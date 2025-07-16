@@ -242,7 +242,7 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.IsMonotonic = types.BoolValue(val)
     }
     if val, ok := metricDataResponse["count"].(float64); ok {
-        data.Count = types.NumberValue(big.NewFloat(val))
+        data.CountValue = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := metricDataResponse["sum"].(float64); ok {
         data.Sum = types.NumberValue(big.NewFloat(val))
