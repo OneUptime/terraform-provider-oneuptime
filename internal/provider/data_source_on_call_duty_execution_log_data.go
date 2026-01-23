@@ -77,7 +77,7 @@ func (d *OnCallDutyExecutionLogDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -97,15 +97,15 @@ func (d *OnCallDutyExecutionLogDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

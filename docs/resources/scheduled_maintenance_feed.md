@@ -15,29 +15,29 @@ Scheduled maintenance feed resource
 ```terraform
 resource "oneuptime_scheduled_maintenance_feed" "example" {
   scheduled_maintenance_id = "123e4567-e89b-12d3-a456-426614174000"
-  feed_info_in_markdown = "example-feed_info_in_markdown"
-  scheduled_maintenance_feed_event_type = "example-scheduled_maintenance_feed_event_type"
-  display_color = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
+  feed_info_in_markdown = "# Heading
+
+This is **markdown** content"
+  scheduled_maintenance_feed_event_type = "Example short text"
+  display_color = "#ff0000"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `feed_info_in_markdown` (String) Log (in Markdown). Required.
-- `more_information_in_markdown` (String) More Information (in Markdown). Optional.
-- `scheduled_maintenance_feed_event_type` (String) ScheduledMaintenance Log Event. Required.
-- `display_color` (Map) Color object. Required.
-- `user_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `posted_at` (Map) A date time object.. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `feed_info_in_markdown` (String) Log of the entire scheduled maintenance state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log], Update: [No access - you don't have permission for this operation]. Required.
+- `more_information_in_markdown` (String) More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `scheduled_maintenance_feed_event_type` (String) ScheduledMaintenance Log Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log], Update: [No access - you don't have permission for this operation]. Required.
+- `display_color` (String) Color object. Required.
+- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `posted_at` (String) A date time object.. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

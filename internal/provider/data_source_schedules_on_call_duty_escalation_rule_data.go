@@ -68,7 +68,7 @@ func (d *SchedulesOnCallDutyEscalationRuleDataDataSource) Schema(ctx context.Con
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -127,7 +127,7 @@ func (d *SchedulesOnCallDutyEscalationRuleDataDataSource) Read(ctx context.Conte
 
     
     // Build API path
-    apiPath := "/" + "on-call-duty-policy-esclation-rule-schedule" + "/" + data.Id.ValueString() + "/" + "get-item"
+    apiPath := "/" + "on-call-duty-policy-escalation-rule-schedule" + "/" + data.Id.ValueString() + "/" + "get-item"
     
     // Prepare request body with select fields (if needed)
     requestBody := map[string]interface{}{

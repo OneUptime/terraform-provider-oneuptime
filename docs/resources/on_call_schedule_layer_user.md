@@ -23,15 +23,15 @@ resource "oneuptime_on_call_schedule_layer_user" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `on_call_duty_policy_schedule_layer_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `order` (Number) Order. Optional.
+- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

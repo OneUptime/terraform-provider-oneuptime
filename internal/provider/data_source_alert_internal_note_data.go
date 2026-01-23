@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -35,7 +36,9 @@ type AlertInternalNoteDataDataSourceModel struct {
     AlertId types.String `tfsdk:"alert_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Note types.String `tfsdk:"note"`
+    Attachments types.List `tfsdk:"attachments"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
+    PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
 }
 
 func (d *AlertInternalNoteDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -68,7 +71,7 @@ func (d *AlertInternalNoteDataDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -84,11 +87,20 @@ func (d *AlertInternalNoteDataDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]",
+                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]",
                 Computed: true,
             },
+            "attachments": schema.ListAttribute{
+                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "posted_from_slack_message_id": schema.StringAttribute{
+                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -184,8 +196,23 @@ func (d *AlertInternalNoteDataDataSource) Read(ctx context.Context, req datasour
     if val, ok := alertInternalNoteDataResponse["note"].(string); ok {
         data.Note = types.StringValue(val)
     }
+    if val, ok := alertInternalNoteDataResponse["attachments"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        listValue, _ := types.ListValue(types.StringType, elements)
+        data.Attachments = listValue
+    }
     if val, ok := alertInternalNoteDataResponse["is_owner_notified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
+    }
+    if val, ok := alertInternalNoteDataResponse["posted_from_slack_message_id"].(string); ok {
+        data.PostedFromSlackMessageId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

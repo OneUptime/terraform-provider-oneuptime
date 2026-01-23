@@ -15,28 +15,26 @@ On call time log resource
 ```terraform
 resource "oneuptime_on_call_time_log" "example" {
   user_id = "123e4567-e89b-12d3-a456-426614174000"
-  starts_at = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
+  starts_at = "2023-10-01T12:00:00Z"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `team_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `more_info` (String) More Info. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `more_info` (String) More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Create On-Call Policy Time Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `starts_at` (Map) A date time object.. Required.
-- `ends_at` (Map) A date time object.. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `starts_at` (String) A date time object.. Required.
+- `ends_at` (String) A date time object.. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

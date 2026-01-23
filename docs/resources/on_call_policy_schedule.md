@@ -14,30 +14,29 @@ On call policy schedule resource
 
 ```terraform
 resource "oneuptime_on_call_policy_schedule" "example" {
-  name = "example-resource"
-  description = "Example resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `labels` (List) Labels. Optional.
-- `description` (String) Description. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Schedule]. Required.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Schedule]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Schedule]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `current_user_id_on_roster` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `next_user_id_on_roster` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `roster_handoff_at` (Map) A date time object.. Computed.
-- `roster_next_handoff_at` (Map) A date time object.. Computed.
-- `roster_next_start_at` (Map) A date time object.. Computed.
-- `roster_start_at` (Map) A date time object.. Computed.
+- `roster_handoff_at` (String) A date time object.. Computed.
+- `roster_next_handoff_at` (String) A date time object.. Computed.
+- `roster_next_start_at` (String) A date time object.. Computed.
+- `roster_start_at` (String) A date time object.. Computed.
 
 ## Import
 

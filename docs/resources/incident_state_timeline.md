@@ -22,21 +22,22 @@ resource "oneuptime_incident_state_timeline" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `incident_state_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `is_status_page_subscribers_notified` (Bool) Are subscribers notified?. Optional.
-- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified?. Optional.
-- `is_owner_notified` (Bool) Are Owners Notified. Optional.
-- `root_cause` (String) Root Cause. Optional.
-- `ends_at` (Map) A date time object.. Optional.
-- `starts_at` (Map) A date time object.. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Incident State Timeline]. Computed.
+- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `ends_at` (String) A date time object.. Computed.
+- `starts_at` (String) A date time object.. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `state_change_log` (Map) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status` (String) Status of notification sent to subscribers about this incident state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Incident State Timeline]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `state_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

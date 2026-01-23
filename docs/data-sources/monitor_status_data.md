@@ -25,13 +25,13 @@ data "oneuptime_monitor_status_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [No access - you don't have permission for this operation]. Computed.
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [No access - you don't have permission for this operation]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `color` (String) Color object. Computed.
-- `is_operational_state` (Bool) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
-- `is_offline_state` (Bool) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
-- `priority` (Number) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `is_operational_state` (Bool) Is this monitor in operational state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `is_offline_state` (Bool) Is this monitor in offline state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `priority` (Number) Order / Priority of this status. For example: Operational has priority 1, Degraded has 2, Offline has 3. Lower priority would mean bad state of the resource. . Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.

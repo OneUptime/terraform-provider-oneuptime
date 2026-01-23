@@ -14,41 +14,40 @@ Scheduled maintenance template resource
 
 ```terraform
 resource "oneuptime_scheduled_maintenance_template" "example" {
-  template_name = "example-template_name"
-  template_description = "example-template_description"
-  title = "example-title"
-  description = "Example resource"
+  template_name = "Example short text"
+  template_description = "This is an example of longer text content that might be stored in this field."
+  title = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `template_name` (String) Name. Required.
-- `template_description` (String) Template Description. Required.
-- `title` (String) Title. Required.
-- `description` (String) Description. Optional.
-- `monitors` (List) Monitors. Optional.
-- `status_pages` (List) Status Pages. Optional.
-- `labels` (List) Labels. Optional.
-- `change_monitor_status_to_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `first_event_scheduled_at` (Map) A date time object.. Optional.
-- `first_event_starts_at` (Map) A date time object.. Optional.
-- `first_event_ends_at` (Map) A date time object.. Optional.
-- `recurring_interval` (Map) Recurring Interval. Optional.
-- `is_recurring_event` (Bool) Is Recurring Event. Optional.
-- `schedule_next_event_at` (Map) A date time object.. Optional.
-- `should_status_page_subscribers_be_notified_on_event_created` (Bool) Should subscribers be notified when event is created?. Optional.
-- `should_status_page_subscribers_be_notified_when_event_changed_to_ongoing` (Bool) Should subscribers be notified when event is changed to ongoing?. Optional.
-- `should_status_page_subscribers_be_notified_when_event_changed_to_ended` (Bool) Should subscribers be notified when event is changed to ended?. Optional.
-- `custom_fields` (Map) Custom Fields. Optional.
-- `send_subscriber_notifications_on_before_the_event` (Map) Subscriber notifications before the event. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `template_name` (String) Name of the Scheduled Maintenance Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Required.
+- `template_description` (String) Description of the Scheduled Maintenance Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Required.
+- `title` (String) Title of this scheduled event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Required.
+- `description` (String) Description of this scheduled event that will show up on Status Page. This is a markdown field.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
+- `monitors` (List) List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
+- `status_pages` (List) List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
+- `change_monitor_status_to_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `first_event_scheduled_at` (String) A date time object.. Computed.
+- `first_event_starts_at` (String) A date time object.. Computed.
+- `first_event_ends_at` (String) A date time object.. Computed.
+- `recurring_interval` (String) How often should this event recur?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
+- `is_recurring_event` (Bool) Is this a recurring event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
+- `schedule_next_event_at` (String) A date time object.. Computed.
+- `should_status_page_subscribers_be_notified_on_event_created` (Bool) Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
+- `should_status_page_subscribers_be_notified_when_event_changed_to_ongoing` (Bool) Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
+- `should_status_page_subscribers_be_notified_when_event_changed_to_ended` (Bool) Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
+- `custom_fields` (String) Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
+- `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

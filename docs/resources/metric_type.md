@@ -14,23 +14,22 @@ Metric type resource
 
 ```terraform
 resource "oneuptime_metric_type" "example" {
-  name = "example-resource"
-  description = "Example resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `telemetry_services` (List) Telemetry Services. Optional.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `unit` (String) Description. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `services` (List) List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Required.
+- `description` (String) Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Computed.
+- `unit` (String) Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

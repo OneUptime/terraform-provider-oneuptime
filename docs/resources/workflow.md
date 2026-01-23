@@ -14,25 +14,24 @@ Workflow resource
 
 ```terraform
 resource "oneuptime_workflow" "example" {
-  name = "example-resource"
-  description = "Example resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `is_enabled` (Bool) Is Enabled. Optional.
-- `graph` (Map) Workflow Graph. Optional.
-- `labels` (List) Labels. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `is_enabled` (Bool) Is this workflow enabled?. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

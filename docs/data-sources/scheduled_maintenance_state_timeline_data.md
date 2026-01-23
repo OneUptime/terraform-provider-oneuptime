@@ -25,13 +25,14 @@ data "oneuptime_scheduled_maintenance_state_timeline_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_status_page_subscribers_notified` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
-- `should_status_page_subscribers_be_notified` (Bool) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
-- `is_owner_notified` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status` (String) Status of notification sent to subscribers about this scheduled maintenance state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]. Computed.
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]. Computed.
+- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
 - `ends_at` (String) A date time object.. Computed.
 - `starts_at` (String) A date time object.. Computed.

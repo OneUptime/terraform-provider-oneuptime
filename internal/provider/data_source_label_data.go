@@ -69,7 +69,7 @@ func (d *LabelDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -77,11 +77,11 @@ func (d *LabelDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [Project Owner, Project Admin, Edit Label]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [Project Owner, Project Admin, Edit Label]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

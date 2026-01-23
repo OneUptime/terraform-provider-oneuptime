@@ -15,30 +15,30 @@ Status page resource resource
 ```terraform
 resource "oneuptime_status_page_resource" "example" {
   status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  display_name = "example-display_name"
+  display_name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `monitor_group_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `status_page_group_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `display_name` (String) Display Name. Required.
-- `display_description` (String) Display Description. Optional.
-- `display_tooltip` (String) Display Tooltip. Optional.
-- `show_current_status` (Bool) Show current status. Optional.
-- `show_uptime_percent` (Bool) Show Uptime Percent. Optional.
-- `uptime_percent_precision` (String) Uptime Percent Precision. Optional.
-- `show_status_history_chart` (Bool) Show History Chart. Optional.
-- `order` (Number) Order. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `monitor_group_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `status_page_group_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `display_name` (String) Display name of the monitor on the Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Required.
+- `display_description` (String) Display description of the monitor on the Status Page. This is in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Computed.
+- `display_tooltip` (String) Tooltip of the monitor on the Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Computed.
+- `show_current_status` (Bool) Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Computed.
+- `show_uptime_percent` (Bool) Show uptime percent of this monitor for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Computed.
+- `uptime_percent_precision` (String) Precision of uptime percent of this monitor for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Computed.
+- `show_status_history_chart` (Bool) Show a 90 day uptime history of this monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Computed.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

@@ -36,6 +36,7 @@ type WhatsAppLogDataDataSourceModel struct {
     FromNumber types.String `tfsdk:"from_number"`
     MessageText types.String `tfsdk:"message_text"`
     StatusMessage types.String `tfsdk:"status_message"`
+    WhatsAppMessageId types.String `tfsdk:"whats_app_message_id"`
     Status types.String `tfsdk:"status"`
     WhatsAppCostInUsdCents types.Number `tfsdk:"whats_app_cost_in_usd_cents"`
     IncidentId types.String `tfsdk:"incident_id"`
@@ -96,19 +97,23 @@ func (d *WhatsAppLogDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "message_text": schema.StringAttribute{
-                MarkdownDescription: "Text content of the WhatsApp message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read SMS Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Text content of the WhatsApp message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read SMS Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "whats_app_message_id": schema.StringAttribute{
+                MarkdownDescription: "Message ID returned by Meta's API. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the WhatsApp message sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read SMS Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the WhatsApp message sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "whats_app_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "WhatsApp Message Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read SMS Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "WhatsApp Message Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
@@ -246,6 +251,9 @@ func (d *WhatsAppLogDataDataSource) Read(ctx context.Context, req datasource.Rea
     }
     if val, ok := whatsAppLogDataResponse["status_message"].(string); ok {
         data.StatusMessage = types.StringValue(val)
+    }
+    if val, ok := whatsAppLogDataResponse["whats_app_message_id"].(string); ok {
+        data.WhatsAppMessageId = types.StringValue(val)
     }
     if val, ok := whatsAppLogDataResponse["status"].(string); ok {
         data.Status = types.StringValue(val)

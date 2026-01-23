@@ -73,7 +73,7 @@ func (d *IncidentStateDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -81,11 +81,11 @@ func (d *IncidentStateDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -101,19 +101,19 @@ func (d *IncidentStateDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "is_created_state": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Is it the created state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Computed: true,
             },
             "is_acknowledged_state": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Is it the acknowledged state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Computed: true,
             },
             "is_resolved_state": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Is it the resolved state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Computed: true,
             },
         },

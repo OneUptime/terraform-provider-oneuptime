@@ -15,23 +15,23 @@ Status page header link resource
 ```terraform
 resource "oneuptime_status_page_header_link" "example" {
   status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  title = "example-title"
-  link = "example-link"
+  title = "Example short text"
+  link = "https://short.url/abc123"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `title` (String) Title. Required.
-- `link` (String) Link. Required.
-- `order` (Number) Order. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `title` (String) Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Required.
+- `link` (String) URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Required.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

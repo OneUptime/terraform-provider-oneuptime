@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -34,6 +35,7 @@ type LogDataDataSourceModel struct {
     SeverityText types.String `tfsdk:"severity_text"`
     SeverityNumber types.Number `tfsdk:"severity_number"`
     Attributes types.String `tfsdk:"attributes"`
+    AttributeKeys types.List `tfsdk:"attribute_keys"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     Body types.String `tfsdk:"body"`
@@ -83,6 +85,11 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             "attributes": schema.StringAttribute{
                 MarkdownDescription: "Attributes",
                 Computed: true,
+            },
+            "attribute_keys": schema.ListAttribute{
+                MarkdownDescription: "Attribute Keys",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "trace_id": schema.StringAttribute{
                 MarkdownDescription: "Trace ID",
@@ -185,6 +192,18 @@ func (d *LogDataDataSource) Read(ctx context.Context, req datasource.ReadRequest
     }
     if val, ok := logDataResponse["attributes"].(string); ok {
         data.Attributes = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["attribute_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        listValue, _ := types.ListValue(types.StringType, elements)
+        data.AttributeKeys = listValue
     }
     if val, ok := logDataResponse["trace_id"].(string); ok {
         data.TraceId = types.StringValue(val)

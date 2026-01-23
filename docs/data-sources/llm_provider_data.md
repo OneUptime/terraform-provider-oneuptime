@@ -35,3 +35,4 @@ data "oneuptime_llm_provider_data" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_default` (Bool) Is this the default LLM provider for the project? When set, the global LLM provider will not be used.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit LLM]. Computed.
+- `cost_per_million_tokens_in_usd_cents` (Number) Cost per million tokens in USD cents. Used for billing when using global LLM providers.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]. Computed.

@@ -35,15 +35,16 @@ type CodeRepositoryDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
-    Labels types.List `tfsdk:"labels"`
-    SecretToken types.String `tfsdk:"secret_token"`
-    MainBranchName types.String `tfsdk:"main_branch_name"`
     RepositoryHostedAt types.String `tfsdk:"repository_hosted_at"`
     OrganizationName types.String `tfsdk:"organization_name"`
     RepositoryName types.String `tfsdk:"repository_name"`
-    LastCopilotRunDateTime types.String `tfsdk:"last_copilot_run_date_time"`
+    MainBranchName types.String `tfsdk:"main_branch_name"`
+    RepositoryUrl types.String `tfsdk:"repository_url"`
+    GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
+    GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
+    Labels types.List `tfsdk:"labels"`
 }
 
 func (d *CodeRepositoryDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -76,7 +77,7 @@ func (d *CodeRepositoryDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -84,11 +85,39 @@ func (d *CodeRepositoryDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
+                MarkdownDescription: "A description of this code repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
+                Computed: true,
+            },
+            "repository_hosted_at": schema.StringAttribute{
+                MarkdownDescription: "Where is this repository hosted (GitHub, GitLab, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "organization_name": schema.StringAttribute{
+                MarkdownDescription: "GitHub organization or username that owns this repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "repository_name": schema.StringAttribute{
+                MarkdownDescription: "The name of the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "main_branch_name": schema.StringAttribute{
+                MarkdownDescription: "The name of the main/default branch. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
+                Computed: true,
+            },
+            "repository_url": schema.StringAttribute{
+                MarkdownDescription: "The HTTPS URL to the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "git_hub_app_installation_id": schema.StringAttribute{
+                MarkdownDescription: "The GitHub App installation ID used to authenticate with this repository. Permissions - Create: [Project Owner, Project Admin, Create Code Repository], Read: [Project Owner, Project Admin, Read Code Repository], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "git_lab_project_id": schema.StringAttribute{
+                MarkdownDescription: "The GitLab project ID for this repository. Permissions - Create: [Project Owner, Project Admin, Create Code Repository], Read: [Project Owner, Project Admin, Read Code Repository], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -100,33 +129,9 @@ func (d *CodeRepositoryDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
                 Computed: true,
                 ElementType: types.StringType,
-            },
-            "secret_token": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "main_branch_name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
-                Computed: true,
-            },
-            "repository_hosted_at": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
-                Computed: true,
-            },
-            "organization_name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
-                Computed: true,
-            },
-            "repository_name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
-                Computed: true,
-            },
-            "last_copilot_run_date_time": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
             },
         },
     }
@@ -164,7 +169,7 @@ func (d *CodeRepositoryDataDataSource) Read(ctx context.Context, req datasource.
 
     
     // Build API path
-    apiPath := "/" + "copilot-code-repository" + "/" + data.Id.ValueString() + "/" + "get-item"
+    apiPath := "/" + "code-repository" + "/" + data.Id.ValueString() + "/" + "get-item"
     
     // Prepare request body with select fields (if needed)
     requestBody := map[string]interface{}{
@@ -218,6 +223,27 @@ func (d *CodeRepositoryDataDataSource) Read(ctx context.Context, req datasource.
     if val, ok := codeRepositoryDataResponse["description"].(string); ok {
         data.Description = types.StringValue(val)
     }
+    if val, ok := codeRepositoryDataResponse["repository_hosted_at"].(string); ok {
+        data.RepositoryHostedAt = types.StringValue(val)
+    }
+    if val, ok := codeRepositoryDataResponse["organization_name"].(string); ok {
+        data.OrganizationName = types.StringValue(val)
+    }
+    if val, ok := codeRepositoryDataResponse["repository_name"].(string); ok {
+        data.RepositoryName = types.StringValue(val)
+    }
+    if val, ok := codeRepositoryDataResponse["main_branch_name"].(string); ok {
+        data.MainBranchName = types.StringValue(val)
+    }
+    if val, ok := codeRepositoryDataResponse["repository_url"].(string); ok {
+        data.RepositoryUrl = types.StringValue(val)
+    }
+    if val, ok := codeRepositoryDataResponse["git_hub_app_installation_id"].(string); ok {
+        data.GitHubAppInstallationId = types.StringValue(val)
+    }
+    if val, ok := codeRepositoryDataResponse["git_lab_project_id"].(string); ok {
+        data.GitLabProjectId = types.StringValue(val)
+    }
     if val, ok := codeRepositoryDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     }
@@ -235,24 +261,6 @@ func (d *CodeRepositoryDataDataSource) Read(ctx context.Context, req datasource.
         }
         listValue, _ := types.ListValue(types.StringType, elements)
         data.Labels = listValue
-    }
-    if val, ok := codeRepositoryDataResponse["secret_token"].(string); ok {
-        data.SecretToken = types.StringValue(val)
-    }
-    if val, ok := codeRepositoryDataResponse["main_branch_name"].(string); ok {
-        data.MainBranchName = types.StringValue(val)
-    }
-    if val, ok := codeRepositoryDataResponse["repository_hosted_at"].(string); ok {
-        data.RepositoryHostedAt = types.StringValue(val)
-    }
-    if val, ok := codeRepositoryDataResponse["organization_name"].(string); ok {
-        data.OrganizationName = types.StringValue(val)
-    }
-    if val, ok := codeRepositoryDataResponse["repository_name"].(string); ok {
-        data.RepositoryName = types.StringValue(val)
-    }
-    if val, ok := codeRepositoryDataResponse["last_copilot_run_date_time"].(string); ok {
-        data.LastCopilotRunDateTime = types.StringValue(val)
     }
 
     // Write logs using the tflog package

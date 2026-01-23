@@ -25,14 +25,14 @@ data "oneuptime_on_call_schedule_layer_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Edit On-Call Schedule Layer]. Computed.
+- `description` (String) Description for this layer. This is optional and can be left blank.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Edit On-Call Schedule Layer]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
+- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
 - `starts_at` (String) A date time object.. Computed.
-- `rotation` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
+- `rotation` (String) How often would you like to hand off the duty to the next user in this layer?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
 - `hand_off_time` (String) A date time object.. Computed.
-- `restriction_times` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
+- `restriction_times` (String) Restrict this layer to these times. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.

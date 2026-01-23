@@ -53,9 +53,14 @@ type MonitorDataDataSourceModel struct {
     ServerMonitorSecretKey types.String `tfsdk:"server_monitor_secret_key"`
     IncomingRequestSecretKey types.String `tfsdk:"incoming_request_secret_key"`
     IncomingMonitorRequest types.String `tfsdk:"incoming_monitor_request"`
+    IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
+    IncomingEmailMonitorLastEmailReceivedAt types.String `tfsdk:"incoming_email_monitor_last_email_received_at"`
+    IncomingEmailMonitorRequest types.String `tfsdk:"incoming_email_monitor_request"`
+    IncomingEmailMonitorHeartbeatCheckedAt types.String `tfsdk:"incoming_email_monitor_heartbeat_checked_at"`
     ServerMonitorResponse types.String `tfsdk:"server_monitor_response"`
     IsAllProbesDisconnectedFromThisMonitor types.Bool `tfsdk:"is_all_probes_disconnected_from_this_monitor"`
     IsNoProbeEnabledOnThisMonitor types.Bool `tfsdk:"is_no_probe_enabled_on_this_monitor"`
+    MinimumProbeAgreement types.Number `tfsdk:"minimum_probe_agreement"`
 }
 
 func (d *MonitorDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -88,7 +93,7 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -96,11 +101,11 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -108,12 +113,12 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_type": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "What is the type of this monitor? Website? API? etc.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "current_monitor_status_id": schema.StringAttribute{
@@ -125,19 +130,19 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "monitoring_interval": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
+                MarkdownDescription: "How often would you like OneUptime to monitor this resource?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "disable_active_monitoring": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Create Monitor]",
+                MarkdownDescription: "Disable active monitoring for this resource?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Create Monitor]",
                 Computed: true,
             },
             "incoming_request_monitor_heartbeat_checked_at": schema.StringAttribute{
@@ -153,11 +158,11 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "disable_active_monitoring_because_of_scheduled_maintenance_event": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Disable Monitoring because of Ongoing Scheduled Maintenance Event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "disable_active_monitoring_because_of_manual_incident": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Disable Monitoring because of Incident which is creeated manually by user.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "server_monitor_request_received_at": schema.StringAttribute{
@@ -173,19 +178,39 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "incoming_monitor_request": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Incoming Monitor Request for Incoming Request Monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "incoming_email_secret_key": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "incoming_email_monitor_last_email_received_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "incoming_email_monitor_request": schema.StringAttribute{
+                MarkdownDescription: "This field is for Incoming Email Monitor only. Last email data received.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "incoming_email_monitor_heartbeat_checked_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "server_monitor_response": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Server Monitor Response for Server Monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_all_probes_disconnected_from_this_monitor": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "All Probes Disconnected From This Monitor. Is this monitor not being monitored?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_no_probe_enabled_on_this_monitor": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "No Probe Enabled On This Monitor. Is this monitor not being monitored?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "minimum_probe_agreement": schema.NumberAttribute{
+                MarkdownDescription: "Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
                 Computed: true,
             },
         },
@@ -341,6 +366,18 @@ func (d *MonitorDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := monitorDataResponse["incoming_monitor_request"].(string); ok {
         data.IncomingMonitorRequest = types.StringValue(val)
     }
+    if val, ok := monitorDataResponse["incoming_email_secret_key"].(string); ok {
+        data.IncomingEmailSecretKey = types.StringValue(val)
+    }
+    if val, ok := monitorDataResponse["incoming_email_monitor_last_email_received_at"].(string); ok {
+        data.IncomingEmailMonitorLastEmailReceivedAt = types.StringValue(val)
+    }
+    if val, ok := monitorDataResponse["incoming_email_monitor_request"].(string); ok {
+        data.IncomingEmailMonitorRequest = types.StringValue(val)
+    }
+    if val, ok := monitorDataResponse["incoming_email_monitor_heartbeat_checked_at"].(string); ok {
+        data.IncomingEmailMonitorHeartbeatCheckedAt = types.StringValue(val)
+    }
     if val, ok := monitorDataResponse["server_monitor_response"].(string); ok {
         data.ServerMonitorResponse = types.StringValue(val)
     }
@@ -349,6 +386,9 @@ func (d *MonitorDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := monitorDataResponse["is_no_probe_enabled_on_this_monitor"].(bool); ok {
         data.IsNoProbeEnabledOnThisMonitor = types.BoolValue(val)
+    }
+    if val, ok := monitorDataResponse["minimum_probe_agreement"].(float64); ok {
+        data.MinimumProbeAgreement = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

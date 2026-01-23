@@ -14,30 +14,26 @@ Monitor status resource
 
 ```terraform
 resource "oneuptime_monitor_status" "example" {
-  name = "example-resource"
-  color = {
-    _type = "Color"
-    value = "#ff0000"
-  }
-  description = "Example resource"
+  name = "Example short text"
+  color = "#ff0000"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `color` (Map) Color object. Required.
-- `is_operational_state` (Bool) Is Operational State. Optional.
-- `is_offline_state` (Bool) Is Offline State. Optional.
-- `priority` (Number) Order. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `color` (String) Color object. Required.
+- `is_operational_state` (Bool) Is this monitor in operational state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `is_offline_state` (Bool) Is this monitor in offline state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `priority` (Number) Order / Priority of this status. For example: Operational has priority 1, Degraded has 2, Offline has 3. Lower priority would mean bad state of the resource. . Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

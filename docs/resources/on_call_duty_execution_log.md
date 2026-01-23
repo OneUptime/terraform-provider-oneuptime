@@ -15,35 +15,35 @@ On call duty execution log resource
 ```terraform
 resource "oneuptime_on_call_duty_execution_log" "example" {
   on_call_duty_policy_id = "123e4567-e89b-12d3-a456-426614174000"
-  status = "example-status"
-  status_message = "example-status_message"
-  user_notification_event_type = "example-user_notification_event_type"
+  status = "Example short text"
+  status_message = "This is an example of longer text content that might be stored in this field."
+  user_notification_event_type = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `status` (String) Status. Required.
-- `status_message` (String) Status Message. Required.
-- `user_notification_event_type` (String) Notification Event Type. Required.
-- `acknowledged_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `acknowledged_at` (Map) A date time object.. Optional.
-- `acknowledged_by_team_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `last_executed_escalation_rule_order` (Number) Executed Escalation Rule Order. Optional.
-- `last_escalation_rule_executed_at` (Map) A date time object.. Optional.
-- `last_executed_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `execute_next_escalation_rule_in_minutes` (Number) Execute next escalation rule in minutes. Optional.
-- `on_call_policy_execution_repeat_count` (Number) On-Call Policy Execution Repeat Count. Optional.
-- `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `status` (String) Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Required.
+- `status_message` (String) Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Required.
+- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Required.
+- `acknowledged_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `acknowledged_at` (String) A date time object.. Computed.
+- `acknowledged_by_team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `last_escalation_rule_executed_at` (String) A date time object.. Optional.
+- `last_executed_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `execute_next_escalation_rule_in_minutes` (Number) How many minutes should we wait before executing the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `on_call_policy_execution_repeat_count` (Number) How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

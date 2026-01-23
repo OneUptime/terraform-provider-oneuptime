@@ -14,23 +14,22 @@ Monitor secret resource
 
 ```terraform
 resource "oneuptime_monitor_secret" "example" {
-  name = "example-resource"
-  description = "Example resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `secret_value` (String) Secret Value. Optional.
-- `monitors` (List) Monitors. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]. Computed.
+- `secret_value` (String) Secret value that you want to store in this object. This value will be encrypted and only accessible by the probe.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [No access - you don't have permission for this operation], Update: [Project Owner, Project Admin, Edit Monitor Secret]. Optional.
+- `monitors` (List) List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

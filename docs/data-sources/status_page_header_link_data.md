@@ -25,10 +25,10 @@ data "oneuptime_status_page_header_link_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `title` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Computed.
-- `link` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Computed.
+- `title` (String) Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Computed.
+- `link` (String) URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Computed.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]. Computed.

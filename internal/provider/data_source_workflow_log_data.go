@@ -69,7 +69,7 @@ func (d *WorkflowLogDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -81,11 +81,11 @@ func (d *WorkflowLogDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "logs": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Logs. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "workflow_status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of this workflow. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{

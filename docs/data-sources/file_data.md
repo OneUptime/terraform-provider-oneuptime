@@ -21,12 +21,4 @@ data "oneuptime_file_data" "example" {
 ## Schema
 
 - `id` (String) Identifier to filter by. Optional.
-- `name` (String) Name to filter by. Computed.
-- `created_at` (String) A date time object.. Computed.
-- `updated_at` (String) A date time object.. Computed.
-- `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Object version. Computed.
-- `file` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
-- `file_type` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
-- `slug` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
-- `is_public` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
+- `name` (String) Name to filter by. Optional.

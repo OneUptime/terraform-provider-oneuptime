@@ -14,26 +14,25 @@ Workspace notification rule resource
 
 ```terraform
 resource "oneuptime_workspace_notification_rule" "example" {
-  name = "example-rule"
-  event_type = "example-event_type"
-  workspace_type = "example-workspace_type"
-  description = "Example rule"
+  name = "This is an example of longer text content that might be stored in this field."
+  event_type = "Example short text"
+  workspace_type = "This is an example of longer text content that might be stored in this field."
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Rule Name. Required.
-- `description` (String) Rule Description. Optional.
-- `notification_rule` (Map) Workspace Notification Rules. Optional.
-- `event_type` (String) Workspace Event Type. Required.
-- `workspace_type` (String) Workspace Type. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Name of the Notification Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]. Required.
+- `description` (String) Description of the Notification Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]. Computed.
+- `notification_rule` (String) Notification Rules for the Workspace. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]. Computed.
+- `event_type` (String) Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]. Required.
+- `workspace_type` (String) Type of Workspace - slack, microsoft teams etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]. Required.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

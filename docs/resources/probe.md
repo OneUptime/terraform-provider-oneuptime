@@ -14,12 +14,9 @@ Probe resource
 
 ```terraform
 resource "oneuptime_probe" "example" {
-  key = "example-key"
-  name = "example-resource"
-  probe_version = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
-  description = "Example resource"
+  key = "Example short text"
+  name = "John Doe"
+  probe_version = "1.0.0"
 }
 ```
 
@@ -27,21 +24,21 @@ resource "oneuptime_probe" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `key` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Probe], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Edit Probe]. Required.
-- `name` (Map) Name object. Required.
-- `description` (Map) Name object. Optional.
-- `probe_version` (Map) Version object. Required.
-- `last_alive` (Map) A date time object.. Optional.
-- `icon_file_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe. Optional.
-- `labels` (List) Labels. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]. Computed.
+- `name` (String) Name object. Required.
+- `description` (String) Name object. Computed.
+- `probe_version` (String) Version object. Required.
+- `last_alive` (String) A date time object.. Computed.
+- `icon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `connection_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [No access - you don't have permission for this operation]. Computed.
+- `connection_status` (String) Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

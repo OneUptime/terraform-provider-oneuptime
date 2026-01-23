@@ -25,9 +25,9 @@ data "oneuptime_service_dependency_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `service_catalog_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `dependency_service_catalog_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `service_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `dependency_service_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

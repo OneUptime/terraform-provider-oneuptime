@@ -25,7 +25,7 @@ data "oneuptime_scheduled_maintenance_template_user_owner_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_template_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

@@ -69,7 +69,7 @@ func (d *StatusPagePrivateUserDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -85,7 +85,7 @@ func (d *StatusPagePrivateUserDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "password": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [Project Owner, Project Admin, Project Member, Edit Status Page PrivateUser]",
+                MarkdownDescription: "Password. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [Project Owner, Project Admin, Project Member, Edit Status Page PrivateUser]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (d *StatusPagePrivateUserDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "is_sso_user": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Did this user sign up via SSO?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

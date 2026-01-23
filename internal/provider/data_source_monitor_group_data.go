@@ -69,7 +69,7 @@ func (d *MonitorGroupDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -77,11 +77,11 @@ func (d *MonitorGroupDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -89,7 +89,7 @@ func (d *MonitorGroupDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
                 Computed: true,
                 ElementType: types.StringType,
             },

@@ -69,7 +69,7 @@ func (d *StatusPageHistoryChartBarColorDataDataSource) Schema(ctx context.Contex
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -81,7 +81,7 @@ func (d *StatusPageHistoryChartBarColorDataDataSource) Schema(ctx context.Contex
                 Computed: true,
             },
             "uptime_percent_greater_than_or_equal_to": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
+                MarkdownDescription: "Uptime percent greater than or equal to this value. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
                 Computed: true,
             },
             "bar_color": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (d *StatusPageHistoryChartBarColorDataDataSource) Schema(ctx context.Contex
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
                 Computed: true,
             },
         },

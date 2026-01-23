@@ -21,15 +21,15 @@ resource "oneuptime_status_page_private_user" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `email` (Map) Email object. Optional.
-- `password` (String) Password. Optional.
-- `is_sso_user` (Bool) SSO User. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `email` (String) Email object. Computed.
+- `password` (String) Password. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [Project Owner, Project Admin, Project Member, Edit Status Page PrivateUser]. Computed.
+- `is_sso_user` (Bool) Did this user sign up via SSO?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [No access - you don't have permission for this operation]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

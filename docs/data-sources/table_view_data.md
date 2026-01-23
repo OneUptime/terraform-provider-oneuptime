@@ -25,12 +25,12 @@ data "oneuptime_table_view_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `table_id` (String) Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `table_id` (String) ID of the table this view is for. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `query` (String) Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
-- `sort` (String) Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
-- `items_on_page` (Number) Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `query` (String) Filters for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `sort` (String) Sort for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `items_on_page` (Number) Items on page. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.

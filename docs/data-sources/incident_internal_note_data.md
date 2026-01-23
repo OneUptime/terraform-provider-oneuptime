@@ -25,9 +25,11 @@ data "oneuptime_incident_internal_note_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `note` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Incident Internal Note]. Computed.
-- `is_owner_notified` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [No access - you don't have permission for this operation]. Computed.
+- `note` (String) Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Incident Internal Note]. Computed.
+- `attachments` (List) Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Incident Internal Note]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [No access - you don't have permission for this operation]. Computed.
+- `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [No access - you don't have permission for this operation]. Computed.

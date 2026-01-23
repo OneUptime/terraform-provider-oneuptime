@@ -21,16 +21,16 @@ resource "oneuptime_workflow_log" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `workflow_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `logs` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `workflow_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `started_at` (Map) A date time object.. Computed.
-- `completed_at` (Map) A date time object.. Computed.
+- `logs` (String) Logs. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `workflow_status` (String) Status of this workflow. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `started_at` (String) A date time object.. Computed.
+- `completed_at` (String) A date time object.. Computed.
 
 ## Import
 

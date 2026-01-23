@@ -25,10 +25,10 @@ data "oneuptime_status_page_history_chart_bar_color_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `uptime_percent_greater_than_or_equal_to` (Number) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]. Computed.
+- `uptime_percent_greater_than_or_equal_to` (Number) Uptime percent greater than or equal to this value. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]. Computed.
 - `bar_color` (String) Color object. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]. Computed.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]. Computed.

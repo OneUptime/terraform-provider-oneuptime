@@ -71,7 +71,7 @@ func (d *TableViewDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -79,11 +79,11 @@ func (d *TableViewDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "table_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "ID of the table this view is for. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -95,15 +95,15 @@ func (d *TableViewDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Filters for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
                 Computed: true,
             },
             "sort": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Sort for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
                 Computed: true,
             },
             "items_on_page": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Items on page. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
                 Computed: true,
             },
         },

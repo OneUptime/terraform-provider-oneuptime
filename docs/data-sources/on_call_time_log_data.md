@@ -25,13 +25,13 @@ data "oneuptime_on_call_time_log_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `more_info` (String) Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Create On-Call Policy Time Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `more_info` (String) More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Create On-Call Policy Time Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `starts_at` (String) A date time object.. Computed.

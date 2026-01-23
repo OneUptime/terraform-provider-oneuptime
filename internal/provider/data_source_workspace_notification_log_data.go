@@ -36,14 +36,20 @@ type WorkspaceNotificationLogDataDataSourceModel struct {
     ChannelId types.String `tfsdk:"channel_id"`
     ChannelName types.String `tfsdk:"channel_name"`
     ThreadId types.String `tfsdk:"thread_id"`
-    MessageSummary types.String `tfsdk:"message_summary"`
+    Message types.String `tfsdk:"message"`
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
+    ActionType types.String `tfsdk:"action_type"`
     IncidentId types.String `tfsdk:"incident_id"`
+    UserId types.String `tfsdk:"user_id"`
     AlertId types.String `tfsdk:"alert_id"`
     ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     StatusPageAnnouncementId types.String `tfsdk:"status_page_announcement_id"`
+    OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
+    OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
+    TeamId types.String `tfsdk:"team_id"`
 }
 
 func (d *WorkspaceNotificationLogDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -99,8 +105,8 @@ func (d *WorkspaceNotificationLogDataDataSource) Schema(ctx context.Context, req
                 MarkdownDescription: "Thread ID of the message in the channel (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
-            "message_summary": schema.StringAttribute{
-                MarkdownDescription: "Short summary of the message content. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
+            "message": schema.StringAttribute{
+                MarkdownDescription: "Content of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
@@ -111,7 +117,15 @@ func (d *WorkspaceNotificationLogDataDataSource) Schema(ctx context.Context, req
                 MarkdownDescription: "Status of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
+            "action_type": schema.StringAttribute{
+                MarkdownDescription: "Type of workspace action performed. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
             "incident_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -128,6 +142,22 @@ func (d *WorkspaceNotificationLogDataDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "status_page_announcement_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_schedule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "team_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -227,8 +257,8 @@ func (d *WorkspaceNotificationLogDataDataSource) Read(ctx context.Context, req d
     if val, ok := workspaceNotificationLogDataResponse["thread_id"].(string); ok {
         data.ThreadId = types.StringValue(val)
     }
-    if val, ok := workspaceNotificationLogDataResponse["message_summary"].(string); ok {
-        data.MessageSummary = types.StringValue(val)
+    if val, ok := workspaceNotificationLogDataResponse["message"].(string); ok {
+        data.Message = types.StringValue(val)
     }
     if val, ok := workspaceNotificationLogDataResponse["status_message"].(string); ok {
         data.StatusMessage = types.StringValue(val)
@@ -236,8 +266,14 @@ func (d *WorkspaceNotificationLogDataDataSource) Read(ctx context.Context, req d
     if val, ok := workspaceNotificationLogDataResponse["status"].(string); ok {
         data.Status = types.StringValue(val)
     }
+    if val, ok := workspaceNotificationLogDataResponse["action_type"].(string); ok {
+        data.ActionType = types.StringValue(val)
+    }
     if val, ok := workspaceNotificationLogDataResponse["incident_id"].(string); ok {
         data.IncidentId = types.StringValue(val)
+    }
+    if val, ok := workspaceNotificationLogDataResponse["user_id"].(string); ok {
+        data.UserId = types.StringValue(val)
     }
     if val, ok := workspaceNotificationLogDataResponse["alert_id"].(string); ok {
         data.AlertId = types.StringValue(val)
@@ -250,6 +286,18 @@ func (d *WorkspaceNotificationLogDataDataSource) Read(ctx context.Context, req d
     }
     if val, ok := workspaceNotificationLogDataResponse["status_page_announcement_id"].(string); ok {
         data.StatusPageAnnouncementId = types.StringValue(val)
+    }
+    if val, ok := workspaceNotificationLogDataResponse["on_call_duty_policy_id"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
+    }
+    if val, ok := workspaceNotificationLogDataResponse["on_call_duty_policy_escalation_rule_id"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
+    }
+    if val, ok := workspaceNotificationLogDataResponse["on_call_duty_policy_schedule_id"].(string); ok {
+        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    }
+    if val, ok := workspaceNotificationLogDataResponse["team_id"].(string); ok {
+        data.TeamId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

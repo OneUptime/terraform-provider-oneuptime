@@ -38,6 +38,9 @@ type ProjectDataDataSourceModel struct {
     PaymentProviderSubscriptionSeats types.Number `tfsdk:"payment_provider_subscription_seats"`
     TrialEndsAt types.String `tfsdk:"trial_ends_at"`
     PaymentProviderCustomerId types.String `tfsdk:"payment_provider_customer_id"`
+    BusinessDetails types.String `tfsdk:"business_details"`
+    BusinessDetailsCountry types.String `tfsdk:"business_details_country"`
+    FinanceAccountingEmail types.String `tfsdk:"finance_accounting_email"`
     PaymentProviderSubscriptionStatus types.String `tfsdk:"payment_provider_subscription_status"`
     PaymentProviderMeteredSubscriptionStatus types.String `tfsdk:"payment_provider_metered_subscription_status"`
     PaymentProviderPromoCode types.String `tfsdk:"payment_provider_promo_code"`
@@ -50,12 +53,20 @@ type ProjectDataDataSourceModel struct {
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
     EnableSmsNotifications types.Bool `tfsdk:"enable_sms_notifications"`
+    EnableWhatsAppNotifications types.Bool `tfsdk:"enable_whats_app_notifications"`
     EnableCallNotifications types.Bool `tfsdk:"enable_call_notifications"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
+    AiCurrentBalanceInUsdCents types.Number `tfsdk:"ai_current_balance_in_usd_cents"`
+    AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
+    AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
+    EnableAi types.Bool `tfsdk:"enable_ai"`
+    EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     PlanName types.String `tfsdk:"plan_name"`
     ResellerId types.String `tfsdk:"reseller_id"`
     ResellerPlanId types.String `tfsdk:"reseller_plan_id"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
+    DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
+    GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
 }
 
 func (d *ProjectDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -88,15 +99,15 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "payment_provider_plan_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner]",
+                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "payment_provider_subscription_id": schema.StringAttribute{
@@ -117,6 +128,18 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "payment_provider_customer_id": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "business_details": schema.StringAttribute{
+                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "business_details_country": schema.StringAttribute{
+                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE).. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "finance_accounting_email": schema.StringAttribute{
+                MarkdownDescription: "Email object",
                 Computed: true,
             },
             "payment_provider_subscription_status": schema.StringAttribute{
@@ -140,7 +163,7 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "is_feature_flag_monitor_groups_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]",
+                MarkdownDescription: "Is Feature Flag Monitor Groups Enabled. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]",
                 Computed: true,
             },
             "workflow_runs_in_last30_days": schema.NumberAttribute{
@@ -152,31 +175,55 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "sms_or_call_current_balance_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Balance in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "auto_recharge_sms_or_call_by_balance_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "auto_recharge_sms_or_call_when_current_balance_falls_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "enable_sms_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable SMS notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "enable_whats_app_notifications": schema.BoolAttribute{
+                MarkdownDescription: "Enable WhatsApp notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "enable_call_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable call notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "ai_current_balance_in_usd_cents": schema.NumberAttribute{
+                MarkdownDescription: "Balance in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "auto_ai_recharge_by_balance_in_usd": schema.NumberAttribute{
+                MarkdownDescription: "Auto recharge amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "auto_recharge_ai_when_current_balance_falls_in_usd": schema.NumberAttribute{
+                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "enable_ai": schema.BoolAttribute{
+                MarkdownDescription: "Enable AI services for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "enable_auto_recharge_ai_balance": schema.BoolAttribute{
+                MarkdownDescription: "Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "plan_name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the plan this project is subscribed to.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "reseller_id": schema.StringAttribute{
@@ -188,7 +235,15 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "let_customer_support_access_project": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "do_not_add_global_probes_by_default_on_new_monitors": schema.BoolAttribute{
+                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "git_hub_app_installation_id": schema.StringAttribute{
+                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
         },
@@ -293,6 +348,15 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := projectDataResponse["payment_provider_customer_id"].(string); ok {
         data.PaymentProviderCustomerId = types.StringValue(val)
     }
+    if val, ok := projectDataResponse["business_details"].(string); ok {
+        data.BusinessDetails = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["business_details_country"].(string); ok {
+        data.BusinessDetailsCountry = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["finance_accounting_email"].(string); ok {
+        data.FinanceAccountingEmail = types.StringValue(val)
+    }
     if val, ok := projectDataResponse["payment_provider_subscription_status"].(string); ok {
         data.PaymentProviderSubscriptionStatus = types.StringValue(val)
     }
@@ -329,11 +393,29 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := projectDataResponse["enable_sms_notifications"].(bool); ok {
         data.EnableSmsNotifications = types.BoolValue(val)
     }
+    if val, ok := projectDataResponse["enable_whats_app_notifications"].(bool); ok {
+        data.EnableWhatsAppNotifications = types.BoolValue(val)
+    }
     if val, ok := projectDataResponse["enable_call_notifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
     }
     if val, ok := projectDataResponse["enable_auto_recharge_sms_or_call_balance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["ai_current_balance_in_usd_cents"].(float64); ok {
+        data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["auto_ai_recharge_by_balance_in_usd"].(float64); ok {
+        data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["auto_recharge_ai_when_current_balance_falls_in_usd"].(float64); ok {
+        data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["enable_ai"].(bool); ok {
+        data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["enable_auto_recharge_ai_balance"].(bool); ok {
+        data.EnableAutoRechargeAiBalance = types.BoolValue(val)
     }
     if val, ok := projectDataResponse["plan_name"].(string); ok {
         data.PlanName = types.StringValue(val)
@@ -346,6 +428,12 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["let_customer_support_access_project"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["do_not_add_global_probes_by_default_on_new_monitors"].(bool); ok {
+        data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["git_hub_app_installation_id"].(string); ok {
+        data.GitHubAppInstallationId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

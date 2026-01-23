@@ -22,19 +22,19 @@ resource "oneuptime_monitor_probe" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `probe_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `last_ping_at` (Map) A date time object.. Optional.
-- `next_ping_at` (Map) A date time object.. Optional.
-- `is_enabled` (Bool) Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Read Monitor Probe], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Probe]. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `last_ping_at` (String) A date time object.. Computed.
+- `next_ping_at` (String) A date time object.. Computed.
+- `is_enabled` (Bool) Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Read Monitor Probe], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Probe]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `last_monitoring_log` (Map) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Probe], Update: [No access - you don't have permission for this operation]. Computed.
+- `last_monitoring_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Probe], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

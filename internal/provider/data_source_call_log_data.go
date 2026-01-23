@@ -38,6 +38,16 @@ type CallLogDataDataSourceModel struct {
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
     CallCostInUsdCents types.Number `tfsdk:"call_cost_in_usd_cents"`
+    IncidentId types.String `tfsdk:"incident_id"`
+    UserId types.String `tfsdk:"user_id"`
+    AlertId types.String `tfsdk:"alert_id"`
+    ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
+    StatusPageId types.String `tfsdk:"status_page_id"`
+    StatusPageAnnouncementId types.String `tfsdk:"status_page_announcement_id"`
+    OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
+    OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
+    TeamId types.String `tfsdk:"team_id"`
 }
 
 func (d *CallLogDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -70,7 +80,7 @@ func (d *CallLogDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -86,19 +96,59 @@ func (d *CallLogDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "call_data": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Content of the data that was sent in the call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the Call sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "call_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Call Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "incident_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "alert_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "scheduled_maintenance_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "status_page_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "status_page_announcement_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_schedule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "team_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
         },
@@ -202,6 +252,36 @@ func (d *CallLogDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := callLogDataResponse["call_cost_in_usd_cents"].(float64); ok {
         data.CallCostInUsdCents = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := callLogDataResponse["incident_id"].(string); ok {
+        data.IncidentId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["user_id"].(string); ok {
+        data.UserId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["alert_id"].(string); ok {
+        data.AlertId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["scheduled_maintenance_id"].(string); ok {
+        data.ScheduledMaintenanceId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["status_page_id"].(string); ok {
+        data.StatusPageId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["status_page_announcement_id"].(string); ok {
+        data.StatusPageAnnouncementId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["on_call_duty_policy_id"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["on_call_duty_policy_escalation_rule_id"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["on_call_duty_policy_schedule_id"].(string); ok {
+        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    }
+    if val, ok := callLogDataResponse["team_id"].(string); ok {
+        data.TeamId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

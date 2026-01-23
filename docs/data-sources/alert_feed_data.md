@@ -25,13 +25,13 @@ data "oneuptime_alert_feed_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `feed_info_in_markdown` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Computed.
-- `more_information_in_markdown` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Computed.
-- `alert_feed_event_type` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Computed.
+- `feed_info_in_markdown` (String) Log of the entire alert state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Computed.
+- `more_information_in_markdown` (String) More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Computed.
+- `alert_feed_event_type` (String) Alert Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Computed.
 - `display_color` (String) Color object. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `posted_at` (String) A date time object.. Computed.

@@ -70,7 +70,7 @@ func (d *IncidentSeverityDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -78,11 +78,11 @@ func (d *IncidentSeverityDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity], Update: [Project Owner, Project Admin, Project Member, Edit Incident Severity]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity], Update: [Project Owner, Project Admin, Project Member, Edit Incident Severity]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -98,7 +98,7 @@ func (d *IncidentSeverityDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity], Update: [Project Owner, Project Admin, Project Member, Edit Incident Severity]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity], Update: [Project Owner, Project Admin, Project Member, Edit Incident Severity]",
                 Computed: true,
             },
         },

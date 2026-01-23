@@ -21,15 +21,15 @@ resource "oneuptime_team_member" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `team_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `has_accepted_invitation` (Bool) Has Accepted Invitation. Optional.
-- `invitation_accepted_at` (Map) A date time object.. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `has_accepted_invitation` (Bool) Has this team member accepted invitation. Permissions - Create: [Project Owner, Project Admin, Create Team, Invite New Members], Read: [Project Owner, Project Admin, Project Member, Read Teams, Logged in User], Update: [Logged in User]. Computed.
+- `invitation_accepted_at` (String) A date time object.. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 
 ## Import
 

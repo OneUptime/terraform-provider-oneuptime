@@ -14,34 +14,34 @@ Exception resource
 
 ```terraform
 resource "oneuptime_exception" "example" {
-  telemetry_service_id = "123e4567-e89b-12d3-a456-426614174000"
+  service_id = "123e4567-e89b-12d3-a456-426614174000"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `telemetry_service_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `message` (String) Exception Message. Optional.
-- `stack_trace` (String) Stack Trace. Optional.
-- `exception_type` (String) Exception Type. Optional.
-- `fingerprint` (String) Finger Print. Optional.
-- `marked_as_resolved_at` (Map) A date time object.. Optional.
-- `marked_as_archived_at` (Map) A date time object.. Optional.
-- `first_seen_at` (Map) A date time object.. Optional.
-- `last_seen_at` (Map) A date time object.. Optional.
-- `assign_to_user_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `assign_to_team_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `marked_as_resolved_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `marked_as_archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `is_resolved` (Bool) Is Resolved. Optional.
-- `is_archived` (Bool) Is Archived. Optional.
-- `occurance_count` (Number) Occurances. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `service_id` (String) A unique identifier for an object, represented as a UUID.. Required.
+- `message` (String) Exception message that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
+- `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
+- `exception_type` (String) Type of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
+- `fingerprint` (String) Finger print of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
+- `marked_as_resolved_at` (String) A date time object.. Computed.
+- `marked_as_archived_at` (String) A date time object.. Computed.
+- `first_seen_at` (String) A date time object.. Computed.
+- `last_seen_at` (String) A date time object.. Computed.
+- `assign_to_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `assign_to_team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `marked_as_resolved_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `marked_as_archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `is_resolved` (Bool) Is this exception resolved?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
+- `is_archived` (Bool) Is this exception archived?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
+- `occurance_count` (Number) Number of times this exception has occurred. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

@@ -40,6 +40,7 @@ type SpanDataDataSourceModel struct {
     ParentSpanId types.String `tfsdk:"parent_span_id"`
     TraceState types.String `tfsdk:"trace_state"`
     Attributes types.String `tfsdk:"attributes"`
+    AttributeKeys types.List `tfsdk:"attribute_keys"`
     Events types.List `tfsdk:"events"`
     Links types.String `tfsdk:"links"`
     StatusCode types.Number `tfsdk:"status_code"`
@@ -111,6 +112,11 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             "attributes": schema.StringAttribute{
                 MarkdownDescription: "Attributes",
                 Computed: true,
+            },
+            "attribute_keys": schema.ListAttribute{
+                MarkdownDescription: "Attribute Keys",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "events": schema.ListAttribute{
                 MarkdownDescription: "Events",
@@ -237,6 +243,18 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := spanDataResponse["attributes"].(string); ok {
         data.Attributes = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["attribute_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        listValue, _ := types.ListValue(types.StringType, elements)
+        data.AttributeKeys = listValue
     }
     if val, ok := spanDataResponse["events"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

@@ -24,7 +24,7 @@ resource "oneuptime_monitor_log" "example" {
 - `project_id` (String) Project ID. Computed.
 - `monitor_id` (String) Monitor ID. Computed.
 - `time` (String) Time. Computed.
-- `log_body` (Map) Log Body. Computed.
+- `log_body` (String) Log Body. Computed.
 
 ## Import
 

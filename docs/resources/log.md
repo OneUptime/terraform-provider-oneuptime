@@ -27,7 +27,8 @@ resource "oneuptime_log" "example" {
 - `time_unix_nano` (Number) Time (in Unix Nano). Computed.
 - `severity_text` (String) Severity Text. Computed.
 - `severity_number` (Number) Severity Number. Computed.
-- `attributes` (Map) Attributes. Computed.
+- `attributes` (String) Attributes. Computed.
+- `attribute_keys` (List) Attribute Keys. Computed.
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.
 - `body` (String) Log Body. Computed.

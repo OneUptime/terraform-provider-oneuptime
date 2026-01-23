@@ -31,11 +31,17 @@ data "oneuptime_workspace_notification_log_data" "example" {
 - `channel_id` (String) Channel ID where the message was sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `channel_name` (String) Channel Name where the message was sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `thread_id` (String) Thread ID of the message in the channel (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `message_summary` (String) Short summary of the message content. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `message` (String) Content of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `status_message` (String) Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `status` (String) Status of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `action_type` (String) Type of workspace action performed. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_announcement_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

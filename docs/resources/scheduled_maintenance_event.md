@@ -14,47 +14,42 @@ Scheduled maintenance event resource
 
 ```terraform
 resource "oneuptime_scheduled_maintenance_event" "example" {
-  title = "example-title"
-  current_scheduled_maintenance_state_id = "123e4567-e89b-12d3-a456-426614174000"
-  starts_at = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
-  ends_at = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
-  description = "Example resource"
+  title = "Example short text"
+  starts_at = "2023-10-01T12:00:00Z"
+  ends_at = "2023-10-01T12:00:00Z"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `title` (String) Title. Required.
-- `description` (String) Description. Optional.
-- `monitors` (List) Monitors. Optional.
-- `status_pages` (List) Status Pages. Optional.
-- `labels` (List) Labels. Optional.
-- `current_scheduled_maintenance_state_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `change_monitor_status_to_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `starts_at` (Map) A date time object.. Required.
-- `ends_at` (Map) A date time object.. Required.
-- `should_status_page_subscribers_be_notified_on_event_created` (Bool) Should subscribers be notified when event is created?. Optional.
-- `should_status_page_subscribers_be_notified_when_event_changed_to_ongoing` (Bool) Should subscribers be notified when event is changed to ongoing?. Optional.
-- `should_status_page_subscribers_be_notified_when_event_changed_to_ended` (Bool) Should subscribers be notified when event is changed to ended?. Optional.
-- `custom_fields` (Map) Custom Fields. Optional.
-- `is_owner_notified_of_resource_creation` (Bool) Are Owners Notified Of Resource Creation?. Optional.
-- `send_subscriber_notifications_on_before_the_event` (Map) Subscriber notifications before the event. Optional.
-- `next_subscriber_notification_before_the_event_at` (Map) A date time object.. Optional.
-- `scheduled_maintenance_number` (Number) Scheduled Maintenance Number. Optional.
-- `is_visible_on_status_page` (Bool) Should be visible on status page?. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `title` (String) Title of this scheduled event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Required.
+- `description` (String) Description of this scheduled event that will show up on Status Page. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `monitors` (List) List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `status_pages` (List) List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `current_scheduled_maintenance_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `change_monitor_status_to_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `starts_at` (String) A date time object.. Required.
+- `ends_at` (String) A date time object.. Required.
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications when event is scheduled - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `should_status_page_subscribers_be_notified_on_event_created` (Bool) Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
+- `should_status_page_subscribers_be_notified_when_event_changed_to_ongoing` (Bool) Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
+- `should_status_page_subscribers_be_notified_when_event_changed_to_ended` (Bool) Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
+- `custom_fields` (String) Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `send_subscriber_notifications_on_before_the_event` (String) Should subscribers be notified before the event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `next_subscriber_notification_before_the_event_at` (String) A date time object.. Computed.
+- `is_visible_on_status_page` (Bool) Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_status_page_subscribers_notified_on_event_scheduled` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status_on_event_scheduled` (String) Status of notification sent to subscribers when event was scheduled. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]. Computed.
+- `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
+- `scheduled_maintenance_number` (Number) Scheduled Maintenance Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

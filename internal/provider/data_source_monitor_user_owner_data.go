@@ -69,7 +69,7 @@ func (d *MonitorUserOwnerDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (d *MonitorUserOwnerDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor User Owner], Read: [Project Owner, Project Admin, Project Member, Read Monitor User Owner], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor User Owner], Read: [Project Owner, Project Admin, Project Member, Read Monitor User Owner], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

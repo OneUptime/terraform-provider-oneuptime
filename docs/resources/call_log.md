@@ -21,17 +21,27 @@ resource "oneuptime_call_log" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `to_number` (Map) Phone object. Computed.
-- `from_number` (Map) Phone object. Computed.
-- `call_data` (Map) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `status_message` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `call_cost_in_u_s_d_cents` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `to_number` (String) Phone object. Computed.
+- `from_number` (String) Phone object. Computed.
+- `call_data` (String) Content of the data that was sent in the call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `status_message` (String) Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `status` (String) Status of the Call sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `call_cost_in_usd_cents` (Number) Call Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `status_page_announcement_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import
 

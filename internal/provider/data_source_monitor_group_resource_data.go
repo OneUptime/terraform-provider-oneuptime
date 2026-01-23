@@ -67,7 +67,7 @@ func (d *MonitorGroupResourceDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{

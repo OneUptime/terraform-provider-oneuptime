@@ -68,7 +68,7 @@ func (d *ScheduledMaintenanceTemplateTeamOwnerDataDataSource) Schema(ctx context
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{

@@ -15,25 +15,23 @@ Status page history chart bar color resource
 ```terraform
 resource "oneuptime_status_page_history_chart_bar_color" "example" {
   status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  uptime_percent_greater_than_or_equal_to = 1
-  bar_color = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
+  uptime_percent_greater_than_or_equal_to = 42
+  bar_color = "#ff0000"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `uptime_percent_greater_than_or_equal_to` (Number) Uptime Percent Greater than or equal to. Required.
-- `bar_color` (Map) Color object. Required.
-- `order` (Number) Order. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `uptime_percent_greater_than_or_equal_to` (Number) Uptime percent greater than or equal to this value. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]. Required.
+- `bar_color` (String) Color object. Required.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

@@ -38,6 +38,16 @@ type EmailLogDataDataSourceModel struct {
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
     ProjectSmtpConfigId types.String `tfsdk:"project_smtp_config_id"`
+    IncidentId types.String `tfsdk:"incident_id"`
+    UserId types.String `tfsdk:"user_id"`
+    AlertId types.String `tfsdk:"alert_id"`
+    ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
+    StatusPageId types.String `tfsdk:"status_page_id"`
+    StatusPageAnnouncementId types.String `tfsdk:"status_page_announcement_id"`
+    OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
+    OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
+    TeamId types.String `tfsdk:"team_id"`
 }
 
 func (d *EmailLogDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -70,7 +80,7 @@ func (d *EmailLogDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -86,18 +96,58 @@ func (d *EmailLogDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "subject": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Email Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Subject of the email sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Email Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Email Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Email Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Email Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Email Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "project_smtp_config_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "incident_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "alert_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "scheduled_maintenance_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "status_page_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "status_page_announcement_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_schedule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "team_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -202,6 +252,36 @@ func (d *EmailLogDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     }
     if val, ok := emailLogDataResponse["project_smtp_config_id"].(string); ok {
         data.ProjectSmtpConfigId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["incident_id"].(string); ok {
+        data.IncidentId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["user_id"].(string); ok {
+        data.UserId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["alert_id"].(string); ok {
+        data.AlertId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["scheduled_maintenance_id"].(string); ok {
+        data.ScheduledMaintenanceId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["status_page_id"].(string); ok {
+        data.StatusPageId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["status_page_announcement_id"].(string); ok {
+        data.StatusPageAnnouncementId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["on_call_duty_policy_id"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["on_call_duty_policy_escalation_rule_id"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["on_call_duty_policy_schedule_id"].(string); ok {
+        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    }
+    if val, ok := emailLogDataResponse["team_id"].(string); ok {
+        data.TeamId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

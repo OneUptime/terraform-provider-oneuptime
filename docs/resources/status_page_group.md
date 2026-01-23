@@ -15,28 +15,27 @@ Status page group resource
 ```terraform
 resource "oneuptime_status_page_group" "example" {
   status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  name = "example-group"
-  description = "Example resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `name` (String) Group Name. Required.
-- `description` (String) Description. Optional.
-- `order` (Number) Order. Optional.
-- `is_expanded_by_default` (Bool) Expanded by Default. Optional.
-- `show_current_status` (Bool) Show current status. Optional.
-- `show_uptime_percent` (Bool) Show Uptime Percent. Optional.
-- `uptime_percent_precision` (String) Uptime Percent Precision. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [No access - you don't have permission for this operation]. Computed.
+- `name` (String) Name of the Group. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]. Required.
+- `description` (String) Description for this group. This is visible on Status Page. This can be in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]. Computed.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]. Computed.
+- `is_expanded_by_default` (Bool) Is this group expanded by default on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]. Computed.
+- `show_current_status` (Bool) Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]. Computed.
+- `show_uptime_percent` (Bool) Show uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]. Computed.
+- `uptime_percent_precision` (String) Precision of uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

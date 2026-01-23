@@ -34,12 +34,15 @@ type StatusPageAnnouncementDataDataSourceModel struct {
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPages types.List `tfsdk:"status_pages"`
+    Monitors types.List `tfsdk:"monitors"`
     Title types.String `tfsdk:"title"`
     ShowAnnouncementAt types.String `tfsdk:"show_announcement_at"`
     EndAnnouncementAt types.String `tfsdk:"end_announcement_at"`
     Description types.String `tfsdk:"description"`
+    Attachments types.List `tfsdk:"attachments"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    IsStatusPageSubscribersNotified types.Bool `tfsdk:"is_status_page_subscribers_notified"`
+    SubscriberNotificationStatus types.String `tfsdk:"subscriber_notification_status"`
+    SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
     ShouldStatusPageSubscribersBeNotified types.Bool `tfsdk:"should_status_page_subscribers_be_notified"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
@@ -74,7 +77,7 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -82,12 +85,17 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "status_pages": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Status Pages to show show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "monitors": schema.ListAttribute{
+                MarkdownDescription: "List of monitors affected by this announcement. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
             },
             "show_announcement_at": schema.StringAttribute{
@@ -99,23 +107,32 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Text of the announcement. This can be in Markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
+            },
+            "attachments": schema.ListAttribute{
+                MarkdownDescription: "Files attached to this announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "is_status_page_subscribers_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]",
+            "subscriber_notification_status": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
+                Computed: true,
+            },
+            "subscriber_notification_status_message": schema.StringAttribute{
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -214,6 +231,18 @@ func (d *StatusPageAnnouncementDataDataSource) Read(ctx context.Context, req dat
         listValue, _ := types.ListValue(types.StringType, elements)
         data.StatusPages = listValue
     }
+    if val, ok := statusPageAnnouncementDataResponse["monitors"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        listValue, _ := types.ListValue(types.StringType, elements)
+        data.Monitors = listValue
+    }
     if val, ok := statusPageAnnouncementDataResponse["title"].(string); ok {
         data.Title = types.StringValue(val)
     }
@@ -226,11 +255,26 @@ func (d *StatusPageAnnouncementDataDataSource) Read(ctx context.Context, req dat
     if val, ok := statusPageAnnouncementDataResponse["description"].(string); ok {
         data.Description = types.StringValue(val)
     }
+    if val, ok := statusPageAnnouncementDataResponse["attachments"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        listValue, _ := types.ListValue(types.StringType, elements)
+        data.Attachments = listValue
+    }
     if val, ok := statusPageAnnouncementDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     }
-    if val, ok := statusPageAnnouncementDataResponse["is_status_page_subscribers_notified"].(bool); ok {
-        data.IsStatusPageSubscribersNotified = types.BoolValue(val)
+    if val, ok := statusPageAnnouncementDataResponse["subscriber_notification_status"].(string); ok {
+        data.SubscriberNotificationStatus = types.StringValue(val)
+    }
+    if val, ok := statusPageAnnouncementDataResponse["subscriber_notification_status_message"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
     }
     if val, ok := statusPageAnnouncementDataResponse["should_status_page_subscribers_be_notified"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotified = types.BoolValue(val)

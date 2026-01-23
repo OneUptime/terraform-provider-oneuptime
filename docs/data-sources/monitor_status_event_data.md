@@ -25,13 +25,13 @@ data "oneuptime_monitor_status_event_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of status change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status Timeline], Update: [No access - you don't have permission for this operation]. Computed.
 - `status_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status Timeline], Update: [No access - you don't have permission for this operation]. Computed.
-- `root_cause` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status Timeline], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status Timeline], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status Timeline], Update: [No access - you don't have permission for this operation]. Computed.
 - `ends_at` (String) A date time object.. Computed.
 - `starts_at` (String) A date time object.. Computed.

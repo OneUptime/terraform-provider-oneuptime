@@ -14,27 +14,26 @@ Team resource
 
 ```terraform
 resource "oneuptime_team" "example" {
-  name = "example-resource"
-  description = "Example resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [Project Owner, Project Admin, Create Team], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Team], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Edit Team]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Edit Team]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_permissions_editable` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
-- `is_team_deleteable` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
-- `should_have_at_least_one_member` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
-- `is_team_editable` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_permissions_editable` (Bool) Can you edit team permissions? Teams auto-created for you are uneditable but you should be able to edit permissions on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_team_deleteable` (Bool) Can you delete this team? Teams auto-created for you are not deleteable but you should be able to delete permissions on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
+- `should_have_at_least_one_member` (Bool) Can this team have no members? Owner team should have at least 1 member, other teams can have no members. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_team_editable` (Bool) Can you edit team? Teams auto-created for you are uneditable but you should be able to edit on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

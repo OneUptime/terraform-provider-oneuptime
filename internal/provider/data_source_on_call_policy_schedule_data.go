@@ -75,7 +75,7 @@ func (d *OnCallPolicyScheduleDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -83,16 +83,16 @@ func (d *OnCallPolicyScheduleDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Schedule]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Schedule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Schedule]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Schedule]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Schedule], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

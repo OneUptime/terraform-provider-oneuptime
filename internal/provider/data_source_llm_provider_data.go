@@ -40,6 +40,7 @@ type LlmProviderDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsDefault types.Bool `tfsdk:"is_default"`
+    CostPerMillionTokensInUsdCents types.Number `tfsdk:"cost_per_million_tokens_in_usd_cents"`
 }
 
 func (d *LlmProviderDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -109,6 +110,10 @@ func (d *LlmProviderDataDataSource) Schema(ctx context.Context, req datasource.S
             },
             "is_default": schema.BoolAttribute{
                 MarkdownDescription: "Is this the default LLM provider for the project? When set, the global LLM provider will not be used.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                Computed: true,
+            },
+            "cost_per_million_tokens_in_usd_cents": schema.NumberAttribute{
+                MarkdownDescription: "Cost per million tokens in USD cents. Used for billing when using global LLM providers.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -218,6 +223,9 @@ func (d *LlmProviderDataDataSource) Read(ctx context.Context, req datasource.Rea
     }
     if val, ok := llmProviderDataResponse["is_default"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
+    }
+    if val, ok := llmProviderDataResponse["cost_per_million_tokens_in_usd_cents"].(float64); ok {
+        data.CostPerMillionTokensInUsdCents = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

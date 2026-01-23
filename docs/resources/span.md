@@ -32,9 +32,10 @@ resource "oneuptime_span" "example" {
 - `span_id` (String) Span ID. Computed.
 - `parent_span_id` (String) Parent Span ID. Computed.
 - `trace_state` (String) Trace State. Computed.
-- `attributes` (Map) Attributes. Computed.
+- `attributes` (String) Attributes. Computed.
+- `attribute_keys` (List) Attribute Keys. Computed.
 - `events` (List) Events. Computed.
-- `links` (Map) Links. Computed.
+- `links` (String) Links. Computed.
 - `status_code` (Number) Status Code. Computed.
 - `status_message` (String) Status Message. Computed.
 - `name` (String) Name. Computed.

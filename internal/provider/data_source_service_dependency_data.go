@@ -32,8 +32,8 @@ type ServiceDependencyDataDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceCatalogId types.String `tfsdk:"service_catalog_id"`
-    DependencyServiceCatalogId types.String `tfsdk:"dependency_service_catalog_id"`
+    ServiceId types.String `tfsdk:"service_id"`
+    DependencyServiceId types.String `tfsdk:"dependency_service_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -68,18 +68,18 @@ func (d *ServiceDependencyDataDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "service_catalog_id": schema.StringAttribute{
+            "service_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "dependency_service_catalog_id": schema.StringAttribute{
+            "dependency_service_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -127,7 +127,7 @@ func (d *ServiceDependencyDataDataSource) Read(ctx context.Context, req datasour
 
     
     // Build API path
-    apiPath := "/" + "service-catalog-dependency" + "/" + data.Id.ValueString() + "/" + "get-item"
+    apiPath := "/" + "service-dependency" + "/" + data.Id.ValueString() + "/" + "get-item"
     
     // Prepare request body with select fields (if needed)
     requestBody := map[string]interface{}{
@@ -175,11 +175,11 @@ func (d *ServiceDependencyDataDataSource) Read(ctx context.Context, req datasour
     if val, ok := serviceDependencyDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := serviceDependencyDataResponse["service_catalog_id"].(string); ok {
-        data.ServiceCatalogId = types.StringValue(val)
+    if val, ok := serviceDependencyDataResponse["service_id"].(string); ok {
+        data.ServiceId = types.StringValue(val)
     }
-    if val, ok := serviceDependencyDataResponse["dependency_service_catalog_id"].(string); ok {
-        data.DependencyServiceCatalogId = types.StringValue(val)
+    if val, ok := serviceDependencyDataResponse["dependency_service_id"].(string); ok {
+        data.DependencyServiceId = types.StringValue(val)
     }
     if val, ok := serviceDependencyDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

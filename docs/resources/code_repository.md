@@ -14,33 +14,33 @@ Code repository resource
 
 ```terraform
 resource "oneuptime_code_repository" "example" {
-  name = "example-resource"
-  main_branch_name = "example-main_branch_name"
-  repository_hosted_at = "example-repository_hosted_at"
-  organization_name = "example-organization_name"
-  repository_name = "example-repository_name"
-  description = "Example resource"
+  name = "Example short text"
+  repository_hosted_at = "Example short text"
+  organization_name = "Example short text"
+  repository_name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `labels` (List) Labels. Optional.
-- `secret_token` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `main_branch_name` (String) Main Branch Name. Required.
-- `repository_hosted_at` (String) Repository Hosted At. Required.
-- `organization_name` (String) Organization Name. Required.
-- `repository_name` (String) Repository Name. Required.
-- `last_copilot_run_date_time` (Map) A date time object.. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) A friendly name for this code repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]. Required.
+- `description` (String) A description of this code repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]. Computed.
+- `repository_hosted_at` (String) Where is this repository hosted (GitHub, GitLab, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]. Required.
+- `organization_name` (String) GitHub organization or username that owns this repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]. Required.
+- `repository_name` (String) The name of the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]. Required.
+- `main_branch_name` (String) The name of the main/default branch. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]. Computed.
+- `repository_url` (String) The HTTPS URL to the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]. Computed.
+- `git_hub_app_installation_id` (String) The GitHub App installation ID used to authenticate with this repository. Permissions - Create: [Project Owner, Project Admin, Create Code Repository], Read: [Project Owner, Project Admin, Read Code Repository], Update: [No access - you don't have permission for this operation]. Computed.
+- `git_lab_project_id` (String) The GitLab project ID for this repository. Permissions - Create: [Project Owner, Project Admin, Create Code Repository], Read: [Project Owner, Project Admin, Read Code Repository], Update: [No access - you don't have permission for this operation]. Computed.
+- `secret_token` (String) Secret token used to verify incoming webhooks. Permissions - Create: [Project Owner, Project Admin, Create Code Repository], Read: [No access - you don't have permission for this operation], Update: [Project Owner, Project Admin, Edit Code Repository]. Optional.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

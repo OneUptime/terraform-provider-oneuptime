@@ -69,7 +69,7 @@ func (d *ProbeOwnerTeamDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (d *ProbeOwnerTeamDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Probe Owner Team], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Probe Owner Team], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

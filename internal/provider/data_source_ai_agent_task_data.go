@@ -118,7 +118,7 @@ func (d *AiAgentTaskDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "task_number": schema.NumberAttribute{
-                MarkdownDescription: "A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

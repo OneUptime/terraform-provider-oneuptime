@@ -35,6 +35,7 @@ type IncidentDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
+    DeclaredAt types.String `tfsdk:"declared_at"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.List `tfsdk:"monitors"`
@@ -43,11 +44,19 @@ type IncidentDataDataSourceModel struct {
     CurrentIncidentStateId types.String `tfsdk:"current_incident_state_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
-    IsStatusPageSubscribersNotifiedOnIncidentCreated types.Bool `tfsdk:"is_status_page_subscribers_notified_on_incident_created"`
+    SubscriberNotificationStatusOnIncidentCreated types.String `tfsdk:"subscriber_notification_status_on_incident_created"`
+    SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
+    SubscriberNotificationStatusOnPostmortemPublished types.String `tfsdk:"subscriber_notification_status_on_postmortem_published"`
+    SubscriberNotificationStatusMessageOnPostmortemPublished types.String `tfsdk:"subscriber_notification_status_message_on_postmortem_published"`
     ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_incident_created"`
     CustomFields types.String `tfsdk:"custom_fields"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
     RootCause types.String `tfsdk:"root_cause"`
+    PostmortemNote types.String `tfsdk:"postmortem_note"`
+    ShowPostmortemOnStatusPage types.Bool `tfsdk:"show_postmortem_on_status_page"`
+    NotifySubscribersOnPostmortemPublished types.Bool `tfsdk:"notify_subscribers_on_postmortem_published"`
+    PostmortemPostedAt types.String `tfsdk:"postmortem_posted_at"`
+    PostmortemAttachments types.List `tfsdk:"postmortem_attachments"`
     CreatedStateLog types.String `tfsdk:"created_state_log"`
     CreatedCriteriaId types.String `tfsdk:"created_criteria_id"`
     CreatedIncidentTemplateId types.String `tfsdk:"created_incident_template_id"`
@@ -89,7 +98,7 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -97,15 +106,19 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "Title of this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "declared_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -113,17 +126,17 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "monitors": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "on_call_duty_policies": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "List of on-call duty policy affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -139,36 +152,69 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "is_status_page_subscribers_notified_on_incident_created": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+            "subscriber_notification_status_on_incident_created": schema.StringAttribute{
+                MarkdownDescription: "Status of notification sent to subscribers about this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "subscriber_notification_status_message": schema.StringAttribute{
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "subscriber_notification_status_on_postmortem_published": schema.StringAttribute{
+                MarkdownDescription: "Status of notification sent to subscribers about this incident postmortem. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "subscriber_notification_status_message_on_postmortem_published": schema.StringAttribute{
+                MarkdownDescription: "Status message for subscriber notifications on postmortem published - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_incident_created": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "What is the root cause of this incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
+            },
+            "postmortem_note": schema.StringAttribute{
+                MarkdownDescription: "Document the postmortem summary for this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "show_postmortem_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Should the postmortem note and attachments be visible on the status page once published?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "notify_subscribers_on_postmortem_published": schema.BoolAttribute{
+                MarkdownDescription: "Should subscribers be notified when the postmortem is published?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "postmortem_posted_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "postmortem_attachments": schema.ListAttribute{
+                MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "created_state_log": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the criteria that created it.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
@@ -176,23 +222,23 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "is_created_automatically": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "Notes on how to remediate this incident. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "Telemetry query for this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
             },
             "incident_number": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Incident Number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
             },
         },
@@ -285,6 +331,9 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     if val, ok := incidentDataResponse["description"].(string); ok {
         data.Description = types.StringValue(val)
     }
+    if val, ok := incidentDataResponse["declared_at"].(string); ok {
+        data.DeclaredAt = types.StringValue(val)
+    }
     if val, ok := incidentDataResponse["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     }
@@ -336,8 +385,17 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     if val, ok := incidentDataResponse["change_monitor_status_to_id"].(string); ok {
         data.ChangeMonitorStatusToId = types.StringValue(val)
     }
-    if val, ok := incidentDataResponse["is_status_page_subscribers_notified_on_incident_created"].(bool); ok {
-        data.IsStatusPageSubscribersNotifiedOnIncidentCreated = types.BoolValue(val)
+    if val, ok := incidentDataResponse["subscriber_notification_status_on_incident_created"].(string); ok {
+        data.SubscriberNotificationStatusOnIncidentCreated = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["subscriber_notification_status_message"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["subscriber_notification_status_on_postmortem_published"].(string); ok {
+        data.SubscriberNotificationStatusOnPostmortemPublished = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["subscriber_notification_status_message_on_postmortem_published"].(string); ok {
+        data.SubscriberNotificationStatusMessageOnPostmortemPublished = types.StringValue(val)
     }
     if val, ok := incidentDataResponse["should_status_page_subscribers_be_notified_on_incident_created"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnIncidentCreated = types.BoolValue(val)
@@ -350,6 +408,30 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     }
     if val, ok := incidentDataResponse["root_cause"].(string); ok {
         data.RootCause = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["postmortem_note"].(string); ok {
+        data.PostmortemNote = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["show_postmortem_on_status_page"].(bool); ok {
+        data.ShowPostmortemOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := incidentDataResponse["notify_subscribers_on_postmortem_published"].(bool); ok {
+        data.NotifySubscribersOnPostmortemPublished = types.BoolValue(val)
+    }
+    if val, ok := incidentDataResponse["postmortem_posted_at"].(string); ok {
+        data.PostmortemPostedAt = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["postmortem_attachments"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        listValue, _ := types.ListValue(types.StringType, elements)
+        data.PostmortemAttachments = listValue
     }
     if val, ok := incidentDataResponse["created_state_log"].(string); ok {
         data.CreatedStateLog = types.StringValue(val)

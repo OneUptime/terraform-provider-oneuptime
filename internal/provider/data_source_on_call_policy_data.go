@@ -38,7 +38,7 @@ type OnCallPolicyDataDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     RepeatPolicyIfNoOneAcknowledges types.Bool `tfsdk:"repeat_policy_if_no_one_acknowledges"`
-    RepeatPolicyIfNoOneAcknowledgesNoOfTimes types.Bool `tfsdk:"repeat_policy_if_no_one_acknowledges_no_of_times"`
+    RepeatPolicyIfNoOneAcknowledgesNoOfTimes types.Number `tfsdk:"repeat_policy_if_no_one_acknowledges_no_of_times"`
     CustomFields types.String `tfsdk:"custom_fields"`
 }
 
@@ -72,7 +72,7 @@ func (d *OnCallPolicyDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -80,16 +80,16 @@ func (d *OnCallPolicyDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -97,15 +97,15 @@ func (d *OnCallPolicyDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "repeat_policy_if_no_one_acknowledges": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Repeat the policy if no one acknowledges the alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
                 Computed: true,
             },
-            "repeat_policy_if_no_one_acknowledges_no_of_times": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+            "repeat_policy_if_no_one_acknowledges_no_of_times": schema.NumberAttribute{
+                MarkdownDescription: "Repeat the policy X number of times if no one acknowledges the alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
                 Computed: true,
             },
         },
@@ -216,8 +216,8 @@ func (d *OnCallPolicyDataDataSource) Read(ctx context.Context, req datasource.Re
     if val, ok := onCallPolicyDataResponse["repeat_policy_if_no_one_acknowledges"].(bool); ok {
         data.RepeatPolicyIfNoOneAcknowledges = types.BoolValue(val)
     }
-    if val, ok := onCallPolicyDataResponse["repeat_policy_if_no_one_acknowledges_no_of_times"].(bool); ok {
-        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.BoolValue(val)
+    if val, ok := onCallPolicyDataResponse["repeat_policy_if_no_one_acknowledges_no_of_times"].(float64); ok {
+        data.RepeatPolicyIfNoOneAcknowledgesNoOfTimes = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := onCallPolicyDataResponse["custom_fields"].(string); ok {
         data.CustomFields = types.StringValue(val)

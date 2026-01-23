@@ -41,6 +41,7 @@ type ServiceDataDataSourceModel struct {
     ServiceColor types.String `tfsdk:"service_color"`
     ServiceLanguage types.String `tfsdk:"service_language"`
     TechStack types.String `tfsdk:"tech_stack"`
+    RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
 }
 
 func (d *ServiceDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -111,6 +112,10 @@ func (d *ServiceDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "tech_stack": schema.StringAttribute{
                 MarkdownDescription: "Tech stack used in the service. This will help other developers understand the service better.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Service], Update: [Project Owner, Project Admin, Project Member, Edit Service]",
+                Computed: true,
+            },
+            "retain_telemetry_data_for_days": schema.NumberAttribute{
+                MarkdownDescription: "Number of days to retain telemetry data for this service.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Service], Update: [Project Owner, Project Admin, Project Member, Edit Service]",
                 Computed: true,
             },
         },
@@ -229,6 +234,9 @@ func (d *ServiceDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := serviceDataResponse["tech_stack"].(string); ok {
         data.TechStack = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["retain_telemetry_data_for_days"].(float64); ok {
+        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

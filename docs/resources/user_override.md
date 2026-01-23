@@ -16,28 +16,24 @@ User override resource
 resource "oneuptime_user_override" "example" {
   override_user_id = "123e4567-e89b-12d3-a456-426614174000"
   route_alerts_to_user_id = "123e4567-e89b-12d3-a456-426614174000"
-  starts_at = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
-  ends_at = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
+  starts_at = "2023-10-01T12:00:00Z"
+  ends_at = "2023-10-01T12:00:00Z"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `override_user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `route_alerts_to_user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `starts_at` (Map) A date time object.. Required.
-- `ends_at` (Map) A date time object.. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `starts_at` (String) A date time object.. Required.
+- `ends_at` (String) A date time object.. Required.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

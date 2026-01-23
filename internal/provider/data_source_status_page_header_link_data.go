@@ -69,7 +69,7 @@ func (d *StatusPageHeaderLinkDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -81,11 +81,11 @@ func (d *StatusPageHeaderLinkDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
+                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
                 Computed: true,
             },
             "link": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
+                MarkdownDescription: "URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (d *StatusPageHeaderLinkDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
                 Computed: true,
             },
         },

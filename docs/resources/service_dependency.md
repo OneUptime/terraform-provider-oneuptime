@@ -14,21 +14,21 @@ Service dependency resource
 
 ```terraform
 resource "oneuptime_service_dependency" "example" {
-  service_catalog_id = "123e4567-e89b-12d3-a456-426614174000"
-  dependency_service_catalog_id = "123e4567-e89b-12d3-a456-426614174000"
+  service_id = "123e4567-e89b-12d3-a456-426614174000"
+  dependency_service_id = "123e4567-e89b-12d3-a456-426614174000"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `service_catalog_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `dependency_service_catalog_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `service_id` (String) A unique identifier for an object, represented as a UUID.. Required.
+- `dependency_service_id` (String) A unique identifier for an object, represented as a UUID.. Required.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

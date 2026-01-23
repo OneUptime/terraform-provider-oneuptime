@@ -25,9 +25,9 @@ data "oneuptime_scheduled_maintenance_note_template_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `note` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
-- `template_name` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
-- `template_description` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
+- `note` (String) Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
+- `template_name` (String) Name of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
+- `template_description` (String) Description of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

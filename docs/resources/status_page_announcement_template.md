@@ -14,26 +14,29 @@ Status page announcement template resource
 
 ```terraform
 resource "oneuptime_status_page_announcement_template" "example" {
-  template_name = "example-template_name"
-  title = "example-title"
-  description = "Example announcement"
+  template_name = "Example short text"
+  title = "Example short text"
+  description = "# Heading
+
+This is **markdown** content"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `template_name` (String) Template Name. Required.
-- `template_description` (String) Template Description. Optional.
-- `title` (String) Announcement Title. Required.
-- `description` (String) Announcement Description. Required.
-- `status_pages` (List) Status Pages. Optional.
-- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified?. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `template_name` (String) Name of the announcement template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]. Required.
+- `template_description` (String) Description of the announcement template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]. Computed.
+- `title` (String) Title of the announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]. Required.
+- `description` (String) Text of the announcement. This is in Markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]. Required.
+- `status_pages` (List) Status Pages to show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]. Computed.
+- `monitors` (List) List of monitors affected by this announcement template. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]. Computed.
+- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about announcements created from this template?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

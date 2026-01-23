@@ -35,7 +35,8 @@ type IncidentStateTimelineDataDataSourceModel struct {
     IncidentId types.String `tfsdk:"incident_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IncidentStateId types.String `tfsdk:"incident_state_id"`
-    IsStatusPageSubscribersNotified types.Bool `tfsdk:"is_status_page_subscribers_notified"`
+    SubscriberNotificationStatus types.String `tfsdk:"subscriber_notification_status"`
+    SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
     ShouldStatusPageSubscribersBeNotified types.Bool `tfsdk:"should_status_page_subscribers_be_notified"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     StateChangeLog types.String `tfsdk:"state_change_log"`
@@ -74,7 +75,7 @@ func (d *IncidentStateTimelineDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -93,16 +94,20 @@ func (d *IncidentStateTimelineDataDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "is_status_page_subscribers_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
+            "subscriber_notification_status": schema.StringAttribute{
+                MarkdownDescription: "Status of notification sent to subscribers about this incident state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Incident State Timeline]",
+                Computed: true,
+            },
+            "subscriber_notification_status_message": schema.StringAttribute{
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Incident State Timeline]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "state_change_log": schema.StringAttribute{
@@ -110,7 +115,7 @@ func (d *IncidentStateTimelineDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident State Timeline], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "ends_at": schema.StringAttribute{
@@ -214,8 +219,11 @@ func (d *IncidentStateTimelineDataDataSource) Read(ctx context.Context, req data
     if val, ok := incidentStateTimelineDataResponse["incident_state_id"].(string); ok {
         data.IncidentStateId = types.StringValue(val)
     }
-    if val, ok := incidentStateTimelineDataResponse["is_status_page_subscribers_notified"].(bool); ok {
-        data.IsStatusPageSubscribersNotified = types.BoolValue(val)
+    if val, ok := incidentStateTimelineDataResponse["subscriber_notification_status"].(string); ok {
+        data.SubscriberNotificationStatus = types.StringValue(val)
+    }
+    if val, ok := incidentStateTimelineDataResponse["subscriber_notification_status_message"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
     }
     if val, ok := incidentStateTimelineDataResponse["should_status_page_subscribers_be_notified"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotified = types.BoolValue(val)

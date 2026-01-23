@@ -25,10 +25,10 @@ data "oneuptime_monitor_user_owner_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor User Owner], Read: [Project Owner, Project Admin, Project Member, Read Monitor User Owner], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor User Owner], Read: [Project Owner, Project Admin, Project Member, Read Monitor User Owner], Update: [No access - you don't have permission for this operation]. Computed.

@@ -15,24 +15,23 @@ Escalation rule resource
 ```terraform
 resource "oneuptime_escalation_rule" "example" {
   on_call_duty_policy_id = "123e4567-e89b-12d3-a456-426614174000"
-  name = "example-resource"
-  description = "Example resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `escalate_after_in_minutes` (Number) Escalate After (in minutes). Optional.
-- `order` (Number) Order. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]. Computed.
+- `escalate_after_in_minutes` (Number) How long should we wait before we execute the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]. Computed.
+- `order` (Number) Order of this rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

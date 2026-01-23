@@ -68,7 +68,7 @@ func (d *TeamMemberDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "team_id": schema.StringAttribute{
@@ -84,7 +84,7 @@ func (d *TeamMemberDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "has_accepted_invitation": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Team, Invite New Members], Read: [Project Owner, Project Admin, Project Member, Read Teams, Logged in User], Update: [Logged in User]",
+                MarkdownDescription: "Has this team member accepted invitation. Permissions - Create: [Project Owner, Project Admin, Create Team, Invite New Members], Read: [Project Owner, Project Admin, Project Member, Read Teams, Logged in User], Update: [Logged in User]",
                 Computed: true,
             },
             "invitation_accepted_at": schema.StringAttribute{

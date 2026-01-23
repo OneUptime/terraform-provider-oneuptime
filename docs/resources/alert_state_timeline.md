@@ -22,19 +22,19 @@ resource "oneuptime_alert_state_timeline" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `alert_state_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `is_owner_notified` (Bool) Are Owners Notified. Optional.
-- `root_cause` (String) Root Cause. Optional.
-- `ends_at` (Map) A date time object.. Optional.
-- `starts_at` (Map) A date time object.. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `ends_at` (String) A date time object.. Computed.
+- `starts_at` (String) A date time object.. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `state_change_log` (Map) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `state_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

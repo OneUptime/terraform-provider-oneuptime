@@ -25,9 +25,9 @@ data "oneuptime_alert_note_template_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `note` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Computed.
-- `template_name` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Computed.
-- `template_description` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Computed.
+- `note` (String) Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Computed.
+- `template_name` (String) Name of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Computed.
+- `template_description` (String) Description of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

@@ -25,10 +25,10 @@ data "oneuptime_workflow_variable_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `workflow_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables], Update: [Project Owner, Project Admin, Edit Workflow Variables]. Computed.
-- `is_secret` (Bool) Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables], Update: [No access - you don't have permission for this operation]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables], Update: [Project Owner, Project Admin, Edit Workflow Variables]. Computed.
+- `is_secret` (Bool) Is this variable a secret. If true, then it'll not be in the logs. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

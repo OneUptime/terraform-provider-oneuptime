@@ -32,7 +32,7 @@ type MetricTypeDataDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
-    TelemetryServices types.List `tfsdk:"telemetry_services"`
+    Services types.List `tfsdk:"services"`
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
     Unit types.String `tfsdk:"unit"`
@@ -70,11 +70,11 @@ func (d *MetricTypeDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
-            "telemetry_services": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+            "services": schema.ListAttribute{
+                MarkdownDescription: "List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -83,11 +83,11 @@ func (d *MetricTypeDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Computed: true,
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -179,7 +179,7 @@ func (d *MetricTypeDataDataSource) Read(ctx context.Context, req datasource.Read
     if val, ok := metricTypeDataResponse["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
     }
-    if val, ok := metricTypeDataResponse["telemetry_services"].([]interface{}); ok {
+    if val, ok := metricTypeDataResponse["services"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
         for i, item := range val {
             if strItem, ok := item.(string); ok {
@@ -189,7 +189,7 @@ func (d *MetricTypeDataDataSource) Read(ctx context.Context, req datasource.Read
             }
         }
         listValue, _ := types.ListValue(types.StringType, elements)
-        data.TelemetryServices = listValue
+        data.Services = listValue
     }
     if val, ok := metricTypeDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)

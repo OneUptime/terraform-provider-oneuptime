@@ -18,6 +18,7 @@ resource "oneuptime_ai_agent_task" "example" {
   description = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
   task_type = "Example short text"
   status = "Example short text"
+  task_number = 42
 }
 ```
 
@@ -27,10 +28,11 @@ resource "oneuptime_ai_agent_task" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `name` (String) Name of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
 - `description` (String) Description of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
+- `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `task_type` (String) Type of task to be performed by the AI agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]. Required.
 - `status` (String) Current status of the task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
 - `metadata` (String) Task-specific metadata containing context for the AI agent. Structure varies based on task type.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Computed.
-- `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `task_number` (Number) A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]. Required.
 - `status_message` (String) A message describing the current status or result of the task.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
@@ -39,7 +41,6 @@ resource "oneuptime_ai_agent_task" "example" {
 - `started_at` (String) A date time object.. Computed.
 - `completed_at` (String) A date time object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `task_number` (Number) A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

@@ -9,7 +9,6 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/types"
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
-    "net/http"
     "encoding/json"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -35,11 +34,6 @@ type FileResourceModel struct {
     Name types.String `tfsdk:"name"`
     FileType types.String `tfsdk:"file_type"`
     IsPublic types.String `tfsdk:"is_public"`
-    CreatedAt types.String `tfsdk:"created_at"`
-    UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
-    Slug types.String `tfsdk:"slug"`
 }
 
 func (r *FileResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -62,7 +56,6 @@ func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, r
             "file": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
-                Computed: true,
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
@@ -75,27 +68,6 @@ func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, r
             "is_public": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
-                Computed: true,
-            },
-            "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
-                Computed: true,
-            },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
             },
         },
     }
@@ -131,6 +103,10 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     if resp.Diagnostics.HasError() {
         return
     }
+
+    // Store the original file value since API won't return it
+    originalFileValue := data.File.ValueString()
+
 
     // Create API request body
     fileRequest := map[string]interface{}{
@@ -168,11 +144,32 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     }
 
     if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
             data.Id = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Id = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            if jsonBytes, err := json.Marshal(obj); err == nil {
+                data.Id = types.StringValue(string(jsonBytes))
+            } else {
+                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+                data.Id = types.StringValue(string(jsonBytes))
+            } else {
+                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Id = types.StringValue(string(jsonBytes))
         } else {
             data.Id = types.StringNull()
         }
@@ -181,26 +178,39 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     } else {
         data.Id = types.StringNull()
     }
-    if obj, ok := dataMap["file"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.File = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.File = types.StringValue(val)
-        } else {
-            data.File = types.StringNull()
-        }
-    } else if val, ok := dataMap["file"].(string); ok && val != "" {
+    if val, ok := dataMap["file"].(string); ok {
         data.File = types.StringValue(val)
     } else {
-        data.File = types.StringNull()
+        // Preserve original value from the request since API doesn't return file content
+        data.File = types.StringValue(originalFileValue)
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
             data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            if jsonBytes, err := json.Marshal(obj); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", obj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+                data.Name = types.StringValue(string(jsonBytes))
+            } else {
+                data.Name = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Name = types.StringValue(string(jsonBytes))
         } else {
             data.Name = types.StringNull()
         }
@@ -210,11 +220,32 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         data.Name = types.StringNull()
     }
     if obj, ok := dataMap["fileType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.FileType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
             data.FileType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FileType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            if jsonBytes, err := json.Marshal(obj); err == nil {
+                data.FileType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FileType = types.StringValue(fmt.Sprintf("%v", obj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+                data.FileType = types.StringValue(string(jsonBytes))
+            } else {
+                data.FileType = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FileType = types.StringValue(string(jsonBytes))
         } else {
             data.FileType = types.StringNull()
         }
@@ -224,11 +255,32 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         data.FileType = types.StringNull()
     }
     if obj, ok := dataMap["isPublic"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IsPublic = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
             data.IsPublic = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IsPublic = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            if jsonBytes, err := json.Marshal(obj); err == nil {
+                data.IsPublic = types.StringValue(string(jsonBytes))
+            } else {
+                data.IsPublic = types.StringValue(fmt.Sprintf("%v", obj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+                data.IsPublic = types.StringValue(string(jsonBytes))
+            } else {
+                data.IsPublic = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IsPublic = types.StringValue(string(jsonBytes))
         } else {
             data.IsPublic = types.StringNull()
         }
@@ -236,62 +288,6 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         data.IsPublic = types.StringValue(val)
     } else {
         data.IsPublic = types.StringNull()
-    }
-    if val, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        if jsonBytes, err := json.Marshal(val); err == nil {
-            data.CreatedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = types.StringValue(val)
-    } else {
-        data.CreatedAt = types.StringNull()
-    }
-    if val, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        if jsonBytes, err := json.Marshal(val); err == nil {
-            data.UpdatedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = types.StringValue(val)
-    } else {
-        data.UpdatedAt = types.StringNull()
-    }
-    if val, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if jsonBytes, err := json.Marshal(val); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
-    }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -307,193 +303,10 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
 }
 
 func (r *FileResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data FileResourceModel
-
-    // Read Terraform prior state data into the model
-    resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-
-    if resp.Diagnostics.HasError() {
-        return
-    }
-
-    // Create select parameter to get full object
-    selectParam := map[string]interface{}{
-        "file": true,
-        "name": true,
-        "fileType": true,
-        "isPublic": true,
-        "createdAt": true,
-        "updatedAt": true,
-        "deletedAt": true,
-        "version": true,
-        "slug": true,
-        "_id": true,
-    }
-
-    // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/file/" + data.Id.ValueString() + "/get-item", selectParam)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read file, got error: %s", err))
-        return
-    }
-
-    if httpResp.StatusCode == http.StatusNotFound {
-        resp.State.RemoveResource(ctx)
-        return
-    }
-
-    var fileResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &fileResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse file response, got error: %s", err))
-        return
-    }
-
-    // Update the model with response data
-    // Extract data from response wrapper
-    var dataMap map[string]interface{}
-    if wrapper, ok := fileResponse["data"].(map[string]interface{}); ok {
-        // Response is wrapped in a data field
-        dataMap = wrapper
-    } else {
-        // Response is the direct object
-        dataMap = fileResponse
-    }
-
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
-    if obj, ok := dataMap["file"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.File = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.File = types.StringValue(val)
-        } else {
-            data.File = types.StringNull()
-        }
-    } else if val, ok := dataMap["file"].(string); ok && val != "" {
-        data.File = types.StringValue(val)
-    } else {
-        data.File = types.StringNull()
-    }
-    if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
-        } else {
-            data.Name = types.StringNull()
-        }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
-        data.Name = types.StringValue(val)
-    } else {
-        data.Name = types.StringNull()
-    }
-    if obj, ok := dataMap["fileType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FileType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.FileType = types.StringValue(val)
-        } else {
-            data.FileType = types.StringNull()
-        }
-    } else if val, ok := dataMap["fileType"].(string); ok && val != "" {
-        data.FileType = types.StringValue(val)
-    } else {
-        data.FileType = types.StringNull()
-    }
-    if obj, ok := dataMap["isPublic"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IsPublic = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.IsPublic = types.StringValue(val)
-        } else {
-            data.IsPublic = types.StringNull()
-        }
-    } else if val, ok := dataMap["isPublic"].(string); ok && val != "" {
-        data.IsPublic = types.StringValue(val)
-    } else {
-        data.IsPublic = types.StringNull()
-    }
-    if val, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        if jsonBytes, err := json.Marshal(val); err == nil {
-            data.CreatedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = types.StringValue(val)
-    } else {
-        data.CreatedAt = types.StringNull()
-    }
-    if val, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        if jsonBytes, err := json.Marshal(val); err == nil {
-            data.UpdatedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = types.StringValue(val)
-    } else {
-        data.UpdatedAt = types.StringNull()
-    }
-    if val, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        if jsonBytes, err := json.Marshal(val); err == nil {
-            data.DeletedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = types.StringValue(val)
-    } else {
-        data.DeletedAt = types.StringNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
-    }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
-    }
-    if val, ok := dataMap["_id"].(string); ok {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
-
-    // Save updated data into Terraform state
-    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    resp.Diagnostics.AddError(
+        "Read Not Implemented", 
+        "This resource does not support read operations",
+    )
 }
 
 func (r *FileResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -559,12 +372,70 @@ func (r *FileResource) parseJSONField(terraformString types.String) interface{} 
     if terraformString.IsNull() || terraformString.IsUnknown() || terraformString.ValueString() == "" {
         return nil
     }
-    
+
     var result interface{}
     if err := json.Unmarshal([]byte(terraformString.ValueString()), &result); err != nil {
         // If JSON parsing fails, return the raw string
         return terraformString.ValueString()
     }
-    
+
     return result
+}
+
+// Helper method to convert *big.Float to float64 for JSON serialization
+func (r *FileResource) bigFloatToFloat64(bf *big.Float) interface{} {
+    if bf == nil {
+        return nil
+    }
+    f, _ := bf.Float64()
+    return f
+}
+
+// Helper method to check if a type string is a valid OneUptime ObjectType
+// Only these types should be marshalled/unmarshalled as typed wrapper objects
+// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+func (r *FileResource) isValidOneUptimeObjectType(typeStr string) bool {
+    validTypes := map[string]bool{
+        "ObjectID": true,
+        "Decimal": true,
+        "Name": true,
+        "EqualTo": true,
+        "EqualToOrNull": true,
+        "MonitorSteps": true,
+        "MonitorStep": true,
+        "Recurring": true,
+        "RestrictionTimes": true,
+        "MonitorCriteria": true,
+        "PositiveNumber": true,
+        "MonitorCriteriaInstance": true,
+        "NotEqual": true,
+        "Email": true,
+        "Phone": true,
+        "Color": true,
+        "Domain": true,
+        "Version": true,
+        "IP": true,
+        "Route": true,
+        "URL": true,
+        "Permission": true,
+        "Search": true,
+        "GreaterThan": true,
+        "GreaterThanOrEqual": true,
+        "GreaterThanOrNull": true,
+        "LessThanOrNull": true,
+        "LessThan": true,
+        "LessThanOrEqual": true,
+        "Port": true,
+        "Hostname": true,
+        "HashedString": true,
+        "DateTime": true,
+        "Buffer": true,
+        "InBetween": true,
+        "NotNull": true,
+        "IsNull": true,
+        "Includes": true,
+        "DashboardComponent": true,
+        "DashboardViewConfig": true,
+    }
+    return validTypes[typeStr]
 }

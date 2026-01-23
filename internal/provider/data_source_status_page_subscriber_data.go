@@ -38,6 +38,7 @@ type StatusPageSubscriberDataDataSourceModel struct {
     SubscriberPhone types.String `tfsdk:"subscriber_phone"`
     SubscriberWebhook types.String `tfsdk:"subscriber_webhook"`
     SlackWorkspaceName types.String `tfsdk:"slack_workspace_name"`
+    MicrosoftTeamsWorkspaceName types.String `tfsdk:"microsoft_teams_workspace_name"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsSubscriptionConfirmed types.Bool `tfsdk:"is_subscription_confirmed"`
     IsUnsubscribed types.Bool `tfsdk:"is_unsubscribed"`
@@ -79,7 +80,7 @@ func (d *StatusPageSubscriberDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -99,11 +100,15 @@ func (d *StatusPageSubscriberDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "subscriber_webhook": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Webhook to ping when events happen on Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
             "slack_workspace_name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Name of the Slack workspace for validation and identification. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                Computed: true,
+            },
+            "microsoft_teams_workspace_name": schema.StringAttribute{
+                MarkdownDescription: "Name of the Microsoft Teams workspace for validation and identification. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -111,36 +116,36 @@ func (d *StatusPageSubscriberDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "is_subscription_confirmed": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
             "is_unsubscribed": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Is Subscriber Unsubscribed?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
             "send_you_have_subscribed_message": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Send You Have Subscribed Message when subscriber is created?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_subscribed_to_all_resources": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Is Subscriber Subscribed to All Resources on this status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
             "is_subscribed_to_all_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
             "status_page_resources": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "status_page_event_types": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
             "internal_note": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Any notes or text you would like to add to this subscriber object. This is for internal use only.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
         },
@@ -241,6 +246,9 @@ func (d *StatusPageSubscriberDataDataSource) Read(ctx context.Context, req datas
     }
     if val, ok := statusPageSubscriberDataResponse["slack_workspace_name"].(string); ok {
         data.SlackWorkspaceName = types.StringValue(val)
+    }
+    if val, ok := statusPageSubscriberDataResponse["microsoft_teams_workspace_name"].(string); ok {
+        data.MicrosoftTeamsWorkspaceName = types.StringValue(val)
     }
     if val, ok := statusPageSubscriberDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

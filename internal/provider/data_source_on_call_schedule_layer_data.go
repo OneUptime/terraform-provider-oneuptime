@@ -73,7 +73,7 @@ func (d *OnCallScheduleLayerDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -85,7 +85,7 @@ func (d *OnCallScheduleLayerDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Edit On-Call Schedule Layer]",
+                MarkdownDescription: "Description for this layer. This is optional and can be left blank.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Edit On-Call Schedule Layer]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -97,7 +97,7 @@ func (d *OnCallScheduleLayerDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]",
+                MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]",
                 Computed: true,
             },
             "starts_at": schema.StringAttribute{
@@ -105,7 +105,7 @@ func (d *OnCallScheduleLayerDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "rotation": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]",
+                MarkdownDescription: "How often would you like to hand off the duty to the next user in this layer?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]",
                 Computed: true,
             },
             "hand_off_time": schema.StringAttribute{
@@ -113,7 +113,7 @@ func (d *OnCallScheduleLayerDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "restriction_times": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]",
+                MarkdownDescription: "Restrict this layer to these times. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]",
                 Computed: true,
             },
         },

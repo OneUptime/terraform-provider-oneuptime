@@ -14,27 +14,23 @@ Label resource
 
 ```terraform
 resource "oneuptime_label" "example" {
-  name = "example-resource"
-  color = {
-    _type = "Color"
-    value = "#ff0000"
-  }
-  description = "Example resource"
+  name = "Example short text"
+  color = "#ff0000"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `name` (String) Name. Required.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `description` (String) Description. Optional.
-- `color` (Map) Color object. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [No access - you don't have permission for this operation]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [Project Owner, Project Admin, Edit Label]. Required.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [Project Owner, Project Admin, Edit Label]. Computed.
+- `color` (String) Color object. Required.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Label], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

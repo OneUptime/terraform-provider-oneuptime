@@ -38,6 +38,7 @@ type MetricDataDataSourceModel struct {
     TimeUnixNano types.Number `tfsdk:"time_unix_nano"`
     StartTimeUnixNano types.Number `tfsdk:"start_time_unix_nano"`
     Attributes types.String `tfsdk:"attributes"`
+    AttributeKeys types.List `tfsdk:"attribute_keys"`
     IsMonotonic types.Bool `tfsdk:"is_monotonic"`
     CountValue types.Number `tfsdk:"count_value"`
     Sum types.Number `tfsdk:"sum"`
@@ -104,6 +105,11 @@ func (d *MetricDataDataSource) Schema(ctx context.Context, req datasource.Schema
             "attributes": schema.StringAttribute{
                 MarkdownDescription: "Attributes",
                 Computed: true,
+            },
+            "attribute_keys": schema.ListAttribute{
+                MarkdownDescription: "Attribute Keys",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "is_monotonic": schema.BoolAttribute{
                 MarkdownDescription: "Is Monotonic",
@@ -238,11 +244,23 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if val, ok := metricDataResponse["attributes"].(string); ok {
         data.Attributes = types.StringValue(val)
     }
+    if val, ok := metricDataResponse["attribute_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        listValue, _ := types.ListValue(types.StringType, elements)
+        data.AttributeKeys = listValue
+    }
     if val, ok := metricDataResponse["is_monotonic"].(bool); ok {
         data.IsMonotonic = types.BoolValue(val)
     }
     if val, ok := metricDataResponse["count"].(float64); ok {
-        data.Count = types.NumberValue(big.NewFloat(val))
+        data.CountValue = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := metricDataResponse["sum"].(float64); ok {
         data.Sum = types.NumberValue(big.NewFloat(val))

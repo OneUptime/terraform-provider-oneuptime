@@ -22,14 +22,14 @@ resource "oneuptime_team_on_call_duty_escalation_rule" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `team_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

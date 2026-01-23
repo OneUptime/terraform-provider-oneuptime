@@ -25,14 +25,14 @@ data "oneuptime_on_call_duty_execution_log_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `status_message` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
-- `user_notification_event_type` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `status` (String) Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `status_message` (String) Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `acknowledged_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

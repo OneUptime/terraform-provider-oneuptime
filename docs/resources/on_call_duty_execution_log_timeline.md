@@ -21,25 +21,25 @@ resource "oneuptime_on_call_duty_execution_log_timeline" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_execution_log_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `user_notification_event_type` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.
 - `alert_sent_to_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_belongs_to_team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `status_message` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.
-- `status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `status_message` (String) Status message of this execution timeline event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `status` (String) Status of this execution timeline event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_acknowledged` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.
-- `acknowledged_at` (Map) A date time object.. Computed.
+- `acknowledged_at` (String) A date time object.. Computed.
 - `overrided_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

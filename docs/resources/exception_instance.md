@@ -34,7 +34,7 @@ resource "oneuptime_exception_instance" "example" {
 - `span_id` (String) Span ID. Computed.
 - `fingerprint` (String) Fingerprint. Computed.
 - `span_name` (String) Span Name. Computed.
-- `attributes` (Map) Attributes. Computed.
+- `attributes` (String) Attributes. Computed.
 
 ## Import
 

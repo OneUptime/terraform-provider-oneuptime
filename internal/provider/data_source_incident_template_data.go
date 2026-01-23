@@ -44,6 +44,7 @@ type IncidentTemplateDataDataSourceModel struct {
     Labels types.List `tfsdk:"labels"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
+    InitialIncidentStateId types.String `tfsdk:"initial_incident_state_id"`
     CustomFields types.String `tfsdk:"custom_fields"`
 }
 
@@ -77,7 +78,7 @@ func (d *IncidentTemplateDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -85,23 +86,23 @@ func (d *IncidentTemplateDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "Title of this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "Name of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "Description of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -109,17 +110,17 @@ func (d *IncidentTemplateDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "monitors": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "on_call_duty_policies": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "List of on-call duty policy affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -131,8 +132,12 @@ func (d *IncidentTemplateDataDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "initial_incident_state_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
             },
         },
@@ -278,6 +283,9 @@ func (d *IncidentTemplateDataDataSource) Read(ctx context.Context, req datasourc
     }
     if val, ok := incidentTemplateDataResponse["change_monitor_status_to_id"].(string); ok {
         data.ChangeMonitorStatusToId = types.StringValue(val)
+    }
+    if val, ok := incidentTemplateDataResponse["initial_incident_state_id"].(string); ok {
+        data.InitialIncidentStateId = types.StringValue(val)
     }
     if val, ok := incidentTemplateDataResponse["custom_fields"].(string); ok {
         data.CustomFields = types.StringValue(val)

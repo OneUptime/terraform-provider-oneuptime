@@ -14,22 +14,22 @@ Alert note template resource
 
 ```terraform
 resource "oneuptime_alert_note_template" "example" {
-  template_name = "example-template_name"
-  template_description = "example-template_description"
+  template_name = "Example short text"
+  template_description = "This is an example of longer text content that might be stored in this field."
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `note` (String) Note. Optional.
-- `template_name` (String) Name. Required.
-- `template_description` (String) Template Description. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `note` (String) Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Computed.
+- `template_name` (String) Name of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Required.
+- `template_description` (String) Description of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Edit Alert Note Template]. Required.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

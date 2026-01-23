@@ -35,13 +35,19 @@ type PushNotificationLogDataDataSourceModel struct {
     Title types.String `tfsdk:"title"`
     Body types.String `tfsdk:"body"`
     DeviceType types.String `tfsdk:"device_type"`
+    DeviceName types.String `tfsdk:"device_name"`
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
     IncidentId types.String `tfsdk:"incident_id"`
+    UserId types.String `tfsdk:"user_id"`
     AlertId types.String `tfsdk:"alert_id"`
     ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     StatusPageAnnouncementId types.String `tfsdk:"status_page_announcement_id"`
+    OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
+    OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
+    OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
+    TeamId types.String `tfsdk:"team_id"`
 }
 
 func (d *PushNotificationLogDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -93,6 +99,10 @@ func (d *PushNotificationLogDataDataSource) Schema(ctx context.Context, req data
                 MarkdownDescription: "Type of device this was sent to (e.g., web). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Push Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
+            "device_name": schema.StringAttribute{
+                MarkdownDescription: "Name of the device this was sent to. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Push Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Push Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
@@ -102,6 +112,10 @@ func (d *PushNotificationLogDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -118,6 +132,22 @@ func (d *PushNotificationLogDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "status_page_announcement_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_escalation_rule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_duty_policy_schedule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "team_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -214,6 +244,9 @@ func (d *PushNotificationLogDataDataSource) Read(ctx context.Context, req dataso
     if val, ok := pushNotificationLogDataResponse["device_type"].(string); ok {
         data.DeviceType = types.StringValue(val)
     }
+    if val, ok := pushNotificationLogDataResponse["device_name"].(string); ok {
+        data.DeviceName = types.StringValue(val)
+    }
     if val, ok := pushNotificationLogDataResponse["status_message"].(string); ok {
         data.StatusMessage = types.StringValue(val)
     }
@@ -222,6 +255,9 @@ func (d *PushNotificationLogDataDataSource) Read(ctx context.Context, req dataso
     }
     if val, ok := pushNotificationLogDataResponse["incident_id"].(string); ok {
         data.IncidentId = types.StringValue(val)
+    }
+    if val, ok := pushNotificationLogDataResponse["user_id"].(string); ok {
+        data.UserId = types.StringValue(val)
     }
     if val, ok := pushNotificationLogDataResponse["alert_id"].(string); ok {
         data.AlertId = types.StringValue(val)
@@ -234,6 +270,18 @@ func (d *PushNotificationLogDataDataSource) Read(ctx context.Context, req dataso
     }
     if val, ok := pushNotificationLogDataResponse["status_page_announcement_id"].(string); ok {
         data.StatusPageAnnouncementId = types.StringValue(val)
+    }
+    if val, ok := pushNotificationLogDataResponse["on_call_duty_policy_id"].(string); ok {
+        data.OnCallDutyPolicyId = types.StringValue(val)
+    }
+    if val, ok := pushNotificationLogDataResponse["on_call_duty_policy_escalation_rule_id"].(string); ok {
+        data.OnCallDutyPolicyEscalationRuleId = types.StringValue(val)
+    }
+    if val, ok := pushNotificationLogDataResponse["on_call_duty_policy_schedule_id"].(string); ok {
+        data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    }
+    if val, ok := pushNotificationLogDataResponse["team_id"].(string); ok {
+        data.TeamId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

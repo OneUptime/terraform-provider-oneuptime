@@ -73,7 +73,7 @@ func (d *OnCallTimeLogDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -97,7 +97,7 @@ func (d *OnCallTimeLogDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "more_info": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Create On-Call Policy Time Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Create On-Call Policy Time Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

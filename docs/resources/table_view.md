@@ -14,27 +14,25 @@ Table view resource
 
 ```terraform
 resource "oneuptime_table_view" "example" {
-  name = "example-resource"
-  table_id = "123e4567-e89b-12d3-a456-426614174000"
-  items_on_page = 1
-  description = "Example resource"
+  name = "Example short text"
+  table_id = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `table_id` (String) Table ID. Required.
-- `description` (String) Description. Optional.
-- `query` (Map) Filters. Optional.
-- `sort` (Map) Sort. Optional.
-- `items_on_page` (Number) Items on Page. Required.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Required.
+- `table_id` (String) ID of the table this view is for. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `query` (String) Filters for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `sort` (String) Sort for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `items_on_page` (Number) Items on page. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

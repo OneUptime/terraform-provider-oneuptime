@@ -14,31 +14,27 @@ Incident state resource
 
 ```terraform
 resource "oneuptime_incident_state" "example" {
-  name = "example-resource"
-  color = {
-    _type = "Color"
-    value = "#ff0000"
-  }
-  description = "Example resource"
+  name = "Example short text"
+  color = "#ff0000"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `color` (Map) Color object. Required.
-- `is_created_state` (Bool) Is Created State. Optional.
-- `is_acknowledged_state` (Bool) Is Acknowledged State. Optional.
-- `is_resolved_state` (Bool) Is Resolved State. Optional.
-- `order` (Number) Order. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]. Computed.
+- `color` (String) Color object. Required.
+- `is_created_state` (Bool) Is it the created state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]. Computed.
+- `is_acknowledged_state` (Bool) Is it the acknowledged state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]. Computed.
+- `is_resolved_state` (Bool) Is it the resolved state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]. Computed.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

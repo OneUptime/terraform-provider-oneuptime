@@ -14,32 +14,32 @@ Incident template resource
 
 ```terraform
 resource "oneuptime_incident_template" "example" {
-  title = "example-title"
-  template_name = "example-template_name"
-  template_description = "example-template_description"
-  description = "Example resource"
+  title = "This is an example of longer text content that might be stored in this field."
+  template_name = "Example short text"
+  template_description = "This is an example of longer text content that might be stored in this field."
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `title` (String) Title. Required.
-- `template_name` (String) Name. Required.
-- `template_description` (String) Template Description. Required.
-- `description` (String) Description. Optional.
-- `monitors` (List) Monitors. Optional.
-- `on_call_duty_policies` (List) On-Call Duty Policies. Optional.
-- `labels` (List) Labels. Optional.
-- `incident_severity_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `change_monitor_status_to_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `custom_fields` (Map) Custom Fields. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `title` (String) Title of this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Required.
+- `template_name` (String) Name of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Required.
+- `template_description` (String) Description of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Required.
+- `description` (String) Short description of this incident. This is in markdown and will be visible on the status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Computed.
+- `monitors` (List) List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Computed.
+- `on_call_duty_policies` (List) List of on-call duty policy affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Computed.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Computed.
+- `incident_severity_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `change_monitor_status_to_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `initial_incident_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `custom_fields` (String) Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

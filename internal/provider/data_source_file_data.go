@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "math/big"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -27,14 +26,6 @@ type FileDataDataSource struct {
 type FileDataDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
-    CreatedAt types.String `tfsdk:"created_at"`
-    UpdatedAt types.String `tfsdk:"updated_at"`
-    DeletedAt types.String `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
-    File types.String `tfsdk:"file"`
-    FileType types.String `tfsdk:"file_type"`
-    Slug types.String `tfsdk:"slug"`
-    IsPublic types.String `tfsdk:"is_public"`
 }
 
 func (d *FileDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -52,39 +43,7 @@ func (d *FileDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Name to filter by",
-                Computed: true,
-            },
-            "created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "updated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "deleted_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "version": schema.NumberAttribute{
-                MarkdownDescription: "Object version",
-                Computed: true,
-            },
-            "file": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "file_type": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "is_public": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
+                Optional: true,
             },
         },
     }
@@ -121,16 +80,26 @@ func (d *FileDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
 
     
-    // Build API path
-    apiPath := "/" + "file" + "/" + data.Id.ValueString() + "/" + "get-item"
-    
-    // Prepare request body with select fields (if needed)
+    // Build request body with query parameters
     requestBody := map[string]interface{}{
-        "select": map[string]interface{}{}, // Add specific fields to select if needed
+        "query": map[string]interface{}{},
+        "select": map[string]interface{}{},
+    }
+    
+    // Add filters based on data source inputs
+    queryFilters := map[string]interface{}{}
+    if !data.Id.IsNull() {
+        queryFilters["_id"] = data.Id.ValueString()
+    }
+    if !data.Name.IsNull() {
+        queryFilters["name"] = data.Name.ValueString()
+    }
+    if len(queryFilters) > 0 {
+        requestBody["query"] = queryFilters
     }
     
     // Make API call
-    httpResp, err := d.client.Post(apiPath, requestBody)
+    httpResp, err := d.client.Post("/file/get-list", requestBody)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read file_data, got error: %s", err))
         return
@@ -143,9 +112,11 @@ func (d *FileDataDataSource) Read(ctx context.Context, req datasource.ReadReques
         return
     }
 
-    // Extract data from response
-    if dataMap, ok := fileDataResponse["data"].(map[string]interface{}); ok {
-        fileDataResponse = dataMap
+    // For list operations, take the first matching item
+    if items, ok := fileDataResponse["data"].([]interface{}); ok && len(items) > 0 {
+        if firstItem, ok := items[0].(map[string]interface{}); ok {
+            fileDataResponse = firstItem
+        }
     }
 
     // Update the model with response data
@@ -154,30 +125,6 @@ func (d *FileDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := fileDataResponse["name"].(string); ok {
         data.Name = types.StringValue(val)
-    }
-    if val, ok := fileDataResponse["created_at"].(string); ok {
-        data.CreatedAt = types.StringValue(val)
-    }
-    if val, ok := fileDataResponse["updated_at"].(string); ok {
-        data.UpdatedAt = types.StringValue(val)
-    }
-    if val, ok := fileDataResponse["deleted_at"].(string); ok {
-        data.DeletedAt = types.StringValue(val)
-    }
-    if val, ok := fileDataResponse["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    }
-    if val, ok := fileDataResponse["file"].(string); ok {
-        data.File = types.StringValue(val)
-    }
-    if val, ok := fileDataResponse["file_type"].(string); ok {
-        data.FileType = types.StringValue(val)
-    }
-    if val, ok := fileDataResponse["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
-    }
-    if val, ok := fileDataResponse["is_public"].(string); ok {
-        data.IsPublic = types.StringValue(val)
     }
 
     // Write logs using the tflog package

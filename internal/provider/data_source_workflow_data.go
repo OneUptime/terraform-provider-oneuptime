@@ -72,7 +72,7 @@ func (d *WorkflowDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -80,11 +80,11 @@ func (d *WorkflowDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -96,15 +96,15 @@ func (d *WorkflowDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Is this workflow enabled?. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
             },
             "graph": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Workflow Graph in JSON. Ideally, create this via UI and not via API.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
             },
             "labels": schema.ListAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
                 ElementType: types.StringType,
             },

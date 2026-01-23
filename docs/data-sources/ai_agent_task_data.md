@@ -36,4 +36,4 @@ data "oneuptime_ai_agent_task_data" "example" {
 - `started_at` (String) A date time object.. Computed.
 - `completed_at` (String) A date time object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `task_number` (Number) A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]. Computed.
+- `task_number` (Number) A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]. Computed.

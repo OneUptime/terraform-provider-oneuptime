@@ -14,31 +14,34 @@ Status page announcement resource
 
 ```terraform
 resource "oneuptime_status_page_announcement" "example" {
-  title = "example-title"
-  show_announcement_at = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
-  description = "Example announcement"
+  title = "Example short text"
+  show_announcement_at = "2023-10-01T12:00:00Z"
+  description = "# Heading
+
+This is **markdown** content"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `status_pages` (List) Status Pages. Optional.
-- `title` (String) Title. Required.
-- `show_announcement_at` (Map) A date time object.. Required.
-- `end_announcement_at` (Map) A date time object.. Optional.
-- `description` (String) Announcement Description. Required.
-- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified?. Optional.
-- `is_owner_notified` (Bool) Are Owners Notified. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `status_pages` (List) Status Pages to show show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]. Computed.
+- `monitors` (List) List of monitors affected by this announcement. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]. Computed.
+- `title` (String) Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]. Required.
+- `show_announcement_at` (String) A date time object.. Required.
+- `end_announcement_at` (String) A date time object.. Computed.
+- `description` (String) Text of the announcement. This can be in Markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]. Required.
+- `attachments` (List) Files attached to this announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]. Computed.
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]. Computed.
+- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_status_page_subscribers_notified` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

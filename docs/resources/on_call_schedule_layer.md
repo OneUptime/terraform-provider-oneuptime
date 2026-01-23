@@ -15,33 +15,28 @@ On call schedule layer resource
 ```terraform
 resource "oneuptime_on_call_schedule_layer" "example" {
   on_call_duty_policy_schedule_id = "123e4567-e89b-12d3-a456-426614174000"
-  name = "example-resource"
-  starts_at = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
-  hand_off_time = {
-    id = "123e4567-e89b-12d3-a456-426614174000"
-  }
-  description = "Example resource"
+  name = "Example short text"
+  starts_at = "2023-10-01T12:00:00Z"
+  hand_off_time = "2023-10-01T12:00:00Z"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `order` (Number) Order. Optional.
-- `starts_at` (Map) A date time object.. Required.
-- `rotation` (Map) Rotation. Optional.
-- `hand_off_time` (Map) A date time object.. Required.
-- `restriction_times` (Map) Restriction Times. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `name` (String) Friendly name for this layer. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Edit On-Call Schedule Layer]. Required.
+- `description` (String) Description for this layer. This is optional and can be left blank.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Edit On-Call Schedule Layer]. Computed.
+- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
+- `starts_at` (String) A date time object.. Required.
+- `rotation` (String) How often would you like to hand off the duty to the next user in this layer?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
+- `hand_off_time` (String) A date time object.. Required.
+- `restriction_times` (String) Restrict this layer to these times. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

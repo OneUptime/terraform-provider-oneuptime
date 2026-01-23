@@ -69,7 +69,7 @@ func (d *EscalationRuleDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "version": schema.NumberAttribute{
-                MarkdownDescription: "Version",
+                MarkdownDescription: "Object version",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -81,7 +81,7 @@ func (d *EscalationRuleDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -89,11 +89,11 @@ func (d *EscalationRuleDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "escalate_after_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "How long should we wait before we execute the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]",
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "Order of this rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy Escalation Rule]",
                 Computed: true,
             },
         },
@@ -132,7 +132,7 @@ func (d *EscalationRuleDataDataSource) Read(ctx context.Context, req datasource.
 
     
     // Build API path
-    apiPath := "/" + "on-call-duty-policy-esclation-rule" + "/" + data.Id.ValueString() + "/" + "get-item"
+    apiPath := "/" + "on-call-duty-policy-escalation-rule" + "/" + data.Id.ValueString() + "/" + "get-item"
     
     // Prepare request body with select fields (if needed)
     requestBody := map[string]interface{}{

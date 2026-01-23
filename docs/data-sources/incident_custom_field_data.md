@@ -25,9 +25,9 @@ data "oneuptime_incident_custom_field_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Create Incident Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Incident Custom Field], Update: [Project Owner, Project Admin, Edit Incident Custom Field]. Computed.
-- `custom_field_type` (String) Permissions - Create: [Project Owner, Project Admin, Create Incident Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Incident Custom Field], Update: [No access - you don't have permission for this operation]. Computed.
+- `description` (String) Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Incident Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Incident Custom Field], Update: [Project Owner, Project Admin, Edit Incident Custom Field]. Computed.
+- `custom_field_type` (String) Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Incident Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Incident Custom Field], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

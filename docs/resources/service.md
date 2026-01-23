@@ -28,6 +28,7 @@ resource "oneuptime_service" "example" {
 - `service_color` (String) Color object. Computed.
 - `service_language` (String) Language in which this service is written. Computed.
 - `tech_stack` (String) Tech stack used in the service. This will help other developers understand the service better.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Service], Update: [Project Owner, Project Admin, Project Member, Edit Service]. Computed.
+- `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this service.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Project Member, Read Service], Update: [Project Owner, Project Admin, Project Member, Edit Service]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

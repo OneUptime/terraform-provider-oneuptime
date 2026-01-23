@@ -25,12 +25,12 @@ data "oneuptime_workflow_data" "example" {
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
-- `version` (Number) Version. Computed.
+- `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `slug` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [No access - you don't have permission for this operation]. Computed.
-- `description` (String) Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [No access - you don't have permission for this operation]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_enabled` (Bool) Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
-- `graph` (String) Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
-- `labels` (List) Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `is_enabled` (Bool) Is this workflow enabled?. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]. Computed.

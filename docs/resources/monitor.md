@@ -14,44 +14,48 @@ Monitor resource
 
 ```terraform
 resource "oneuptime_monitor" "example" {
-  name = "example-resource"
-  monitor_type = "example-monitor_type"
-  description = "Example resource"
+  name = "Example short text"
+  monitor_type = "HTTP"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `project_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `name` (String) Name. Required.
-- `description` (String) Description. Optional.
-- `labels` (List) Labels. Optional.
-- `monitor_type` (String) Monitor Type. Required.
-- `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `monitor_steps` (Map) MonitorSteps object. Optional.
-- `monitoring_interval` (String) Monitoring Interval. Optional.
-- `custom_fields` (Map) Custom Fields. Optional.
-- `is_owner_notified_of_resource_creation` (Bool) Are Owners Notified Of Resource Creation?. Optional.
-- `disable_active_monitoring` (Bool) Disable Monitoring. Optional.
-- `incoming_request_monitor_heartbeat_checked_at` (Map) A date time object.. Optional.
-- `telemetry_monitor_next_monitor_at` (Map) A date time object.. Optional.
-- `telemetry_monitor_last_monitor_at` (Map) A date time object.. Optional.
-- `server_monitor_request_received_at` (Map) A date time object.. Optional.
-- `server_monitor_secret_key` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `incoming_request_secret_key` (String) A unique identifier for an object, represented as a UUID.. Optional.
-- `incoming_monitor_request` (Map) Incoming Monitor Request. Optional.
-- `server_monitor_response` (Map) Server Monitor Response. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `name` (String) Any friendly name for this monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]. Computed.
+- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]. Computed.
+- `monitor_type` (String) What is the type of this monitor? Website? API? etc.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Required.
+- `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `monitor_steps` (String) MonitorSteps object. Computed.
+- `monitoring_interval` (String) How often would you like OneUptime to monitor this resource?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]. Computed.
+- `custom_fields` (String) Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]. Computed.
+- `disable_active_monitoring` (Bool) Disable active monitoring for this resource?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Create Monitor]. Computed.
+- `incoming_request_monitor_heartbeat_checked_at` (String) A date time object.. Computed.
+- `telemetry_monitor_next_monitor_at` (String) A date time object.. Computed.
+- `telemetry_monitor_last_monitor_at` (String) A date time object.. Computed.
+- `server_monitor_request_received_at` (String) A date time object.. Computed.
+- `incoming_monitor_request` (String) Incoming Monitor Request for Incoming Request Monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `server_monitor_response` (String) Server Monitor Response for Server Monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `minimum_probe_agreement` (Number) Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `disable_active_monitoring_because_of_scheduled_maintenance_event` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
-- `disable_active_monitoring_because_of_manual_incident` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
-- `is_all_probes_disconnected_from_this_monitor` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
-- `is_no_probe_enabled_on_this_monitor` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `disable_active_monitoring_because_of_scheduled_maintenance_event` (Bool) Disable Monitoring because of Ongoing Scheduled Maintenance Event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `disable_active_monitoring_because_of_manual_incident` (Bool) Disable Monitoring because of Incident which is creeated manually by user.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `server_monitor_secret_key` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `incoming_request_secret_key` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `incoming_email_secret_key` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `incoming_email_monitor_last_email_received_at` (String) A date time object.. Computed.
+- `incoming_email_monitor_request` (String) This field is for Incoming Email Monitor only. Last email data received.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `incoming_email_monitor_heartbeat_checked_at` (String) A date time object.. Computed.
+- `is_all_probes_disconnected_from_this_monitor` (Bool) All Probes Disconnected From This Monitor. Is this monitor not being monitored?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_no_probe_enabled_on_this_monitor` (Bool) No Probe Enabled On This Monitor. Is this monitor not being monitored?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

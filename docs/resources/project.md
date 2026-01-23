@@ -14,46 +14,57 @@ Project resource
 
 ```terraform
 resource "oneuptime_project" "example" {
-  name = "example-resource"
+  name = "Example short text"
 }
 ```
 
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `name` (String) Name. Required.
-- `payment_provider_plan_id` (String) Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner]. Optional.
-- `payment_provider_promo_code` (String) Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Optional.
-- `is_feature_flag_monitor_groups_enabled` (Bool) Is Feature Flag Monitor Groups Enabled. Optional.
-- `active_monitors_limit` (Number) Project active_monitors_limit. Optional.
-- `seat_limit` (Number) Project seat_limit. Optional.
-- `utm_content` (String) Project utm_content. Optional.
-- `require_sso_for_login` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]. Optional.
-- `auto_recharge_sms_or_call_by_balance_in_u_s_d` (Number) Auto Recharge Amount. Optional.
-- `auto_recharge_sms_or_call_when_current_balance_falls_in_u_s_d` (Number) Auto Recharge when current balance falls to. Optional.
-- `enable_sms_notifications` (Bool) Enable SMS Notifications. Optional.
-- `enable_call_notifications` (Bool) Enable Call Notifications. Optional.
-- `enable_auto_recharge_sms_or_call_balance` (Bool) Enable auto recharge SMS or Call balance. Optional.
-- `created_at` (Map) A date time object.. Computed.
-- `updated_at` (Map) A date time object.. Computed.
-- `deleted_at` (Map) A date time object.. Computed.
-- `version` (Number) Version. Computed.
-- `slug` (String) Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]. Required.
+- `payment_provider_plan_id` (String) Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `business_details` (String) Business legal name, address and any tax information to appear on invoices.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `business_details_country` (String) Two-letter ISO country code for billing address (e.g., US, GB, DE).. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `finance_accounting_email` (String) Email object. Computed.
+- `payment_provider_promo_code` (String) Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_feature_flag_monitor_groups_enabled` (Bool) Is Feature Flag Monitor Groups Enabled. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]. Computed.
+- `active_monitors_limit` (Number) Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `seat_limit` (Number) Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `utm_content` (String) Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `require_sso_for_login` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]. Computed.
+- `auto_recharge_sms_or_call_by_balance_in_usd` (Number) Auto recharge amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]. Computed.
+- `auto_recharge_sms_or_call_when_current_balance_falls_in_usd` (Number) Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]. Computed.
+- `enable_sms_notifications` (Bool) Enable SMS notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `enable_whats_app_notifications` (Bool) Enable WhatsApp notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `enable_call_notifications` (Bool) Enable call notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `enable_auto_recharge_sms_or_call_balance` (Bool) Enable auto recharge for SMS, Call, and WhatsApp balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `auto_ai_recharge_by_balance_in_usd` (Number) Auto recharge amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]. Computed.
+- `auto_recharge_ai_when_current_balance_falls_in_usd` (Number) Auto recharge is triggered when current balance falls to this amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Manage Billing]. Computed.
+- `enable_ai` (Bool) Enable AI services for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `enable_auto_recharge_ai_balance` (Bool) Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]. Computed.
+- `do_not_add_global_probes_by_default_on_new_monitors` (Bool) If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]. Computed.
+- `git_hub_app_installation_id` (String) The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Project Admin]. Computed.
+- `created_at` (String) A date time object.. Computed.
+- `updated_at` (String) A date time object.. Computed.
+- `deleted_at` (String) A date time object.. Computed.
+- `version` (Number) Object version. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
 - `payment_provider_subscription_id` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
 - `payment_provider_metered_subscription_id` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
 - `payment_provider_subscription_seats` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
-- `trial_ends_at` (Map) A date time object.. Computed.
+- `trial_ends_at` (String) A date time object.. Computed.
 - `payment_provider_customer_id` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
 - `payment_provider_subscription_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
 - `payment_provider_metered_subscription_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `workflow_runs_in_last30_days` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Read Workflow], Update: [No access - you don't have permission for this operation]. Computed.
-- `sms_or_call_current_balance_in_u_s_d_cents` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [No access - you don't have permission for this operation]. Computed.
-- `plan_name` (String) Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
+- `sms_or_call_current_balance_in_usd_cents` (Number) Balance in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [No access - you don't have permission for this operation]. Computed.
+- `ai_current_balance_in_usd_cents` (Number) Balance in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [No access - you don't have permission for this operation]. Computed.
+- `plan_name` (String) Name of the plan this project is subscribed to.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [No access - you don't have permission for this operation]. Computed.
 - `reseller_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `reseller_plan_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `let_customer_support_access_project` (Bool) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Project Admin]. Computed.
+- `let_customer_support_access_project` (Bool) OneUptime customer support can access this project. This is used for debugging purposes.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project], Update: [Project Owner, Project Admin]. Computed.
 
 ## Import
 
