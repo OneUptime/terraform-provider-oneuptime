@@ -52,6 +52,7 @@ type AlertDataDataSourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery types.String `tfsdk:"telemetry_query"`
     AlertNumber types.Number `tfsdk:"alert_number"`
+    AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
 }
 
 func (d *AlertDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -167,6 +168,10 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "alert_number": schema.NumberAttribute{
                 MarkdownDescription: "Alert Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "alert_episode_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
         },
@@ -327,6 +332,9 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := alertDataResponse["alert_number"].(float64); ok {
         data.AlertNumber = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := alertDataResponse["alert_episode_id"].(string); ok {
+        data.AlertEpisodeId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

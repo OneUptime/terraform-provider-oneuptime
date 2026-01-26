@@ -35,6 +35,7 @@ resource "oneuptime_alert" "example" {
 - `root_cause` (String) What is the root cause of this alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [No access - you don't have permission for this operation]. Computed.
 - `remediation_notes` (String) Notes on how to remediate this alert. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]. Computed.
 - `telemetry_query` (String) Telemetry query for this alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]. Computed.
+- `alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

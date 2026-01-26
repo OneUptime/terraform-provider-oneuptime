@@ -35,6 +35,7 @@ type OnCallDutyExecutionLogDataDataSourceModel struct {
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
     TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
+    TriggeredByAlertEpisodeId types.String `tfsdk:"triggered_by_alert_episode_id"`
     Status types.String `tfsdk:"status"`
     StatusMessage types.String `tfsdk:"status_message"`
     UserNotificationEventType types.String `tfsdk:"user_notification_event_type"`
@@ -93,6 +94,10 @@ func (d *OnCallDutyExecutionLogDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "triggered_by_alert_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "triggered_by_alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -228,6 +233,9 @@ func (d *OnCallDutyExecutionLogDataDataSource) Read(ctx context.Context, req dat
     }
     if val, ok := onCallDutyExecutionLogDataResponse["triggered_by_alert_id"].(string); ok {
         data.TriggeredByAlertId = types.StringValue(val)
+    }
+    if val, ok := onCallDutyExecutionLogDataResponse["triggered_by_alert_episode_id"].(string); ok {
+        data.TriggeredByAlertEpisodeId = types.StringValue(val)
     }
     if val, ok := onCallDutyExecutionLogDataResponse["status"].(string); ok {
         data.Status = types.StringValue(val)

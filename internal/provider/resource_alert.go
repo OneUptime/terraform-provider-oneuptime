@@ -47,6 +47,7 @@ type AlertResourceModel struct {
     RootCause types.String `tfsdk:"root_cause"`
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery types.String `tfsdk:"telemetry_query"`
+    AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -175,6 +176,14 @@ func (r *AlertResource) Schema(ctx context.Context, req resource.SchemaRequest, 
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "alert_episode_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
@@ -272,6 +281,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         "rootCause": data.RootCause.ValueString(),
         "remediationNotes": data.RemediationNotes.ValueString(),
         "telemetryQuery": r.parseJSONField(data.TelemetryQuery),
+        "alertEpisodeId": data.AlertEpisodeId.ValueString(),
         },
     }
 
@@ -762,6 +772,41 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         data.TelemetryQuery = types.StringNull()
     }
+    if obj, ok := dataMap["alertEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            if jsonBytes, err := json.Marshal(obj); err == nil {
+                data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+                data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertEpisodeId"].(string); ok && val != "" {
+        data.AlertEpisodeId = types.StringValue(val)
+    } else {
+        data.AlertEpisodeId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1069,6 +1114,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "rootCause": true,
         "remediationNotes": true,
         "telemetryQuery": true,
+        "alertEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1575,6 +1621,41 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         data.TelemetryQuery = types.StringNull()
     }
+    if obj, ok := dataMap["alertEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            if jsonBytes, err := json.Marshal(obj); err == nil {
+                data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+                data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertEpisodeId"].(string); ok && val != "" {
+        data.AlertEpisodeId = types.StringValue(val)
+    } else {
+        data.AlertEpisodeId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1922,6 +2003,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
             requestDataMap["telemetryQuery"] = data.TelemetryQuery.ValueString()
         }
     }
+    if !data.AlertEpisodeId.IsUnknown() && !state.AlertEpisodeId.IsUnknown() && !data.AlertEpisodeId.Equal(state.AlertEpisodeId) {
+        requestDataMap["alertEpisodeId"] = data.AlertEpisodeId.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/alert/" + data.Id.ValueString() + "", alertRequest)
@@ -1953,6 +2037,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "rootCause": true,
         "remediationNotes": true,
         "telemetryQuery": true,
+        "alertEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2452,6 +2537,41 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         data.TelemetryQuery = types.StringValue(val)
     } else {
         data.TelemetryQuery = types.StringNull()
+    }
+    if obj, ok := dataMap["alertEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            if jsonBytes, err := json.Marshal(obj); err == nil {
+                data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+                data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertEpisodeId"].(string); ok && val != "" {
+        data.AlertEpisodeId = types.StringValue(val)
+    } else {
+        data.AlertEpisodeId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

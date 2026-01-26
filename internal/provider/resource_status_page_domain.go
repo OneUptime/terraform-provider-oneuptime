@@ -11,7 +11,6 @@ import (
     "math/big"
     "net/http"
     "encoding/json"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -37,8 +36,6 @@ type StatusPageDomainResourceModel struct {
     DomainId types.String `tfsdk:"domain_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     Subdomain types.String `tfsdk:"subdomain"`
-    IsSslOrdered types.Bool `tfsdk:"is_ssl_ordered"`
-    IsSslProvisioned types.Bool `tfsdk:"is_ssl_provisioned"`
     CustomCertificate types.String `tfsdk:"custom_certificate"`
     CustomCertificateKey types.String `tfsdk:"custom_certificate_key"`
     IsCustomCertificate types.Bool `tfsdk:"is_custom_certificate"`
@@ -49,6 +46,8 @@ type StatusPageDomainResourceModel struct {
     FullDomain types.String `tfsdk:"full_domain"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsCnameVerified types.Bool `tfsdk:"is_cname_verified"`
+    IsSslOrdered types.Bool `tfsdk:"is_ssl_ordered"`
+    IsSslProvisioned types.Bool `tfsdk:"is_ssl_provisioned"`
 }
 
 func (r *StatusPageDomainResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -87,24 +86,6 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
             "subdomain": schema.StringAttribute{
                 MarkdownDescription: "Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]",
                 Required: true,
-            },
-            "is_ssl_ordered": schema.BoolAttribute{
-                MarkdownDescription: "Is SSL ordered?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "is_ssl_provisioned": schema.BoolAttribute{
-                MarkdownDescription: "Is SSL provisioned?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
             },
             "custom_certificate": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]",
@@ -158,6 +139,14 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
                 MarkdownDescription: "Is CNAME Verified?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
+            "is_ssl_ordered": schema.BoolAttribute{
+                MarkdownDescription: "Is SSL ordered?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "is_ssl_provisioned": schema.BoolAttribute{
+                MarkdownDescription: "Is SSL provisioned?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
         },
     }
 }
@@ -202,8 +191,6 @@ func (r *StatusPageDomainResource) Create(ctx context.Context, req resource.Crea
         "domainId": data.DomainId.ValueString(),
         "statusPageId": data.StatusPageId.ValueString(),
         "subdomain": data.Subdomain.ValueString(),
-        "isSslOrdered": data.IsSslOrdered.ValueBool(),
-        "isSslProvisioned": data.IsSslProvisioned.ValueBool(),
         "customCertificate": data.CustomCertificate.ValueString(),
         "customCertificateKey": data.CustomCertificateKey.ValueString(),
         "isCustomCertificate": data.IsCustomCertificate.ValueBool(),
@@ -385,12 +372,6 @@ func (r *StatusPageDomainResource) Create(ctx context.Context, req resource.Crea
         data.Subdomain = types.StringValue(val)
     } else {
         data.Subdomain = types.StringNull()
-    }
-    if val, ok := dataMap["isSslOrdered"].(bool); ok {
-        data.IsSslOrdered = types.BoolValue(val)
-    }
-    if val, ok := dataMap["isSslProvisioned"].(bool); ok {
-        data.IsSslProvisioned = types.BoolValue(val)
     }
     if obj, ok := dataMap["customCertificate"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -654,6 +635,12 @@ func (r *StatusPageDomainResource) Create(ctx context.Context, req resource.Crea
     if val, ok := dataMap["isCnameVerified"].(bool); ok {
         data.IsCnameVerified = types.BoolValue(val)
     }
+    if val, ok := dataMap["isSslOrdered"].(bool); ok {
+        data.IsSslOrdered = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isSslProvisioned"].(bool); ok {
+        data.IsSslProvisioned = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -683,8 +670,6 @@ func (r *StatusPageDomainResource) Read(ctx context.Context, req resource.ReadRe
         "domainId": true,
         "statusPageId": true,
         "subdomain": true,
-        "isSslOrdered": true,
-        "isSslProvisioned": true,
         "customCertificate": true,
         "customCertificateKey": true,
         "isCustomCertificate": true,
@@ -695,6 +680,8 @@ func (r *StatusPageDomainResource) Read(ctx context.Context, req resource.ReadRe
         "fullDomain": true,
         "createdByUserId": true,
         "isCnameVerified": true,
+        "isSslOrdered": true,
+        "isSslProvisioned": true,
         "_id": true,
     }
 
@@ -879,12 +866,6 @@ func (r *StatusPageDomainResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.Subdomain = types.StringNull()
     }
-    if val, ok := dataMap["isSslOrdered"].(bool); ok {
-        data.IsSslOrdered = types.BoolValue(val)
-    }
-    if val, ok := dataMap["isSslProvisioned"].(bool); ok {
-        data.IsSslProvisioned = types.BoolValue(val)
-    }
     if obj, ok := dataMap["customCertificate"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1147,6 +1128,12 @@ func (r *StatusPageDomainResource) Read(ctx context.Context, req resource.ReadRe
     if val, ok := dataMap["isCnameVerified"].(bool); ok {
         data.IsCnameVerified = types.BoolValue(val)
     }
+    if val, ok := dataMap["isSslOrdered"].(bool); ok {
+        data.IsSslOrdered = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isSslProvisioned"].(bool); ok {
+        data.IsSslProvisioned = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1216,8 +1203,6 @@ func (r *StatusPageDomainResource) Update(ctx context.Context, req resource.Upda
         "domainId": true,
         "statusPageId": true,
         "subdomain": true,
-        "isSslOrdered": true,
-        "isSslProvisioned": true,
         "customCertificate": true,
         "customCertificateKey": true,
         "isCustomCertificate": true,
@@ -1228,6 +1213,8 @@ func (r *StatusPageDomainResource) Update(ctx context.Context, req resource.Upda
         "fullDomain": true,
         "createdByUserId": true,
         "isCnameVerified": true,
+        "isSslOrdered": true,
+        "isSslProvisioned": true,
         "_id": true,
     }
 
@@ -1406,12 +1393,6 @@ func (r *StatusPageDomainResource) Update(ctx context.Context, req resource.Upda
     } else {
         data.Subdomain = types.StringNull()
     }
-    if val, ok := dataMap["isSslOrdered"].(bool); ok {
-        data.IsSslOrdered = types.BoolValue(val)
-    }
-    if val, ok := dataMap["isSslProvisioned"].(bool); ok {
-        data.IsSslProvisioned = types.BoolValue(val)
-    }
     if obj, ok := dataMap["customCertificate"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1673,6 +1654,12 @@ func (r *StatusPageDomainResource) Update(ctx context.Context, req resource.Upda
     }
     if val, ok := dataMap["isCnameVerified"].(bool); ok {
         data.IsCnameVerified = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isSslOrdered"].(bool); ok {
+        data.IsSslOrdered = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isSslProvisioned"].(bool); ok {
+        data.IsSslProvisioned = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
