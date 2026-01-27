@@ -32,7 +32,7 @@ type MetricTypeDataDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
-    Services types.List `tfsdk:"services"`
+    Services types.Set `tfsdk:"services"`
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
     Unit types.String `tfsdk:"unit"`
@@ -73,7 +73,7 @@ func (d *MetricTypeDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
-            "services": schema.ListAttribute{
+            "services": schema.SetAttribute{
                 MarkdownDescription: "List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -188,8 +188,8 @@ func (d *MetricTypeDataDataSource) Read(ctx context.Context, req datasource.Read
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Services = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Services = setValue
     }
     if val, ok := metricTypeDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)

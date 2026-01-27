@@ -32,15 +32,15 @@ resource "oneuptime_metric" "example" {
 - `time_unix_nano` (Number) Time (in Unix Nano). Computed.
 - `start_time_unix_nano` (Number) Start Time (in Unix Nano). Computed.
 - `attributes` (String) Attributes. Computed.
-- `attribute_keys` (List) Attribute Keys. Computed.
+- `attribute_keys` (Set) Attribute Keys. Computed.
 - `is_monotonic` (Bool) Is Monotonic. Computed.
 - `count` (Number) Count. Computed.
 - `sum` (Number) Sum. Computed.
 - `value` (Number) Value. Computed.
 - `min` (Number) Min. Computed.
 - `max` (Number) Max. Computed.
-- `bucket_counts` (List) Bucket Counts. Computed.
-- `explicit_bounds` (List) Explicit Bonds. Computed.
+- `bucket_counts` (Set) Bucket Counts. Computed.
+- `explicit_bounds` (Set) Explicit Bonds. Computed.
 
 ## Import
 

@@ -46,7 +46,7 @@ type IncomingCallPolicyDataDataSourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     RepeatPolicyIfNoOneAnswers types.Bool `tfsdk:"repeat_policy_if_no_one_answers"`
     RepeatPolicyIfNoOneAnswersTimes types.Number `tfsdk:"repeat_policy_if_no_one_answers_times"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
     ProjectCallSmsConfigId types.String `tfsdk:"project_call_sms_config_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -140,7 +140,7 @@ func (d *IncomingCallPolicyDataDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "Maximum repeat attempts if no one answers. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -285,8 +285,8 @@ func (d *IncomingCallPolicyDataDataSource) Read(ctx context.Context, req datasou
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := incomingCallPolicyDataResponse["project_call_sms_config_id"].(string); ok {
         data.ProjectCallSmsConfigId = types.StringValue(val)

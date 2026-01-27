@@ -10,6 +10,8 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "encoding/json"
+    "net/url"
+    "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -155,17 +157,19 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -196,17 +200,19 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
             data.Name = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Name = types.StringValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Name = types.StringValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -231,17 +237,19 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
             data.FileType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.FileType = types.StringValue(string(jsonBytes))
             } else {
-                data.FileType = types.StringValue(fmt.Sprintf("%v", obj))
+                data.FileType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.FileType = types.StringValue(string(jsonBytes))
             } else {
-                data.FileType = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.FileType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -266,17 +274,19 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
             data.IsPublic = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.IsPublic = types.StringValue(string(jsonBytes))
             } else {
-                data.IsPublic = types.StringValue(fmt.Sprintf("%v", obj))
+                data.IsPublic = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.IsPublic = types.StringValue(string(jsonBytes))
             } else {
-                data.IsPublic = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.IsPublic = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -367,6 +377,27 @@ func (r *FileResource) convertTerraformListToInterface(terraformList types.List)
     return result
 }
 
+// Helper method to convert Terraform set to Go interface{}
+func (r *FileResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+    if terraformSet.IsNull() || terraformSet.IsUnknown() {
+        return nil
+    }
+    
+    var stringList []string
+    terraformSet.ElementsAs(context.Background(), &stringList, false)
+    
+    // Convert string array to OneUptime format with _id fields
+    var result []interface{}
+    for _, str := range stringList {
+        if str != "" {
+            result = append(result, map[string]interface{}{
+                "_id": str,
+            })
+        }
+    }
+    return result
+}
+
 // Helper method to parse JSON field for complex objects
 func (r *FileResource) parseJSONField(terraformString types.String) interface{} {
     if terraformString.IsNull() || terraformString.IsUnknown() || terraformString.ValueString() == "" {
@@ -380,6 +411,40 @@ func (r *FileResource) parseJSONField(terraformString types.String) interface{} 
     }
 
     return result
+}
+
+// Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
+func (r *FileResource) normalizeURLWrappers(value interface{}) interface{} {
+    switch v := value.(type) {
+    case map[string]interface{}:
+        if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
+            if val, ok := v["value"].(string); ok {
+                v["value"] = r.normalizeURLString(val)
+            }
+        }
+        for key, child := range v {
+            v[key] = r.normalizeURLWrappers(child)
+        }
+        return v
+    case []interface{}:
+        for i, child := range v {
+            v[i] = r.normalizeURLWrappers(child)
+        }
+        return v
+    default:
+        return v
+    }
+}
+
+func (r *FileResource) normalizeURLString(value string) string {
+    parsed, err := url.Parse(value)
+    if err != nil {
+        return value
+    }
+    if parsed.Path == "/" && parsed.RawQuery == "" && parsed.Fragment == "" {
+        return strings.TrimSuffix(value, "/")
+    }
+    return value
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization

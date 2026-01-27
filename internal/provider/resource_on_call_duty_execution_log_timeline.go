@@ -11,6 +11,8 @@ import (
     "math/big"
     "net/http"
     "encoding/json"
+    "net/url"
+    "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -236,17 +238,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -271,17 +275,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -306,17 +312,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -341,17 +349,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -396,17 +406,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -431,17 +443,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.TriggeredByIncidentId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.TriggeredByIncidentId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -466,17 +480,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.TriggeredByAlertId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.TriggeredByAlertId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -501,17 +517,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.TriggeredByAlertEpisodeId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.TriggeredByAlertEpisodeId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -536,17 +554,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyPolicyExecutionLogId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyPolicyExecutionLogId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -571,17 +591,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -606,17 +628,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UserNotificationEventType = types.StringValue(string(jsonBytes))
             } else {
-                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UserNotificationEventType = types.StringValue(string(jsonBytes))
             } else {
-                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -641,17 +665,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.AlertSentToUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.AlertSentToUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -676,17 +702,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UserBelongsToTeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UserBelongsToTeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -711,17 +739,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyScheduleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyScheduleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -746,17 +776,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.StatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -781,17 +813,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.Status = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -816,17 +850,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -856,17 +892,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.AcknowledgedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.AcknowledgedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -891,17 +929,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Create(ctx context.Context, req
             data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OverridedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OverridedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1005,17 +1045,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1040,17 +1082,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1075,17 +1119,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1110,17 +1156,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1165,17 +1213,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyPolicyId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyPolicyId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1200,17 +1250,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.TriggeredByIncidentId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.TriggeredByIncidentId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.TriggeredByIncidentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1235,17 +1287,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.TriggeredByAlertId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.TriggeredByAlertId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.TriggeredByAlertId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1270,17 +1324,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.TriggeredByAlertEpisodeId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.TriggeredByAlertEpisodeId = types.StringValue(string(jsonBytes))
             } else {
-                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.TriggeredByAlertEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1305,17 +1361,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyPolicyExecutionLogId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyPolicyExecutionLogId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyPolicyExecutionLogId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1340,17 +1398,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyPolicyEscalationRuleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyPolicyEscalationRuleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1375,17 +1435,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UserNotificationEventType = types.StringValue(string(jsonBytes))
             } else {
-                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UserNotificationEventType = types.StringValue(string(jsonBytes))
             } else {
-                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UserNotificationEventType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1410,17 +1472,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.AlertSentToUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.AlertSentToUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.AlertSentToUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1445,17 +1509,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UserBelongsToTeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UserBelongsToTeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UserBelongsToTeamId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1480,17 +1546,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OnCallDutyScheduleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OnCallDutyScheduleId = types.StringValue(string(jsonBytes))
             } else {
-                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OnCallDutyScheduleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1515,17 +1583,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.StatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1550,17 +1620,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.Status = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1585,17 +1657,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1625,17 +1699,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.AcknowledgedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.AcknowledgedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.AcknowledgedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1660,17 +1736,19 @@ func (r *OnCallDutyExecutionLogTimelineResource) Read(ctx context.Context, req r
             data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OverridedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OverridedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OverridedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1751,6 +1829,27 @@ func (r *OnCallDutyExecutionLogTimelineResource) convertTerraformListToInterface
     return result
 }
 
+// Helper method to convert Terraform set to Go interface{}
+func (r *OnCallDutyExecutionLogTimelineResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+    if terraformSet.IsNull() || terraformSet.IsUnknown() {
+        return nil
+    }
+    
+    var stringList []string
+    terraformSet.ElementsAs(context.Background(), &stringList, false)
+    
+    // Convert string array to OneUptime format with _id fields
+    var result []interface{}
+    for _, str := range stringList {
+        if str != "" {
+            result = append(result, map[string]interface{}{
+                "_id": str,
+            })
+        }
+    }
+    return result
+}
+
 // Helper method to parse JSON field for complex objects
 func (r *OnCallDutyExecutionLogTimelineResource) parseJSONField(terraformString types.String) interface{} {
     if terraformString.IsNull() || terraformString.IsUnknown() || terraformString.ValueString() == "" {
@@ -1764,6 +1863,40 @@ func (r *OnCallDutyExecutionLogTimelineResource) parseJSONField(terraformString 
     }
 
     return result
+}
+
+// Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
+func (r *OnCallDutyExecutionLogTimelineResource) normalizeURLWrappers(value interface{}) interface{} {
+    switch v := value.(type) {
+    case map[string]interface{}:
+        if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
+            if val, ok := v["value"].(string); ok {
+                v["value"] = r.normalizeURLString(val)
+            }
+        }
+        for key, child := range v {
+            v[key] = r.normalizeURLWrappers(child)
+        }
+        return v
+    case []interface{}:
+        for i, child := range v {
+            v[i] = r.normalizeURLWrappers(child)
+        }
+        return v
+    default:
+        return v
+    }
+}
+
+func (r *OnCallDutyExecutionLogTimelineResource) normalizeURLString(value string) string {
+    parsed, err := url.Parse(value)
+    if err != nil {
+        return value
+    }
+    if parsed.Path == "/" && parsed.RawQuery == "" && parsed.Fragment == "" {
+        return strings.TrimSuffix(value, "/")
+    }
+    return value
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization

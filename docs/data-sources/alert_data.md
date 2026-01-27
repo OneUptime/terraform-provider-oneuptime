@@ -31,8 +31,8 @@ data "oneuptime_alert_data" "example" {
 - `description` (String) Short description of this alert. This will be visible on the status page. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `on_call_duty_policies` (List) List of on-call duty policy affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]. Computed.
-- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]. Computed.
+- `on_call_duty_policies` (Set) List of on-call duty policy affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]. Computed.
 - `current_alert_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_severity_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_status_when_this_alert_was_created_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

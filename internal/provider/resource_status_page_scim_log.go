@@ -11,6 +11,8 @@ import (
     "math/big"
     "net/http"
     "encoding/json"
+    "net/url"
+    "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -206,17 +208,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -241,17 +245,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -276,17 +282,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -311,17 +319,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -366,17 +376,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -401,17 +413,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusPageScimId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusPageScimId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -436,17 +450,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.OperationType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OperationType = types.StringValue(string(jsonBytes))
             } else {
-                data.OperationType = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OperationType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OperationType = types.StringValue(string(jsonBytes))
             } else {
-                data.OperationType = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OperationType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -471,17 +487,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.Status = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -506,17 +524,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.StatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -541,17 +561,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.LogBody = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.LogBody = types.StringValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", obj))
+                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.LogBody = types.StringValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -576,17 +598,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.HttpMethod = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.HttpMethod = types.StringValue(string(jsonBytes))
             } else {
-                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", obj))
+                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.HttpMethod = types.StringValue(string(jsonBytes))
             } else {
-                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -611,17 +635,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.RequestPath = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.RequestPath = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestPath = types.StringValue(fmt.Sprintf("%v", obj))
+                data.RequestPath = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.RequestPath = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestPath = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.RequestPath = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -655,17 +681,19 @@ func (r *StatusPageScimLogResource) Create(ctx context.Context, req resource.Cre
             data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.AffectedUserEmail = types.StringValue(string(jsonBytes))
             } else {
-                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", obj))
+                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.AffectedUserEmail = types.StringValue(string(jsonBytes))
             } else {
-                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -763,17 +791,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -798,17 +828,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -833,17 +865,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -868,17 +902,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -923,17 +959,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.StatusPageId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusPageId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusPageId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -958,17 +996,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusPageScimId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusPageScimId = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusPageScimId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -993,17 +1033,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.OperationType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.OperationType = types.StringValue(string(jsonBytes))
             } else {
-                data.OperationType = types.StringValue(fmt.Sprintf("%v", obj))
+                data.OperationType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.OperationType = types.StringValue(string(jsonBytes))
             } else {
-                data.OperationType = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.OperationType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1028,17 +1070,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.Status = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Status = types.StringValue(string(jsonBytes))
             } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1063,17 +1107,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.StatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.StatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1098,17 +1144,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.LogBody = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.LogBody = types.StringValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", obj))
+                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.LogBody = types.StringValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1133,17 +1181,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.HttpMethod = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.HttpMethod = types.StringValue(string(jsonBytes))
             } else {
-                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", obj))
+                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.HttpMethod = types.StringValue(string(jsonBytes))
             } else {
-                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.HttpMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1168,17 +1218,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.RequestPath = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.RequestPath = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestPath = types.StringValue(fmt.Sprintf("%v", obj))
+                data.RequestPath = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.RequestPath = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestPath = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.RequestPath = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1212,17 +1264,19 @@ func (r *StatusPageScimLogResource) Read(ctx context.Context, req resource.ReadR
             data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.AffectedUserEmail = types.StringValue(string(jsonBytes))
             } else {
-                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", obj))
+                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.AffectedUserEmail = types.StringValue(string(jsonBytes))
             } else {
-                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.AffectedUserEmail = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1303,6 +1357,27 @@ func (r *StatusPageScimLogResource) convertTerraformListToInterface(terraformLis
     return result
 }
 
+// Helper method to convert Terraform set to Go interface{}
+func (r *StatusPageScimLogResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+    if terraformSet.IsNull() || terraformSet.IsUnknown() {
+        return nil
+    }
+    
+    var stringList []string
+    terraformSet.ElementsAs(context.Background(), &stringList, false)
+    
+    // Convert string array to OneUptime format with _id fields
+    var result []interface{}
+    for _, str := range stringList {
+        if str != "" {
+            result = append(result, map[string]interface{}{
+                "_id": str,
+            })
+        }
+    }
+    return result
+}
+
 // Helper method to parse JSON field for complex objects
 func (r *StatusPageScimLogResource) parseJSONField(terraformString types.String) interface{} {
     if terraformString.IsNull() || terraformString.IsUnknown() || terraformString.ValueString() == "" {
@@ -1316,6 +1391,40 @@ func (r *StatusPageScimLogResource) parseJSONField(terraformString types.String)
     }
 
     return result
+}
+
+// Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
+func (r *StatusPageScimLogResource) normalizeURLWrappers(value interface{}) interface{} {
+    switch v := value.(type) {
+    case map[string]interface{}:
+        if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
+            if val, ok := v["value"].(string); ok {
+                v["value"] = r.normalizeURLString(val)
+            }
+        }
+        for key, child := range v {
+            v[key] = r.normalizeURLWrappers(child)
+        }
+        return v
+    case []interface{}:
+        for i, child := range v {
+            v[i] = r.normalizeURLWrappers(child)
+        }
+        return v
+    default:
+        return v
+    }
+}
+
+func (r *StatusPageScimLogResource) normalizeURLString(value string) string {
+    parsed, err := url.Parse(value)
+    if err != nil {
+        return value
+    }
+    if parsed.Path == "/" && parsed.RawQuery == "" && parsed.Fragment == "" {
+        return strings.TrimSuffix(value, "/")
+    }
+    return value
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization

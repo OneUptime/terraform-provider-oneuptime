@@ -36,7 +36,7 @@ type ApiKeyPermissionDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Permission types.String `tfsdk:"permission"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
     IsBlockPermission types.Bool `tfsdk:"is_block_permission"`
 }
 
@@ -89,7 +89,7 @@ func (d *ApiKeyPermissionDataDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -200,8 +200,8 @@ func (d *ApiKeyPermissionDataDataSource) Read(ctx context.Context, req datasourc
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := apiKeyPermissionDataResponse["is_block_permission"].(bool); ok {
         data.IsBlockPermission = types.BoolValue(val)

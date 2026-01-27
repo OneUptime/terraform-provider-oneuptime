@@ -42,7 +42,7 @@ type AiAgentDataDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
     IsDefault types.Bool `tfsdk:"is_default"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
 }
 
 func (d *AiAgentDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -118,7 +118,7 @@ func (d *AiAgentDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Is this the default AI Agent for the project? When set, this agent will be used for automated tasks.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -243,8 +243,8 @@ func (d *AiAgentDataDataSource) Read(ctx context.Context, req datasource.ReadReq
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
 
     // Write logs using the tflog package

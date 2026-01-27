@@ -35,7 +35,7 @@ type LogDataDataSourceModel struct {
     SeverityText types.String `tfsdk:"severity_text"`
     SeverityNumber types.Number `tfsdk:"severity_number"`
     Attributes types.String `tfsdk:"attributes"`
-    AttributeKeys types.List `tfsdk:"attribute_keys"`
+    AttributeKeys types.Set `tfsdk:"attribute_keys"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     Body types.String `tfsdk:"body"`
@@ -86,7 +86,7 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "Attributes",
                 Computed: true,
             },
-            "attribute_keys": schema.ListAttribute{
+            "attribute_keys": schema.SetAttribute{
                 MarkdownDescription: "Attribute Keys",
                 Computed: true,
                 ElementType: types.StringType,
@@ -202,8 +202,8 @@ func (d *LogDataDataSource) Read(ctx context.Context, req datasource.ReadRequest
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.AttributeKeys = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.AttributeKeys = setValue
     }
     if val, ok := logDataResponse["trace_id"].(string); ok {
         data.TraceId = types.StringValue(val)

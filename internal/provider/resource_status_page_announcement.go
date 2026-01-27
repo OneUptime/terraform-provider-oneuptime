@@ -11,13 +11,15 @@ import (
     "math/big"
     "net/http"
     "encoding/json"
+    "net/url"
+    "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -37,13 +39,13 @@ type StatusPageAnnouncementResource struct {
 type StatusPageAnnouncementResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
-    StatusPages types.List `tfsdk:"status_pages"`
-    Monitors types.List `tfsdk:"monitors"`
+    StatusPages types.Set `tfsdk:"status_pages"`
+    Monitors types.Set `tfsdk:"monitors"`
     Title types.String `tfsdk:"title"`
     ShowAnnouncementAt types.String `tfsdk:"show_announcement_at"`
     EndAnnouncementAt types.String `tfsdk:"end_announcement_at"`
     Description types.String `tfsdk:"description"`
-    Attachments types.List `tfsdk:"attachments"`
+    Attachments types.Set `tfsdk:"attachments"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
     ShouldStatusPageSubscribersBeNotified types.Bool `tfsdk:"should_status_page_subscribers_be_notified"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -74,28 +76,27 @@ func (r *StatusPageAnnouncementResource) Schema(ctx context.Context, req resourc
             },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "status_pages": schema.ListAttribute{
+            "status_pages": schema.SetAttribute{
                 MarkdownDescription: "Status Pages to show show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.List{
-                    listplanmodifier.UseStateForUnknown(),
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
                 },
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this announcement. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.List{
-                    listplanmodifier.UseStateForUnknown(),
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
                 },
             },
             "title": schema.StringAttribute{
@@ -118,13 +119,13 @@ func (r *StatusPageAnnouncementResource) Schema(ctx context.Context, req resourc
                 MarkdownDescription: "Text of the announcement. This can be in Markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Required: true,
             },
-            "attachments": schema.ListAttribute{
+            "attachments": schema.SetAttribute{
                 MarkdownDescription: "Files attached to this announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
-                PlanModifiers: []planmodifier.List{
-                    listplanmodifier.UseStateForUnknown(),
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
                 },
             },
             "subscriber_notification_status_message": schema.StringAttribute{
@@ -212,14 +213,13 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
     // Create API request body
     statusPageAnnouncementRequest := map[string]interface{}{
         "data": map[string]interface{}{
-        "projectId": data.ProjectId.ValueString(),
-        "statusPages": r.convertTerraformListToInterface(data.StatusPages),
-        "monitors": r.convertTerraformListToInterface(data.Monitors),
+        "statusPages": r.convertTerraformSetToInterface(data.StatusPages),
+        "monitors": r.convertTerraformSetToInterface(data.Monitors),
         "title": data.Title.ValueString(),
         "showAnnouncementAt": r.parseJSONField(data.ShowAnnouncementAt),
         "endAnnouncementAt": r.parseJSONField(data.EndAnnouncementAt),
         "description": data.Description.ValueString(),
-        "attachments": r.convertTerraformListToInterface(data.Attachments),
+        "attachments": r.convertTerraformSetToInterface(data.Attachments),
         "subscriberNotificationStatusMessage": data.SubscriberNotificationStatusMessage.ValueString(),
         "shouldStatusPageSubscribersBeNotified": data.ShouldStatusPageSubscribersBeNotified.ValueBool(),
         },
@@ -262,17 +262,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -297,70 +299,68 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
         data.ProjectId = types.StringNull()
     }
     if val, ok := dataMap["statusPages"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.StatusPages = types.ListValueMust(types.StringType, listItems)
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.StatusPages = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.Monitors = types.ListValueMust(types.StringType, listItems)
+        data.Monitors = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.Monitors = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["title"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -374,17 +374,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.Title = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Title = types.StringValue(string(jsonBytes))
             } else {
-                data.Title = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Title = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Title = types.StringValue(string(jsonBytes))
             } else {
-                data.Title = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Title = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -409,17 +411,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.ShowAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.ShowAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -444,17 +448,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.EndAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.EndAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -479,17 +485,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Description = types.StringValue(string(jsonBytes))
             } else {
-                data.Description = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Description = types.StringValue(string(jsonBytes))
             } else {
-                data.Description = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -503,37 +511,36 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
         data.Description = types.StringNull()
     }
     if val, ok := dataMap["attachments"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.Attachments = types.ListValueMust(types.StringType, listItems)
+        data.Attachments = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.Attachments = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.Attachments = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -547,17 +554,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", obj))
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -585,17 +594,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -620,17 +631,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -655,17 +668,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -699,17 +714,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -734,17 +751,19 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
             data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.SubscriberNotificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", obj))
+                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.SubscriberNotificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -847,17 +866,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -882,70 +903,68 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
         data.ProjectId = types.StringNull()
     }
     if val, ok := dataMap["statusPages"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.StatusPages = types.ListValueMust(types.StringType, listItems)
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.StatusPages = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.Monitors = types.ListValueMust(types.StringType, listItems)
+        data.Monitors = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.Monitors = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["title"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -959,17 +978,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.Title = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Title = types.StringValue(string(jsonBytes))
             } else {
-                data.Title = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Title = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Title = types.StringValue(string(jsonBytes))
             } else {
-                data.Title = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Title = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -994,17 +1015,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.ShowAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.ShowAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1029,17 +1052,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.EndAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.EndAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1064,17 +1089,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Description = types.StringValue(string(jsonBytes))
             } else {
-                data.Description = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Description = types.StringValue(string(jsonBytes))
             } else {
-                data.Description = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1088,37 +1115,36 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
         data.Description = types.StringNull()
     }
     if val, ok := dataMap["attachments"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.Attachments = types.ListValueMust(types.StringType, listItems)
+        data.Attachments = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.Attachments = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.Attachments = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1132,17 +1158,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", obj))
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1170,17 +1198,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1205,17 +1235,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1240,17 +1272,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1284,17 +1318,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1319,17 +1355,19 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
             data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.SubscriberNotificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", obj))
+                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.SubscriberNotificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1381,10 +1419,10 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
     requestDataMap := statusPageAnnouncementRequest["data"].(map[string]interface{})
 
     if !data.StatusPages.IsUnknown() && !state.StatusPages.IsUnknown() && !data.StatusPages.Equal(state.StatusPages) {
-        requestDataMap["statusPages"] = r.convertTerraformListToInterface(data.StatusPages)
+        requestDataMap["statusPages"] = r.convertTerraformSetToInterface(data.StatusPages)
     }
     if !data.Monitors.IsUnknown() && !state.Monitors.IsUnknown() && !data.Monitors.Equal(state.Monitors) {
-        requestDataMap["monitors"] = r.convertTerraformListToInterface(data.Monitors)
+        requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
     }
     if !data.Title.IsUnknown() && !state.Title.IsUnknown() && !data.Title.Equal(state.Title) {
         requestDataMap["title"] = data.Title.ValueString()
@@ -1409,7 +1447,7 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
         requestDataMap["description"] = data.Description.ValueString()
     }
     if !data.Attachments.IsUnknown() && !state.Attachments.IsUnknown() && !data.Attachments.Equal(state.Attachments) {
-        requestDataMap["attachments"] = r.convertTerraformListToInterface(data.Attachments)
+        requestDataMap["attachments"] = r.convertTerraformSetToInterface(data.Attachments)
     }
     if !data.SubscriberNotificationStatusMessage.IsUnknown() && !state.SubscriberNotificationStatusMessage.IsUnknown() && !data.SubscriberNotificationStatusMessage.Equal(state.SubscriberNotificationStatusMessage) {
         requestDataMap["subscriberNotificationStatusMessage"] = data.SubscriberNotificationStatusMessage.ValueString()
@@ -1488,17 +1526,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.Id = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Id = types.StringValue(string(jsonBytes))
             } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1523,70 +1563,68 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
         data.ProjectId = types.StringNull()
     }
     if val, ok := dataMap["statusPages"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.StatusPages = types.ListValueMust(types.StringType, listItems)
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.StatusPages = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.Monitors = types.ListValueMust(types.StringType, listItems)
+        data.Monitors = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.Monitors = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["title"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1600,17 +1638,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.Title = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Title = types.StringValue(string(jsonBytes))
             } else {
-                data.Title = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Title = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Title = types.StringValue(string(jsonBytes))
             } else {
-                data.Title = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Title = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1635,17 +1675,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.ShowAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.ShowAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.ShowAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1670,17 +1712,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.EndAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.EndAnnouncementAt = types.StringValue(string(jsonBytes))
             } else {
-                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.EndAnnouncementAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1705,17 +1749,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.Description = types.StringValue(string(jsonBytes))
             } else {
-                data.Description = types.StringValue(fmt.Sprintf("%v", obj))
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.Description = types.StringValue(string(jsonBytes))
             } else {
-                data.Description = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.Description = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1729,37 +1775,36 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
         data.Description = types.StringNull()
     }
     if val, ok := dataMap["attachments"].([]interface{}); ok {
-        // Convert API response list to Terraform list
-        var listItems []attr.Value
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
         for _, item := range val {
             if itemMap, ok := item.(map[string]interface{}); ok {
                 // Handle objects with _id field (OneUptime format)
                 if id, ok := itemMap["_id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else if id, ok := itemMap["id"].(string); ok {
-                    listItems = append(listItems, types.StringValue(id))
+                    setItems = append(setItems, types.StringValue(id))
                 } else {
                     // Convert entire object to JSON string if no id field
                     if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        listItems = append(listItems, types.StringValue(string(jsonBytes)))
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
                     }
                 }
             } else if str, ok := item.(string); ok {
                 // Handle direct string values
-                listItems = append(listItems, types.StringValue(str))
+                setItems = append(setItems, types.StringValue(str))
             }
         }
-        // Sort list items by their string value to ensure consistent ordering
-        // This fixes idempotency issues where server returns items in different order
-        sort.Slice(listItems, func(i, j int) bool {
-            iStr := listItems[i].(types.String).ValueString()
-            jStr := listItems[j].(types.String).ValueString()
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.Attachments = types.ListValueMust(types.StringType, listItems)
+        data.Attachments = types.SetValueMust(types.StringType, setItems)
     } else {
-        // For lists, always use empty list instead of null to match default values
-        data.Attachments = types.ListValueMust(types.StringType, []attr.Value{})
+        // For sets, always use empty set instead of null to match default values
+        data.Attachments = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1773,17 +1818,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", obj))
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1811,17 +1858,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1846,17 +1895,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.UpdatedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1881,17 +1932,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.DeletedAt = types.StringValue(string(jsonBytes))
             } else {
-                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.DeletedAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1925,17 +1978,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.CreatedByUserId = types.StringValue(string(jsonBytes))
             } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -1960,17 +2015,19 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
             data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            if jsonBytes, err := json.Marshal(obj); err == nil {
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
                 data.SubscriberNotificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", obj))
+                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
-            if jsonBytes, err := json.Marshal(obj["value"]); err == nil {
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
                 data.SubscriberNotificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", obj["value"]))
+                data.SubscriberNotificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
@@ -2058,6 +2115,27 @@ func (r *StatusPageAnnouncementResource) convertTerraformListToInterface(terrafo
     return result
 }
 
+// Helper method to convert Terraform set to Go interface{}
+func (r *StatusPageAnnouncementResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+    if terraformSet.IsNull() || terraformSet.IsUnknown() {
+        return nil
+    }
+    
+    var stringList []string
+    terraformSet.ElementsAs(context.Background(), &stringList, false)
+    
+    // Convert string array to OneUptime format with _id fields
+    var result []interface{}
+    for _, str := range stringList {
+        if str != "" {
+            result = append(result, map[string]interface{}{
+                "_id": str,
+            })
+        }
+    }
+    return result
+}
+
 // Helper method to parse JSON field for complex objects
 func (r *StatusPageAnnouncementResource) parseJSONField(terraformString types.String) interface{} {
     if terraformString.IsNull() || terraformString.IsUnknown() || terraformString.ValueString() == "" {
@@ -2071,6 +2149,40 @@ func (r *StatusPageAnnouncementResource) parseJSONField(terraformString types.St
     }
 
     return result
+}
+
+// Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
+func (r *StatusPageAnnouncementResource) normalizeURLWrappers(value interface{}) interface{} {
+    switch v := value.(type) {
+    case map[string]interface{}:
+        if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
+            if val, ok := v["value"].(string); ok {
+                v["value"] = r.normalizeURLString(val)
+            }
+        }
+        for key, child := range v {
+            v[key] = r.normalizeURLWrappers(child)
+        }
+        return v
+    case []interface{}:
+        for i, child := range v {
+            v[i] = r.normalizeURLWrappers(child)
+        }
+        return v
+    default:
+        return v
+    }
+}
+
+func (r *StatusPageAnnouncementResource) normalizeURLString(value string) string {
+    parsed, err := url.Parse(value)
+    if err != nil {
+        return value
+    }
+    if parsed.Path == "/" && parsed.RawQuery == "" && parsed.Fragment == "" {
+        return strings.TrimSuffix(value, "/")
+    }
+    return value
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization

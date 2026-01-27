@@ -37,7 +37,7 @@ type StatusPageDataDataSourceModel struct {
     PageDescription types.String `tfsdk:"page_description"`
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
@@ -70,7 +70,7 @@ type StatusPageDataDataSourceModel struct {
     OverviewPageDescription types.String `tfsdk:"overview_page_description"`
     HidePoweredByOneUptimeBranding types.Bool `tfsdk:"hide_powered_by_one_uptime_branding"`
     DefaultBarColor types.String `tfsdk:"default_bar_color"`
-    DowntimeMonitorStatuses types.List `tfsdk:"downtime_monitor_statuses"`
+    DowntimeMonitorStatuses types.Set `tfsdk:"downtime_monitor_statuses"`
     SubscriberTimezones types.String `tfsdk:"subscriber_timezones"`
     IsReportEnabled types.Bool `tfsdk:"is_report_enabled"`
     ReportStartDateTime types.String `tfsdk:"report_start_date_time"`
@@ -143,7 +143,7 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -276,7 +276,7 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "Color object",
                 Computed: true,
             },
-            "downtime_monitor_statuses": schema.ListAttribute{
+            "downtime_monitor_statuses": schema.SetAttribute{
                 MarkdownDescription: "List of monitors statuses that are considered as \"down\" for this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -454,8 +454,8 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := statusPageDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
@@ -562,8 +562,8 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.DowntimeMonitorStatuses = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DowntimeMonitorStatuses = setValue
     }
     if val, ok := statusPageDataResponse["subscriber_timezones"].(string); ok {
         data.SubscriberTimezones = types.StringValue(val)

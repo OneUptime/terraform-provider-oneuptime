@@ -39,9 +39,9 @@ type ScheduledMaintenanceTemplateDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    Monitors types.List `tfsdk:"monitors"`
-    StatusPages types.List `tfsdk:"status_pages"`
-    Labels types.List `tfsdk:"labels"`
+    Monitors types.Set `tfsdk:"monitors"`
+    StatusPages types.Set `tfsdk:"status_pages"`
+    Labels types.Set `tfsdk:"labels"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
     FirstEventScheduledAt types.String `tfsdk:"first_event_scheduled_at"`
     FirstEventStartsAt types.String `tfsdk:"first_event_starts_at"`
@@ -117,17 +117,17 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Schema(ctx context.Context,
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "status_pages": schema.ListAttribute{
+            "status_pages": schema.SetAttribute{
                 MarkdownDescription: "List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -291,8 +291,8 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Read(ctx context.Context, r
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Monitors = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Monitors = setValue
     }
     if val, ok := scheduledMaintenanceTemplateDataResponse["status_pages"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -303,8 +303,8 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Read(ctx context.Context, r
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.StatusPages = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.StatusPages = setValue
     }
     if val, ok := scheduledMaintenanceTemplateDataResponse["labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -315,8 +315,8 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Read(ctx context.Context, r
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := scheduledMaintenanceTemplateDataResponse["change_monitor_status_to_id"].(string); ok {
         data.ChangeMonitorStatusToId = types.StringValue(val)

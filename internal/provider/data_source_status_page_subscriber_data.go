@@ -45,7 +45,7 @@ type StatusPageSubscriberDataDataSourceModel struct {
     SendYouHaveSubscribedMessage types.Bool `tfsdk:"send_you_have_subscribed_message"`
     IsSubscribedToAllResources types.Bool `tfsdk:"is_subscribed_to_all_resources"`
     IsSubscribedToAllEventTypes types.Bool `tfsdk:"is_subscribed_to_all_event_types"`
-    StatusPageResources types.List `tfsdk:"status_page_resources"`
+    StatusPageResources types.Set `tfsdk:"status_page_resources"`
     StatusPageEventTypes types.String `tfsdk:"status_page_event_types"`
     InternalNote types.String `tfsdk:"internal_note"`
 }
@@ -135,7 +135,7 @@ func (d *StatusPageSubscriberDataDataSource) Schema(ctx context.Context, req dat
                 MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
             },
-            "status_page_resources": schema.ListAttribute{
+            "status_page_resources": schema.SetAttribute{
                 MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Subscriber]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -277,8 +277,8 @@ func (d *StatusPageSubscriberDataDataSource) Read(ctx context.Context, req datas
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.StatusPageResources = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.StatusPageResources = setValue
     }
     if val, ok := statusPageSubscriberDataResponse["status_page_event_types"].(string); ok {
         data.StatusPageEventTypes = types.StringValue(val)

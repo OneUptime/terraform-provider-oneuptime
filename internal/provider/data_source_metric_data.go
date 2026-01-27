@@ -38,15 +38,15 @@ type MetricDataDataSourceModel struct {
     TimeUnixNano types.Number `tfsdk:"time_unix_nano"`
     StartTimeUnixNano types.Number `tfsdk:"start_time_unix_nano"`
     Attributes types.String `tfsdk:"attributes"`
-    AttributeKeys types.List `tfsdk:"attribute_keys"`
+    AttributeKeys types.Set `tfsdk:"attribute_keys"`
     IsMonotonic types.Bool `tfsdk:"is_monotonic"`
     CountValue types.Number `tfsdk:"count_value"`
     Sum types.Number `tfsdk:"sum"`
     Value types.Number `tfsdk:"value"`
     Min types.Number `tfsdk:"min"`
     Max types.Number `tfsdk:"max"`
-    BucketCounts types.List `tfsdk:"bucket_counts"`
-    ExplicitBounds types.List `tfsdk:"explicit_bounds"`
+    BucketCounts types.Set `tfsdk:"bucket_counts"`
+    ExplicitBounds types.Set `tfsdk:"explicit_bounds"`
 }
 
 func (d *MetricDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -106,7 +106,7 @@ func (d *MetricDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "Attributes",
                 Computed: true,
             },
-            "attribute_keys": schema.ListAttribute{
+            "attribute_keys": schema.SetAttribute{
                 MarkdownDescription: "Attribute Keys",
                 Computed: true,
                 ElementType: types.StringType,
@@ -135,12 +135,12 @@ func (d *MetricDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "Max",
                 Computed: true,
             },
-            "bucket_counts": schema.ListAttribute{
+            "bucket_counts": schema.SetAttribute{
                 MarkdownDescription: "Bucket Counts",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "explicit_bounds": schema.ListAttribute{
+            "explicit_bounds": schema.SetAttribute{
                 MarkdownDescription: "Explicit Bonds",
                 Computed: true,
                 ElementType: types.StringType,
@@ -253,8 +253,8 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.AttributeKeys = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.AttributeKeys = setValue
     }
     if val, ok := metricDataResponse["is_monotonic"].(bool); ok {
         data.IsMonotonic = types.BoolValue(val)
@@ -283,8 +283,8 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.BucketCounts = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.BucketCounts = setValue
     }
     if val, ok := metricDataResponse["explicit_bounds"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -295,8 +295,8 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.ExplicitBounds = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.ExplicitBounds = setValue
     }
 
     // Write logs using the tflog package

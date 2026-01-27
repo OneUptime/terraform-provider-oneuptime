@@ -26,7 +26,7 @@ resource "oneuptime_status_page" "example" {
 - `page_title` (String) Title of your Status Page. This is used for SEO.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
 - `page_description` (String) Description of your Status Page. This is used for SEO.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
 - `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
-- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
 - `favicon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `logo_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `cover_image_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
@@ -81,7 +81,7 @@ resource "oneuptime_status_page" "example" {
 - `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [No access - you don't have permission for this operation]. Computed.
-- `downtime_monitor_statuses` (List) List of monitors statuses that are considered as "down" for this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
+- `downtime_monitor_statuses` (Set) List of monitors statuses that are considered as "down" for this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
 
 ## Import
 

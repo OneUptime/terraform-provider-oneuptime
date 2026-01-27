@@ -29,7 +29,7 @@ data "oneuptime_log_data" "example" {
 - `severity_text` (String) Severity Text. Computed.
 - `severity_number` (Number) Severity Number. Computed.
 - `attributes` (String) Attributes. Computed.
-- `attribute_keys` (List) Attribute Keys. Computed.
+- `attribute_keys` (Set) Attribute Keys. Computed.
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.
 - `body` (String) Log Body. Computed.

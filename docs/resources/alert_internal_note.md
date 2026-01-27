@@ -24,7 +24,7 @@ resource "oneuptime_alert_internal_note" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `note` (String) Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]. Computed.
-- `attachments` (List) Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]. Computed.
+- `attachments` (Set) Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]. Computed.
 - `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.

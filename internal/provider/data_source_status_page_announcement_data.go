@@ -33,13 +33,13 @@ type StatusPageAnnouncementDataDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    StatusPages types.List `tfsdk:"status_pages"`
-    Monitors types.List `tfsdk:"monitors"`
+    StatusPages types.Set `tfsdk:"status_pages"`
+    Monitors types.Set `tfsdk:"monitors"`
     Title types.String `tfsdk:"title"`
     ShowAnnouncementAt types.String `tfsdk:"show_announcement_at"`
     EndAnnouncementAt types.String `tfsdk:"end_announcement_at"`
     Description types.String `tfsdk:"description"`
-    Attachments types.List `tfsdk:"attachments"`
+    Attachments types.Set `tfsdk:"attachments"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatus types.String `tfsdk:"subscriber_notification_status"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
@@ -84,12 +84,12 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "status_pages": schema.ListAttribute{
+            "status_pages": schema.SetAttribute{
                 MarkdownDescription: "Status Pages to show show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this announcement. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -110,7 +110,7 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "Text of the announcement. This can be in Markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
             },
-            "attachments": schema.ListAttribute{
+            "attachments": schema.SetAttribute{
                 MarkdownDescription: "Files attached to this announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -228,8 +228,8 @@ func (d *StatusPageAnnouncementDataDataSource) Read(ctx context.Context, req dat
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.StatusPages = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.StatusPages = setValue
     }
     if val, ok := statusPageAnnouncementDataResponse["monitors"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -240,8 +240,8 @@ func (d *StatusPageAnnouncementDataDataSource) Read(ctx context.Context, req dat
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Monitors = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Monitors = setValue
     }
     if val, ok := statusPageAnnouncementDataResponse["title"].(string); ok {
         data.Title = types.StringValue(val)
@@ -264,8 +264,8 @@ func (d *StatusPageAnnouncementDataDataSource) Read(ctx context.Context, req dat
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Attachments = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Attachments = setValue
     }
     if val, ok := statusPageAnnouncementDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

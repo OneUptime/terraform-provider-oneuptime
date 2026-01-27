@@ -39,7 +39,7 @@ type WorkflowDataDataSourceModel struct {
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph types.String `tfsdk:"graph"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
 }
 
 func (d *WorkflowDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -103,7 +103,7 @@ func (d *WorkflowDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "Workflow Graph in JSON. Ideally, create this via UI and not via API.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -219,8 +219,8 @@ func (d *WorkflowDataDataSource) Read(ctx context.Context, req datasource.ReadRe
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
 
     // Write logs using the tflog package

@@ -37,8 +37,8 @@ type AlertDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
-    OnCallDutyPolicies types.List `tfsdk:"on_call_duty_policies"`
-    Labels types.List `tfsdk:"labels"`
+    OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    Labels types.Set `tfsdk:"labels"`
     CurrentAlertStateId types.String `tfsdk:"current_alert_state_id"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     MonitorStatusWhenThisAlertWasCreatedId types.String `tfsdk:"monitor_status_when_this_alert_was_created_id"`
@@ -108,12 +108,12 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "on_call_duty_policies": schema.ListAttribute{
+            "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policy affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert], Update: [Project Owner, Project Admin, Project Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -279,8 +279,8 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.OnCallDutyPolicies = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.OnCallDutyPolicies = setValue
     }
     if val, ok := alertDataResponse["labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -291,8 +291,8 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := alertDataResponse["current_alert_state_id"].(string); ok {
         data.CurrentAlertStateId = types.StringValue(val)

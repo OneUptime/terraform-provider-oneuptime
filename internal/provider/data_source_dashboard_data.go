@@ -37,7 +37,7 @@ type DashboardDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
     DashboardViewConfig types.String `tfsdk:"dashboard_view_config"`
 }
 
@@ -94,7 +94,7 @@ func (d *DashboardDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -208,8 +208,8 @@ func (d *DashboardDataDataSource) Read(ctx context.Context, req datasource.ReadR
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := dashboardDataResponse["dashboard_view_config"].(string); ok {
         data.DashboardViewConfig = types.StringValue(val)

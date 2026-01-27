@@ -31,7 +31,7 @@ resource "oneuptime_ai_agent" "example" {
 - `icon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_default` (Bool) Is this the default AI Agent for the project? When set, this agent will be used for automated tasks.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]. Computed.
-- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Read AI Agent], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

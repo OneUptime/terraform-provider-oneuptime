@@ -24,7 +24,7 @@ resource "oneuptime_monitor_group" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `name` (String) Any friendly name for this monitor group. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]. Required.
 - `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]. Computed.
-- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

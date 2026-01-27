@@ -38,9 +38,9 @@ type IncidentDataDataSourceModel struct {
     DeclaredAt types.String `tfsdk:"declared_at"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    Monitors types.List `tfsdk:"monitors"`
-    OnCallDutyPolicies types.List `tfsdk:"on_call_duty_policies"`
-    Labels types.List `tfsdk:"labels"`
+    Monitors types.Set `tfsdk:"monitors"`
+    OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    Labels types.Set `tfsdk:"labels"`
     CurrentIncidentStateId types.String `tfsdk:"current_incident_state_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
@@ -56,7 +56,7 @@ type IncidentDataDataSourceModel struct {
     ShowPostmortemOnStatusPage types.Bool `tfsdk:"show_postmortem_on_status_page"`
     NotifySubscribersOnPostmortemPublished types.Bool `tfsdk:"notify_subscribers_on_postmortem_published"`
     PostmortemPostedAt types.String `tfsdk:"postmortem_posted_at"`
-    PostmortemAttachments types.List `tfsdk:"postmortem_attachments"`
+    PostmortemAttachments types.Set `tfsdk:"postmortem_attachments"`
     CreatedStateLog types.String `tfsdk:"created_state_log"`
     CreatedCriteriaId types.String `tfsdk:"created_criteria_id"`
     CreatedIncidentTemplateId types.String `tfsdk:"created_incident_template_id"`
@@ -125,17 +125,17 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "on_call_duty_policies": schema.ListAttribute{
+            "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policy affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -200,7 +200,7 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
-            "postmortem_attachments": schema.ListAttribute{
+            "postmortem_attachments": schema.SetAttribute{
                 MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -349,8 +349,8 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Monitors = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Monitors = setValue
     }
     if val, ok := incidentDataResponse["on_call_duty_policies"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -361,8 +361,8 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.OnCallDutyPolicies = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.OnCallDutyPolicies = setValue
     }
     if val, ok := incidentDataResponse["labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -373,8 +373,8 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := incidentDataResponse["current_incident_state_id"].(string); ok {
         data.CurrentIncidentStateId = types.StringValue(val)
@@ -430,8 +430,8 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.PostmortemAttachments = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PostmortemAttachments = setValue
     }
     if val, ok := incidentDataResponse["created_state_log"].(string); ok {
         data.CreatedStateLog = types.StringValue(val)

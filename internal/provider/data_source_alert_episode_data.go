@@ -44,13 +44,13 @@ type AlertEpisodeDataDataSourceModel struct {
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
     AssignedToTeamId types.String `tfsdk:"assigned_to_team_id"`
     AlertGroupingRuleId types.String `tfsdk:"alert_grouping_rule_id"`
-    OnCallDutyPolicies types.List `tfsdk:"on_call_duty_policies"`
+    OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     IsOnCallPolicyExecuted types.Bool `tfsdk:"is_on_call_policy_executed"`
     AlertCount types.Number `tfsdk:"alert_count"`
     TitleTemplate types.String `tfsdk:"title_template"`
     DescriptionTemplate types.String `tfsdk:"description_template"`
     IsManuallyCreated types.Bool `tfsdk:"is_manually_created"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsOwnerNotifiedOfEpisodeCreation types.Bool `tfsdk:"is_owner_notified_of_episode_creation"`
     GroupingKey types.String `tfsdk:"grouping_key"`
@@ -139,7 +139,7 @@ func (d *AlertEpisodeDataDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "on_call_duty_policies": schema.ListAttribute{
+            "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies to execute for this episode.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode], Update: [Project Owner, Project Admin, Project Member, Edit Alert Episode]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -164,7 +164,7 @@ func (d *AlertEpisodeDataDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "Whether this episode was manually created vs auto-created by a rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode], Update: [Project Owner, Project Admin, Project Member, Edit Alert Episode]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -315,8 +315,8 @@ func (d *AlertEpisodeDataDataSource) Read(ctx context.Context, req datasource.Re
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.OnCallDutyPolicies = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.OnCallDutyPolicies = setValue
     }
     if val, ok := alertEpisodeDataResponse["is_on_call_policy_executed"].(bool); ok {
         data.IsOnCallPolicyExecuted = types.BoolValue(val)
@@ -342,8 +342,8 @@ func (d *AlertEpisodeDataDataSource) Read(ctx context.Context, req datasource.Re
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := alertEpisodeDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

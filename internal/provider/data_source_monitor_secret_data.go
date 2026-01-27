@@ -34,7 +34,7 @@ type MonitorSecretDataDataSourceModel struct {
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
-    Monitors types.List `tfsdk:"monitors"`
+    Monitors types.Set `tfsdk:"monitors"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -80,7 +80,7 @@ func (d *MonitorSecretDataDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
                 Computed: true,
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -189,8 +189,8 @@ func (d *MonitorSecretDataDataSource) Read(ctx context.Context, req datasource.R
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Monitors = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Monitors = setValue
     }
     if val, ok := monitorSecretDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

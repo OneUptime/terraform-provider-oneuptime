@@ -39,9 +39,9 @@ type IncidentTemplateDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    Monitors types.List `tfsdk:"monitors"`
-    OnCallDutyPolicies types.List `tfsdk:"on_call_duty_policies"`
-    Labels types.List `tfsdk:"labels"`
+    Monitors types.Set `tfsdk:"monitors"`
+    OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    Labels types.Set `tfsdk:"labels"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
     InitialIncidentStateId types.String `tfsdk:"initial_incident_state_id"`
@@ -109,17 +109,17 @@ func (d *IncidentTemplateDataDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "on_call_duty_policies": schema.ListAttribute{
+            "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policy affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Edit Incident Template]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -251,8 +251,8 @@ func (d *IncidentTemplateDataDataSource) Read(ctx context.Context, req datasourc
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Monitors = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Monitors = setValue
     }
     if val, ok := incidentTemplateDataResponse["on_call_duty_policies"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -263,8 +263,8 @@ func (d *IncidentTemplateDataDataSource) Read(ctx context.Context, req datasourc
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.OnCallDutyPolicies = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.OnCallDutyPolicies = setValue
     }
     if val, ok := incidentTemplateDataResponse["labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -275,8 +275,8 @@ func (d *IncidentTemplateDataDataSource) Read(ctx context.Context, req datasourc
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := incidentTemplateDataResponse["incident_severity_id"].(string); ok {
         data.IncidentSeverityId = types.StringValue(val)

@@ -37,8 +37,8 @@ type StatusPageAnnouncementTemplateDataDataSourceModel struct {
     TemplateDescription types.String `tfsdk:"template_description"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
-    StatusPages types.List `tfsdk:"status_pages"`
-    Monitors types.List `tfsdk:"monitors"`
+    StatusPages types.Set `tfsdk:"status_pages"`
+    Monitors types.Set `tfsdk:"monitors"`
     ShouldStatusPageSubscribersBeNotified types.Bool `tfsdk:"should_status_page_subscribers_be_notified"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -96,12 +96,12 @@ func (d *StatusPageAnnouncementTemplateDataDataSource) Schema(ctx context.Contex
                 MarkdownDescription: "Text of the announcement. This is in Markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]",
                 Computed: true,
             },
-            "status_pages": schema.ListAttribute{
+            "status_pages": schema.SetAttribute{
                 MarkdownDescription: "Status Pages to show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this announcement template. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Announcement Template]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -219,8 +219,8 @@ func (d *StatusPageAnnouncementTemplateDataDataSource) Read(ctx context.Context,
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.StatusPages = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.StatusPages = setValue
     }
     if val, ok := statusPageAnnouncementTemplateDataResponse["monitors"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -231,8 +231,8 @@ func (d *StatusPageAnnouncementTemplateDataDataSource) Read(ctx context.Context,
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Monitors = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Monitors = setValue
     }
     if val, ok := statusPageAnnouncementTemplateDataResponse["should_status_page_subscribers_be_notified"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotified = types.BoolValue(val)

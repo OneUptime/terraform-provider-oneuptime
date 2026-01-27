@@ -42,7 +42,7 @@ type ProbeDataDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     ShouldAutoEnableProbeOnNewMonitors types.Bool `tfsdk:"should_auto_enable_probe_on_new_monitors"`
     ConnectionStatus types.String `tfsdk:"connection_status"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
 }
 
 func (d *ProbeDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -118,7 +118,7 @@ func (d *ProbeDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -243,8 +243,8 @@ func (d *ProbeDataDataSource) Read(ctx context.Context, req datasource.ReadReque
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
 
     // Write logs using the tflog package

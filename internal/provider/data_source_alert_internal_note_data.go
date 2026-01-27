@@ -36,7 +36,7 @@ type AlertInternalNoteDataDataSourceModel struct {
     AlertId types.String `tfsdk:"alert_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Note types.String `tfsdk:"note"`
-    Attachments types.List `tfsdk:"attachments"`
+    Attachments types.Set `tfsdk:"attachments"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
 }
@@ -90,7 +90,7 @@ func (d *AlertInternalNoteDataDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]",
                 Computed: true,
             },
-            "attachments": schema.ListAttribute{
+            "attachments": schema.SetAttribute{
                 MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -205,8 +205,8 @@ func (d *AlertInternalNoteDataDataSource) Read(ctx context.Context, req datasour
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Attachments = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Attachments = setValue
     }
     if val, ok := alertInternalNoteDataResponse["is_owner_notified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)

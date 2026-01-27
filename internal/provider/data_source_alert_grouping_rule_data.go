@@ -37,10 +37,10 @@ type AlertGroupingRuleDataDataSourceModel struct {
     Priority types.Number `tfsdk:"priority"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     MatchCriteria types.String `tfsdk:"match_criteria"`
-    Monitors types.List `tfsdk:"monitors"`
-    AlertSeverities types.List `tfsdk:"alert_severities"`
-    AlertLabels types.List `tfsdk:"alert_labels"`
-    MonitorLabels types.List `tfsdk:"monitor_labels"`
+    Monitors types.Set `tfsdk:"monitors"`
+    AlertSeverities types.Set `tfsdk:"alert_severities"`
+    AlertLabels types.Set `tfsdk:"alert_labels"`
+    MonitorLabels types.Set `tfsdk:"monitor_labels"`
     AlertTitlePattern types.String `tfsdk:"alert_title_pattern"`
     AlertDescriptionPattern types.String `tfsdk:"alert_description_pattern"`
     MonitorNamePattern types.String `tfsdk:"monitor_name_pattern"`
@@ -60,7 +60,7 @@ type AlertGroupingRuleDataDataSourceModel struct {
     ReopenWindowMinutes types.Number `tfsdk:"reopen_window_minutes"`
     EnableInactivityTimeout types.Bool `tfsdk:"enable_inactivity_timeout"`
     InactivityTimeoutMinutes types.Number `tfsdk:"inactivity_timeout_minutes"`
-    OnCallDutyPolicies types.List `tfsdk:"on_call_duty_policies"`
+    OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     DefaultAssignToUserId types.String `tfsdk:"default_assign_to_user_id"`
     DefaultAssignToTeamId types.String `tfsdk:"default_assign_to_team_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -119,22 +119,22 @@ func (d *AlertGroupingRuleDataDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "JSON object defining the criteria for matching alerts to this rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
-            "monitors": schema.ListAttribute{
+            "monitors": schema.SetAttribute{
                 MarkdownDescription: "Only group alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "alert_severities": schema.ListAttribute{
+            "alert_severities": schema.SetAttribute{
                 MarkdownDescription: "Only group alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "alert_labels": schema.ListAttribute{
+            "alert_labels": schema.SetAttribute{
                 MarkdownDescription: "Only group alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "monitor_labels": schema.ListAttribute{
+            "monitor_labels": schema.SetAttribute{
                 MarkdownDescription: "Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -215,7 +215,7 @@ func (d *AlertGroupingRuleDataDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
-            "on_call_duty_policies": schema.ListAttribute{
+            "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -337,8 +337,8 @@ func (d *AlertGroupingRuleDataDataSource) Read(ctx context.Context, req datasour
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Monitors = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Monitors = setValue
     }
     if val, ok := alertGroupingRuleDataResponse["alert_severities"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -349,8 +349,8 @@ func (d *AlertGroupingRuleDataDataSource) Read(ctx context.Context, req datasour
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.AlertSeverities = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.AlertSeverities = setValue
     }
     if val, ok := alertGroupingRuleDataResponse["alert_labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -361,8 +361,8 @@ func (d *AlertGroupingRuleDataDataSource) Read(ctx context.Context, req datasour
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.AlertLabels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.AlertLabels = setValue
     }
     if val, ok := alertGroupingRuleDataResponse["monitor_labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -373,8 +373,8 @@ func (d *AlertGroupingRuleDataDataSource) Read(ctx context.Context, req datasour
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.MonitorLabels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.MonitorLabels = setValue
     }
     if val, ok := alertGroupingRuleDataResponse["alert_title_pattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
@@ -442,8 +442,8 @@ func (d *AlertGroupingRuleDataDataSource) Read(ctx context.Context, req datasour
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.OnCallDutyPolicies = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.OnCallDutyPolicies = setValue
     }
     if val, ok := alertGroupingRuleDataResponse["default_assign_to_user_id"].(string); ok {
         data.DefaultAssignToUserId = types.StringValue(val)

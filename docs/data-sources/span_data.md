@@ -34,8 +34,8 @@ data "oneuptime_span_data" "example" {
 - `parent_span_id` (String) Parent Span ID. Computed.
 - `trace_state` (String) Trace State. Computed.
 - `attributes` (String) Attributes. Computed.
-- `attribute_keys` (List) Attribute Keys. Computed.
-- `events` (List) Events. Computed.
+- `attribute_keys` (Set) Attribute Keys. Computed.
+- `events` (Set) Events. Computed.
 - `links` (String) Links. Computed.
 - `status_code` (Number) Status Code. Computed.
 - `status_message` (String) Status Message. Computed.

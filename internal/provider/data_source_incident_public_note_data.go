@@ -36,7 +36,7 @@ type IncidentPublicNoteDataDataSourceModel struct {
     IncidentId types.String `tfsdk:"incident_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Note types.String `tfsdk:"note"`
-    Attachments types.List `tfsdk:"attachments"`
+    Attachments types.Set `tfsdk:"attachments"`
     SubscriberNotificationStatusOnNoteCreated types.String `tfsdk:"subscriber_notification_status_on_note_created"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
     ShouldStatusPageSubscribersBeNotifiedOnNoteCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_note_created"`
@@ -94,7 +94,7 @@ func (d *IncidentPublicNoteDataDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Status Page Note], Update: [Project Owner, Project Admin, Project Member, Edit Incident Status Page Note]",
                 Computed: true,
             },
-            "attachments": schema.ListAttribute{
+            "attachments": schema.SetAttribute{
                 MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Status Page Note], Update: [Project Owner, Project Admin, Project Member, Edit Incident Status Page Note]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -225,8 +225,8 @@ func (d *IncidentPublicNoteDataDataSource) Read(ctx context.Context, req datasou
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Attachments = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Attachments = setValue
     }
     if val, ok := incidentPublicNoteDataResponse["subscriber_notification_status_on_note_created"].(string); ok {
         data.SubscriberNotificationStatusOnNoteCreated = types.StringValue(val)

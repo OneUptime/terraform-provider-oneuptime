@@ -33,7 +33,7 @@ type OnCallPolicyDataDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -79,7 +79,7 @@ func (d *OnCallPolicyDataDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -201,8 +201,8 @@ func (d *OnCallPolicyDataDataSource) Read(ctx context.Context, req datasource.Re
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := onCallPolicyDataResponse["description"].(string); ok {
         data.Description = types.StringValue(val)

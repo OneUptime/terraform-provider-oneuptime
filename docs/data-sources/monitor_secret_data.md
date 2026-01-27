@@ -28,6 +28,6 @@ data "oneuptime_monitor_secret_data" "example" {
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]. Computed.
-- `monitors` (List) List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]. Computed.
+- `monitors` (Set) List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

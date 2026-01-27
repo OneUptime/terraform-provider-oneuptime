@@ -24,7 +24,7 @@ resource "oneuptime_dashboard" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]. Required.
 - `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]. Computed.
-- `labels` (List) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]. Computed.
 - `dashboard_view_config` (String) Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.

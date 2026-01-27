@@ -44,7 +44,7 @@ type CodeRepositoryDataDataSourceModel struct {
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
 }
 
 func (d *CodeRepositoryDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -128,7 +128,7 @@ func (d *CodeRepositoryDataDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -259,8 +259,8 @@ func (d *CodeRepositoryDataDataSource) Read(ctx context.Context, req datasource.
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
 
     // Write logs using the tflog package

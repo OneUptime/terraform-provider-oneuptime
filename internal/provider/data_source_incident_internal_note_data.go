@@ -36,7 +36,7 @@ type IncidentInternalNoteDataDataSourceModel struct {
     IncidentId types.String `tfsdk:"incident_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Note types.String `tfsdk:"note"`
-    Attachments types.List `tfsdk:"attachments"`
+    Attachments types.Set `tfsdk:"attachments"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
 }
@@ -90,7 +90,7 @@ func (d *IncidentInternalNoteDataDataSource) Schema(ctx context.Context, req dat
                 MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Incident Internal Note]",
                 Computed: true,
             },
-            "attachments": schema.ListAttribute{
+            "attachments": schema.SetAttribute{
                 MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note], Update: [Project Owner, Project Admin, Project Member, Edit Incident Internal Note]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -205,8 +205,8 @@ func (d *IncidentInternalNoteDataDataSource) Read(ctx context.Context, req datas
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Attachments = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Attachments = setValue
     }
     if val, ok := incidentInternalNoteDataResponse["is_owner_notified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)

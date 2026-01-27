@@ -40,8 +40,8 @@ type SpanDataDataSourceModel struct {
     ParentSpanId types.String `tfsdk:"parent_span_id"`
     TraceState types.String `tfsdk:"trace_state"`
     Attributes types.String `tfsdk:"attributes"`
-    AttributeKeys types.List `tfsdk:"attribute_keys"`
-    Events types.List `tfsdk:"events"`
+    AttributeKeys types.Set `tfsdk:"attribute_keys"`
+    Events types.Set `tfsdk:"events"`
     Links types.String `tfsdk:"links"`
     StatusCode types.Number `tfsdk:"status_code"`
     StatusMessage types.String `tfsdk:"status_message"`
@@ -113,12 +113,12 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "Attributes",
                 Computed: true,
             },
-            "attribute_keys": schema.ListAttribute{
+            "attribute_keys": schema.SetAttribute{
                 MarkdownDescription: "Attribute Keys",
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "events": schema.ListAttribute{
+            "events": schema.SetAttribute{
                 MarkdownDescription: "Events",
                 Computed: true,
                 ElementType: types.StringType,
@@ -253,8 +253,8 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.AttributeKeys = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.AttributeKeys = setValue
     }
     if val, ok := spanDataResponse["events"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -265,8 +265,8 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Events = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Events = setValue
     }
     if val, ok := spanDataResponse["links"].(string); ok {
         data.Links = types.StringValue(val)

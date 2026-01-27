@@ -36,7 +36,7 @@ type MonitorDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    Labels types.List `tfsdk:"labels"`
+    Labels types.Set `tfsdk:"labels"`
     MonitorType types.String `tfsdk:"monitor_type"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitorSteps types.String `tfsdk:"monitor_steps"`
@@ -112,7 +112,7 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "labels": schema.ListAttribute{
+            "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Read Monitor], Update: [Project Owner, Project Admin, Project Member, Edit Monitor]",
                 Computed: true,
                 ElementType: types.StringType,
@@ -315,8 +315,8 @@ func (d *MonitorDataDataSource) Read(ctx context.Context, req datasource.ReadReq
                 elements[i] = types.StringValue("")
             }
         }
-        listValue, _ := types.ListValue(types.StringType, elements)
-        data.Labels = listValue
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Labels = setValue
     }
     if val, ok := monitorDataResponse["monitor_type"].(string); ok {
         data.MonitorType = types.StringValue(val)
