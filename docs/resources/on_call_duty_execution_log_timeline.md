@@ -29,6 +29,7 @@ resource "oneuptime_on_call_duty_execution_log_timeline" "example" {
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `triggered_by_alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_execution_log_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline], Update: [No access - you don't have permission for this operation]. Computed.

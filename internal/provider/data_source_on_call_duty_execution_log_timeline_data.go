@@ -35,6 +35,7 @@ type OnCallDutyExecutionLogTimelineDataDataSourceModel struct {
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
     TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
+    TriggeredByAlertEpisodeId types.String `tfsdk:"triggered_by_alert_episode_id"`
     OnCallDutyPolicyExecutionLogId types.String `tfsdk:"on_call_duty_policy_execution_log_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
     UserNotificationEventType types.String `tfsdk:"user_notification_event_type"`
@@ -95,6 +96,10 @@ func (d *OnCallDutyExecutionLogTimelineDataDataSource) Schema(ctx context.Contex
                 Computed: true,
             },
             "triggered_by_alert_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "triggered_by_alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -238,6 +243,9 @@ func (d *OnCallDutyExecutionLogTimelineDataDataSource) Read(ctx context.Context,
     }
     if val, ok := onCallDutyExecutionLogTimelineDataResponse["triggered_by_alert_id"].(string); ok {
         data.TriggeredByAlertId = types.StringValue(val)
+    }
+    if val, ok := onCallDutyExecutionLogTimelineDataResponse["triggered_by_alert_episode_id"].(string); ok {
+        data.TriggeredByAlertEpisodeId = types.StringValue(val)
     }
     if val, ok := onCallDutyExecutionLogTimelineDataResponse["on_call_duty_policy_execution_log_id"].(string); ok {
         data.OnCallDutyPolicyExecutionLogId = types.StringValue(val)
