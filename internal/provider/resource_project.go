@@ -46,6 +46,7 @@ type ProjectResourceModel struct {
     IsFeatureFlagMonitorGroupsEnabled types.Bool `tfsdk:"is_feature_flag_monitor_groups_enabled"`
     ActiveMonitorsLimit types.Number `tfsdk:"active_monitors_limit"`
     SeatLimit types.Number `tfsdk:"seat_limit"`
+    SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     UtmContent types.String `tfsdk:"utm_content"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
@@ -160,6 +161,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             "seat_limit": schema.NumberAttribute{
                 MarkdownDescription: "Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
+            },
+            "send_invoices_by_email": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
             },
             "utm_content": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
@@ -414,6 +424,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "isFeatureFlagMonitorGroupsEnabled": data.IsFeatureFlagMonitorGroupsEnabled.ValueBool(),
         "activeMonitorsLimit": r.bigFloatToFloat64(data.ActiveMonitorsLimit.ValueBigFloat()),
         "seatLimit": r.bigFloatToFloat64(data.SeatLimit.ValueBigFloat()),
+        "sendInvoicesByEmail": data.SendInvoicesByEmail.ValueBool(),
         "utmContent": data.UtmContent.ValueString(),
         "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
         "autoRechargeSmsOrCallByBalanceInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat()),
@@ -735,6 +746,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["seatLimit"] == nil {
         data.SeatLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
+        data.SendInvoicesByEmail = types.BoolValue(val)
     }
     if obj, ok := dataMap["utmContent"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1507,6 +1521,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "isFeatureFlagMonitorGroupsEnabled": true,
         "activeMonitorsLimit": true,
         "seatLimit": true,
+        "sendInvoicesByEmail": true,
         "utmContent": true,
         "requireSsoForLogin": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
@@ -1854,6 +1869,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["seatLimit"] == nil {
         data.SeatLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
+        data.SendInvoicesByEmail = types.BoolValue(val)
     }
     if obj, ok := dataMap["utmContent"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2683,6 +2701,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAutoRechargeAiBalance.IsUnknown() && !state.EnableAutoRechargeAiBalance.IsUnknown() && !data.EnableAutoRechargeAiBalance.Equal(state.EnableAutoRechargeAiBalance) {
         requestDataMap["enableAutoRechargeAiBalance"] = data.EnableAutoRechargeAiBalance.ValueBool()
     }
+    if !data.SendInvoicesByEmail.IsUnknown() && !state.SendInvoicesByEmail.IsUnknown() && !data.SendInvoicesByEmail.Equal(state.SendInvoicesByEmail) {
+        requestDataMap["sendInvoicesByEmail"] = data.SendInvoicesByEmail.ValueBool()
+    }
     if !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !state.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.Equal(state.DoNotAddGlobalProbesByDefaultOnNewMonitors) {
         requestDataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"] = data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()
     }
@@ -2716,6 +2737,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "isFeatureFlagMonitorGroupsEnabled": true,
         "activeMonitorsLimit": true,
         "seatLimit": true,
+        "sendInvoicesByEmail": true,
         "utmContent": true,
         "requireSsoForLogin": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
@@ -3057,6 +3079,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["seatLimit"] == nil {
         data.SeatLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
+        data.SendInvoicesByEmail = types.BoolValue(val)
     }
     if obj, ok := dataMap["utmContent"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

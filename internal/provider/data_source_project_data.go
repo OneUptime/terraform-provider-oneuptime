@@ -61,6 +61,7 @@ type ProjectDataDataSourceModel struct {
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
+    SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     PlanName types.String `tfsdk:"plan_name"`
     ResellerId types.String `tfsdk:"reseller_id"`
     ResellerPlanId types.String `tfsdk:"reseller_plan_id"`
@@ -220,6 +221,10 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "send_invoices_by_email": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "plan_name": schema.StringAttribute{
@@ -416,6 +421,9 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["enable_auto_recharge_ai_balance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["send_invoices_by_email"].(bool); ok {
+        data.SendInvoicesByEmail = types.BoolValue(val)
     }
     if val, ok := projectDataResponse["plan_name"].(string); ok {
         data.PlanName = types.StringValue(val)
