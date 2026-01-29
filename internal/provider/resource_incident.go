@@ -61,6 +61,7 @@ type IncidentResourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery types.String `tfsdk:"telemetry_query"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -278,6 +279,14 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "incident_episode_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
@@ -400,6 +409,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "remediationNotes": data.RemediationNotes.ValueString(),
         "telemetryQuery": r.parseJSONField(data.TelemetryQuery),
         "isVisibleOnStatusPage": data.IsVisibleOnStatusPage.ValueBool(),
+        "incidentEpisodeId": data.IncidentEpisodeId.ValueString(),
         },
     }
 
@@ -1134,6 +1144,43 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok && val != "" {
+        data.IncidentEpisodeId = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1613,6 +1660,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
+        "incidentEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2367,6 +2415,43 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok && val != "" {
+        data.IncidentEpisodeId = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeId = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2916,6 +3001,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.IsVisibleOnStatusPage.IsUnknown() && !state.IsVisibleOnStatusPage.IsUnknown() && !data.IsVisibleOnStatusPage.Equal(state.IsVisibleOnStatusPage) {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
     }
+    if !data.IncidentEpisodeId.IsUnknown() && !state.IncidentEpisodeId.IsUnknown() && !data.IncidentEpisodeId.Equal(state.IncidentEpisodeId) {
+        requestDataMap["incidentEpisodeId"] = data.IncidentEpisodeId.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/incident/" + data.Id.ValueString() + "", incidentRequest)
@@ -2957,6 +3045,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
+        "incidentEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3704,6 +3793,43 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     }
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok && val != "" {
+        data.IncidentEpisodeId = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

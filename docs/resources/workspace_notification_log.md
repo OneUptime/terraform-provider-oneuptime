@@ -38,6 +38,7 @@ resource "oneuptime_workspace_notification_log" "example" {
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `incident_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_announcement_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

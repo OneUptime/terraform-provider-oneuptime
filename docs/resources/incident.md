@@ -45,6 +45,7 @@ resource "oneuptime_incident" "example" {
 - `remediation_notes` (String) Notes on how to remediate this incident. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]. Computed.
 - `telemetry_query` (String) Telemetry query for this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]. Computed.
 - `is_visible_on_status_page` (Bool) Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]. Computed.
+- `incident_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

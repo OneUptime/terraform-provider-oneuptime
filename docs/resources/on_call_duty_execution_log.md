@@ -29,6 +29,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `triggered_by_incident_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status` (String) Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Required.
 - `status_message` (String) Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Required.
 - `user_notification_event_type` (String) Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Required.

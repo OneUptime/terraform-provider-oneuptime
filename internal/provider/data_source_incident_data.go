@@ -66,6 +66,7 @@ type IncidentDataDataSourceModel struct {
     TelemetryQuery types.String `tfsdk:"telemetry_query"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
 }
 
 func (d *IncidentDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -239,6 +240,10 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "is_visible_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                Computed: true,
+            },
+            "incident_episode_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
         },
@@ -459,6 +464,9 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     }
     if val, ok := incidentDataResponse["is_visible_on_status_page"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := incidentDataResponse["incident_episode_id"].(string); ok {
+        data.IncidentEpisodeId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

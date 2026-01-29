@@ -44,6 +44,7 @@ type WorkspaceNotificationLogDataDataSourceModel struct {
     UserId types.String `tfsdk:"user_id"`
     AlertId types.String `tfsdk:"alert_id"`
     AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
+    IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
     ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     StatusPageAnnouncementId types.String `tfsdk:"status_page_announcement_id"`
@@ -135,6 +136,10 @@ func (d *WorkspaceNotificationLogDataDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "alert_episode_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -285,6 +290,9 @@ func (d *WorkspaceNotificationLogDataDataSource) Read(ctx context.Context, req d
     }
     if val, ok := workspaceNotificationLogDataResponse["alert_episode_id"].(string); ok {
         data.AlertEpisodeId = types.StringValue(val)
+    }
+    if val, ok := workspaceNotificationLogDataResponse["incident_episode_id"].(string); ok {
+        data.IncidentEpisodeId = types.StringValue(val)
     }
     if val, ok := workspaceNotificationLogDataResponse["scheduled_maintenance_id"].(string); ok {
         data.ScheduledMaintenanceId = types.StringValue(val)
