@@ -25,9 +25,9 @@ resource "oneuptime_status_page_footer_link" "example" {
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `title` (String) Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]. Required.
-- `link` (String) URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]. Required.
-- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]. Computed.
+- `title` (String) Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]. Required.
+- `link` (String) URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]. Required.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

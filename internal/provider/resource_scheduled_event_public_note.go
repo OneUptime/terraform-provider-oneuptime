@@ -84,7 +84,7 @@ func (r *ScheduledEventPublicNoteResource) Schema(ctx context.Context, req resou
                 Required: true,
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
+                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,7 +92,7 @@ func (r *ScheduledEventPublicNoteResource) Schema(ctx context.Context, req resou
                 },
             },
             "attachments": schema.SetAttribute{
-                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
+                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -101,7 +101,7 @@ func (r *ScheduledEventPublicNoteResource) Schema(ctx context.Context, req resou
                 },
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -109,7 +109,7 @@ func (r *ScheduledEventPublicNoteResource) Schema(ctx context.Context, req resou
                 },
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this note?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -126,7 +126,7 @@ func (r *ScheduledEventPublicNoteResource) Schema(ctx context.Context, req resou
                 },
             },
             "posted_from_slack_message_id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -154,11 +154,11 @@ func (r *ScheduledEventPublicNoteResource) Schema(ctx context.Context, req resou
                 Computed: true,
             },
             "subscriber_notification_status_on_note_created": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers about this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
+                MarkdownDescription: "Status of notification sent to subscribers about this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Status Page Note]",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Status Page Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

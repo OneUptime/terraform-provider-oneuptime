@@ -70,11 +70,11 @@ func (r *ScheduledMaintenanceCustomFieldResource) Schema(ctx context.Context, re
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Custom Field], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Custom Field]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Custom Field]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Custom Field], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Custom Field]",
+                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Custom Field]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -82,7 +82,7 @@ func (r *ScheduledMaintenanceCustomFieldResource) Schema(ctx context.Context, re
                 },
             },
             "custom_field_type": schema.StringAttribute{
-                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Custom Field], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Custom Field, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

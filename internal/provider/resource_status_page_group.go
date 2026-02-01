@@ -82,11 +82,11 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
                 Required: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Group. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
+                MarkdownDescription: "Name of the Group. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description for this group. This is visible on Status Page. This can be in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
+                MarkdownDescription: "Description for this group. This is visible on Status Page. This can be in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -94,7 +94,7 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -102,7 +102,7 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "is_expanded_by_default": schema.BoolAttribute{
-                MarkdownDescription: "Is this group expanded by default on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
+                MarkdownDescription: "Is this group expanded by default on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -111,7 +111,7 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "show_current_status": schema.BoolAttribute{
-                MarkdownDescription: "Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
+                MarkdownDescription: "Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -120,7 +120,7 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "show_uptime_percent": schema.BoolAttribute{
-                MarkdownDescription: "Show uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
+                MarkdownDescription: "Show uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -129,7 +129,7 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "uptime_percent_precision": schema.StringAttribute{
-                MarkdownDescription: "Precision of uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
+                MarkdownDescription: "Precision of uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Group]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -153,7 +153,7 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page Group, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

@@ -75,7 +75,7 @@ func (r *StatusPageHistoryChartBarColorResource) Schema(ctx context.Context, req
                 Required: true,
             },
             "uptime_percent_greater_than_or_equal_to": schema.NumberAttribute{
-                MarkdownDescription: "Uptime percent greater than or equal to this value. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
+                MarkdownDescription: "Uptime percent greater than or equal to this value. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
                 Required: true,
             },
             "bar_color": schema.StringAttribute{
@@ -83,7 +83,7 @@ func (r *StatusPageHistoryChartBarColorResource) Schema(ctx context.Context, req
                 Required: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page History Chart Bar Color Rule], Read: [Project Owner, Project Admin, Project Member, Read Status Page History Chart Bar Color Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page History Chart Bar Color Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

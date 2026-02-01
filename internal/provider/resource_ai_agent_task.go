@@ -76,11 +76,11 @@ func (r *AiAgentTaskResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Name of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Description of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
                 Required: true,
             },
             "ai_agent_id": schema.StringAttribute{
@@ -92,15 +92,15 @@ func (r *AiAgentTaskResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "task_type": schema.StringAttribute{
-                MarkdownDescription: "Type of task to be performed by the AI agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of task to be performed by the AI agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of the task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Current status of the task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
                 Required: true,
             },
             "metadata": schema.StringAttribute{
-                MarkdownDescription: "Task-specific metadata containing context for the AI agent. Structure varies based on task type.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Task-specific metadata containing context for the AI agent. Structure varies based on task type.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -108,11 +108,11 @@ func (r *AiAgentTaskResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "task_number": schema.NumberAttribute{
-                MarkdownDescription: "A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "A message describing the current status or result of the task.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "A message describing the current status or result of the task.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

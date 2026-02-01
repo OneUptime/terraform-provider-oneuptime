@@ -107,11 +107,11 @@ func (r *IncomingCallLogItemResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of this dial attempt. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Status of this dial attempt. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Required: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Additional status information. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Additional status information. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -119,7 +119,7 @@ func (r *IncomingCallLogItemResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "dial_duration_in_seconds": schema.NumberAttribute{
-                MarkdownDescription: "How long this dial lasted in seconds. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "How long this dial lasted in seconds. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -127,7 +127,7 @@ func (r *IncomingCallLogItemResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "call_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Cost for this dial attempt in USD cents. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Cost for this dial attempt in USD cents. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -151,7 +151,7 @@ func (r *IncomingCallLogItemResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "is_answered": schema.BoolAttribute{
-                MarkdownDescription: "Whether this user answered the call. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Whether this user answered the call. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

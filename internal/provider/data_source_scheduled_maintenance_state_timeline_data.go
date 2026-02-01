@@ -93,19 +93,19 @@ func (d *ScheduledMaintenanceStateTimelineDataDataSource) Schema(ctx context.Con
                 Computed: true,
             },
             "subscriber_notification_status": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers about this scheduled maintenance state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]",
+                MarkdownDescription: "Status of notification sent to subscribers about this scheduled maintenance state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]",
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]",
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "ends_at": schema.StringAttribute{

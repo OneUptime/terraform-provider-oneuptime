@@ -91,19 +91,19 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Scheduled Maintenance Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "Name of the Scheduled Maintenance Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Required: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Scheduled Maintenance Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "Description of the Scheduled Maintenance Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Required: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this scheduled event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "Title of this scheduled event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is a markdown field.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is a markdown field.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -111,7 +111,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -120,7 +120,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -129,7 +129,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -170,7 +170,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often should this event recur?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "How often should this event recur?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -178,7 +178,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "is_recurring_event": schema.BoolAttribute{
-                MarkdownDescription: "Is this a recurring event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
+                MarkdownDescription: "Is this a recurring event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -194,7 +194,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
+                MarkdownDescription: "Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -203,7 +203,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -212,7 +212,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ended": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -221,7 +221,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -229,7 +229,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 },
             },
             "send_subscriber_notifications_on_before_the_event": schema.StringAttribute{
-                MarkdownDescription: "Should subscribers be notified before the event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
+                MarkdownDescription: "Should subscribers be notified before the event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -253,7 +253,7 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

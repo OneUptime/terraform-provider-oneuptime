@@ -94,19 +94,19 @@ func (d *ExceptionDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "message": schema.StringAttribute{
-                MarkdownDescription: "Exception message that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Exception message that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
             "stack_trace": schema.StringAttribute{
-                MarkdownDescription: "Stack trace of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Stack trace of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
             "exception_type": schema.StringAttribute{
-                MarkdownDescription: "Type of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Type of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
             "fingerprint": schema.StringAttribute{
-                MarkdownDescription: "Finger print of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Finger print of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -150,15 +150,15 @@ func (d *ExceptionDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "is_resolved": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception resolved?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Is this exception resolved?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception archived?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Is this exception archived?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
             "occurance_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of times this exception has occurred. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Number of times this exception has occurred. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
         },

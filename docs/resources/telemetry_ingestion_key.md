@@ -22,8 +22,8 @@ resource "oneuptime_telemetry_ingestion_key" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]. Required.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

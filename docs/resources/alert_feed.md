@@ -28,9 +28,9 @@ This is **markdown** content"
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `feed_info_in_markdown` (String) Log of the entire alert state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Required.
-- `more_information_in_markdown` (String) More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Computed.
-- `alert_feed_event_type` (String) Alert Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]. Required.
+- `feed_info_in_markdown` (String) Log of the entire alert state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Required.
+- `more_information_in_markdown` (String) More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `alert_feed_event_type` (String) Alert Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Required.
 - `display_color` (String) Color object. Required.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `posted_at` (String) A date time object.. Computed.

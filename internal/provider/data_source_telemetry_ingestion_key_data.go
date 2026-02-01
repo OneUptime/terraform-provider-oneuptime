@@ -75,7 +75,7 @@ func (d *TelemetryIngestionKeyDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

@@ -74,7 +74,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this LLM configuration.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "Description of this LLM configuration.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -82,11 +82,11 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "llm_type": schema.StringAttribute{
-                MarkdownDescription: "The type of LLM provider (OpenAI, Anthropic, Ollama, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The type of LLM provider (OpenAI, Anthropic, Ollama, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
                 Required: true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI and Anthropic.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI and Anthropic.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -94,7 +94,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "model_name": schema.StringAttribute{
-                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -102,7 +102,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Ollama, optional for others.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The base URL for the LLM API. Required for Ollama, optional for others.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "is_default": schema.BoolAttribute{
-                MarkdownDescription: "Is this the default LLM provider for the project? When set, the global LLM provider will not be used.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "Is this the default LLM provider for the project? When set, the global LLM provider will not be used.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -142,7 +142,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -150,7 +150,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 Computed: true,
             },
             "cost_per_million_tokens_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Cost per million tokens in USD cents. Used for billing when using global LLM providers.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Cost per million tokens in USD cents. Used for billing when using global LLM providers.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

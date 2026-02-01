@@ -73,11 +73,11 @@ func (r *AlertSeverityResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity], Update: [Project Owner, Project Admin, Project Member, Edit Alert Severity]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert Severity]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity], Update: [Project Owner, Project Admin, Project Member, Edit Alert Severity]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert Severity]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -89,7 +89,7 @@ func (r *AlertSeverityResource) Schema(ctx context.Context, req resource.SchemaR
                 Required: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity], Update: [Project Owner, Project Admin, Project Member, Edit Alert Severity]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert Severity]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -113,7 +113,7 @@ func (r *AlertSeverityResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Severity, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

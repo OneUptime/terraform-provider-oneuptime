@@ -76,11 +76,11 @@ func (d *StatusPageCustomFieldDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Status Page Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Status Page Custom Field], Update: [Project Owner, Project Admin, Edit Status Page Custom Field]",
+                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Status Page Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Status Page Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Custom Field]",
                 Computed: true,
             },
             "custom_field_type": schema.StringAttribute{
-                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Status Page Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Status Page Custom Field], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Status Page Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Status Page Custom Field, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

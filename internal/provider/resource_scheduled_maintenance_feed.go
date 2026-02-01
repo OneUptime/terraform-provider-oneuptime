@@ -77,11 +77,11 @@ func (r *ScheduledMaintenanceFeedResource) Schema(ctx context.Context, req resou
                 Required: true,
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire scheduled maintenance state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Log of the entire scheduled maintenance state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -89,7 +89,7 @@ func (r *ScheduledMaintenanceFeedResource) Schema(ctx context.Context, req resou
                 },
             },
             "scheduled_maintenance_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "ScheduledMaintenance Log Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "ScheduledMaintenance Log Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Log], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "display_color": schema.StringAttribute{

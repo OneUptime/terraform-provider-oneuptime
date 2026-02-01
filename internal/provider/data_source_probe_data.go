@@ -79,7 +79,7 @@ func (d *ProbeDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Probe], Read: [Project Owner, Project Admin], Update: [Project Owner, Project Admin, Project Member, Edit Probe]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Probe], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Probe]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
@@ -87,7 +87,7 @@ func (d *ProbeDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "probe_version": schema.StringAttribute{
@@ -111,15 +111,15 @@ func (d *ProbeDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "should_auto_enable_probe_on_new_monitors": schema.BoolAttribute{
-                MarkdownDescription: "Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                MarkdownDescription: "Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Computed: true,
             },
             "connection_status": schema.StringAttribute{
-                MarkdownDescription: "Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Computed: true,
                 ElementType: types.StringType,
             },

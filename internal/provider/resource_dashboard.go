@@ -75,11 +75,11 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -87,7 +87,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -96,7 +96,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "dashboard_view_config": schema.StringAttribute{
-                MarkdownDescription: "Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -120,7 +120,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

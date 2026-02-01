@@ -92,15 +92,15 @@ func (d *AlertStateTimelineDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "state_change_log": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Alert State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "ends_at": schema.StringAttribute{

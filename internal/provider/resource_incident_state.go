@@ -77,11 +77,11 @@ func (r *IncidentStateResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -93,7 +93,7 @@ func (r *IncidentStateResource) Schema(ctx context.Context, req resource.SchemaR
                 Required: true,
             },
             "is_created_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the created state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Is it the created state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -101,7 +101,7 @@ func (r *IncidentStateResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_acknowledged_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the acknowledged state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Is it the acknowledged state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -109,7 +109,7 @@ func (r *IncidentStateResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_resolved_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the resolved state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Is it the resolved state of the incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -117,7 +117,7 @@ func (r *IncidentStateResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident State], Read: [Project Owner, Project Admin, Project Member, Read Incident State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -141,7 +141,7 @@ func (r *IncidentStateResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident State, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

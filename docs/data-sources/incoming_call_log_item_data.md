@@ -31,10 +31,10 @@ data "oneuptime_incoming_call_log_item_data" "example" {
 - `incoming_call_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_phone_number` (String) Phone object. Computed.
-- `status` (String) Status of this dial attempt. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]. Computed.
-- `status_message` (String) Additional status information. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]. Computed.
-- `dial_duration_in_seconds` (Number) How long this dial lasted in seconds. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]. Computed.
-- `call_cost_in_usd_cents` (Number) Cost for this dial attempt in USD cents. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]. Computed.
+- `status` (String) Status of this dial attempt. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]. Computed.
+- `status_message` (String) Additional status information. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]. Computed.
+- `dial_duration_in_seconds` (Number) How long this dial lasted in seconds. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]. Computed.
+- `call_cost_in_usd_cents` (Number) Cost for this dial attempt in USD cents. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]. Computed.
 - `started_at` (String) A date time object.. Computed.
 - `ended_at` (String) A date time object.. Computed.
-- `is_answered` (Bool) Whether this user answered the call. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]. Computed.
+- `is_answered` (Bool) Whether this user answered the call. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]. Computed.

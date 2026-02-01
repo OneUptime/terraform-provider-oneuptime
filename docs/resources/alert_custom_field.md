@@ -22,9 +22,9 @@ resource "oneuptime_alert_custom_field" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Alert Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Alert Custom Field], Update: [Project Owner, Project Admin, Edit Alert Custom Field]. Required.
-- `description` (String) Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Alert Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Alert Custom Field], Update: [Project Owner, Project Admin, Edit Alert Custom Field]. Computed.
-- `custom_field_type` (String) Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Alert Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Alert Custom Field], Update: [No access - you don't have permission for this operation]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Alert Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Alert Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Custom Field]. Required.
+- `description` (String) Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Alert Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Alert Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Custom Field]. Computed.
+- `custom_field_type` (String) Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Alert Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Alert Custom Field, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

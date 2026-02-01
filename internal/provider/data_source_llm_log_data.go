@@ -96,51 +96,51 @@ func (d *LlmLogDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "llm_provider_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the LLM Provider at time of call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the LLM Provider at time of call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "llm_type": schema.StringAttribute{
-                MarkdownDescription: "Type of LLM (OpenAI, Anthropic, Ollama). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of LLM (OpenAI, Anthropic, Ollama). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "model_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the model used (e.g., gpt-4, claude-3-opus). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the model used (e.g., gpt-4, claude-3-opus). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_global_provider": schema.BoolAttribute{
-                MarkdownDescription: "Was a global LLM provider used for this call?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Was a global LLM provider used for this call?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "total_tokens": schema.NumberAttribute{
-                MarkdownDescription: "Total tokens used (input + output). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Total tokens used (input + output). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Total cost in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Total cost in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "was_billed": schema.BoolAttribute{
-                MarkdownDescription: "Was the project charged for this API call?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Was the project charged for this API call?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the LLM API call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the LLM API call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (error details if failed). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (error details if failed). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "feature": schema.StringAttribute{
-                MarkdownDescription: "The feature that triggered this API call (e.g., IncidentPostmortem). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The feature that triggered this API call (e.g., IncidentPostmortem). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "request_prompt": schema.StringAttribute{
-                MarkdownDescription: "The prompt sent to the LLM (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The prompt sent to the LLM (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "response_preview": schema.StringAttribute{
-                MarkdownDescription: "Preview of the LLM response (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Preview of the LLM response (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
@@ -168,7 +168,7 @@ func (d *LlmLogDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "duration_ms": schema.NumberAttribute{
-                MarkdownDescription: "Request duration in milliseconds. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Request duration in milliseconds. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

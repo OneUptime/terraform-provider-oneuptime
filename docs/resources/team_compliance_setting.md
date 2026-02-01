@@ -24,9 +24,9 @@ resource "oneuptime_team_compliance_setting" "example" {
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `team_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `rule_type` (String) Type of compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Edit Team]. Required.
-- `enabled` (Bool) Whether this compliance rule is enabled.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Edit Team]. Computed.
-- `options` (String) Additional options for this compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Edit Team]. Computed.
+- `rule_type` (String) Type of compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]. Required.
+- `enabled` (Bool) Whether this compliance rule is enabled.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]. Computed.
+- `options` (String) Additional options for this compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

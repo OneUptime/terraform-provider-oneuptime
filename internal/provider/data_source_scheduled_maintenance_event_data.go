@@ -95,15 +95,15 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this scheduled event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Title of this scheduled event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -111,17 +111,17 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -142,35 +142,35 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "subscriber_notification_status_on_event_scheduled": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers when event was scheduled. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Status of notification sent to subscribers when event was scheduled. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications when event is scheduled - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Status message for subscriber notifications when event is scheduled - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Status Page Note], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ended": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "send_subscriber_notifications_on_before_the_event": schema.StringAttribute{
-                MarkdownDescription: "Should subscribers be notified before the event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Should subscribers be notified before the event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
             },
             "next_subscriber_notification_before_the_event_at": schema.StringAttribute{
@@ -178,11 +178,11 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "scheduled_maintenance_number": schema.NumberAttribute{
-                MarkdownDescription: "Scheduled Maintenance Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Scheduled Maintenance Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance]",
                 Computed: true,
             },
         },

@@ -91,7 +91,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 Required: true,
             },
             "message": schema.StringAttribute{
-                MarkdownDescription: "Exception message that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Exception message that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -99,7 +99,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "stack_trace": schema.StringAttribute{
-                MarkdownDescription: "Stack trace of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Stack trace of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -107,7 +107,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "exception_type": schema.StringAttribute{
-                MarkdownDescription: "Type of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Type of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -115,7 +115,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "fingerprint": schema.StringAttribute{
-                MarkdownDescription: "Finger print of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Finger print of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -187,7 +187,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "is_resolved": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception resolved?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Is this exception resolved?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -196,7 +196,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this exception archived?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Is this exception archived?. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -205,7 +205,7 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "occurance_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of times this exception has occurred. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                MarkdownDescription: "Number of times this exception has occurred. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),

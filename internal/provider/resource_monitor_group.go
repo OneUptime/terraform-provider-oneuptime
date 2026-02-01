@@ -73,11 +73,11 @@ func (r *MonitorGroupResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name for this monitor group. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
+                MarkdownDescription: "Any friendly name for this monitor group. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -85,7 +85,7 @@ func (r *MonitorGroupResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Group], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Group]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -110,7 +110,7 @@ func (r *MonitorGroupResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Group, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

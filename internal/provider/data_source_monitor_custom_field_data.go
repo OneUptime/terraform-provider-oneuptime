@@ -76,11 +76,11 @@ func (d *MonitorCustomFieldDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Monitor Custom Field], Update: [Project Owner, Project Admin, Edit Monitor Custom Field]",
+                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Monitor Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Custom Field]",
                 Computed: true,
             },
             "custom_field_type": schema.StringAttribute{
-                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Monitor Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Monitor Custom Field], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Monitor Custom Field], Read: [Project Owner, Project Admin, Project Member, Read Monitor Custom Field, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

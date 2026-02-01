@@ -27,8 +27,8 @@ data "oneuptime_api_key_data" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create API Key], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key]. Computed.
-- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Read API Key], Update: [No access - you don't have permission for this operation]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create API Key], Read: [Project Owner, Project Admin, Read API Key, Read All Project Resources], Update: [Project Owner, Project Admin, Edit API Key]. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Read API Key, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `expires_at` (String) A date time object.. Computed.
 - `api_key` (String) A unique identifier for an object, represented as a UUID.. Computed.

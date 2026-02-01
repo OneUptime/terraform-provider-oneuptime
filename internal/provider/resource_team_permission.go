@@ -83,7 +83,7 @@ func (r *TeamPermissionResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "permission": schema.StringAttribute{
-                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Invite New Members, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Invite New Members, Edit Team Permissions, Edit Team]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *TeamPermissionResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -100,7 +100,7 @@ func (r *TeamPermissionResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_block_permission": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

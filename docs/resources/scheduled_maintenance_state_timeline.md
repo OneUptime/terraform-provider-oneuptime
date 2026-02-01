@@ -25,8 +25,8 @@ resource "oneuptime_scheduled_maintenance_state_timeline" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `scheduled_maintenance_state_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]. Computed.
-- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]. Computed.
+- `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `ends_at` (String) A date time object.. Computed.
 - `starts_at` (String) A date time object.. Computed.
 - `created_at` (String) A date time object.. Computed.
@@ -34,8 +34,8 @@ resource "oneuptime_scheduled_maintenance_state_timeline" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `subscriber_notification_status` (String) Status of notification sent to subscribers about this scheduled maintenance state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]. Computed.
-- `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status` (String) Status of notification sent to subscribers about this scheduled maintenance state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

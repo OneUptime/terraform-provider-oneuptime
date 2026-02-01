@@ -31,5 +31,5 @@ data "oneuptime_on_call_schedule_layer_user_data" "example" {
 - `on_call_duty_policy_schedule_layer_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
+- `order` (Number) Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Read On-Call Schedule Layer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Schedule Layer]. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

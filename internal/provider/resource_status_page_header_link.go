@@ -75,15 +75,15 @@ func (r *StatusPageHeaderLinkResource) Schema(ctx context.Context, req resource.
                 Required: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
+                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
                 Required: true,
             },
             "link": schema.StringAttribute{
-                MarkdownDescription: "URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
+                MarkdownDescription: "URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
                 Required: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Header Link]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

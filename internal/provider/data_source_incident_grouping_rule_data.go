@@ -63,6 +63,11 @@ type IncidentGroupingRuleDataDataSourceModel struct {
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     DefaultAssignToUserId types.String `tfsdk:"default_assign_to_user_id"`
     DefaultAssignToTeamId types.String `tfsdk:"default_assign_to_team_id"`
+    EpisodeLabels types.Set `tfsdk:"episode_labels"`
+    EpisodeOwnerUsers types.Set `tfsdk:"episode_owner_users"`
+    EpisodeOwnerTeams types.Set `tfsdk:"episode_owner_teams"`
+    EpisodeMemberRoles types.Set `tfsdk:"episode_member_roles"`
+    EpisodeMemberRoleAssignments types.String `tfsdk:"episode_member_role_assignments"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -104,119 +109,119 @@ func (d *IncidentGroupingRuleDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Description of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "match_criteria": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "group_by_monitor": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "group_by_severity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "group_by_incident_title": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "group_by_service": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from monitors belonging to different services will be grouped into separate episodes. When disabled, incidents can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents from monitors belonging to different services will be grouped into separate episodes. When disabled, incidents can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "enable_time_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "time_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "group_by_fields": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "episode_title_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "episode_description_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "enable_resolve_delay": schema.BoolAttribute{
-                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "resolve_delay_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all incidents are resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all incidents are resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "enable_reopen_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "reopen_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "enable_inactivity_timeout": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "inactivity_timeout_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -226,6 +231,30 @@ func (d *IncidentGroupingRuleDataDataSource) Schema(ctx context.Context, req dat
             },
             "default_assign_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "episode_labels": schema.SetAttribute{
+                MarkdownDescription: "Labels to automatically apply to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "episode_owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "episode_owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "episode_member_roles": schema.SetAttribute{
+                MarkdownDescription: "Incident roles to display in the episode members form. Select the roles that can be assigned to episode members.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "episode_member_role_assignments": schema.StringAttribute{
+                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -450,6 +479,57 @@ func (d *IncidentGroupingRuleDataDataSource) Read(ctx context.Context, req datas
     }
     if val, ok := incidentGroupingRuleDataResponse["default_assign_to_team_id"].(string); ok {
         data.DefaultAssignToTeamId = types.StringValue(val)
+    }
+    if val, ok := incidentGroupingRuleDataResponse["episode_labels"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EpisodeLabels = setValue
+    }
+    if val, ok := incidentGroupingRuleDataResponse["episode_owner_users"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EpisodeOwnerUsers = setValue
+    }
+    if val, ok := incidentGroupingRuleDataResponse["episode_owner_teams"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EpisodeOwnerTeams = setValue
+    }
+    if val, ok := incidentGroupingRuleDataResponse["episode_member_roles"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EpisodeMemberRoles = setValue
+    }
+    if val, ok := incidentGroupingRuleDataResponse["episode_member_role_assignments"].(string); ok {
+        data.EpisodeMemberRoleAssignments = types.StringValue(val)
     }
     if val, ok := incidentGroupingRuleDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

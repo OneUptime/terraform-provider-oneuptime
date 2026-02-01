@@ -22,15 +22,15 @@ resource "oneuptime_dashboard" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]. Required.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]. Computed.
-- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]. Computed.
-- `dashboard_view_config` (String) Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]. Computed.
+- `dashboard_view_config` (String) Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
-- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Dashboard], Update: [No access - you don't have permission for this operation]. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

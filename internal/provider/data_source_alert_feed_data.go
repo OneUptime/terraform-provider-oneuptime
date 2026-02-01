@@ -88,15 +88,15 @@ func (d *AlertFeedDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire alert state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Log of the entire alert state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "alert_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "Alert Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Alert Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Feed], Read: [Project Owner, Project Admin, Project Member, Read Alert Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "display_color": schema.StringAttribute{

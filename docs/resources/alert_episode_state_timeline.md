@@ -25,7 +25,7 @@ resource "oneuptime_alert_episode_state_timeline" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `alert_state_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `ends_at` (String) A date time object.. Computed.
 - `starts_at` (String) A date time object.. Computed.
 - `created_at` (String) A date time object.. Computed.
@@ -33,8 +33,8 @@ resource "oneuptime_alert_episode_state_timeline" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
-- `state_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode State Timeline], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `state_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

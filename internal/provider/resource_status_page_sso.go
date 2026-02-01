@@ -83,35 +83,35 @@ func (r *StatusPageSsoResource) Schema(ctx context.Context, req resource.SchemaR
                 Required: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "signature_method": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "digest_method": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "sign_on_url": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Project User, Public], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Project User, Public, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "issuer_url": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "public_certificate": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -120,7 +120,7 @@ func (r *StatusPageSsoResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_tested": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

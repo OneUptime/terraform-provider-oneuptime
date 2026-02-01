@@ -31,4 +31,4 @@ data "oneuptime_status_page_user_owner_data" "example" {
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page User Owner], Read: [Project Owner, Project Admin, Project Member, Read Status Page User Owner], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page User Owner], Read: [Project Owner, Project Admin, Project Member, Read Status Page User Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.

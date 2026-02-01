@@ -72,11 +72,11 @@ func (r *WorkspaceNotificationRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Notification Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
+                MarkdownDescription: "Name of the Notification Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Notification Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
+                MarkdownDescription: "Description of the Notification Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -84,7 +84,7 @@ func (r *WorkspaceNotificationRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "notification_rule": schema.StringAttribute{
-                MarkdownDescription: "Notification Rules for the Workspace. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
+                MarkdownDescription: "Notification Rules for the Workspace. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,11 +92,11 @@ func (r *WorkspaceNotificationRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "event_type": schema.StringAttribute{
-                MarkdownDescription: "Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
+                MarkdownDescription: "Event Type for the Workspace like Incident Created, Monitor Status Updated, etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
                 Required: true,
             },
             "workspace_type": schema.StringAttribute{
-                MarkdownDescription: "Type of Workspace - slack, microsoft teams etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
+                MarkdownDescription: "Type of Workspace - slack, microsoft teams etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Create Workspace Notification Rule], Read: [Project Admin, Project Owner, Project Member, Read Workspace Notification Rule, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Edit Workspace Notification Rule]",
                 Required: true,
             },
             "created_at": schema.StringAttribute{

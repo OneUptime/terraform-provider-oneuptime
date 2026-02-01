@@ -99,19 +99,19 @@ func (d *IncomingCallLogItemDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of this dial attempt. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Status of this dial attempt. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Additional status information. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Additional status information. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "dial_duration_in_seconds": schema.NumberAttribute{
-                MarkdownDescription: "How long this dial lasted in seconds. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "How long this dial lasted in seconds. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "call_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Cost for this dial attempt in USD cents. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Cost for this dial attempt in USD cents. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -123,7 +123,7 @@ func (d *IncomingCallLogItemDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "is_answered": schema.BoolAttribute{
-                MarkdownDescription: "Whether this user answered the call. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Whether this user answered the call. Permissions - Create: [Project Owner, Project Admin], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Log Item, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
         },

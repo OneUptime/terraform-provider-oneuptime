@@ -72,6 +72,11 @@ type IncidentGroupingRuleResourceModel struct {
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     DefaultAssignToUserId types.String `tfsdk:"default_assign_to_user_id"`
     DefaultAssignToTeamId types.String `tfsdk:"default_assign_to_team_id"`
+    EpisodeLabels types.Set `tfsdk:"episode_labels"`
+    EpisodeOwnerUsers types.Set `tfsdk:"episode_owner_users"`
+    EpisodeOwnerTeams types.Set `tfsdk:"episode_owner_teams"`
+    EpisodeMemberRoles types.Set `tfsdk:"episode_member_roles"`
+    EpisodeMemberRoleAssignments types.String `tfsdk:"episode_member_role_assignments"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -104,11 +109,11 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Name of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Description of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -116,7 +121,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
@@ -125,7 +130,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -134,7 +139,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "match_criteria": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -142,7 +147,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -151,7 +156,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -160,7 +165,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -169,7 +174,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -178,7 +183,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -186,7 +191,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -194,7 +199,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -202,7 +207,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -210,7 +215,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_monitor": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -219,7 +224,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_severity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -228,7 +233,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_incident_title": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -237,7 +242,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_service": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from monitors belonging to different services will be grouped into separate episodes. When disabled, incidents can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents from monitors belonging to different services will be grouped into separate episodes. When disabled, incidents can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -246,7 +251,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_time_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -255,7 +260,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "time_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
@@ -264,7 +269,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_fields": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -272,7 +277,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_title_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -280,7 +285,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_description_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -288,7 +293,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_resolve_delay": schema.BoolAttribute{
-                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -297,7 +302,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "resolve_delay_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all incidents are resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all incidents are resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -306,7 +311,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_reopen_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -315,7 +320,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "reopen_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -324,7 +329,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_inactivity_timeout": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -333,7 +338,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "inactivity_timeout_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
@@ -342,7 +347,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -360,6 +365,50 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
             },
             "default_assign_to_team_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "episode_labels": schema.SetAttribute{
+                MarkdownDescription: "Labels to automatically apply to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "episode_owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "episode_owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "episode_member_roles": schema.SetAttribute{
+                MarkdownDescription: "Incident roles to display in the episode members form. Select the roles that can be assigned to episode members.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "episode_member_role_assignments": schema.StringAttribute{
+                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -457,6 +506,11 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         "onCallDutyPolicies": r.convertTerraformSetToInterface(data.OnCallDutyPolicies),
         "defaultAssignToUserId": data.DefaultAssignToUserId.ValueString(),
         "defaultAssignToTeamId": data.DefaultAssignToTeamId.ValueString(),
+        "episodeLabels": r.convertTerraformSetToInterface(data.EpisodeLabels),
+        "episodeOwnerUsers": r.convertTerraformSetToInterface(data.EpisodeOwnerUsers),
+        "episodeOwnerTeams": r.convertTerraformSetToInterface(data.EpisodeOwnerTeams),
+        "episodeMemberRoles": r.convertTerraformSetToInterface(data.EpisodeMemberRoles),
+        "episodeMemberRoleAssignments": r.parseJSONField(data.EpisodeMemberRoleAssignments),
         },
     }
 
@@ -1209,6 +1263,171 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
     } else {
         data.DefaultAssignToTeamId = types.StringNull()
     }
+    if val, ok := dataMap["episodeLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeMemberRoles"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeMemberRoles = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeMemberRoles = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["episodeMemberRoleAssignments"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EpisodeMemberRoleAssignments = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EpisodeMemberRoleAssignments = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+            } else {
+                data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+            } else {
+                data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+        } else {
+            data.EpisodeMemberRoleAssignments = types.StringNull()
+        }
+    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok && val != "" {
+        data.EpisodeMemberRoleAssignments = types.StringValue(val)
+    } else {
+        data.EpisodeMemberRoleAssignments = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1423,6 +1642,11 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         "onCallDutyPolicies": true,
         "defaultAssignToUserId": true,
         "defaultAssignToTeamId": true,
+        "episodeLabels": true,
+        "episodeOwnerUsers": true,
+        "episodeOwnerTeams": true,
+        "episodeMemberRoles": true,
+        "episodeMemberRoleAssignments": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2185,6 +2409,171 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
     } else {
         data.DefaultAssignToTeamId = types.StringNull()
     }
+    if val, ok := dataMap["episodeLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeMemberRoles"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeMemberRoles = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeMemberRoles = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["episodeMemberRoleAssignments"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EpisodeMemberRoleAssignments = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EpisodeMemberRoleAssignments = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+            } else {
+                data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+            } else {
+                data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+        } else {
+            data.EpisodeMemberRoleAssignments = types.StringNull()
+        }
+    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok && val != "" {
+        data.EpisodeMemberRoleAssignments = types.StringValue(val)
+    } else {
+        data.EpisodeMemberRoleAssignments = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2480,6 +2869,26 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
     if !data.DefaultAssignToTeamId.IsUnknown() && !state.DefaultAssignToTeamId.IsUnknown() && !data.DefaultAssignToTeamId.Equal(state.DefaultAssignToTeamId) {
         requestDataMap["defaultAssignToTeamId"] = data.DefaultAssignToTeamId.ValueString()
     }
+    if !data.EpisodeLabels.IsUnknown() && !state.EpisodeLabels.IsUnknown() && !data.EpisodeLabels.Equal(state.EpisodeLabels) {
+        requestDataMap["episodeLabels"] = r.convertTerraformSetToInterface(data.EpisodeLabels)
+    }
+    if !data.EpisodeOwnerUsers.IsUnknown() && !state.EpisodeOwnerUsers.IsUnknown() && !data.EpisodeOwnerUsers.Equal(state.EpisodeOwnerUsers) {
+        requestDataMap["episodeOwnerUsers"] = r.convertTerraformSetToInterface(data.EpisodeOwnerUsers)
+    }
+    if !data.EpisodeOwnerTeams.IsUnknown() && !state.EpisodeOwnerTeams.IsUnknown() && !data.EpisodeOwnerTeams.Equal(state.EpisodeOwnerTeams) {
+        requestDataMap["episodeOwnerTeams"] = r.convertTerraformSetToInterface(data.EpisodeOwnerTeams)
+    }
+    if !data.EpisodeMemberRoles.IsUnknown() && !state.EpisodeMemberRoles.IsUnknown() && !data.EpisodeMemberRoles.Equal(state.EpisodeMemberRoles) {
+        requestDataMap["episodeMemberRoles"] = r.convertTerraformSetToInterface(data.EpisodeMemberRoles)
+    }
+    if !data.EpisodeMemberRoleAssignments.IsUnknown() && !state.EpisodeMemberRoleAssignments.IsUnknown() && !data.EpisodeMemberRoleAssignments.Equal(state.EpisodeMemberRoleAssignments) {
+        var episodememberroleassignmentsData interface{}
+        if err := json.Unmarshal([]byte(data.EpisodeMemberRoleAssignments.ValueString()), &episodememberroleassignmentsData); err == nil {
+            requestDataMap["episodeMemberRoleAssignments"] = episodememberroleassignmentsData
+        } else {
+            requestDataMap["episodeMemberRoleAssignments"] = data.EpisodeMemberRoleAssignments.ValueString()
+        }
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/incident-grouping-rule/" + data.Id.ValueString() + "", incidentGroupingRuleRequest)
@@ -2530,6 +2939,11 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         "onCallDutyPolicies": true,
         "defaultAssignToUserId": true,
         "defaultAssignToTeamId": true,
+        "episodeLabels": true,
+        "episodeOwnerUsers": true,
+        "episodeOwnerTeams": true,
+        "episodeMemberRoles": true,
+        "episodeMemberRoleAssignments": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3285,6 +3699,171 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.DefaultAssignToTeamId = types.StringValue(val)
     } else {
         data.DefaultAssignToTeamId = types.StringNull()
+    }
+    if val, ok := dataMap["episodeLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["episodeMemberRoles"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.EpisodeMemberRoles = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.EpisodeMemberRoles = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["episodeMemberRoleAssignments"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EpisodeMemberRoleAssignments = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EpisodeMemberRoleAssignments = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+            } else {
+                data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+            } else {
+                data.EpisodeMemberRoleAssignments = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EpisodeMemberRoleAssignments = types.StringValue(string(jsonBytes))
+        } else {
+            data.EpisodeMemberRoleAssignments = types.StringNull()
+        }
+    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok && val != "" {
+        data.EpisodeMemberRoleAssignments = types.StringValue(val)
+    } else {
+        data.EpisodeMemberRoleAssignments = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -102,19 +102,19 @@ func (r *CallLogResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "call_data": schema.StringAttribute{
-                MarkdownDescription: "Content of the data that was sent in the call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Content of the data that was sent in the call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the Call sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the Call sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "call_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Call Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Call Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{

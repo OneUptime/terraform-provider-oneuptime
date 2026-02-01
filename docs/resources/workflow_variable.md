@@ -24,10 +24,10 @@ resource "oneuptime_workflow_variable" "example" {
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `workflow_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `name` (String) Variable Name. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables], Update: [Project Owner, Project Admin, Edit Workflow Variables]. Required.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables], Update: [Project Owner, Project Admin, Edit Workflow Variables]. Computed.
+- `name` (String) Variable Name. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Variables]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Variables]. Computed.
 - `content` (String) Content of the variable. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [No access - you don't have permission for this operation], Update: [Project Owner, Project Admin]. Required.
-- `is_secret` (Bool) Is this variable a secret. If true, then it'll not be in the logs. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_secret` (Bool) Is this variable a secret. If true, then it'll not be in the logs. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Read Workflow Variables, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

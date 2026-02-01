@@ -84,7 +84,7 @@ func (r *StatusPagePrivateUserResource) Schema(ctx context.Context, req resource
                 },
             },
             "password": schema.StringAttribute{
-                MarkdownDescription: "Password. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [Project Owner, Project Admin, Project Member, Edit Status Page PrivateUser]",
+                MarkdownDescription: "Password. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page PrivateUser]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,7 +92,7 @@ func (r *StatusPagePrivateUserResource) Schema(ctx context.Context, req resource
                 },
             },
             "is_sso_user": schema.BoolAttribute{
-                MarkdownDescription: "Did this user sign up via SSO?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Did this user sign up via SSO?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Private User], Read: [Project Owner, Project Admin, Project Member, Read Status Page Private User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
