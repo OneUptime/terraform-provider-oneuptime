@@ -47,6 +47,7 @@ type SmsLogResourceModel struct {
     IncidentId types.String `tfsdk:"incident_id"`
     UserId types.String `tfsdk:"user_id"`
     AlertId types.String `tfsdk:"alert_id"`
+    MonitorId types.String `tfsdk:"monitor_id"`
     ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     StatusPageAnnouncementId types.String `tfsdk:"status_page_announcement_id"`
@@ -126,6 +127,10 @@ func (r *SmsLogResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -699,6 +704,43 @@ func (r *SmsLogResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.AlertId = types.StringNull()
     }
+    if obj, ok := dataMap["monitorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorId"].(string); ok && val != "" {
+        data.MonitorId = types.StringValue(val)
+    } else {
+        data.MonitorId = types.StringNull()
+    }
     if obj, ok := dataMap["scheduledMaintenanceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -997,6 +1039,7 @@ func (r *SmsLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         "incidentId": true,
         "userId": true,
         "alertId": true,
+        "monitorId": true,
         "scheduledMaintenanceId": true,
         "statusPageId": true,
         "statusPageAnnouncementId": true,
@@ -1509,6 +1552,43 @@ func (r *SmsLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         data.AlertId = types.StringValue(val)
     } else {
         data.AlertId = types.StringNull()
+    }
+    if obj, ok := dataMap["monitorId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorId"].(string); ok && val != "" {
+        data.MonitorId = types.StringValue(val)
+    } else {
+        data.MonitorId = types.StringNull()
     }
     if obj, ok := dataMap["scheduledMaintenanceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -41,6 +41,7 @@ type PushNotificationLogDataDataSourceModel struct {
     IncidentId types.String `tfsdk:"incident_id"`
     UserId types.String `tfsdk:"user_id"`
     AlertId types.String `tfsdk:"alert_id"`
+    MonitorId types.String `tfsdk:"monitor_id"`
     ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
     StatusPageAnnouncementId types.String `tfsdk:"status_page_announcement_id"`
@@ -120,6 +121,10 @@ func (d *PushNotificationLogDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -261,6 +266,9 @@ func (d *PushNotificationLogDataDataSource) Read(ctx context.Context, req dataso
     }
     if val, ok := pushNotificationLogDataResponse["alert_id"].(string); ok {
         data.AlertId = types.StringValue(val)
+    }
+    if val, ok := pushNotificationLogDataResponse["monitor_id"].(string); ok {
+        data.MonitorId = types.StringValue(val)
     }
     if val, ok := pushNotificationLogDataResponse["scheduled_maintenance_id"].(string); ok {
         data.ScheduledMaintenanceId = types.StringValue(val)
