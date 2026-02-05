@@ -89,6 +89,9 @@ type StatusPageResourceModel struct {
     EnableCustomSubscriberEmailNotificationFooterText types.Bool `tfsdk:"enable_custom_subscriber_email_notification_footer_text"`
     ShowIncidentsOnStatusPage types.Bool `tfsdk:"show_incidents_on_status_page"`
     ShowAnnouncementsOnStatusPage types.Bool `tfsdk:"show_announcements_on_status_page"`
+    ShowEpisodesOnStatusPage types.Bool `tfsdk:"show_episodes_on_status_page"`
+    ShowEpisodeHistoryInDays types.Number `tfsdk:"show_episode_history_in_days"`
+    ShowEpisodeLabelsOnStatusPage types.Bool `tfsdk:"show_episode_labels_on_status_page"`
     ShowScheduledMaintenanceEventsOnStatusPage types.Bool `tfsdk:"show_scheduled_maintenance_events_on_status_page"`
     ShowSubscriberPageOnStatusPage types.Bool `tfsdk:"show_subscriber_page_on_status_page"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
@@ -524,6 +527,33 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "show_episodes_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Show Incident Episodes on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "show_episode_history_in_days": schema.NumberAttribute{
+                MarkdownDescription: "How many days of episode history to show on the status page. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "show_episode_labels_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Show Episode Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "show_scheduled_maintenance_events_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Show Scheduled Maintenance Events on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Optional: true,
@@ -687,6 +717,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "enableCustomSubscriberEmailNotificationFooterText": data.EnableCustomSubscriberEmailNotificationFooterText.ValueBool(),
         "showIncidentsOnStatusPage": data.ShowIncidentsOnStatusPage.ValueBool(),
         "showAnnouncementsOnStatusPage": data.ShowAnnouncementsOnStatusPage.ValueBool(),
+        "showEpisodesOnStatusPage": data.ShowEpisodesOnStatusPage.ValueBool(),
+        "showEpisodeHistoryInDays": r.bigFloatToFloat64(data.ShowEpisodeHistoryInDays.ValueBigFloat()),
+        "showEpisodeLabelsOnStatusPage": data.ShowEpisodeLabelsOnStatusPage.ValueBool(),
         "showScheduledMaintenanceEventsOnStatusPage": data.ShowScheduledMaintenanceEventsOnStatusPage.ValueBool(),
         "showSubscriberPageOnStatusPage": data.ShowSubscriberPageOnStatusPage.ValueBool(),
         "ipWhitelist": data.IpWhitelist.ValueString(),
@@ -1778,6 +1811,21 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if val, ok := dataMap["showAnnouncementsOnStatusPage"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["showEpisodesOnStatusPage"].(bool); ok {
+        data.ShowEpisodesOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["showEpisodeHistoryInDays"].(float64); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int64); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["showEpisodeHistoryInDays"] == nil {
+        data.ShowEpisodeHistoryInDays = types.NumberNull()
+    }
+    if val, ok := dataMap["showEpisodeLabelsOnStatusPage"].(bool); ok {
+        data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
+    }
     if val, ok := dataMap["showScheduledMaintenanceEventsOnStatusPage"].(bool); ok {
         data.ShowScheduledMaintenanceEventsOnStatusPage = types.BoolValue(val)
     }
@@ -2163,6 +2211,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "enableCustomSubscriberEmailNotificationFooterText": true,
         "showIncidentsOnStatusPage": true,
         "showAnnouncementsOnStatusPage": true,
+        "showEpisodesOnStatusPage": true,
+        "showEpisodeHistoryInDays": true,
+        "showEpisodeLabelsOnStatusPage": true,
         "showScheduledMaintenanceEventsOnStatusPage": true,
         "showSubscriberPageOnStatusPage": true,
         "ipWhitelist": true,
@@ -3267,6 +3318,21 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     if val, ok := dataMap["showAnnouncementsOnStatusPage"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["showEpisodesOnStatusPage"].(bool); ok {
+        data.ShowEpisodesOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["showEpisodeHistoryInDays"].(float64); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int64); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["showEpisodeHistoryInDays"] == nil {
+        data.ShowEpisodeHistoryInDays = types.NumberNull()
+    }
+    if val, ok := dataMap["showEpisodeLabelsOnStatusPage"].(bool); ok {
+        data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
+    }
     if val, ok := dataMap["showScheduledMaintenanceEventsOnStatusPage"].(bool); ok {
         data.ShowScheduledMaintenanceEventsOnStatusPage = types.BoolValue(val)
     }
@@ -3785,6 +3851,15 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.ShowAnnouncementsOnStatusPage.IsUnknown() && !state.ShowAnnouncementsOnStatusPage.IsUnknown() && !data.ShowAnnouncementsOnStatusPage.Equal(state.ShowAnnouncementsOnStatusPage) {
         requestDataMap["showAnnouncementsOnStatusPage"] = data.ShowAnnouncementsOnStatusPage.ValueBool()
     }
+    if !data.ShowEpisodesOnStatusPage.IsUnknown() && !state.ShowEpisodesOnStatusPage.IsUnknown() && !data.ShowEpisodesOnStatusPage.Equal(state.ShowEpisodesOnStatusPage) {
+        requestDataMap["showEpisodesOnStatusPage"] = data.ShowEpisodesOnStatusPage.ValueBool()
+    }
+    if !data.ShowEpisodeHistoryInDays.IsUnknown() && !state.ShowEpisodeHistoryInDays.IsUnknown() && !data.ShowEpisodeHistoryInDays.Equal(state.ShowEpisodeHistoryInDays) {
+        requestDataMap["showEpisodeHistoryInDays"] = r.bigFloatToFloat64(data.ShowEpisodeHistoryInDays.ValueBigFloat())
+    }
+    if !data.ShowEpisodeLabelsOnStatusPage.IsUnknown() && !state.ShowEpisodeLabelsOnStatusPage.IsUnknown() && !data.ShowEpisodeLabelsOnStatusPage.Equal(state.ShowEpisodeLabelsOnStatusPage) {
+        requestDataMap["showEpisodeLabelsOnStatusPage"] = data.ShowEpisodeLabelsOnStatusPage.ValueBool()
+    }
     if !data.ShowScheduledMaintenanceEventsOnStatusPage.IsUnknown() && !state.ShowScheduledMaintenanceEventsOnStatusPage.IsUnknown() && !data.ShowScheduledMaintenanceEventsOnStatusPage.Equal(state.ShowScheduledMaintenanceEventsOnStatusPage) {
         requestDataMap["showScheduledMaintenanceEventsOnStatusPage"] = data.ShowScheduledMaintenanceEventsOnStatusPage.ValueBool()
     }
@@ -3866,6 +3941,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "enableCustomSubscriberEmailNotificationFooterText": true,
         "showIncidentsOnStatusPage": true,
         "showAnnouncementsOnStatusPage": true,
+        "showEpisodesOnStatusPage": true,
+        "showEpisodeHistoryInDays": true,
+        "showEpisodeLabelsOnStatusPage": true,
         "showScheduledMaintenanceEventsOnStatusPage": true,
         "showSubscriberPageOnStatusPage": true,
         "ipWhitelist": true,
@@ -4963,6 +5041,21 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if val, ok := dataMap["showAnnouncementsOnStatusPage"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["showEpisodesOnStatusPage"].(bool); ok {
+        data.ShowEpisodesOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["showEpisodeHistoryInDays"].(float64); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["showEpisodeHistoryInDays"].(int64); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["showEpisodeHistoryInDays"] == nil {
+        data.ShowEpisodeHistoryInDays = types.NumberNull()
+    }
+    if val, ok := dataMap["showEpisodeLabelsOnStatusPage"].(bool); ok {
+        data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
     }
     if val, ok := dataMap["showScheduledMaintenanceEventsOnStatusPage"].(bool); ok {
         data.ShowScheduledMaintenanceEventsOnStatusPage = types.BoolValue(val)

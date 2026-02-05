@@ -77,6 +77,7 @@ type IncidentGroupingRuleResourceModel struct {
     EpisodeOwnerTeams types.Set `tfsdk:"episode_owner_teams"`
     EpisodeMemberRoles types.Set `tfsdk:"episode_member_roles"`
     EpisodeMemberRoleAssignments types.String `tfsdk:"episode_member_role_assignments"`
+    ShowEpisodeOnStatusPage types.Bool `tfsdk:"show_episode_on_status_page"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -415,6 +416,15 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "show_episode_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Should episodes created by this rule be shown on the status page?. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
@@ -511,6 +521,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         "episodeOwnerTeams": r.convertTerraformSetToInterface(data.EpisodeOwnerTeams),
         "episodeMemberRoles": r.convertTerraformSetToInterface(data.EpisodeMemberRoles),
         "episodeMemberRoleAssignments": r.parseJSONField(data.EpisodeMemberRoleAssignments),
+        "showEpisodeOnStatusPage": data.ShowEpisodeOnStatusPage.ValueBool(),
         },
     }
 
@@ -1428,6 +1439,9 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
     } else {
         data.EpisodeMemberRoleAssignments = types.StringNull()
     }
+    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
+        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1647,6 +1661,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         "episodeOwnerTeams": true,
         "episodeMemberRoles": true,
         "episodeMemberRoleAssignments": true,
+        "showEpisodeOnStatusPage": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2574,6 +2589,9 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
     } else {
         data.EpisodeMemberRoleAssignments = types.StringNull()
     }
+    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
+        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2889,6 +2907,9 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
             requestDataMap["episodeMemberRoleAssignments"] = data.EpisodeMemberRoleAssignments.ValueString()
         }
     }
+    if !data.ShowEpisodeOnStatusPage.IsUnknown() && !state.ShowEpisodeOnStatusPage.IsUnknown() && !data.ShowEpisodeOnStatusPage.Equal(state.ShowEpisodeOnStatusPage) {
+        requestDataMap["showEpisodeOnStatusPage"] = data.ShowEpisodeOnStatusPage.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/incident-grouping-rule/" + data.Id.ValueString() + "", incidentGroupingRuleRequest)
@@ -2944,6 +2965,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         "episodeOwnerTeams": true,
         "episodeMemberRoles": true,
         "episodeMemberRoleAssignments": true,
+        "showEpisodeOnStatusPage": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3864,6 +3886,9 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.EpisodeMemberRoleAssignments = types.StringValue(val)
     } else {
         data.EpisodeMemberRoleAssignments = types.StringNull()
+    }
+    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
+        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

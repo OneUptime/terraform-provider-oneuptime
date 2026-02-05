@@ -37,7 +37,6 @@ resource "oneuptime_scheduled_maintenance_template" "example" {
 - `first_event_ends_at` (String) A date time object.. Computed.
 - `recurring_interval` (String) How often should this event recur?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Template]. Computed.
 - `is_recurring_event` (Bool) Is this a recurring event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
-- `schedule_next_event_at` (String) A date time object.. Computed.
 - `should_status_page_subscribers_be_notified_on_event_created` (Bool) Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
 - `should_status_page_subscribers_be_notified_when_event_changed_to_ongoing` (Bool) Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
 - `should_status_page_subscribers_be_notified_when_event_changed_to_ended` (Bool) Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]. Computed.
@@ -49,6 +48,7 @@ resource "oneuptime_scheduled_maintenance_template" "example" {
 - `version` (Number) Object version. Computed.
 - `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `schedule_next_event_at` (String) A date time object.. Computed.
 
 ## Import
 

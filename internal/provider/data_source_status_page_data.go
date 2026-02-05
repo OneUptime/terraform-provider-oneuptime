@@ -83,6 +83,9 @@ type StatusPageDataDataSourceModel struct {
     EnableCustomSubscriberEmailNotificationFooterText types.Bool `tfsdk:"enable_custom_subscriber_email_notification_footer_text"`
     ShowIncidentsOnStatusPage types.Bool `tfsdk:"show_incidents_on_status_page"`
     ShowAnnouncementsOnStatusPage types.Bool `tfsdk:"show_announcements_on_status_page"`
+    ShowEpisodesOnStatusPage types.Bool `tfsdk:"show_episodes_on_status_page"`
+    ShowEpisodeHistoryInDays types.Number `tfsdk:"show_episode_history_in_days"`
+    ShowEpisodeLabelsOnStatusPage types.Bool `tfsdk:"show_episode_labels_on_status_page"`
     ShowScheduledMaintenanceEventsOnStatusPage types.Bool `tfsdk:"show_scheduled_maintenance_events_on_status_page"`
     ShowSubscriberPageOnStatusPage types.Bool `tfsdk:"show_subscriber_page_on_status_page"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
@@ -327,6 +330,18 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "show_announcements_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Show Announcements on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Computed: true,
+            },
+            "show_episodes_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Show Incident Episodes on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Computed: true,
+            },
+            "show_episode_history_in_days": schema.NumberAttribute{
+                MarkdownDescription: "How many days of episode history to show on the status page. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Computed: true,
+            },
+            "show_episode_labels_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Show Episode Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Computed: true,
             },
             "show_scheduled_maintenance_events_on_status_page": schema.BoolAttribute{
@@ -600,6 +615,15 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := statusPageDataResponse["show_announcements_on_status_page"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := statusPageDataResponse["show_episodes_on_status_page"].(bool); ok {
+        data.ShowEpisodesOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := statusPageDataResponse["show_episode_history_in_days"].(float64); ok {
+        data.ShowEpisodeHistoryInDays = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := statusPageDataResponse["show_episode_labels_on_status_page"].(bool); ok {
+        data.ShowEpisodeLabelsOnStatusPage = types.BoolValue(val)
     }
     if val, ok := statusPageDataResponse["show_scheduled_maintenance_events_on_status_page"].(bool); ok {
         data.ShowScheduledMaintenanceEventsOnStatusPage = types.BoolValue(val)

@@ -40,6 +40,9 @@ type IncidentEpisodeStateTimelineDataDataSourceModel struct {
     RootCause types.String `tfsdk:"root_cause"`
     EndsAt types.String `tfsdk:"ends_at"`
     StartsAt types.String `tfsdk:"starts_at"`
+    ShouldStatusPageSubscribersBeNotified types.Bool `tfsdk:"should_status_page_subscribers_be_notified"`
+    SubscriberNotificationStatus types.String `tfsdk:"subscriber_notification_status"`
+    SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
 }
 
 func (d *IncidentEpisodeStateTimelineDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -109,6 +112,18 @@ func (d *IncidentEpisodeStateTimelineDataDataSource) Schema(ctx context.Context,
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "should_status_page_subscribers_be_notified": schema.BoolAttribute{
+                MarkdownDescription: "Should status page subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "subscriber_notification_status": schema.StringAttribute{
+                MarkdownDescription: "Status of notification sent to subscribers about this state change. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "subscriber_notification_status_message": schema.StringAttribute{
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -218,6 +233,15 @@ func (d *IncidentEpisodeStateTimelineDataDataSource) Read(ctx context.Context, r
     }
     if val, ok := incidentEpisodeStateTimelineDataResponse["starts_at"].(string); ok {
         data.StartsAt = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeStateTimelineDataResponse["should_status_page_subscribers_be_notified"].(bool); ok {
+        data.ShouldStatusPageSubscribersBeNotified = types.BoolValue(val)
+    }
+    if val, ok := incidentEpisodeStateTimelineDataResponse["subscriber_notification_status"].(string); ok {
+        data.SubscriberNotificationStatus = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeStateTimelineDataResponse["subscriber_notification_status_message"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
     }
 
     // Write logs using the tflog package

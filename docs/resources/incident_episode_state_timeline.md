@@ -28,6 +28,7 @@ resource "oneuptime_incident_episode_state_timeline" "example" {
 - `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `ends_at` (String) A date time object.. Computed.
 - `starts_at` (String) A date time object.. Computed.
+- `should_status_page_subscribers_be_notified` (Bool) Should status page subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
@@ -35,6 +36,8 @@ resource "oneuptime_incident_episode_state_timeline" "example" {
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_owner_notified` (Bool) Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `state_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status` (String) Status of notification sent to subscribers about this state change. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

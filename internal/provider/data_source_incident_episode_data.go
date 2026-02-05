@@ -57,6 +57,11 @@ type IncidentEpisodeDataDataSourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     PostmortemNote types.String `tfsdk:"postmortem_note"`
     PostUpdatesToWorkspaceChannels types.String `tfsdk:"post_updates_to_workspace_channels"`
+    IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    DeclaredAt types.String `tfsdk:"declared_at"`
+    ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_episode_created"`
+    SubscriberNotificationStatusOnEpisodeCreated types.String `tfsdk:"subscriber_notification_status_on_episode_created"`
+    SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
 }
 
 func (d *IncidentEpisodeDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -192,6 +197,26 @@ func (d *IncidentEpisodeDataDataSource) Schema(ctx context.Context, req datasour
             },
             "post_updates_to_workspace_channels": schema.StringAttribute{
                 MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode]",
+                Computed: true,
+            },
+            "is_visible_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Should this episode be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode]",
+                Computed: true,
+            },
+            "declared_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "should_status_page_subscribers_be_notified_on_episode_created": schema.BoolAttribute{
+                MarkdownDescription: "Should status page subscribers be notified when this episode is created?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "subscriber_notification_status_on_episode_created": schema.StringAttribute{
+                MarkdownDescription: "Status of notification sent to subscribers when this episode was created. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "subscriber_notification_status_message": schema.StringAttribute{
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -367,6 +392,21 @@ func (d *IncidentEpisodeDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := incidentEpisodeDataResponse["post_updates_to_workspace_channels"].(string); ok {
         data.PostUpdatesToWorkspaceChannels = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeDataResponse["is_visible_on_status_page"].(bool); ok {
+        data.IsVisibleOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := incidentEpisodeDataResponse["declared_at"].(string); ok {
+        data.DeclaredAt = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeDataResponse["should_status_page_subscribers_be_notified_on_episode_created"].(bool); ok {
+        data.ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated = types.BoolValue(val)
+    }
+    if val, ok := incidentEpisodeDataResponse["subscriber_notification_status_on_episode_created"].(string); ok {
+        data.SubscriberNotificationStatusOnEpisodeCreated = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeDataResponse["subscriber_notification_status_message"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
     }
 
     // Write logs using the tflog package

@@ -78,6 +78,7 @@ func GetResources() []func() resource.Resource {
         NewIncidentEpisodeTeamOwnerResource,
         NewIncidentEpisodeInternalNoteResource,
         NewIncidentEpisodeFeedResource,
+        NewIncidentEpisodePublicNoteResource,
         NewIncidentGroupingRuleResource,
         NewIncidentSlaRuleResource,
         NewIncidentSlaResource,

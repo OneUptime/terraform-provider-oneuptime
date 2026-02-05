@@ -69,6 +69,7 @@ type IncidentGroupingRuleDataDataSourceModel struct {
     EpisodeMemberRoles types.Set `tfsdk:"episode_member_roles"`
     EpisodeMemberRoleAssignments types.String `tfsdk:"episode_member_role_assignments"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ShowEpisodeOnStatusPage types.Bool `tfsdk:"show_episode_on_status_page"`
 }
 
 func (d *IncidentGroupingRuleDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -259,6 +260,10 @@ func (d *IncidentGroupingRuleDataDataSource) Schema(ctx context.Context, req dat
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "show_episode_on_status_page": schema.BoolAttribute{
+                MarkdownDescription: "Should episodes created by this rule be shown on the status page?. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
         },
@@ -533,6 +538,9 @@ func (d *IncidentGroupingRuleDataDataSource) Read(ctx context.Context, req datas
     }
     if val, ok := incidentGroupingRuleDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
+    }
+    if val, ok := incidentGroupingRuleDataResponse["show_episode_on_status_page"].(bool); ok {
+        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
     }
 
     // Write logs using the tflog package

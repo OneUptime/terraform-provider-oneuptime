@@ -52,7 +52,6 @@ type ScheduledMaintenanceTemplateResourceModel struct {
     FirstEventEndsAt types.String `tfsdk:"first_event_ends_at"`
     RecurringInterval types.String `tfsdk:"recurring_interval"`
     IsRecurringEvent types.Bool `tfsdk:"is_recurring_event"`
-    ScheduleNextEventAt types.String `tfsdk:"schedule_next_event_at"`
     ShouldStatusPageSubscribersBeNotifiedOnEventCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_event_created"`
     ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing types.Bool `tfsdk:"should_status_page_subscribers_be_notified_when_event_changed_to_ongoing"`
     ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded types.Bool `tfsdk:"should_status_page_subscribers_be_notified_when_event_changed_to_ended"`
@@ -64,6 +63,7 @@ type ScheduledMaintenanceTemplateResourceModel struct {
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ScheduleNextEventAt types.String `tfsdk:"schedule_next_event_at"`
 }
 
 func (r *ScheduledMaintenanceTemplateResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -185,14 +185,6 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
-            "schedule_next_event_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
                 MarkdownDescription: "Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
                 Optional: true,
@@ -260,6 +252,10 @@ func (r *ScheduledMaintenanceTemplateResource) Schema(ctx context.Context, req r
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "schedule_next_event_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
         },
     }
 }
@@ -313,7 +309,6 @@ func (r *ScheduledMaintenanceTemplateResource) Create(ctx context.Context, req r
         "firstEventEndsAt": r.parseJSONField(data.FirstEventEndsAt),
         "recurringInterval": r.parseJSONField(data.RecurringInterval),
         "isRecurringEvent": data.IsRecurringEvent.ValueBool(),
-        "scheduleNextEventAt": r.parseJSONField(data.ScheduleNextEventAt),
         "shouldStatusPageSubscribersBeNotifiedOnEventCreated": data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool(),
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing": data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.ValueBool(),
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded": data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.ValueBool(),
@@ -829,43 +824,6 @@ func (r *ScheduledMaintenanceTemplateResource) Create(ctx context.Context, req r
     } else if dataMap["isRecurringEvent"] == nil {
         data.IsRecurringEvent = types.BoolNull()
     }
-    if obj, ok := dataMap["scheduleNextEventAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ScheduleNextEventAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ScheduleNextEventAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.ScheduleNextEventAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["scheduleNextEventAt"].(string); ok && val != "" {
-        data.ScheduleNextEventAt = types.StringValue(val)
-    } else {
-        data.ScheduleNextEventAt = types.StringNull()
-    }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated = types.BoolValue(val)
     }
@@ -1143,6 +1101,43 @@ func (r *ScheduledMaintenanceTemplateResource) Create(ctx context.Context, req r
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["scheduleNextEventAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleNextEventAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleNextEventAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleNextEventAt = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleNextEventAt"].(string); ok && val != "" {
+        data.ScheduleNextEventAt = types.StringValue(val)
+    } else {
+        data.ScheduleNextEventAt = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1182,7 +1177,6 @@ func (r *ScheduledMaintenanceTemplateResource) Read(ctx context.Context, req res
         "firstEventEndsAt": true,
         "recurringInterval": true,
         "isRecurringEvent": true,
-        "scheduleNextEventAt": true,
         "shouldStatusPageSubscribersBeNotifiedOnEventCreated": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded": true,
@@ -1194,6 +1188,7 @@ func (r *ScheduledMaintenanceTemplateResource) Read(ctx context.Context, req res
         "version": true,
         "slug": true,
         "createdByUserId": true,
+        "scheduleNextEventAt": true,
         "_id": true,
     }
 
@@ -1709,43 +1704,6 @@ func (r *ScheduledMaintenanceTemplateResource) Read(ctx context.Context, req res
     } else if dataMap["isRecurringEvent"] == nil {
         data.IsRecurringEvent = types.BoolNull()
     }
-    if obj, ok := dataMap["scheduleNextEventAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ScheduleNextEventAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ScheduleNextEventAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.ScheduleNextEventAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["scheduleNextEventAt"].(string); ok && val != "" {
-        data.ScheduleNextEventAt = types.StringValue(val)
-    } else {
-        data.ScheduleNextEventAt = types.StringNull()
-    }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated = types.BoolValue(val)
     }
@@ -2023,6 +1981,43 @@ func (r *ScheduledMaintenanceTemplateResource) Read(ctx context.Context, req res
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["scheduleNextEventAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleNextEventAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleNextEventAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleNextEventAt = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleNextEventAt"].(string); ok && val != "" {
+        data.ScheduleNextEventAt = types.StringValue(val)
+    } else {
+        data.ScheduleNextEventAt = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2117,14 +2112,6 @@ func (r *ScheduledMaintenanceTemplateResource) Update(ctx context.Context, req r
     if !data.IsRecurringEvent.IsUnknown() && !state.IsRecurringEvent.IsUnknown() && !data.IsRecurringEvent.Equal(state.IsRecurringEvent) {
         requestDataMap["isRecurringEvent"] = data.IsRecurringEvent.ValueBool()
     }
-    if !data.ScheduleNextEventAt.IsUnknown() && !state.ScheduleNextEventAt.IsUnknown() && !data.ScheduleNextEventAt.Equal(state.ScheduleNextEventAt) {
-        var schedulenexteventatData interface{}
-        if err := json.Unmarshal([]byte(data.ScheduleNextEventAt.ValueString()), &schedulenexteventatData); err == nil {
-            requestDataMap["scheduleNextEventAt"] = schedulenexteventatData
-        } else {
-            requestDataMap["scheduleNextEventAt"] = data.ScheduleNextEventAt.ValueString()
-        }
-    }
     if !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsUnknown() && !state.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsUnknown() && !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.Equal(state.ShouldStatusPageSubscribersBeNotifiedOnEventCreated) {
         requestDataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"] = data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool()
     }
@@ -2182,7 +2169,6 @@ func (r *ScheduledMaintenanceTemplateResource) Update(ctx context.Context, req r
         "firstEventEndsAt": true,
         "recurringInterval": true,
         "isRecurringEvent": true,
-        "scheduleNextEventAt": true,
         "shouldStatusPageSubscribersBeNotifiedOnEventCreated": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded": true,
@@ -2194,6 +2180,7 @@ func (r *ScheduledMaintenanceTemplateResource) Update(ctx context.Context, req r
         "version": true,
         "slug": true,
         "createdByUserId": true,
+        "scheduleNextEventAt": true,
         "_id": true,
     }
 
@@ -2703,43 +2690,6 @@ func (r *ScheduledMaintenanceTemplateResource) Update(ctx context.Context, req r
     } else if dataMap["isRecurringEvent"] == nil {
         data.IsRecurringEvent = types.BoolNull()
     }
-    if obj, ok := dataMap["scheduleNextEventAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ScheduleNextEventAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ScheduleNextEventAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.ScheduleNextEventAt = types.StringNull()
-        }
-    } else if val, ok := dataMap["scheduleNextEventAt"].(string); ok && val != "" {
-        data.ScheduleNextEventAt = types.StringValue(val)
-    } else {
-        data.ScheduleNextEventAt = types.StringNull()
-    }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated = types.BoolValue(val)
     }
@@ -3016,6 +2966,43 @@ func (r *ScheduledMaintenanceTemplateResource) Update(ctx context.Context, req r
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduleNextEventAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduleNextEventAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduleNextEventAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduleNextEventAt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduleNextEventAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduleNextEventAt = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduleNextEventAt"].(string); ok && val != "" {
+        data.ScheduleNextEventAt = types.StringValue(val)
+    } else {
+        data.ScheduleNextEventAt = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

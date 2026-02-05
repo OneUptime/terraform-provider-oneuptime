@@ -78,6 +78,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewIncidentEpisodeTeamOwnerDataDataSource,
         NewIncidentEpisodeInternalNoteDataDataSource,
         NewIncidentEpisodeFeedDataDataSource,
+        NewIncidentEpisodePublicNoteDataDataSource,
         NewIncidentGroupingRuleDataDataSource,
         NewIncidentSlaRuleDataDataSource,
         NewIncidentSlaDataDataSource,
