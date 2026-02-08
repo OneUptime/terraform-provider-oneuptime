@@ -61,6 +61,7 @@ resource "oneuptime_incident" "example" {
 - `created_by_probe_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_created_automatically` (Bool) Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `incident_number` (Number) Incident Number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `incident_number_with_prefix` (String) Incident number with prefix (e.g., 'INC-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

@@ -77,6 +77,7 @@ type IncidentResourceModel struct {
     CreatedByProbeId types.String `tfsdk:"created_by_probe_id"`
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
+    IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
 }
 
 func (r *IncidentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -345,6 +346,10 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "incident_number": schema.NumberAttribute{
                 MarkdownDescription: "Incident Number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "incident_number_with_prefix": schema.StringAttribute{
+                MarkdownDescription: "Incident number with prefix (e.g., 'INC-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -1612,6 +1617,43 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else if dataMap["incidentNumber"] == nil {
         data.IncidentNumber = types.NumberNull()
     }
+    if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberWithPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentNumberWithPrefix"].(string); ok && val != "" {
+        data.IncidentNumberWithPrefix = types.StringValue(val)
+    } else {
+        data.IncidentNumberWithPrefix = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1676,6 +1718,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "incidentNumber": true,
+        "incidentNumberWithPrefix": true,
         "_id": true,
     }
 
@@ -2883,6 +2926,43 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else if dataMap["incidentNumber"] == nil {
         data.IncidentNumber = types.NumberNull()
     }
+    if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberWithPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentNumberWithPrefix"].(string); ok && val != "" {
+        data.IncidentNumberWithPrefix = types.StringValue(val)
+    } else {
+        data.IncidentNumberWithPrefix = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -3061,6 +3141,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "incidentNumber": true,
+        "incidentNumberWithPrefix": true,
         "_id": true,
     }
 
@@ -4261,6 +4342,43 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         data.IncidentNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["incidentNumber"] == nil {
         data.IncidentNumber = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentNumberWithPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberWithPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentNumberWithPrefix"].(string); ok && val != "" {
+        data.IncidentNumberWithPrefix = types.StringValue(val)
+    } else {
+        data.IncidentNumberWithPrefix = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

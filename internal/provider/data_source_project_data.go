@@ -49,6 +49,11 @@ type ProjectDataDataSourceModel struct {
     IsFeatureFlagMonitorGroupsEnabled types.Bool `tfsdk:"is_feature_flag_monitor_groups_enabled"`
     WorkflowRunsInLast30Days types.Number `tfsdk:"workflow_runs_in_last30_days"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
+    IncidentNumberPrefix types.String `tfsdk:"incident_number_prefix"`
+    AlertNumberPrefix types.String `tfsdk:"alert_number_prefix"`
+    ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
+    IncidentEpisodeNumberPrefix types.String `tfsdk:"incident_episode_number_prefix"`
+    AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
     SmsOrCallCurrentBalanceInUsdCents types.Number `tfsdk:"sms_or_call_current_balance_in_usd_cents"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
@@ -173,6 +178,26 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "require_sso_for_login": schema.BoolAttribute{
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "incident_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "alert_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "scheduled_maintenance_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "incident_episode_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "alert_episode_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
                 Computed: true,
             },
             "sms_or_call_current_balance_in_usd_cents": schema.NumberAttribute{
@@ -385,6 +410,21 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["require_sso_for_login"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["incident_number_prefix"].(string); ok {
+        data.IncidentNumberPrefix = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["alert_number_prefix"].(string); ok {
+        data.AlertNumberPrefix = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["scheduled_maintenance_number_prefix"].(string); ok {
+        data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["incident_episode_number_prefix"].(string); ok {
+        data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["alert_episode_number_prefix"].(string); ok {
+        data.AlertEpisodeNumberPrefix = types.StringValue(val)
     }
     if val, ok := projectDataResponse["sms_or_call_current_balance_in_usd_cents"].(float64); ok {
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))

@@ -54,6 +54,7 @@ type ScheduledMaintenanceEventDataDataSourceModel struct {
     SendSubscriberNotificationsOnBeforeTheEvent types.String `tfsdk:"send_subscriber_notifications_on_before_the_event"`
     NextSubscriberNotificationBeforeTheEventAt types.String `tfsdk:"next_subscriber_notification_before_the_event_at"`
     ScheduledMaintenanceNumber types.Number `tfsdk:"scheduled_maintenance_number"`
+    ScheduledMaintenanceNumberWithPrefix types.String `tfsdk:"scheduled_maintenance_number_with_prefix"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
 }
 
@@ -179,6 +180,10 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
             },
             "scheduled_maintenance_number": schema.NumberAttribute{
                 MarkdownDescription: "Scheduled Maintenance Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "scheduled_maintenance_number_with_prefix": schema.StringAttribute{
+                MarkdownDescription: "Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_visible_on_status_page": schema.BoolAttribute{
@@ -358,6 +363,9 @@ func (d *ScheduledMaintenanceEventDataDataSource) Read(ctx context.Context, req 
     }
     if val, ok := scheduledMaintenanceEventDataResponse["scheduled_maintenance_number"].(float64); ok {
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["scheduled_maintenance_number_with_prefix"].(string); ok {
+        data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
     }
     if val, ok := scheduledMaintenanceEventDataResponse["is_visible_on_status_page"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)

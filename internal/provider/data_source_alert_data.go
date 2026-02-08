@@ -52,6 +52,7 @@ type AlertDataDataSourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery types.String `tfsdk:"telemetry_query"`
     AlertNumber types.Number `tfsdk:"alert_number"`
+    AlertNumberWithPrefix types.String `tfsdk:"alert_number_with_prefix"`
     AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
 }
 
@@ -168,6 +169,10 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "alert_number": schema.NumberAttribute{
                 MarkdownDescription: "Alert Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "alert_number_with_prefix": schema.StringAttribute{
+                MarkdownDescription: "Alert number with prefix (e.g., 'ALT-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "alert_episode_id": schema.StringAttribute{
@@ -332,6 +337,9 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := alertDataResponse["alert_number"].(float64); ok {
         data.AlertNumber = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := alertDataResponse["alert_number_with_prefix"].(string); ok {
+        data.AlertNumberWithPrefix = types.StringValue(val)
     }
     if val, ok := alertDataResponse["alert_episode_id"].(string); ok {
         data.AlertEpisodeId = types.StringValue(val)

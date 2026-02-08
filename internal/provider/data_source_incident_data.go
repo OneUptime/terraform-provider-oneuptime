@@ -65,6 +65,7 @@ type IncidentDataDataSourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery types.String `tfsdk:"telemetry_query"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
+    IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
     IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
 }
@@ -236,6 +237,10 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "incident_number": schema.NumberAttribute{
                 MarkdownDescription: "Incident Number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "incident_number_with_prefix": schema.StringAttribute{
+                MarkdownDescription: "Incident number with prefix (e.g., 'INC-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_visible_on_status_page": schema.BoolAttribute{
@@ -461,6 +466,9 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     }
     if val, ok := incidentDataResponse["incident_number"].(float64); ok {
         data.IncidentNumber = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := incidentDataResponse["incident_number_with_prefix"].(string); ok {
+        data.IncidentNumberWithPrefix = types.StringValue(val)
     }
     if val, ok := incidentDataResponse["is_visible_on_status_page"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)

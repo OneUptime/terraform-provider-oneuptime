@@ -47,6 +47,7 @@ resource "oneuptime_alert" "example" {
 - `created_by_probe_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_created_automatically` (Bool) Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `alert_number` (Number) Alert Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `alert_number_with_prefix` (String) Alert number with prefix (e.g., 'ALT-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

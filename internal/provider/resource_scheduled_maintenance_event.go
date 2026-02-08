@@ -65,6 +65,7 @@ type ScheduledMaintenanceEventResourceModel struct {
     SubscriberNotificationStatusOnEventScheduled types.String `tfsdk:"subscriber_notification_status_on_event_scheduled"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
     ScheduledMaintenanceNumber types.Number `tfsdk:"scheduled_maintenance_number"`
+    ScheduledMaintenanceNumberWithPrefix types.String `tfsdk:"scheduled_maintenance_number_with_prefix"`
 }
 
 func (r *ScheduledMaintenanceEventResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -256,6 +257,10 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
             },
             "scheduled_maintenance_number": schema.NumberAttribute{
                 MarkdownDescription: "Scheduled Maintenance Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "scheduled_maintenance_number_with_prefix": schema.StringAttribute{
+                MarkdownDescription: "Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -1112,6 +1117,43 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     } else if dataMap["scheduledMaintenanceNumber"] == nil {
         data.ScheduledMaintenanceNumber = types.NumberNull()
     }
+    if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok && val != "" {
+        data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+    } else {
+        data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1164,6 +1206,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "subscriberNotificationStatusOnEventScheduled": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "scheduledMaintenanceNumber": true,
+        "scheduledMaintenanceNumberWithPrefix": true,
         "_id": true,
     }
 
@@ -1966,6 +2009,43 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     } else if dataMap["scheduledMaintenanceNumber"] == nil {
         data.ScheduledMaintenanceNumber = types.NumberNull()
     }
+    if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok && val != "" {
+        data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+    } else {
+        data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2113,6 +2193,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "subscriberNotificationStatusOnEventScheduled": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "scheduledMaintenanceNumber": true,
+        "scheduledMaintenanceNumberWithPrefix": true,
         "_id": true,
     }
 
@@ -2908,6 +2989,43 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["scheduledMaintenanceNumber"] == nil {
         data.ScheduledMaintenanceNumber = types.NumberNull()
+    }
+    if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok && val != "" {
+        data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
+    } else {
+        data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

@@ -46,6 +46,11 @@ type ProjectResourceModel struct {
     IsFeatureFlagMonitorGroupsEnabled types.Bool `tfsdk:"is_feature_flag_monitor_groups_enabled"`
     ActiveMonitorsLimit types.Number `tfsdk:"active_monitors_limit"`
     SeatLimit types.Number `tfsdk:"seat_limit"`
+    IncidentNumberPrefix types.String `tfsdk:"incident_number_prefix"`
+    AlertNumberPrefix types.String `tfsdk:"alert_number_prefix"`
+    ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
+    IncidentEpisodeNumberPrefix types.String `tfsdk:"incident_episode_number_prefix"`
+    AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     UtmContent types.String `tfsdk:"utm_content"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
@@ -161,6 +166,46 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             "seat_limit": schema.NumberAttribute{
                 MarkdownDescription: "Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
+            },
+            "incident_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "scheduled_maintenance_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_episode_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_episode_number_prefix": schema.StringAttribute{
+                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "send_invoices_by_email": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
@@ -424,6 +469,11 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "isFeatureFlagMonitorGroupsEnabled": data.IsFeatureFlagMonitorGroupsEnabled.ValueBool(),
         "activeMonitorsLimit": r.bigFloatToFloat64(data.ActiveMonitorsLimit.ValueBigFloat()),
         "seatLimit": r.bigFloatToFloat64(data.SeatLimit.ValueBigFloat()),
+        "incidentNumberPrefix": data.IncidentNumberPrefix.ValueString(),
+        "alertNumberPrefix": data.AlertNumberPrefix.ValueString(),
+        "scheduledMaintenanceNumberPrefix": data.ScheduledMaintenanceNumberPrefix.ValueString(),
+        "incidentEpisodeNumberPrefix": data.IncidentEpisodeNumberPrefix.ValueString(),
+        "alertEpisodeNumberPrefix": data.AlertEpisodeNumberPrefix.ValueString(),
         "sendInvoicesByEmail": data.SendInvoicesByEmail.ValueBool(),
         "utmContent": data.UtmContent.ValueString(),
         "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
@@ -746,6 +796,191 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["seatLimit"] == nil {
         data.SeatLimit = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok && val != "" {
+        data.IncidentNumberPrefix = types.StringValue(val)
+    } else {
+        data.IncidentNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["alertNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok && val != "" {
+        data.AlertNumberPrefix = types.StringValue(val)
+    } else {
+        data.AlertNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduledMaintenanceNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok && val != "" {
+        data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+    } else {
+        data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentEpisodeNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok && val != "" {
+        data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["alertEpisodeNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok && val != "" {
+        data.AlertEpisodeNumberPrefix = types.StringValue(val)
+    } else {
+        data.AlertEpisodeNumberPrefix = types.StringNull()
     }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
@@ -1521,6 +1756,11 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "isFeatureFlagMonitorGroupsEnabled": true,
         "activeMonitorsLimit": true,
         "seatLimit": true,
+        "incidentNumberPrefix": true,
+        "alertNumberPrefix": true,
+        "scheduledMaintenanceNumberPrefix": true,
+        "incidentEpisodeNumberPrefix": true,
+        "alertEpisodeNumberPrefix": true,
         "sendInvoicesByEmail": true,
         "utmContent": true,
         "requireSsoForLogin": true,
@@ -1869,6 +2109,191 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["seatLimit"] == nil {
         data.SeatLimit = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok && val != "" {
+        data.IncidentNumberPrefix = types.StringValue(val)
+    } else {
+        data.IncidentNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["alertNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok && val != "" {
+        data.AlertNumberPrefix = types.StringValue(val)
+    } else {
+        data.AlertNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduledMaintenanceNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok && val != "" {
+        data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+    } else {
+        data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentEpisodeNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok && val != "" {
+        data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["alertEpisodeNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok && val != "" {
+        data.AlertEpisodeNumberPrefix = types.StringValue(val)
+    } else {
+        data.AlertEpisodeNumberPrefix = types.StringNull()
     }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
@@ -2671,6 +3096,21 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.RequireSsoForLogin.IsUnknown() && !state.RequireSsoForLogin.IsUnknown() && !data.RequireSsoForLogin.Equal(state.RequireSsoForLogin) {
         requestDataMap["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
     }
+    if !data.IncidentNumberPrefix.IsUnknown() && !state.IncidentNumberPrefix.IsUnknown() && !data.IncidentNumberPrefix.Equal(state.IncidentNumberPrefix) {
+        requestDataMap["incidentNumberPrefix"] = data.IncidentNumberPrefix.ValueString()
+    }
+    if !data.AlertNumberPrefix.IsUnknown() && !state.AlertNumberPrefix.IsUnknown() && !data.AlertNumberPrefix.Equal(state.AlertNumberPrefix) {
+        requestDataMap["alertNumberPrefix"] = data.AlertNumberPrefix.ValueString()
+    }
+    if !data.ScheduledMaintenanceNumberPrefix.IsUnknown() && !state.ScheduledMaintenanceNumberPrefix.IsUnknown() && !data.ScheduledMaintenanceNumberPrefix.Equal(state.ScheduledMaintenanceNumberPrefix) {
+        requestDataMap["scheduledMaintenanceNumberPrefix"] = data.ScheduledMaintenanceNumberPrefix.ValueString()
+    }
+    if !data.IncidentEpisodeNumberPrefix.IsUnknown() && !state.IncidentEpisodeNumberPrefix.IsUnknown() && !data.IncidentEpisodeNumberPrefix.Equal(state.IncidentEpisodeNumberPrefix) {
+        requestDataMap["incidentEpisodeNumberPrefix"] = data.IncidentEpisodeNumberPrefix.ValueString()
+    }
+    if !data.AlertEpisodeNumberPrefix.IsUnknown() && !state.AlertEpisodeNumberPrefix.IsUnknown() && !data.AlertEpisodeNumberPrefix.Equal(state.AlertEpisodeNumberPrefix) {
+        requestDataMap["alertEpisodeNumberPrefix"] = data.AlertEpisodeNumberPrefix.ValueString()
+    }
     if !data.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() && !state.AutoRechargeSmsOrCallByBalanceInUsd.IsUnknown() && !data.AutoRechargeSmsOrCallByBalanceInUsd.Equal(state.AutoRechargeSmsOrCallByBalanceInUsd) {
         requestDataMap["autoRechargeSmsOrCallByBalanceInUSD"] = r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat())
     }
@@ -2737,6 +3177,11 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "isFeatureFlagMonitorGroupsEnabled": true,
         "activeMonitorsLimit": true,
         "seatLimit": true,
+        "incidentNumberPrefix": true,
+        "alertNumberPrefix": true,
+        "scheduledMaintenanceNumberPrefix": true,
+        "incidentEpisodeNumberPrefix": true,
+        "alertEpisodeNumberPrefix": true,
         "sendInvoicesByEmail": true,
         "utmContent": true,
         "requireSsoForLogin": true,
@@ -3079,6 +3524,191 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["seatLimit"] == nil {
         data.SeatLimit = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok && val != "" {
+        data.IncidentNumberPrefix = types.StringValue(val)
+    } else {
+        data.IncidentNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["alertNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok && val != "" {
+        data.AlertNumberPrefix = types.StringValue(val)
+    } else {
+        data.AlertNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["scheduledMaintenanceNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.ScheduledMaintenanceNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ScheduledMaintenanceNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok && val != "" {
+        data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
+    } else {
+        data.ScheduledMaintenanceNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentEpisodeNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok && val != "" {
+        data.IncidentEpisodeNumberPrefix = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeNumberPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["alertEpisodeNumberPrefix"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertEpisodeNumberPrefix = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertEpisodeNumberPrefix = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertEpisodeNumberPrefix = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertEpisodeNumberPrefix = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok && val != "" {
+        data.AlertEpisodeNumberPrefix = types.StringValue(val)
+    } else {
+        data.AlertEpisodeNumberPrefix = types.StringNull()
     }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)

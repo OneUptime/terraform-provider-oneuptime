@@ -36,6 +36,7 @@ type IncidentEpisodeDataDataSourceModel struct {
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
     EpisodeNumber types.Number `tfsdk:"episode_number"`
+    EpisodeNumberWithPrefix types.String `tfsdk:"episode_number_with_prefix"`
     CurrentIncidentStateId types.String `tfsdk:"current_incident_state_id"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     RootCause types.String `tfsdk:"root_cause"`
@@ -111,6 +112,10 @@ func (d *IncidentEpisodeDataDataSource) Schema(ctx context.Context, req datasour
             },
             "episode_number": schema.NumberAttribute{
                 MarkdownDescription: "Auto-incrementing episode number per project. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "episode_number_with_prefix": schema.StringAttribute{
+                MarkdownDescription: "Episode number with prefix (e.g., 'IE-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "current_incident_state_id": schema.StringAttribute{
@@ -311,6 +316,9 @@ func (d *IncidentEpisodeDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := incidentEpisodeDataResponse["episode_number"].(float64); ok {
         data.EpisodeNumber = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := incidentEpisodeDataResponse["episode_number_with_prefix"].(string); ok {
+        data.EpisodeNumberWithPrefix = types.StringValue(val)
     }
     if val, ok := incidentEpisodeDataResponse["current_incident_state_id"].(string); ok {
         data.CurrentIncidentStateId = types.StringValue(val)
