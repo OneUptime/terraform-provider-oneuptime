@@ -86,7 +86,11 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
             },
             "subdomain": schema.StringAttribute{
                 MarkdownDescription: "Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]",
-                Required: true,
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "custom_certificate": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]",

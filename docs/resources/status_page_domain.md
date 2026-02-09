@@ -16,7 +16,6 @@ Status page domain resource
 resource "oneuptime_status_page_domain" "example" {
   domain_id = "123e4567-e89b-12d3-a456-426614174000"
   status_page_id = "123e4567-e89b-12d3-a456-426614174000"
-  subdomain = "Example short text"
 }
 ```
 
@@ -26,7 +25,7 @@ resource "oneuptime_status_page_domain" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `domain_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `subdomain` (String) Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]. Required.
+- `subdomain` (String) Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]. Computed.
 - `custom_certificate` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]. Computed.
 - `custom_certificate_key` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]. Computed.
 - `is_custom_certificate` (Bool) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Domain]. Computed.
