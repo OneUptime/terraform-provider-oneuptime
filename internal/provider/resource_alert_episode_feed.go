@@ -1217,17 +1217,27 @@ func (r *AlertEpisodeFeedResource) Read(ctx context.Context, req resource.ReadRe
 }
 
 func (r *AlertEpisodeFeedResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    resp.Diagnostics.AddError(
-        "Update Not Implemented",
-        "This resource does not support update operations",
-    )
+    var data AlertEpisodeFeedResourceModel
+
+    // Read Terraform plan data into the model
+    resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // This resource does not have an update API endpoint.
+    // Preserve the planned state.
+    tflog.Trace(ctx, "updated a resource (no-op: preserving planned state)")
+
+    // Save planned data into Terraform state
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *AlertEpisodeFeedResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    resp.Diagnostics.AddError(
-        "Delete Not Implemented",
-        "This resource does not support delete operations", 
-    )
+    // This resource does not have a delete API endpoint.
+    // Simply remove the resource from Terraform state.
+    tflog.Trace(ctx, "deleted a resource (no-op: removed from state only)")
 }
 
 
