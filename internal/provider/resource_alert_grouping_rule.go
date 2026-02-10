@@ -216,7 +216,7 @@ func (r *AlertGroupingRuleResource) Schema(ctx context.Context, req resource.Sch
                 MarkdownDescription: "When enabled, alerts from different monitors will be grouped into separate episodes. When disabled, alerts from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Optional: true,
                 Computed: true,
-                Default: booldefault.StaticBool(true),
+                Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },

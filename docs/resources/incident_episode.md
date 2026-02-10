@@ -50,6 +50,7 @@ resource "oneuptime_incident_episode" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `episode_number_with_prefix` (String) Episode number with prefix (e.g., 'IE-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `all_incidents_resolved_at` (String) A date time object.. Computed.
 - `is_on_call_policy_executed` (Bool) Whether the on-call policy has been executed for this episode. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `incident_count` (Number) Denormalized count of incidents in this episode. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

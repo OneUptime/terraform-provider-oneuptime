@@ -36,6 +36,7 @@ data "oneuptime_incident_episode_data" "example" {
 - `root_cause` (String) User-documented root cause of this episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode]. Computed.
 - `last_incident_added_at` (String) A date time object.. Computed.
 - `resolved_at` (String) A date time object.. Computed.
+- `all_incidents_resolved_at` (String) A date time object.. Computed.
 - `assigned_to_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `assigned_to_team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policies` (Set) List of on-call duty policies to execute for this episode.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode]. Computed.

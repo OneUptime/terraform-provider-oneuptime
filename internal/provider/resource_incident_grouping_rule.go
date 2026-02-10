@@ -219,7 +219,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Read Incident Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
-                Default: booldefault.StaticBool(true),
+                Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },

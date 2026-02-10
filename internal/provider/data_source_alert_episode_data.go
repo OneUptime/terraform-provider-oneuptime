@@ -42,6 +42,7 @@ type AlertEpisodeDataDataSourceModel struct {
     RootCause types.String `tfsdk:"root_cause"`
     LastAlertAddedAt types.String `tfsdk:"last_alert_added_at"`
     ResolvedAt types.String `tfsdk:"resolved_at"`
+    AllAlertsResolvedAt types.String `tfsdk:"all_alerts_resolved_at"`
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
     AssignedToTeamId types.String `tfsdk:"assigned_to_team_id"`
     AlertGroupingRuleId types.String `tfsdk:"alert_grouping_rule_id"`
@@ -129,6 +130,10 @@ func (d *AlertEpisodeDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "resolved_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "all_alerts_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
@@ -304,6 +309,9 @@ func (d *AlertEpisodeDataDataSource) Read(ctx context.Context, req datasource.Re
     }
     if val, ok := alertEpisodeDataResponse["resolved_at"].(string); ok {
         data.ResolvedAt = types.StringValue(val)
+    }
+    if val, ok := alertEpisodeDataResponse["all_alerts_resolved_at"].(string); ok {
+        data.AllAlertsResolvedAt = types.StringValue(val)
     }
     if val, ok := alertEpisodeDataResponse["assigned_to_user_id"].(string); ok {
         data.AssignedToUserId = types.StringValue(val)

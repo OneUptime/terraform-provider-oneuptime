@@ -36,6 +36,7 @@ data "oneuptime_alert_episode_data" "example" {
 - `root_cause` (String) User-documented root cause of this episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert Episode]. Computed.
 - `last_alert_added_at` (String) A date time object.. Computed.
 - `resolved_at` (String) A date time object.. Computed.
+- `all_alerts_resolved_at` (String) A date time object.. Computed.
 - `assigned_to_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `assigned_to_team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_grouping_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

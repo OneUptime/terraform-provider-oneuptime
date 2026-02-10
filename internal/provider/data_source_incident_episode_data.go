@@ -42,6 +42,7 @@ type IncidentEpisodeDataDataSourceModel struct {
     RootCause types.String `tfsdk:"root_cause"`
     LastIncidentAddedAt types.String `tfsdk:"last_incident_added_at"`
     ResolvedAt types.String `tfsdk:"resolved_at"`
+    AllIncidentsResolvedAt types.String `tfsdk:"all_incidents_resolved_at"`
     AssignedToUserId types.String `tfsdk:"assigned_to_user_id"`
     AssignedToTeamId types.String `tfsdk:"assigned_to_team_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
@@ -135,6 +136,10 @@ func (d *IncidentEpisodeDataDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "resolved_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "all_incidents_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
@@ -334,6 +339,9 @@ func (d *IncidentEpisodeDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := incidentEpisodeDataResponse["resolved_at"].(string); ok {
         data.ResolvedAt = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeDataResponse["all_incidents_resolved_at"].(string); ok {
+        data.AllIncidentsResolvedAt = types.StringValue(val)
     }
     if val, ok := incidentEpisodeDataResponse["assigned_to_user_id"].(string); ok {
         data.AssignedToUserId = types.StringValue(val)
