@@ -133,7 +133,7 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 ElementType: types.StringType,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policy affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "List of on-call duty policies affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },

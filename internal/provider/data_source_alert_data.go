@@ -110,7 +110,7 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policy affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert]",
+                MarkdownDescription: "List of on-call duty policies affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
