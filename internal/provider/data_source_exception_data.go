@@ -50,6 +50,9 @@ type ExceptionDataDataSourceModel struct {
     IsResolved types.Bool `tfsdk:"is_resolved"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     OccuranceCount types.Number `tfsdk:"occurance_count"`
+    FirstSeenInRelease types.String `tfsdk:"first_seen_in_release"`
+    LastSeenInRelease types.String `tfsdk:"last_seen_in_release"`
+    Environment types.String `tfsdk:"environment"`
 }
 
 func (d *ExceptionDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -159,6 +162,18 @@ func (d *ExceptionDataDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "occurance_count": schema.NumberAttribute{
                 MarkdownDescription: "Number of times this exception has occurred. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                Computed: true,
+            },
+            "first_seen_in_release": schema.StringAttribute{
+                MarkdownDescription: "The service version / release in which this exception was first observed. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                Computed: true,
+            },
+            "last_seen_in_release": schema.StringAttribute{
+                MarkdownDescription: "The most recent service version / release in which this exception was observed. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                Computed: true,
+            },
+            "environment": schema.StringAttribute{
+                MarkdownDescription: "Deployment environment from deployment.environment resource attribute. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Exception, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
                 Computed: true,
             },
         },
@@ -298,6 +313,15 @@ func (d *ExceptionDataDataSource) Read(ctx context.Context, req datasource.ReadR
     }
     if val, ok := exceptionDataResponse["occurance_count"].(float64); ok {
         data.OccuranceCount = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := exceptionDataResponse["first_seen_in_release"].(string); ok {
+        data.FirstSeenInRelease = types.StringValue(val)
+    }
+    if val, ok := exceptionDataResponse["last_seen_in_release"].(string); ok {
+        data.LastSeenInRelease = types.StringValue(val)
+    }
+    if val, ok := exceptionDataResponse["environment"].(string); ok {
+        data.Environment = types.StringValue(val)
     }
 
     // Write logs using the tflog package

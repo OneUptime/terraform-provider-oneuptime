@@ -35,4 +35,7 @@ data "oneuptime_exception_instance_data" "example" {
 - `span_id` (String) Span ID. Computed.
 - `fingerprint` (String) Fingerprint. Computed.
 - `span_name` (String) Span Name. Computed.
+- `release` (String) Release. Computed.
+- `environment` (String) Environment. Computed.
+- `parsed_frames` (String) Parsed Stack Frames. Computed.
 - `attributes` (String) Attributes. Computed.

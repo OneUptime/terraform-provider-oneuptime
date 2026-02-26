@@ -40,6 +40,9 @@ type ExceptionInstanceDataDataSourceModel struct {
     SpanId types.String `tfsdk:"span_id"`
     Fingerprint types.String `tfsdk:"fingerprint"`
     SpanName types.String `tfsdk:"span_name"`
+    Release types.String `tfsdk:"release"`
+    Environment types.String `tfsdk:"environment"`
+    ParsedFrames types.String `tfsdk:"parsed_frames"`
     Attributes types.String `tfsdk:"attributes"`
 }
 
@@ -110,6 +113,18 @@ func (d *ExceptionInstanceDataDataSource) Schema(ctx context.Context, req dataso
             },
             "span_name": schema.StringAttribute{
                 MarkdownDescription: "Span Name",
+                Computed: true,
+            },
+            "release": schema.StringAttribute{
+                MarkdownDescription: "Release",
+                Computed: true,
+            },
+            "environment": schema.StringAttribute{
+                MarkdownDescription: "Environment",
+                Computed: true,
+            },
+            "parsed_frames": schema.StringAttribute{
+                MarkdownDescription: "Parsed Stack Frames",
                 Computed: true,
             },
             "attributes": schema.StringAttribute{
@@ -223,6 +238,15 @@ func (d *ExceptionInstanceDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := exceptionInstanceDataResponse["span_name"].(string); ok {
         data.SpanName = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["release"].(string); ok {
+        data.Release = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["environment"].(string); ok {
+        data.Environment = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["parsed_frames"].(string); ok {
+        data.ParsedFrames = types.StringValue(val)
     }
     if val, ok := exceptionInstanceDataResponse["attributes"].(string); ok {
         data.Attributes = types.StringValue(val)
