@@ -17,6 +17,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewTeamComplianceSettingDataDataSource,
         NewApiKeyDataDataSource,
         NewLabelDataDataSource,
+        NewLogSavedViewDataDataSource,
         NewApiKeyPermissionDataDataSource,
         NewStatusPageDataDataSource,
         NewOnCallPolicyDataDataSource,

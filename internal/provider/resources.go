@@ -17,6 +17,7 @@ func GetResources() []func() resource.Resource {
         NewTeamComplianceSettingResource,
         NewApiKeyResource,
         NewLabelResource,
+        NewLogSavedViewResource,
         NewApiKeyPermissionResource,
         NewStatusPageResource,
         NewOnCallPolicyResource,
