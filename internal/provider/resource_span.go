@@ -54,6 +54,7 @@ type SpanResourceModel struct {
     StatusMessage types.String `tfsdk:"status_message"`
     Name types.String `tfsdk:"name"`
     Kind types.String `tfsdk:"kind"`
+    HasException types.Bool `tfsdk:"has_exception"`
 }
 
 func (r *SpanResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -149,6 +150,10 @@ func (r *SpanResource) Schema(ctx context.Context, req resource.SchemaRequest, r
             },
             "kind": schema.StringAttribute{
                 MarkdownDescription: "Kind",
+                Computed: true,
+            },
+            "has_exception": schema.BoolAttribute{
+                MarkdownDescription: "Has Exception",
                 Computed: true,
             },
         },
@@ -812,6 +817,9 @@ func (r *SpanResource) Create(ctx context.Context, req resource.CreateRequest, r
     } else {
         data.Kind = types.StringNull()
     }
+    if val, ok := dataMap["hasException"].(bool); ok {
+        data.HasException = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -856,6 +864,7 @@ func (r *SpanResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "statusMessage": true,
         "name": true,
         "kind": true,
+        "hasException": true,
         "_id": true,
     }
 
@@ -1481,6 +1490,9 @@ func (r *SpanResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     } else {
         data.Kind = types.StringNull()
     }
+    if val, ok := dataMap["hasException"].(bool); ok {
+        data.HasException = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1552,6 +1564,7 @@ func (r *SpanResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "statusMessage": true,
         "name": true,
         "kind": true,
+        "hasException": true,
         "_id": true,
     }
 
@@ -2170,6 +2183,9 @@ func (r *SpanResource) Update(ctx context.Context, req resource.UpdateRequest, r
         data.Kind = types.StringValue(val)
     } else {
         data.Kind = types.StringNull()
+    }
+    if val, ok := dataMap["hasException"].(bool); ok {
+        data.HasException = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

@@ -40,6 +40,7 @@ resource "oneuptime_span" "example" {
 - `status_message` (String) Status Message. Computed.
 - `name` (String) Name. Computed.
 - `kind` (String) Kind. Computed.
+- `has_exception` (Bool) Has Exception. Computed.
 
 ## Import
 

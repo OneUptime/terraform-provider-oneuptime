@@ -46,6 +46,9 @@ type LogResourceModel struct {
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     Body types.String `tfsdk:"body"`
+    ObservedTimeUnixNano types.Number `tfsdk:"observed_time_unix_nano"`
+    DroppedAttributesCount types.Number `tfsdk:"dropped_attributes_count"`
+    Flags types.Number `tfsdk:"flags"`
 }
 
 func (r *LogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -108,6 +111,18 @@ func (r *LogResource) Schema(ctx context.Context, req resource.SchemaRequest, re
             },
             "body": schema.StringAttribute{
                 MarkdownDescription: "Log Body",
+                Computed: true,
+            },
+            "observed_time_unix_nano": schema.NumberAttribute{
+                MarkdownDescription: "Observed Time (in Unix Nano)",
+                Computed: true,
+            },
+            "dropped_attributes_count": schema.NumberAttribute{
+                MarkdownDescription: "Dropped Attributes Count",
+                Computed: true,
+            },
+            "flags": schema.NumberAttribute{
+                MarkdownDescription: "Flags",
                 Computed: true,
             },
         },
@@ -536,6 +551,33 @@ func (r *LogResource) Create(ctx context.Context, req resource.CreateRequest, re
     } else {
         data.Body = types.StringNull()
     }
+    if val, ok := dataMap["observedTimeUnixNano"].(float64); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["observedTimeUnixNano"].(int); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["observedTimeUnixNano"].(int64); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["observedTimeUnixNano"] == nil {
+        data.ObservedTimeUnixNano = types.NumberNull()
+    }
+    if val, ok := dataMap["droppedAttributesCount"].(float64); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["droppedAttributesCount"].(int); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["droppedAttributesCount"].(int64); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["droppedAttributesCount"] == nil {
+        data.DroppedAttributesCount = types.NumberNull()
+    }
+    if val, ok := dataMap["flags"].(float64); ok {
+        data.Flags = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["flags"].(int); ok {
+        data.Flags = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["flags"].(int64); ok {
+        data.Flags = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["flags"] == nil {
+        data.Flags = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -572,6 +614,9 @@ func (r *LogResource) Read(ctx context.Context, req resource.ReadRequest, resp *
         "traceId": true,
         "spanId": true,
         "body": true,
+        "observedTimeUnixNano": true,
+        "droppedAttributesCount": true,
+        "flags": true,
         "_id": true,
     }
 
@@ -962,6 +1007,33 @@ func (r *LogResource) Read(ctx context.Context, req resource.ReadRequest, resp *
     } else {
         data.Body = types.StringNull()
     }
+    if val, ok := dataMap["observedTimeUnixNano"].(float64); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["observedTimeUnixNano"].(int); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["observedTimeUnixNano"].(int64); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["observedTimeUnixNano"] == nil {
+        data.ObservedTimeUnixNano = types.NumberNull()
+    }
+    if val, ok := dataMap["droppedAttributesCount"].(float64); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["droppedAttributesCount"].(int); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["droppedAttributesCount"].(int64); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["droppedAttributesCount"] == nil {
+        data.DroppedAttributesCount = types.NumberNull()
+    }
+    if val, ok := dataMap["flags"].(float64); ok {
+        data.Flags = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["flags"].(int); ok {
+        data.Flags = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["flags"].(int64); ok {
+        data.Flags = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["flags"] == nil {
+        data.Flags = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1025,6 +1097,9 @@ func (r *LogResource) Update(ctx context.Context, req resource.UpdateRequest, re
         "traceId": true,
         "spanId": true,
         "body": true,
+        "observedTimeUnixNano": true,
+        "droppedAttributesCount": true,
+        "flags": true,
         "_id": true,
     }
 
@@ -1408,6 +1483,33 @@ func (r *LogResource) Update(ctx context.Context, req resource.UpdateRequest, re
         data.Body = types.StringValue(val)
     } else {
         data.Body = types.StringNull()
+    }
+    if val, ok := dataMap["observedTimeUnixNano"].(float64); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["observedTimeUnixNano"].(int); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["observedTimeUnixNano"].(int64); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["observedTimeUnixNano"] == nil {
+        data.ObservedTimeUnixNano = types.NumberNull()
+    }
+    if val, ok := dataMap["droppedAttributesCount"].(float64); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["droppedAttributesCount"].(int); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["droppedAttributesCount"].(int64); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["droppedAttributesCount"] == nil {
+        data.DroppedAttributesCount = types.NumberNull()
+    }
+    if val, ok := dataMap["flags"].(float64); ok {
+        data.Flags = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["flags"].(int); ok {
+        data.Flags = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["flags"].(int64); ok {
+        data.Flags = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["flags"] == nil {
+        data.Flags = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

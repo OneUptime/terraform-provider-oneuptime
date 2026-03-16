@@ -48,13 +48,13 @@ type MetricResourceModel struct {
     Attributes types.String `tfsdk:"attributes"`
     AttributeKeys types.Set `tfsdk:"attribute_keys"`
     IsMonotonic types.Bool `tfsdk:"is_monotonic"`
-    CountValue types.Number `tfsdk:"count_value"`
+    CountValue types.String `tfsdk:"count_value"`
     Sum types.Number `tfsdk:"sum"`
     Value types.Number `tfsdk:"value"`
     Min types.Number `tfsdk:"min"`
     Max types.Number `tfsdk:"max"`
-    BucketCounts types.Set `tfsdk:"bucket_counts"`
-    ExplicitBounds types.Set `tfsdk:"explicit_bounds"`
+    BucketCounts types.String `tfsdk:"bucket_counts"`
+    ExplicitBounds types.String `tfsdk:"explicit_bounds"`
 }
 
 func (r *MetricResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -127,7 +127,7 @@ func (r *MetricResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 MarkdownDescription: "Is Monotonic",
                 Computed: true,
             },
-            "count_value": schema.NumberAttribute{
+            "count_value": schema.StringAttribute{
                 MarkdownDescription: "Count",
                 Computed: true,
             },
@@ -147,15 +147,13 @@ func (r *MetricResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 MarkdownDescription: "Max",
                 Computed: true,
             },
-            "bucket_counts": schema.SetAttribute{
+            "bucket_counts": schema.StringAttribute{
                 MarkdownDescription: "Bucket Counts",
                 Computed: true,
-                ElementType: types.StringType,
             },
-            "explicit_bounds": schema.SetAttribute{
+            "explicit_bounds": schema.StringAttribute{
                 MarkdownDescription: "Explicit Bonds",
                 Computed: true,
-                ElementType: types.StringType,
             },
         },
     }
@@ -625,14 +623,42 @@ func (r *MetricResource) Create(ctx context.Context, req resource.CreateRequest,
     } else if dataMap["isMonotonic"] == nil {
         data.IsMonotonic = types.BoolNull()
     }
-    if val, ok := dataMap["count"].(float64); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["count"].(int); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["count"].(int64); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["count"] == nil {
-        data.CountValue = types.NumberNull()
+    if obj, ok := dataMap["count"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CountValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CountValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CountValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CountValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.CountValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CountValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.CountValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CountValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.CountValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["count"].(string); ok && val != "" {
+        data.CountValue = types.StringValue(val)
+    } else {
+        data.CountValue = types.StringNull()
     }
     if val, ok := dataMap["sum"].(float64); ok {
         data.Sum = types.NumberValue(big.NewFloat(val))
@@ -670,69 +696,79 @@ func (r *MetricResource) Create(ctx context.Context, req resource.CreateRequest,
     } else if dataMap["max"] == nil {
         data.Max = types.NumberNull()
     }
-    if val, ok := dataMap["bucketCounts"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
+    if obj, ok := dataMap["bucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.BucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.BucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.BucketCounts = types.StringNull()
         }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.BucketCounts = types.SetValueMust(types.StringType, setItems)
+    } else if val, ok := dataMap["bucketCounts"].(string); ok && val != "" {
+        data.BucketCounts = types.StringValue(val)
     } else {
-        // For sets, always use empty set instead of null to match default values
-        data.BucketCounts = types.SetValueMust(types.StringType, []attr.Value{})
+        data.BucketCounts = types.StringNull()
     }
-    if val, ok := dataMap["explicitBounds"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
+    if obj, ok := dataMap["explicitBounds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExplicitBounds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ExplicitBounds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ExplicitBounds = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ExplicitBounds = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ExplicitBounds = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExplicitBounds = types.StringNull()
         }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.ExplicitBounds = types.SetValueMust(types.StringType, setItems)
+    } else if val, ok := dataMap["explicitBounds"].(string); ok && val != "" {
+        data.ExplicitBounds = types.StringValue(val)
     } else {
-        // For sets, always use empty set instead of null to match default values
-        data.ExplicitBounds = types.SetValueMust(types.StringType, []attr.Value{})
+        data.ExplicitBounds = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1211,14 +1247,42 @@ func (r *MetricResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else if dataMap["isMonotonic"] == nil {
         data.IsMonotonic = types.BoolNull()
     }
-    if val, ok := dataMap["count"].(float64); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["count"].(int); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["count"].(int64); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["count"] == nil {
-        data.CountValue = types.NumberNull()
+    if obj, ok := dataMap["count"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CountValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CountValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CountValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CountValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.CountValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CountValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.CountValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CountValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.CountValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["count"].(string); ok && val != "" {
+        data.CountValue = types.StringValue(val)
+    } else {
+        data.CountValue = types.StringNull()
     }
     if val, ok := dataMap["sum"].(float64); ok {
         data.Sum = types.NumberValue(big.NewFloat(val))
@@ -1256,69 +1320,79 @@ func (r *MetricResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else if dataMap["max"] == nil {
         data.Max = types.NumberNull()
     }
-    if val, ok := dataMap["bucketCounts"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
+    if obj, ok := dataMap["bucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.BucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.BucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.BucketCounts = types.StringNull()
         }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.BucketCounts = types.SetValueMust(types.StringType, setItems)
+    } else if val, ok := dataMap["bucketCounts"].(string); ok && val != "" {
+        data.BucketCounts = types.StringValue(val)
     } else {
-        // For sets, always use empty set instead of null to match default values
-        data.BucketCounts = types.SetValueMust(types.StringType, []attr.Value{})
+        data.BucketCounts = types.StringNull()
     }
-    if val, ok := dataMap["explicitBounds"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
+    if obj, ok := dataMap["explicitBounds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExplicitBounds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ExplicitBounds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ExplicitBounds = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ExplicitBounds = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ExplicitBounds = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExplicitBounds = types.StringNull()
         }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.ExplicitBounds = types.SetValueMust(types.StringType, setItems)
+    } else if val, ok := dataMap["explicitBounds"].(string); ok && val != "" {
+        data.ExplicitBounds = types.StringValue(val)
     } else {
-        // For sets, always use empty set instead of null to match default values
-        data.ExplicitBounds = types.SetValueMust(types.StringType, []attr.Value{})
+        data.ExplicitBounds = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1818,14 +1892,42 @@ func (r *MetricResource) Update(ctx context.Context, req resource.UpdateRequest,
     } else if dataMap["isMonotonic"] == nil {
         data.IsMonotonic = types.BoolNull()
     }
-    if val, ok := dataMap["count"].(float64); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["count"].(int); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["count"].(int64); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["count"] == nil {
-        data.CountValue = types.NumberNull()
+    if obj, ok := dataMap["count"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CountValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CountValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CountValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CountValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.CountValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CountValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.CountValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CountValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.CountValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["count"].(string); ok && val != "" {
+        data.CountValue = types.StringValue(val)
+    } else {
+        data.CountValue = types.StringNull()
     }
     if val, ok := dataMap["sum"].(float64); ok {
         data.Sum = types.NumberValue(big.NewFloat(val))
@@ -1863,69 +1965,79 @@ func (r *MetricResource) Update(ctx context.Context, req resource.UpdateRequest,
     } else if dataMap["max"] == nil {
         data.Max = types.NumberNull()
     }
-    if val, ok := dataMap["bucketCounts"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
+    if obj, ok := dataMap["bucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.BucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.BucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.BucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.BucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.BucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.BucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.BucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.BucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.BucketCounts = types.StringNull()
         }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.BucketCounts = types.SetValueMust(types.StringType, setItems)
+    } else if val, ok := dataMap["bucketCounts"].(string); ok && val != "" {
+        data.BucketCounts = types.StringValue(val)
     } else {
-        // For sets, always use empty set instead of null to match default values
-        data.BucketCounts = types.SetValueMust(types.StringType, []attr.Value{})
+        data.BucketCounts = types.StringNull()
     }
-    if val, ok := dataMap["explicitBounds"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
+    if obj, ok := dataMap["explicitBounds"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExplicitBounds = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ExplicitBounds = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ExplicitBounds = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ExplicitBounds = types.StringValue(string(jsonBytes))
+            } else {
+                data.ExplicitBounds = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ExplicitBounds = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExplicitBounds = types.StringNull()
         }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.ExplicitBounds = types.SetValueMust(types.StringType, setItems)
+    } else if val, ok := dataMap["explicitBounds"].(string); ok && val != "" {
+        data.ExplicitBounds = types.StringValue(val)
     } else {
-        // For sets, always use empty set instead of null to match default values
-        data.ExplicitBounds = types.SetValueMust(types.StringType, []attr.Value{})
+        data.ExplicitBounds = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

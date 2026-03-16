@@ -40,13 +40,13 @@ type MetricDataDataSourceModel struct {
     Attributes types.String `tfsdk:"attributes"`
     AttributeKeys types.Set `tfsdk:"attribute_keys"`
     IsMonotonic types.Bool `tfsdk:"is_monotonic"`
-    CountValue types.Number `tfsdk:"count_value"`
+    CountValue types.String `tfsdk:"count_value"`
     Sum types.Number `tfsdk:"sum"`
     Value types.Number `tfsdk:"value"`
     Min types.Number `tfsdk:"min"`
     Max types.Number `tfsdk:"max"`
-    BucketCounts types.Set `tfsdk:"bucket_counts"`
-    ExplicitBounds types.Set `tfsdk:"explicit_bounds"`
+    BucketCounts types.String `tfsdk:"bucket_counts"`
+    ExplicitBounds types.String `tfsdk:"explicit_bounds"`
 }
 
 func (d *MetricDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -115,7 +115,7 @@ func (d *MetricDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "Is Monotonic",
                 Computed: true,
             },
-            "count_value": schema.NumberAttribute{
+            "count_value": schema.StringAttribute{
                 MarkdownDescription: "Count",
                 Computed: true,
             },
@@ -135,15 +135,13 @@ func (d *MetricDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "Max",
                 Computed: true,
             },
-            "bucket_counts": schema.SetAttribute{
+            "bucket_counts": schema.StringAttribute{
                 MarkdownDescription: "Bucket Counts",
                 Computed: true,
-                ElementType: types.StringType,
             },
-            "explicit_bounds": schema.SetAttribute{
+            "explicit_bounds": schema.StringAttribute{
                 MarkdownDescription: "Explicit Bonds",
                 Computed: true,
-                ElementType: types.StringType,
             },
         },
     }
@@ -259,8 +257,8 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if val, ok := metricDataResponse["is_monotonic"].(bool); ok {
         data.IsMonotonic = types.BoolValue(val)
     }
-    if val, ok := metricDataResponse["count"].(float64); ok {
-        data.CountValue = types.NumberValue(big.NewFloat(val))
+    if val, ok := metricDataResponse["count"].(string); ok {
+        data.CountValue = types.StringValue(val)
     }
     if val, ok := metricDataResponse["sum"].(float64); ok {
         data.Sum = types.NumberValue(big.NewFloat(val))
@@ -274,29 +272,11 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if val, ok := metricDataResponse["max"].(float64); ok {
         data.Max = types.NumberValue(big.NewFloat(val))
     }
-    if val, ok := metricDataResponse["bucket_counts"].([]interface{}); ok {
-        elements := make([]attr.Value, len(val))
-        for i, item := range val {
-            if strItem, ok := item.(string); ok {
-                elements[i] = types.StringValue(strItem)
-            } else {
-                elements[i] = types.StringValue("")
-            }
-        }
-        setValue, _ := types.SetValue(types.StringType, elements)
-        data.BucketCounts = setValue
+    if val, ok := metricDataResponse["bucket_counts"].(string); ok {
+        data.BucketCounts = types.StringValue(val)
     }
-    if val, ok := metricDataResponse["explicit_bounds"].([]interface{}); ok {
-        elements := make([]attr.Value, len(val))
-        for i, item := range val {
-            if strItem, ok := item.(string); ok {
-                elements[i] = types.StringValue(strItem)
-            } else {
-                elements[i] = types.StringValue("")
-            }
-        }
-        setValue, _ := types.SetValue(types.StringType, elements)
-        data.ExplicitBounds = setValue
+    if val, ok := metricDataResponse["explicit_bounds"].(string); ok {
+        data.ExplicitBounds = types.StringValue(val)
     }
 
     // Write logs using the tflog package

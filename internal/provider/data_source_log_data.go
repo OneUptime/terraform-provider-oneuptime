@@ -39,6 +39,9 @@ type LogDataDataSourceModel struct {
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     Body types.String `tfsdk:"body"`
+    ObservedTimeUnixNano types.Number `tfsdk:"observed_time_unix_nano"`
+    DroppedAttributesCount types.Number `tfsdk:"dropped_attributes_count"`
+    Flags types.Number `tfsdk:"flags"`
 }
 
 func (d *LogDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -101,6 +104,18 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "body": schema.StringAttribute{
                 MarkdownDescription: "Log Body",
+                Computed: true,
+            },
+            "observed_time_unix_nano": schema.NumberAttribute{
+                MarkdownDescription: "Observed Time (in Unix Nano)",
+                Computed: true,
+            },
+            "dropped_attributes_count": schema.NumberAttribute{
+                MarkdownDescription: "Dropped Attributes Count",
+                Computed: true,
+            },
+            "flags": schema.NumberAttribute{
+                MarkdownDescription: "Flags",
                 Computed: true,
             },
         },
@@ -213,6 +228,15 @@ func (d *LogDataDataSource) Read(ctx context.Context, req datasource.ReadRequest
     }
     if val, ok := logDataResponse["body"].(string); ok {
         data.Body = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["observed_time_unix_nano"].(float64); ok {
+        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := logDataResponse["dropped_attributes_count"].(float64); ok {
+        data.DroppedAttributesCount = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := logDataResponse["flags"].(float64); ok {
+        data.Flags = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

@@ -34,13 +34,13 @@ resource "oneuptime_metric" "example" {
 - `attributes` (String) Attributes. Computed.
 - `attribute_keys` (Set) Attribute Keys. Computed.
 - `is_monotonic` (Bool) Is Monotonic. Computed.
-- `count` (Number) Count. Computed.
+- `count` (String) Count. Computed.
 - `sum` (Number) Sum. Computed.
 - `value` (Number) Value. Computed.
 - `min` (Number) Min. Computed.
 - `max` (Number) Max. Computed.
-- `bucket_counts` (Set) Bucket Counts. Computed.
-- `explicit_bounds` (Set) Explicit Bonds. Computed.
+- `bucket_counts` (String) Bucket Counts. Computed.
+- `explicit_bounds` (String) Explicit Bonds. Computed.
 
 ## Import
 

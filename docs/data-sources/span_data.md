@@ -40,3 +40,4 @@ data "oneuptime_span_data" "example" {
 - `status_code` (Number) Status Code. Computed.
 - `status_message` (String) Status Message. Computed.
 - `kind` (String) Kind. Computed.
+- `has_exception` (Bool) Has Exception. Computed.

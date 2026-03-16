@@ -32,6 +32,9 @@ resource "oneuptime_log" "example" {
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.
 - `body` (String) Log Body. Computed.
+- `observed_time_unix_nano` (Number) Observed Time (in Unix Nano). Computed.
+- `dropped_attributes_count` (Number) Dropped Attributes Count. Computed.
+- `flags` (Number) Flags. Computed.
 
 ## Import
 
