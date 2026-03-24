@@ -170,6 +170,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewTableViewDataDataSource,
         NewDashboardDataDataSource,
         NewWorkspaceNotificationRuleDataDataSource,
+        NewWorkspaceNotificationSummaryDataDataSource,
         NewMonitorFeedDataDataSource,
         NewMetricTypeDataDataSource,
         NewOnCallTimeLogDataDataSource,

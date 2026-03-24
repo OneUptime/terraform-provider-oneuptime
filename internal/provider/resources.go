@@ -170,6 +170,7 @@ func GetResources() []func() resource.Resource {
         NewTableViewResource,
         NewDashboardResource,
         NewWorkspaceNotificationRuleResource,
+        NewWorkspaceNotificationSummaryResource,
         NewMonitorFeedResource,
         NewMetricTypeResource,
         NewOnCallTimeLogResource,
