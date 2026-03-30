@@ -39,6 +39,14 @@ type DashboardDataDataSourceModel struct {
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
     DashboardViewConfig types.String `tfsdk:"dashboard_view_config"`
+    PageTitle types.String `tfsdk:"page_title"`
+    PageDescription types.String `tfsdk:"page_description"`
+    LogoFileId types.String `tfsdk:"logo_file_id"`
+    FaviconFileId types.String `tfsdk:"favicon_file_id"`
+    IsPublicDashboard types.Bool `tfsdk:"is_public_dashboard"`
+    EnableMasterPassword types.Bool `tfsdk:"enable_master_password"`
+    MasterPassword types.String `tfsdk:"master_password"`
+    IpWhitelist types.String `tfsdk:"ip_whitelist"`
 }
 
 func (d *DashboardDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -101,6 +109,38 @@ func (d *DashboardDataDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "dashboard_view_config": schema.StringAttribute{
                 MarkdownDescription: "Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Computed: true,
+            },
+            "page_title": schema.StringAttribute{
+                MarkdownDescription: "Title of the public dashboard page. This will be used for SEO and the browser tab.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Computed: true,
+            },
+            "page_description": schema.StringAttribute{
+                MarkdownDescription: "Description of the public dashboard page. This will be used for SEO.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Computed: true,
+            },
+            "logo_file_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "favicon_file_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_public_dashboard": schema.BoolAttribute{
+                MarkdownDescription: "Is this dashboard public?. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Computed: true,
+            },
+            "enable_master_password": schema.BoolAttribute{
+                MarkdownDescription: "Require visitors to enter a master password before viewing a private dashboard.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Computed: true,
+            },
+            "master_password": schema.StringAttribute{
+                MarkdownDescription: "Password required to unlock a private dashboard. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Computed: true,
+            },
+            "ip_whitelist": schema.StringAttribute{
+                MarkdownDescription: "IP Whitelist for this Dashboard. One IP per line. Only used if the dashboard is private.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Computed: true,
             },
         },
@@ -213,6 +253,30 @@ func (d *DashboardDataDataSource) Read(ctx context.Context, req datasource.ReadR
     }
     if val, ok := dashboardDataResponse["dashboard_view_config"].(string); ok {
         data.DashboardViewConfig = types.StringValue(val)
+    }
+    if val, ok := dashboardDataResponse["page_title"].(string); ok {
+        data.PageTitle = types.StringValue(val)
+    }
+    if val, ok := dashboardDataResponse["page_description"].(string); ok {
+        data.PageDescription = types.StringValue(val)
+    }
+    if val, ok := dashboardDataResponse["logo_file_id"].(string); ok {
+        data.LogoFileId = types.StringValue(val)
+    }
+    if val, ok := dashboardDataResponse["favicon_file_id"].(string); ok {
+        data.FaviconFileId = types.StringValue(val)
+    }
+    if val, ok := dashboardDataResponse["is_public_dashboard"].(bool); ok {
+        data.IsPublicDashboard = types.BoolValue(val)
+    }
+    if val, ok := dashboardDataResponse["enable_master_password"].(bool); ok {
+        data.EnableMasterPassword = types.BoolValue(val)
+    }
+    if val, ok := dashboardDataResponse["master_password"].(string); ok {
+        data.MasterPassword = types.StringValue(val)
+    }
+    if val, ok := dashboardDataResponse["ip_whitelist"].(string); ok {
+        data.IpWhitelist = types.StringValue(val)
     }
 
     // Write logs using the tflog package

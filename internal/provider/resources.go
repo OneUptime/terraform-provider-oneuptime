@@ -169,6 +169,7 @@ func GetResources() []func() resource.Resource {
         NewExceptionResource,
         NewTableViewResource,
         NewDashboardResource,
+        NewDashboardDomainResource,
         NewWorkspaceNotificationRuleResource,
         NewWorkspaceNotificationSummaryResource,
         NewMonitorFeedResource,
@@ -182,5 +183,7 @@ func GetResources() []func() resource.Resource {
         NewMetricResource,
         NewExceptionInstanceResource,
         NewMonitorLogResource,
+        NewProfileResource,
+        NewProfileSampleResource,
     }
 }

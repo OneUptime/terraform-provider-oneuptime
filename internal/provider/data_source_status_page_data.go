@@ -90,6 +90,7 @@ type StatusPageDataDataSourceModel struct {
     ShowSubscriberPageOnStatusPage types.Bool `tfsdk:"show_subscriber_page_on_status_page"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
     EnableEmbeddedOverallStatus types.Bool `tfsdk:"enable_embedded_overall_status"`
+    ShowUptimeHistoryInDays types.Number `tfsdk:"show_uptime_history_in_days"`
     EmbeddedOverallStatusToken types.String `tfsdk:"embedded_overall_status_token"`
 }
 
@@ -358,6 +359,10 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "enable_embedded_overall_status": schema.BoolAttribute{
                 MarkdownDescription: "Enable embedded overall status badge that can be displayed on external websites?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Computed: true,
+            },
+            "show_uptime_history_in_days": schema.NumberAttribute{
+                MarkdownDescription: "How many days of uptime history should be shown on the status page? Maximum is 90 days.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Computed: true,
             },
             "embedded_overall_status_token": schema.StringAttribute{
@@ -636,6 +641,9 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := statusPageDataResponse["enable_embedded_overall_status"].(bool); ok {
         data.EnableEmbeddedOverallStatus = types.BoolValue(val)
+    }
+    if val, ok := statusPageDataResponse["show_uptime_history_in_days"].(float64); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := statusPageDataResponse["embedded_overall_status_token"].(string); ok {
         data.EmbeddedOverallStatusToken = types.StringValue(val)

@@ -169,6 +169,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewExceptionDataDataSource,
         NewTableViewDataDataSource,
         NewDashboardDataDataSource,
+        NewDashboardDomainDataDataSource,
         NewWorkspaceNotificationRuleDataDataSource,
         NewWorkspaceNotificationSummaryDataDataSource,
         NewMonitorFeedDataDataSource,
@@ -182,5 +183,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewMetricDataDataSource,
         NewExceptionInstanceDataDataSource,
         NewMonitorLogDataDataSource,
+        NewProfileDataDataSource,
+        NewProfileSampleDataDataSource,
     }
 }

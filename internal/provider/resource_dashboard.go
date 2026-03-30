@@ -13,10 +13,12 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
 
@@ -41,6 +43,14 @@ type DashboardResourceModel struct {
     Description types.String `tfsdk:"description"`
     Labels types.Set `tfsdk:"labels"`
     DashboardViewConfig types.String `tfsdk:"dashboard_view_config"`
+    PageTitle types.String `tfsdk:"page_title"`
+    PageDescription types.String `tfsdk:"page_description"`
+    LogoFileId types.String `tfsdk:"logo_file_id"`
+    FaviconFileId types.String `tfsdk:"favicon_file_id"`
+    IsPublicDashboard types.Bool `tfsdk:"is_public_dashboard"`
+    EnableMasterPassword types.Bool `tfsdk:"enable_master_password"`
+    MasterPassword types.String `tfsdk:"master_password"`
+    IpWhitelist types.String `tfsdk:"ip_whitelist"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -97,6 +107,72 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
             },
             "dashboard_view_config": schema.StringAttribute{
                 MarkdownDescription: "Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "page_title": schema.StringAttribute{
+                MarkdownDescription: "Title of the public dashboard page. This will be used for SEO and the browser tab.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "page_description": schema.StringAttribute{
+                MarkdownDescription: "Description of the public dashboard page. This will be used for SEO.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "logo_file_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "favicon_file_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_public_dashboard": schema.BoolAttribute{
+                MarkdownDescription: "Is this dashboard public?. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_master_password": schema.BoolAttribute{
+                MarkdownDescription: "Require visitors to enter a master password before viewing a private dashboard.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "master_password": schema.StringAttribute{
+                MarkdownDescription: "Password required to unlock a private dashboard. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ip_whitelist": schema.StringAttribute{
+                MarkdownDescription: "IP Whitelist for this Dashboard. One IP per line. Only used if the dashboard is private.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -175,6 +251,14 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
         "description": data.Description.ValueString(),
         "labels": r.convertTerraformSetToInterface(data.Labels),
         "dashboardViewConfig": r.parseJSONField(data.DashboardViewConfig),
+        "pageTitle": data.PageTitle.ValueString(),
+        "pageDescription": data.PageDescription.ValueString(),
+        "logoFileId": data.LogoFileId.ValueString(),
+        "faviconFileId": data.FaviconFileId.ValueString(),
+        "isPublicDashboard": data.IsPublicDashboard.ValueBool(),
+        "enableMasterPassword": data.EnableMasterPassword.ValueBool(),
+        "masterPassword": data.MasterPassword.ValueString(),
+        "ipWhitelist": data.IpWhitelist.ValueString(),
         },
     }
 
@@ -393,6 +477,234 @@ func (r *DashboardResource) Create(ctx context.Context, req resource.CreateReque
         data.DashboardViewConfig = types.StringValue(val)
     } else {
         data.DashboardViewConfig = types.StringNull()
+    }
+    if obj, ok := dataMap["pageTitle"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageTitle = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageTitle = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageTitle = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageTitle = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageTitle = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageTitle = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageTitle = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageTitle = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageTitle = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageTitle"].(string); ok && val != "" {
+        data.PageTitle = types.StringValue(val)
+    } else {
+        data.PageTitle = types.StringNull()
+    }
+    if obj, ok := dataMap["pageDescription"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageDescription = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageDescription = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageDescription = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageDescription = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageDescription = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageDescription = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageDescription = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageDescription = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageDescription = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageDescription"].(string); ok && val != "" {
+        data.PageDescription = types.StringValue(val)
+    } else {
+        data.PageDescription = types.StringNull()
+    }
+    if obj, ok := dataMap["logoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["logoFileId"].(string); ok && val != "" {
+        data.LogoFileId = types.StringValue(val)
+    } else {
+        data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FaviconFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FaviconFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FaviconFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FaviconFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["faviconFileId"].(string); ok && val != "" {
+        data.FaviconFileId = types.StringValue(val)
+    } else {
+        data.FaviconFileId = types.StringNull()
+    }
+    if val, ok := dataMap["isPublicDashboard"].(bool); ok {
+        data.IsPublicDashboard = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMasterPassword"].(bool); ok {
+        data.EnableMasterPassword = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["masterPassword"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MasterPassword = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MasterPassword = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MasterPassword = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MasterPassword = types.StringValue(string(jsonBytes))
+            } else {
+                data.MasterPassword = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MasterPassword = types.StringValue(string(jsonBytes))
+            } else {
+                data.MasterPassword = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MasterPassword = types.StringValue(string(jsonBytes))
+        } else {
+            data.MasterPassword = types.StringNull()
+        }
+    } else if val, ok := dataMap["masterPassword"].(string); ok && val != "" {
+        data.MasterPassword = types.StringValue(val)
+    } else {
+        data.MasterPassword = types.StringNull()
+    }
+    if obj, ok := dataMap["ipWhitelist"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IpWhitelist = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IpWhitelist = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IpWhitelist = types.StringValue(string(jsonBytes))
+            } else {
+                data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IpWhitelist = types.StringValue(string(jsonBytes))
+            } else {
+                data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IpWhitelist = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpWhitelist = types.StringNull()
+        }
+    } else if val, ok := dataMap["ipWhitelist"].(string); ok && val != "" {
+        data.IpWhitelist = types.StringValue(val)
+    } else {
+        data.IpWhitelist = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -655,6 +967,14 @@ func (r *DashboardResource) Read(ctx context.Context, req resource.ReadRequest, 
         "description": true,
         "labels": true,
         "dashboardViewConfig": true,
+        "pageTitle": true,
+        "pageDescription": true,
+        "logoFileId": true,
+        "faviconFileId": true,
+        "isPublicDashboard": true,
+        "enableMasterPassword": true,
+        "masterPassword": true,
+        "ipWhitelist": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -885,6 +1205,234 @@ func (r *DashboardResource) Read(ctx context.Context, req resource.ReadRequest, 
         data.DashboardViewConfig = types.StringValue(val)
     } else {
         data.DashboardViewConfig = types.StringNull()
+    }
+    if obj, ok := dataMap["pageTitle"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageTitle = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageTitle = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageTitle = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageTitle = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageTitle = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageTitle = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageTitle = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageTitle = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageTitle = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageTitle"].(string); ok && val != "" {
+        data.PageTitle = types.StringValue(val)
+    } else {
+        data.PageTitle = types.StringNull()
+    }
+    if obj, ok := dataMap["pageDescription"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageDescription = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageDescription = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageDescription = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageDescription = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageDescription = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageDescription = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageDescription = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageDescription = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageDescription = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageDescription"].(string); ok && val != "" {
+        data.PageDescription = types.StringValue(val)
+    } else {
+        data.PageDescription = types.StringNull()
+    }
+    if obj, ok := dataMap["logoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["logoFileId"].(string); ok && val != "" {
+        data.LogoFileId = types.StringValue(val)
+    } else {
+        data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FaviconFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FaviconFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FaviconFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FaviconFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["faviconFileId"].(string); ok && val != "" {
+        data.FaviconFileId = types.StringValue(val)
+    } else {
+        data.FaviconFileId = types.StringNull()
+    }
+    if val, ok := dataMap["isPublicDashboard"].(bool); ok {
+        data.IsPublicDashboard = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMasterPassword"].(bool); ok {
+        data.EnableMasterPassword = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["masterPassword"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MasterPassword = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MasterPassword = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MasterPassword = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MasterPassword = types.StringValue(string(jsonBytes))
+            } else {
+                data.MasterPassword = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MasterPassword = types.StringValue(string(jsonBytes))
+            } else {
+                data.MasterPassword = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MasterPassword = types.StringValue(string(jsonBytes))
+        } else {
+            data.MasterPassword = types.StringNull()
+        }
+    } else if val, ok := dataMap["masterPassword"].(string); ok && val != "" {
+        data.MasterPassword = types.StringValue(val)
+    } else {
+        data.MasterPassword = types.StringNull()
+    }
+    if obj, ok := dataMap["ipWhitelist"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IpWhitelist = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IpWhitelist = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IpWhitelist = types.StringValue(string(jsonBytes))
+            } else {
+                data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IpWhitelist = types.StringValue(string(jsonBytes))
+            } else {
+                data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IpWhitelist = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpWhitelist = types.StringNull()
+        }
+    } else if val, ok := dataMap["ipWhitelist"].(string); ok && val != "" {
+        data.IpWhitelist = types.StringValue(val)
+    } else {
+        data.IpWhitelist = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1169,6 +1717,30 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
             requestDataMap["dashboardViewConfig"] = data.DashboardViewConfig.ValueString()
         }
     }
+    if !data.PageTitle.IsUnknown() && !state.PageTitle.IsUnknown() && !data.PageTitle.Equal(state.PageTitle) {
+        requestDataMap["pageTitle"] = data.PageTitle.ValueString()
+    }
+    if !data.PageDescription.IsUnknown() && !state.PageDescription.IsUnknown() && !data.PageDescription.Equal(state.PageDescription) {
+        requestDataMap["pageDescription"] = data.PageDescription.ValueString()
+    }
+    if !data.LogoFileId.IsUnknown() && !state.LogoFileId.IsUnknown() && !data.LogoFileId.Equal(state.LogoFileId) {
+        requestDataMap["logoFileId"] = data.LogoFileId.ValueString()
+    }
+    if !data.FaviconFileId.IsUnknown() && !state.FaviconFileId.IsUnknown() && !data.FaviconFileId.Equal(state.FaviconFileId) {
+        requestDataMap["faviconFileId"] = data.FaviconFileId.ValueString()
+    }
+    if !data.IsPublicDashboard.IsUnknown() && !state.IsPublicDashboard.IsUnknown() && !data.IsPublicDashboard.Equal(state.IsPublicDashboard) {
+        requestDataMap["isPublicDashboard"] = data.IsPublicDashboard.ValueBool()
+    }
+    if !data.EnableMasterPassword.IsUnknown() && !state.EnableMasterPassword.IsUnknown() && !data.EnableMasterPassword.Equal(state.EnableMasterPassword) {
+        requestDataMap["enableMasterPassword"] = data.EnableMasterPassword.ValueBool()
+    }
+    if !data.MasterPassword.IsUnknown() && !state.MasterPassword.IsUnknown() && !data.MasterPassword.Equal(state.MasterPassword) {
+        requestDataMap["masterPassword"] = data.MasterPassword.ValueString()
+    }
+    if !data.IpWhitelist.IsUnknown() && !state.IpWhitelist.IsUnknown() && !data.IpWhitelist.Equal(state.IpWhitelist) {
+        requestDataMap["ipWhitelist"] = data.IpWhitelist.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/dashboard/" + data.Id.ValueString() + "", dashboardRequest)
@@ -1192,6 +1764,14 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
         "description": true,
         "labels": true,
         "dashboardViewConfig": true,
+        "pageTitle": true,
+        "pageDescription": true,
+        "logoFileId": true,
+        "faviconFileId": true,
+        "isPublicDashboard": true,
+        "enableMasterPassword": true,
+        "masterPassword": true,
+        "ipWhitelist": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1416,6 +1996,234 @@ func (r *DashboardResource) Update(ctx context.Context, req resource.UpdateReque
         data.DashboardViewConfig = types.StringValue(val)
     } else {
         data.DashboardViewConfig = types.StringNull()
+    }
+    if obj, ok := dataMap["pageTitle"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageTitle = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageTitle = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageTitle = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageTitle = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageTitle = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageTitle = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageTitle = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageTitle = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageTitle = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageTitle"].(string); ok && val != "" {
+        data.PageTitle = types.StringValue(val)
+    } else {
+        data.PageTitle = types.StringNull()
+    }
+    if obj, ok := dataMap["pageDescription"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageDescription = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageDescription = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageDescription = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageDescription = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageDescription = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageDescription = types.StringValue(string(jsonBytes))
+            } else {
+                data.PageDescription = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageDescription = types.StringValue(string(jsonBytes))
+        } else {
+            data.PageDescription = types.StringNull()
+        }
+    } else if val, ok := dataMap["pageDescription"].(string); ok && val != "" {
+        data.PageDescription = types.StringValue(val)
+    } else {
+        data.PageDescription = types.StringNull()
+    }
+    if obj, ok := dataMap["logoFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LogoFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["logoFileId"].(string); ok && val != "" {
+        data.LogoFileId = types.StringValue(val)
+    } else {
+        data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.FaviconFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.FaviconFileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.FaviconFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FaviconFileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["faviconFileId"].(string); ok && val != "" {
+        data.FaviconFileId = types.StringValue(val)
+    } else {
+        data.FaviconFileId = types.StringNull()
+    }
+    if val, ok := dataMap["isPublicDashboard"].(bool); ok {
+        data.IsPublicDashboard = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMasterPassword"].(bool); ok {
+        data.EnableMasterPassword = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["masterPassword"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MasterPassword = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MasterPassword = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MasterPassword = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MasterPassword = types.StringValue(string(jsonBytes))
+            } else {
+                data.MasterPassword = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MasterPassword = types.StringValue(string(jsonBytes))
+            } else {
+                data.MasterPassword = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MasterPassword = types.StringValue(string(jsonBytes))
+        } else {
+            data.MasterPassword = types.StringNull()
+        }
+    } else if val, ok := dataMap["masterPassword"].(string); ok && val != "" {
+        data.MasterPassword = types.StringValue(val)
+    } else {
+        data.MasterPassword = types.StringNull()
+    }
+    if obj, ok := dataMap["ipWhitelist"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IpWhitelist = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IpWhitelist = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IpWhitelist = types.StringValue(string(jsonBytes))
+            } else {
+                data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IpWhitelist = types.StringValue(string(jsonBytes))
+            } else {
+                data.IpWhitelist = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IpWhitelist = types.StringValue(string(jsonBytes))
+        } else {
+            data.IpWhitelist = types.StringNull()
+        }
+    } else if val, ok := dataMap["ipWhitelist"].(string); ok && val != "" {
+        data.IpWhitelist = types.StringValue(val)
+    } else {
+        data.IpWhitelist = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

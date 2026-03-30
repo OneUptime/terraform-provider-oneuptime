@@ -96,6 +96,7 @@ type StatusPageResourceModel struct {
     ShowSubscriberPageOnStatusPage types.Bool `tfsdk:"show_subscriber_page_on_status_page"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
     EnableEmbeddedOverallStatus types.Bool `tfsdk:"enable_embedded_overall_status"`
+    ShowUptimeHistoryInDays types.Number `tfsdk:"show_uptime_history_in_days"`
     EmbeddedOverallStatusToken types.String `tfsdk:"embedded_overall_status_token"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
@@ -589,6 +590,15 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "show_uptime_history_in_days": schema.NumberAttribute{
+                MarkdownDescription: "How many days of uptime history should be shown on the status page? Maximum is 90 days.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(90)),
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "embedded_overall_status_token": schema.StringAttribute{
                 MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]",
                 Optional: true,
@@ -724,6 +734,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "showSubscriberPageOnStatusPage": data.ShowSubscriberPageOnStatusPage.ValueBool(),
         "ipWhitelist": data.IpWhitelist.ValueString(),
         "enableEmbeddedOverallStatus": data.EnableEmbeddedOverallStatus.ValueBool(),
+        "showUptimeHistoryInDays": r.bigFloatToFloat64(data.ShowUptimeHistoryInDays.ValueBigFloat()),
         "embeddedOverallStatusToken": data.EmbeddedOverallStatusToken.ValueString(),
         },
     }
@@ -1872,6 +1883,15 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if val, ok := dataMap["enableEmbeddedOverallStatus"].(bool); ok {
         data.EnableEmbeddedOverallStatus = types.BoolValue(val)
     }
+    if val, ok := dataMap["showUptimeHistoryInDays"].(float64); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int64); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["showUptimeHistoryInDays"] == nil {
+        data.ShowUptimeHistoryInDays = types.NumberNull()
+    }
     if obj, ok := dataMap["embeddedOverallStatusToken"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2218,6 +2238,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "showSubscriberPageOnStatusPage": true,
         "ipWhitelist": true,
         "enableEmbeddedOverallStatus": true,
+        "showUptimeHistoryInDays": true,
         "embeddedOverallStatusToken": true,
         "createdAt": true,
         "updatedAt": true,
@@ -3379,6 +3400,15 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     if val, ok := dataMap["enableEmbeddedOverallStatus"].(bool); ok {
         data.EnableEmbeddedOverallStatus = types.BoolValue(val)
     }
+    if val, ok := dataMap["showUptimeHistoryInDays"].(float64); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int64); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["showUptimeHistoryInDays"] == nil {
+        data.ShowUptimeHistoryInDays = types.NumberNull()
+    }
     if obj, ok := dataMap["embeddedOverallStatusToken"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3872,6 +3902,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.EnableEmbeddedOverallStatus.IsUnknown() && !state.EnableEmbeddedOverallStatus.IsUnknown() && !data.EnableEmbeddedOverallStatus.Equal(state.EnableEmbeddedOverallStatus) {
         requestDataMap["enableEmbeddedOverallStatus"] = data.EnableEmbeddedOverallStatus.ValueBool()
     }
+    if !data.ShowUptimeHistoryInDays.IsUnknown() && !state.ShowUptimeHistoryInDays.IsUnknown() && !data.ShowUptimeHistoryInDays.Equal(state.ShowUptimeHistoryInDays) {
+        requestDataMap["showUptimeHistoryInDays"] = r.bigFloatToFloat64(data.ShowUptimeHistoryInDays.ValueBigFloat())
+    }
     if !data.EmbeddedOverallStatusToken.IsUnknown() && !state.EmbeddedOverallStatusToken.IsUnknown() && !data.EmbeddedOverallStatusToken.Equal(state.EmbeddedOverallStatusToken) {
         requestDataMap["embeddedOverallStatusToken"] = data.EmbeddedOverallStatusToken.ValueString()
     }
@@ -3948,6 +3981,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "showSubscriberPageOnStatusPage": true,
         "ipWhitelist": true,
         "enableEmbeddedOverallStatus": true,
+        "showUptimeHistoryInDays": true,
         "embeddedOverallStatusToken": true,
         "createdAt": true,
         "updatedAt": true,
@@ -5102,6 +5136,15 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if val, ok := dataMap["enableEmbeddedOverallStatus"].(bool); ok {
         data.EnableEmbeddedOverallStatus = types.BoolValue(val)
+    }
+    if val, ok := dataMap["showUptimeHistoryInDays"].(float64); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["showUptimeHistoryInDays"].(int64); ok {
+        data.ShowUptimeHistoryInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["showUptimeHistoryInDays"] == nil {
+        data.ShowUptimeHistoryInDays = types.NumberNull()
     }
     if obj, ok := dataMap["embeddedOverallStatusToken"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
