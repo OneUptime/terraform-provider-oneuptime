@@ -44,6 +44,7 @@ type WorkflowResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph types.String `tfsdk:"graph"`
     Labels types.Set `tfsdk:"labels"`
+    WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -113,6 +114,14 @@ func (r *WorkflowResource) Schema(ctx context.Context, req resource.SchemaReques
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "webhook_secret_key": schema.StringAttribute{
+                MarkdownDescription: "Secret key used to trigger this workflow via webhook. Use this instead of the workflow ID for security.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -188,6 +197,7 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
         "isEnabled": data.IsEnabled.ValueBool(),
         "graph": r.parseJSONField(data.Graph),
         "labels": r.convertTerraformSetToInterface(data.Labels),
+        "webhookSecretKey": data.WebhookSecretKey.ValueString(),
         },
     }
 
@@ -409,6 +419,43 @@ func (r *WorkflowResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["webhookSecretKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WebhookSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WebhookSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.WebhookSecretKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["webhookSecretKey"].(string); ok && val != "" {
+        data.WebhookSecretKey = types.StringValue(val)
+    } else {
+        data.WebhookSecretKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -672,6 +719,7 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
         "isEnabled": true,
         "graph": true,
         "labels": true,
+        "webhookSecretKey": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -905,6 +953,43 @@ func (r *WorkflowResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["webhookSecretKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WebhookSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WebhookSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.WebhookSecretKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["webhookSecretKey"].(string); ok && val != "" {
+        data.WebhookSecretKey = types.StringValue(val)
+    } else {
+        data.WebhookSecretKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1192,6 +1277,9 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.WebhookSecretKey.IsUnknown() && !state.WebhookSecretKey.IsUnknown() && !data.WebhookSecretKey.Equal(state.WebhookSecretKey) {
+        requestDataMap["webhookSecretKey"] = data.WebhookSecretKey.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/workflow/" + data.Id.ValueString() + "", workflowRequest)
@@ -1216,6 +1304,7 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         "isEnabled": true,
         "graph": true,
         "labels": true,
+        "webhookSecretKey": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1443,6 +1532,43 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["webhookSecretKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WebhookSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.WebhookSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.WebhookSecretKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.WebhookSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.WebhookSecretKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["webhookSecretKey"].(string); ok && val != "" {
+        data.WebhookSecretKey = types.StringValue(val)
+    } else {
+        data.WebhookSecretKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -40,6 +40,7 @@ type WorkflowDataDataSourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph types.String `tfsdk:"graph"`
     Labels types.Set `tfsdk:"labels"`
+    WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
 }
 
 func (d *WorkflowDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -107,6 +108,10 @@ func (d *WorkflowDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member], Read: [Project Owner, Project Admin, Project Member, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "webhook_secret_key": schema.StringAttribute{
+                MarkdownDescription: "Secret key used to trigger this workflow via webhook. Use this instead of the workflow ID for security.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow]",
+                Computed: true,
             },
         },
     }
@@ -221,6 +226,9 @@ func (d *WorkflowDataDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.Labels = setValue
+    }
+    if val, ok := workflowDataResponse["webhook_secret_key"].(string); ok {
+        data.WebhookSecretKey = types.StringValue(val)
     }
 
     // Write logs using the tflog package
