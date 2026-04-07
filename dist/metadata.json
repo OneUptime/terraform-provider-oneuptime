@@ -1,1 +1,1 @@
-{"project_name":"terraform-provider-oneuptime","tag":"v0.0.0","previous_tag":"","version":"0.0.0-SNAPSHOT-8eb0906","commit":"8eb09065f4440f3c9c798138cfa5839494e27431","date":"2026-04-07T08:32:01.164910111Z","runtime":{"goos":"linux","goarch":"amd64"}}
+{"project_name":"terraform-provider-oneuptime","tag":"v0.0.0","previous_tag":"","version":"0.0.0-SNAPSHOT-2b6e865","commit":"2b6e865948380ed4f32a3363c2d121b849e3ca8d","date":"2026-04-07T13:19:07.063953613Z","runtime":{"goos":"linux","goarch":"amd64"}}
