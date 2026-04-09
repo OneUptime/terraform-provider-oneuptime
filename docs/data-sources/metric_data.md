@@ -41,3 +41,5 @@ data "oneuptime_metric_data" "example" {
 - `max` (Number) Max. Computed.
 - `bucket_counts` (String) Bucket Counts. Computed.
 - `explicit_bounds` (String) Explicit Bonds. Computed.
+- `trace_id` (String) Trace ID. Computed.
+- `span_id` (String) Span ID. Computed.

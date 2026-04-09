@@ -47,6 +47,8 @@ type MetricDataDataSourceModel struct {
     Max types.Number `tfsdk:"max"`
     BucketCounts types.String `tfsdk:"bucket_counts"`
     ExplicitBounds types.String `tfsdk:"explicit_bounds"`
+    TraceId types.String `tfsdk:"trace_id"`
+    SpanId types.String `tfsdk:"span_id"`
 }
 
 func (d *MetricDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -141,6 +143,14 @@ func (d *MetricDataDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "explicit_bounds": schema.StringAttribute{
                 MarkdownDescription: "Explicit Bonds",
+                Computed: true,
+            },
+            "trace_id": schema.StringAttribute{
+                MarkdownDescription: "Trace ID",
+                Computed: true,
+            },
+            "span_id": schema.StringAttribute{
+                MarkdownDescription: "Span ID",
                 Computed: true,
             },
         },
@@ -277,6 +287,12 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     }
     if val, ok := metricDataResponse["explicit_bounds"].(string); ok {
         data.ExplicitBounds = types.StringValue(val)
+    }
+    if val, ok := metricDataResponse["trace_id"].(string); ok {
+        data.TraceId = types.StringValue(val)
+    }
+    if val, ok := metricDataResponse["span_id"].(string); ok {
+        data.SpanId = types.StringValue(val)
     }
 
     // Write logs using the tflog package
