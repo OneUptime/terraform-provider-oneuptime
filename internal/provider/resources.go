@@ -178,6 +178,7 @@ func GetResources() []func() resource.Resource {
         NewScimLogResource,
         NewStatusPageScimLogResource,
         NewKubernetesClusterResource,
+        NewDockerHostResource,
         NewLogResource,
         NewSpanResource,
         NewMetricResource,

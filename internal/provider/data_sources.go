@@ -178,6 +178,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewScimLogDataDataSource,
         NewStatusPageScimLogDataDataSource,
         NewKubernetesClusterDataDataSource,
+        NewDockerHostDataDataSource,
         NewLogDataDataSource,
         NewSpanDataDataSource,
         NewMetricDataDataSource,
