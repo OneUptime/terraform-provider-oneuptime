@@ -41,6 +41,7 @@ resource "oneuptime_span" "example" {
 - `name` (String) Name. Computed.
 - `kind` (String) Kind. Computed.
 - `has_exception` (Bool) Has Exception. Computed.
+- `is_root_span` (Bool) Is Root Span. Computed.
 
 ## Import
 

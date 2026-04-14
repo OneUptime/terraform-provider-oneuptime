@@ -55,6 +55,7 @@ type SpanResourceModel struct {
     Name types.String `tfsdk:"name"`
     Kind types.String `tfsdk:"kind"`
     HasException types.Bool `tfsdk:"has_exception"`
+    IsRootSpan types.Bool `tfsdk:"is_root_span"`
 }
 
 func (r *SpanResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -154,6 +155,10 @@ func (r *SpanResource) Schema(ctx context.Context, req resource.SchemaRequest, r
             },
             "has_exception": schema.BoolAttribute{
                 MarkdownDescription: "Has Exception",
+                Computed: true,
+            },
+            "is_root_span": schema.BoolAttribute{
+                MarkdownDescription: "Is Root Span",
                 Computed: true,
             },
         },
@@ -820,6 +825,9 @@ func (r *SpanResource) Create(ctx context.Context, req resource.CreateRequest, r
     if val, ok := dataMap["hasException"].(bool); ok {
         data.HasException = types.BoolValue(val)
     }
+    if val, ok := dataMap["isRootSpan"].(bool); ok {
+        data.IsRootSpan = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -865,6 +873,7 @@ func (r *SpanResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "name": true,
         "kind": true,
         "hasException": true,
+        "isRootSpan": true,
         "_id": true,
     }
 
@@ -1493,6 +1502,9 @@ func (r *SpanResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     if val, ok := dataMap["hasException"].(bool); ok {
         data.HasException = types.BoolValue(val)
     }
+    if val, ok := dataMap["isRootSpan"].(bool); ok {
+        data.IsRootSpan = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1565,6 +1577,7 @@ func (r *SpanResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "name": true,
         "kind": true,
         "hasException": true,
+        "isRootSpan": true,
         "_id": true,
     }
 
@@ -2186,6 +2199,9 @@ func (r *SpanResource) Update(ctx context.Context, req resource.UpdateRequest, r
     }
     if val, ok := dataMap["hasException"].(bool); ok {
         data.HasException = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isRootSpan"].(bool); ok {
+        data.IsRootSpan = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

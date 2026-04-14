@@ -47,6 +47,7 @@ type SpanDataDataSourceModel struct {
     StatusMessage types.String `tfsdk:"status_message"`
     Kind types.String `tfsdk:"kind"`
     HasException types.Bool `tfsdk:"has_exception"`
+    IsRootSpan types.Bool `tfsdk:"is_root_span"`
 }
 
 func (d *SpanDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -142,6 +143,10 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "has_exception": schema.BoolAttribute{
                 MarkdownDescription: "Has Exception",
+                Computed: true,
+            },
+            "is_root_span": schema.BoolAttribute{
+                MarkdownDescription: "Is Root Span",
                 Computed: true,
             },
         },
@@ -287,6 +292,9 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := spanDataResponse["has_exception"].(bool); ok {
         data.HasException = types.BoolValue(val)
+    }
+    if val, ok := spanDataResponse["is_root_span"].(bool); ok {
+        data.IsRootSpan = types.BoolValue(val)
     }
 
     // Write logs using the tflog package
