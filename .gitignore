@@ -1,0 +1,7 @@
+dist/
+builds/
+*.zip
+*.sig
+*SHA256SUMS*
+terraform-provider-oneuptime
+terraform-provider-oneuptime.exe
