@@ -89,11 +89,11 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this policy. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Any friendly name of this policy. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -101,7 +101,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "greeting_message": schema.StringAttribute{
-                MarkdownDescription: "Custom TTS greeting message for incoming calls. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Custom TTS greeting message for incoming calls. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -109,7 +109,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "no_answer_message": schema.StringAttribute{
-                MarkdownDescription: "Message when escalation is exhausted and no one answers. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Message when escalation is exhausted and no one answers. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "no_one_available_message": schema.StringAttribute{
-                MarkdownDescription: "Message when no one is on-call or reachable. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Message when no one is on-call or reachable. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -125,7 +125,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Enable or disable this incoming call policy. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Enable or disable this incoming call policy. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -134,7 +134,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "repeat_policy_if_no_one_answers": schema.BoolAttribute{
-                MarkdownDescription: "Restart from first rule if all fail. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Restart from first rule if all fail. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -143,7 +143,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "repeat_policy_if_no_one_answers_times": schema.NumberAttribute{
-                MarkdownDescription: "Maximum repeat attempts if no one answers. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Maximum repeat attempts if no one answers. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
@@ -152,7 +152,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -185,7 +185,7 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "routing_phone_number": schema.StringAttribute{
@@ -193,15 +193,15 @@ func (r *IncomingCallPolicyResource) Schema(ctx context.Context, req resource.Sc
                 Computed: true,
             },
             "call_provider_phone_number_id": schema.StringAttribute{
-                MarkdownDescription: "The call provider's ID for the phone number (e.g., Twilio SID). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The call provider's ID for the phone number (e.g., Twilio SID). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "phone_number_country_code": schema.StringAttribute{
-                MarkdownDescription: "Country code of the phone number (US, GB, etc.). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Country code of the phone number (US, GB, etc.). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "phone_number_area_code": schema.StringAttribute{
-                MarkdownDescription: "Area code of the phone number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Area code of the phone number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "phone_number_purchased_at": schema.StringAttribute{

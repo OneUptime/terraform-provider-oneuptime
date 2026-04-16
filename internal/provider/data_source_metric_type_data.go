@@ -74,7 +74,7 @@ func (d *MetricTypeDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident]",
+                MarkdownDescription: "List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Telemetry Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Telemetry Manager, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -83,11 +83,11 @@ func (d *MetricTypeDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Computed: true,
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

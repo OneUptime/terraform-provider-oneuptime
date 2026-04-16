@@ -69,7 +69,7 @@ func (r *IncidentNoteTemplateResource) Schema(ctx context.Context, req resource.
                 },
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Note Template]",
+                MarkdownDescription: "Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Note Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -77,11 +77,11 @@ func (r *IncidentNoteTemplateResource) Schema(ctx context.Context, req resource.
                 },
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Note Template]",
+                MarkdownDescription: "Name of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Note Template]",
                 Required: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Note Template]",
+                MarkdownDescription: "Description of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Note Template]",
                 Required: true,
             },
             "created_at": schema.StringAttribute{

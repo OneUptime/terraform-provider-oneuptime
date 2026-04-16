@@ -73,11 +73,11 @@ func (r *IncidentSeverityResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Severity]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Severity]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Severity]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Severity]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -89,7 +89,7 @@ func (r *IncidentSeverityResource) Schema(ctx context.Context, req resource.Sche
                 Required: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Severity]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Severity]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -113,7 +113,7 @@ func (r *IncidentSeverityResource) Schema(ctx context.Context, req resource.Sche
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Severity, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Severity, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

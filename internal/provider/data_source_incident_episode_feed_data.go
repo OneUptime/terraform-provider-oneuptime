@@ -88,15 +88,15 @@ func (d *IncidentEpisodeFeedDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire incident episode activity in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Feed], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Log of the entire incident episode activity in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Feed], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_episode_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "Incident Episode Feed Event Type. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Feed], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Incident Episode Feed Event Type. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "display_color": schema.StringAttribute{

@@ -30,7 +30,7 @@ data "oneuptime_alert_episode_member_data" "example" {
 - `alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `added_at` (String) A date time object.. Computed.
-- `added_by` (String) How this alert was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode Member], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `added_by` (String) How this alert was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `added_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `matched_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

@@ -74,7 +74,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this LLM configuration.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "Description of this LLM configuration.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -82,11 +82,11 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "llm_type": schema.StringAttribute{
-                MarkdownDescription: "The type of LLM provider (OpenAI, Anthropic, Ollama, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The type of LLM provider (OpenAI, Anthropic, Ollama, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Required: true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI and Anthropic.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI and Anthropic.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -94,7 +94,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "model_name": schema.StringAttribute{
-                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The name of the model to use (e.g., gpt-4, claude-3-opus, llama2).. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -102,7 +102,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Ollama, optional for others.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "The base URL for the LLM API. Required for Ollama, optional for others.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "is_default": schema.BoolAttribute{
-                MarkdownDescription: "Is this the default LLM provider for the project? When set, the global LLM provider will not be used.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit LLM]",
+                MarkdownDescription: "Is this the default LLM provider for the project? When set, the global LLM provider will not be used.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

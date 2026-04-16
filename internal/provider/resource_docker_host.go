@@ -83,11 +83,11 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Friendly name for this Docker host. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Docker Host]",
+                MarkdownDescription: "Friendly name for this Docker host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Docker Host]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description for this Docker host. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Docker Host]",
+                MarkdownDescription: "Friendly description for this Docker host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -95,11 +95,11 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "host_identifier": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for this Docker host, sourced from the host.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Docker Host]",
+                MarkdownDescription: "Unique identifier for this Docker host, sourced from the host.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Docker Host]",
                 Required: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Docker Host]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -108,7 +108,7 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -124,7 +124,7 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "containers_running": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of running containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Cached count of running containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -132,7 +132,7 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "containers_stopped": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of stopped containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Cached count of stopped containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -140,7 +140,7 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "containers_paused": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of paused containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Cached count of paused containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -148,7 +148,7 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "os_type": schema.StringAttribute{
-                MarkdownDescription: "Operating system type of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Operating system type of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -156,7 +156,7 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "os_version": schema.StringAttribute{
-                MarkdownDescription: "Operating system version of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Operating system version of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -180,7 +180,7 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Docker Host, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

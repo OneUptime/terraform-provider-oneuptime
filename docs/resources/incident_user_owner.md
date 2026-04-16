@@ -25,7 +25,7 @@ resource "oneuptime_incident_user_owner" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident User Owner], Read: [Project Owner, Project Admin, Project Member, Read Incident User Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident User Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident User Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

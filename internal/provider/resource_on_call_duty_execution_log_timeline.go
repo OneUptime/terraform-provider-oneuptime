@@ -123,7 +123,7 @@ func (r *OnCallDutyExecutionLogTimelineResource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of event that triggered this on-call duty policy.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "alert_sent_to_user_id": schema.StringAttribute{
@@ -139,11 +139,11 @@ func (r *OnCallDutyExecutionLogTimelineResource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message of this execution timeline event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status message of this execution timeline event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of this execution timeline event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of this execution timeline event. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -151,7 +151,7 @@ func (r *OnCallDutyExecutionLogTimelineResource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "is_acknowledged": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Execution Log Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "acknowledged_at": schema.StringAttribute{

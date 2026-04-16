@@ -79,7 +79,7 @@ func (r *IncomingCallPolicyEscalationRuleResource) Schema(ctx context.Context, r
                 Required: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Rule name (e.g., 'Primary On-Call', 'Backup Engineer'). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy Escalation Rule]",
+                MarkdownDescription: "Rule name (e.g., 'Primary On-Call', 'Backup Engineer'). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy Escalation Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -87,7 +87,7 @@ func (r *IncomingCallPolicyEscalationRuleResource) Schema(ctx context.Context, r
                 },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Optional description of this escalation rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy Escalation Rule]",
+                MarkdownDescription: "Optional description of this escalation rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy Escalation Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -95,7 +95,7 @@ func (r *IncomingCallPolicyEscalationRuleResource) Schema(ctx context.Context, r
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Execution order (1, 2, 3...). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy Escalation Rule]",
+                MarkdownDescription: "Execution order (1, 2, 3...). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy Escalation Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -103,7 +103,7 @@ func (r *IncomingCallPolicyEscalationRuleResource) Schema(ctx context.Context, r
                 },
             },
             "escalate_after_seconds": schema.NumberAttribute{
-                MarkdownDescription: "Seconds before escalating to next rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incoming Call Policy Escalation Rule]",
+                MarkdownDescription: "Seconds before escalating to next rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Incoming Call Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Incoming Call Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Incoming Call Policy Escalation Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(30)),

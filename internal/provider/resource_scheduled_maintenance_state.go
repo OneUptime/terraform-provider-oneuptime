@@ -79,11 +79,11 @@ func (r *ScheduledMaintenanceStateResource) Schema(ctx context.Context, req reso
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -95,7 +95,7 @@ func (r *ScheduledMaintenanceStateResource) Schema(ctx context.Context, req reso
                 Required: true,
             },
             "is_scheduled_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this state a scheduled state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State]",
+                MarkdownDescription: "Is this state a scheduled state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -104,7 +104,7 @@ func (r *ScheduledMaintenanceStateResource) Schema(ctx context.Context, req reso
                 },
             },
             "is_ongoing_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this state a ongoing state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State]",
+                MarkdownDescription: "Is this state a ongoing state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -113,7 +113,7 @@ func (r *ScheduledMaintenanceStateResource) Schema(ctx context.Context, req reso
                 },
             },
             "is_ended_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this state a ended state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State]",
+                MarkdownDescription: "Is this state a ended state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -122,7 +122,7 @@ func (r *ScheduledMaintenanceStateResource) Schema(ctx context.Context, req reso
                 },
             },
             "is_resolved_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this state a resolved state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State]",
+                MarkdownDescription: "Is this state a resolved state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -131,7 +131,7 @@ func (r *ScheduledMaintenanceStateResource) Schema(ctx context.Context, req reso
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -155,7 +155,7 @@ func (r *ScheduledMaintenanceStateResource) Schema(ctx context.Context, req reso
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

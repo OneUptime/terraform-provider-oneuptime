@@ -29,5 +29,5 @@ data "oneuptime_team_member_data" "example" {
 - `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `has_accepted_invitation` (Bool) Has this team member accepted invitation. Permissions - Create: [Project Owner, Project Admin, Create Team, Invite New Members], Read: [Project Owner, Project Admin, Project Member, Read Teams, Logged in User], Update: [Logged in User]. Computed.
+- `has_accepted_invitation` (Bool) Has this team member accepted invitation. Permissions - Create: [Project Owner, Project Admin, Create Team, Invite New Members], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Teams, Logged in User], Update: [Logged in User]. Computed.
 - `invitation_accepted_at` (String) A date time object.. Computed.

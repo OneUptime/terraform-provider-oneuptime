@@ -74,7 +74,7 @@ func (r *AiAgentResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent]",
                 Required: true,
             },
             "name": schema.StringAttribute{
@@ -82,7 +82,7 @@ func (r *AiAgentResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *AiAgentResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "is_default": schema.BoolAttribute{
-                MarkdownDescription: "Is this the default AI Agent for the project? When set, this agent will be used for automated tasks.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]",
+                MarkdownDescription: "Is this the default AI Agent for the project? When set, this agent will be used for automated tasks.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -126,7 +126,7 @@ func (r *AiAgentResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Read AI Agent, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -159,7 +159,7 @@ func (r *AiAgentResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "connection_status": schema.StringAttribute{
-                MarkdownDescription: "Connection Status of the AI Agent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read AI Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Connection Status of the AI Agent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

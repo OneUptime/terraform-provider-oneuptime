@@ -85,31 +85,31 @@ func (d *CodeRepositoryDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "A description of this code repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
+                MarkdownDescription: "A description of this code repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Code Repository]",
                 Computed: true,
             },
             "repository_hosted_at": schema.StringAttribute{
-                MarkdownDescription: "Where is this repository hosted (GitHub, GitLab, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Where is this repository hosted (GitHub, GitLab, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "organization_name": schema.StringAttribute{
-                MarkdownDescription: "GitHub organization or username that owns this repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "GitHub organization or username that owns this repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "repository_name": schema.StringAttribute{
-                MarkdownDescription: "The name of the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The name of the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "main_branch_name": schema.StringAttribute{
-                MarkdownDescription: "The name of the main/default branch. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
+                MarkdownDescription: "The name of the main/default branch. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Code Repository]",
                 Computed: true,
             },
             "repository_url": schema.StringAttribute{
-                MarkdownDescription: "The HTTPS URL to the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The HTTPS URL to the repository. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "git_hub_app_installation_id": schema.StringAttribute{
@@ -129,7 +129,7 @@ func (d *CodeRepositoryDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Code Repository]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Code Repository]",
                 Computed: true,
                 ElementType: types.StringType,
             },

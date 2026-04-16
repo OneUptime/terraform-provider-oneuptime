@@ -83,7 +83,7 @@ func (d *StatusPageScimDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description to help you remember. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Friendly description to help you remember. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "bearer_token": schema.StringAttribute{
@@ -91,11 +91,11 @@ func (d *StatusPageScimDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "auto_provision_users": schema.BoolAttribute{
-                MarkdownDescription: "Automatically create status page users when they are added via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Automatically create status page users when they are added via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "auto_deprovision_users": schema.BoolAttribute{
-                MarkdownDescription: "Automatically remove status page users when they are removed via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Automatically remove status page users when they are removed via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

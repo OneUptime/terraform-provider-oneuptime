@@ -28,6 +28,6 @@ data "oneuptime_project_user_profile_data" "example" {
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `custom_fields` (String) Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Logged in User]. Computed.
+- `custom_fields` (String) Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Logged in User]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

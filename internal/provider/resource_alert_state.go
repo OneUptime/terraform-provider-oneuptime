@@ -76,11 +76,11 @@ func (r *AlertStateResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert State]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert State]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert State]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,7 +92,7 @@ func (r *AlertStateResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Required: true,
             },
             "is_created_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the created state of the alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert State]",
+                MarkdownDescription: "Is it the created state of the alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -100,7 +100,7 @@ func (r *AlertStateResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "is_acknowledged_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the acknowledged state of the alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert State]",
+                MarkdownDescription: "Is it the acknowledged state of the alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -108,7 +108,7 @@ func (r *AlertStateResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "is_resolved_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the resolved state of the alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert State]",
+                MarkdownDescription: "Is it the resolved state of the alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -116,7 +116,7 @@ func (r *AlertStateResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert State]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert State]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

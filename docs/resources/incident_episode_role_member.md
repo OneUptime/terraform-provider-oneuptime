@@ -27,7 +27,7 @@ resource "oneuptime_incident_episode_role_member" "example" {
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `incident_episode_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `incident_role_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `notes` (String) Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Role Member], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Role Member, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode Role Member]. Computed.
+- `notes` (String) Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Role Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Role Member, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode Role Member]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

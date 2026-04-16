@@ -26,7 +26,7 @@ data "oneuptime_probe_data" "example" {
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
-- `key` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Create Probe], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Probe]. Computed.
+- `key` (String) Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Probe], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Probe]. Computed.
 - `description` (String) Name object. Computed.
 - `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `probe_version` (String) Version object. Computed.
@@ -34,6 +34,6 @@ data "oneuptime_probe_data" "example" {
 - `icon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
-- `connection_status` (String) Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
-- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page]. Computed.
+- `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Status Page]. Computed.
+- `connection_status` (String) Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Status Page, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Status Page]. Computed.

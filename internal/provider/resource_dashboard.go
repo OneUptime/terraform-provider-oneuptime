@@ -85,11 +85,11 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -97,7 +97,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Dashboard]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -106,7 +106,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "dashboard_view_config": schema.StringAttribute{
-                MarkdownDescription: "Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Configuration of Dashboard View. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -114,7 +114,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "page_title": schema.StringAttribute{
-                MarkdownDescription: "Title of the public dashboard page. This will be used for SEO and the browser tab.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Title of the public dashboard page. This will be used for SEO and the browser tab.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -122,7 +122,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "page_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the public dashboard page. This will be used for SEO.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Description of the public dashboard page. This will be used for SEO.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -146,7 +146,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "is_public_dashboard": schema.BoolAttribute{
-                MarkdownDescription: "Is this dashboard public?. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Is this dashboard public?. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -155,7 +155,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "enable_master_password": schema.BoolAttribute{
-                MarkdownDescription: "Require visitors to enter a master password before viewing a private dashboard.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Require visitors to enter a master password before viewing a private dashboard.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -164,7 +164,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "master_password": schema.StringAttribute{
-                MarkdownDescription: "Password required to unlock a private dashboard. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Password required to unlock a private dashboard. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -172,7 +172,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "ip_whitelist": schema.StringAttribute{
-                MarkdownDescription: "IP Whitelist for this Dashboard. One IP per line. Only used if the dashboard is private.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "IP Whitelist for this Dashboard. One IP per line. Only used if the dashboard is private.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -196,7 +196,7 @@ func (r *DashboardResource) Schema(ctx context.Context, req resource.SchemaReque
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Dashboard, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Dashboard, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

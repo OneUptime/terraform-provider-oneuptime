@@ -121,15 +121,15 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "acknowledged_by_user_id": schema.StringAttribute{
@@ -157,7 +157,7 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "last_executed_escalation_rule_order": schema.NumberAttribute{
-                MarkdownDescription: "Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
             },
             "last_escalation_rule_executed_at": schema.StringAttribute{
@@ -173,11 +173,11 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "execute_next_escalation_rule_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How many minutes should we wait before executing the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How many minutes should we wait before executing the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
             },
             "on_call_policy_execution_repeat_count": schema.NumberAttribute{
-                MarkdownDescription: "How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),

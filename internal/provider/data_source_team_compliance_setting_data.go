@@ -85,15 +85,15 @@ func (d *TeamComplianceSettingDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "rule_type": schema.StringAttribute{
-                MarkdownDescription: "Type of compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
+                MarkdownDescription: "Type of compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
                 Computed: true,
             },
             "enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this compliance rule is enabled.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
+                MarkdownDescription: "Whether this compliance rule is enabled.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
                 Computed: true,
             },
             "options": schema.StringAttribute{
-                MarkdownDescription: "Additional options for this compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
+                MarkdownDescription: "Additional options for this compliance rule.. Permissions - Create: [Project Owner, Project Admin, Edit Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
                 Computed: true,
             },
         },

@@ -80,7 +80,7 @@ func (r *StatusPageUserOwnerResource) Schema(ctx context.Context, req resource.S
                 Required: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page User Owner], Read: [Project Owner, Project Admin, Project Member, Read Status Page User Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page User Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page User Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

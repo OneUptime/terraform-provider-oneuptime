@@ -77,7 +77,7 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 Required: true,
             },
             "is_verified": schema.BoolAttribute{
-                MarkdownDescription: "Is this domain verified?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Domain], Read: [Project Owner, Project Admin, Project Member, Read Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Domain]",
+                MarkdownDescription: "Is this domain verified?. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Domain]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -86,7 +86,7 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 },
             },
             "domain_verification_text": schema.StringAttribute{
-                MarkdownDescription: "Verification text that you need to add to your domains TXT record to veify the domain.. Permissions - Create: [Project Owner, Project Admin, Create Domain], Read: [Project Owner, Project Admin, Project Member, Read Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Verification text that you need to add to your domains TXT record to veify the domain.. Permissions - Create: [Project Owner, Project Admin, Create Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -110,7 +110,7 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

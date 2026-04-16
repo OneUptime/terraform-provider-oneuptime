@@ -77,11 +77,11 @@ func (r *MonitorStatusResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -93,7 +93,7 @@ func (r *MonitorStatusResource) Schema(ctx context.Context, req resource.SchemaR
                 Required: true,
             },
             "is_operational_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this monitor in operational state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Is this monitor in operational state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -102,7 +102,7 @@ func (r *MonitorStatusResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_offline_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this monitor in offline state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Is this monitor in offline state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -111,7 +111,7 @@ func (r *MonitorStatusResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this status. For example: Operational has priority 1, Degraded has 2, Offline has 3. Lower priority would mean bad state of the resource. . Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Order / Priority of this status. For example: Operational has priority 1, Degraded has 2, Offline has 3. Lower priority would mean bad state of the resource. . Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -135,7 +135,7 @@ func (r *MonitorStatusResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

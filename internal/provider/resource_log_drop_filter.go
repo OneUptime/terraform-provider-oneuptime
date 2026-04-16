@@ -82,7 +82,7 @@ func (r *LogDropFilterResource) Schema(ctx context.Context, req resource.SchemaR
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of what this drop filter does.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
+                MarkdownDescription: "Description of what this drop filter does.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -90,15 +90,15 @@ func (r *LogDropFilterResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "filter_query": schema.StringAttribute{
-                MarkdownDescription: "Filter expression that identifies which logs to drop or sample.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
+                MarkdownDescription: "Filter expression that identifies which logs to drop or sample.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
                 Required: true,
             },
             "action": schema.StringAttribute{
-                MarkdownDescription: "What to do with matching logs: 'drop' to discard entirely, 'sample' to keep a percentage.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
+                MarkdownDescription: "What to do with matching logs: 'drop' to discard entirely, 'sample' to keep a percentage.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
                 Required: true,
             },
             "sample_percentage": schema.NumberAttribute{
-                MarkdownDescription: "When action is 'sample', the percentage of matching logs to keep (1-99).. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
+                MarkdownDescription: "When action is 'sample', the percentage of matching logs to keep (1-99).. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -106,7 +106,7 @@ func (r *LogDropFilterResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this drop filter is active.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
+                MarkdownDescription: "Whether this drop filter is active.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -115,7 +115,7 @@ func (r *LogDropFilterResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the evaluation order of this filter relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
+                MarkdownDescription: "Determines the evaluation order of this filter relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Log Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

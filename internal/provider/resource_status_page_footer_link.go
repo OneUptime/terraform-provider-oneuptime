@@ -75,15 +75,15 @@ func (r *StatusPageFooterLinkResource) Schema(ctx context.Context, req resource.
                 Required: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]",
+                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Footer Link]",
                 Required: true,
             },
             "link": schema.StringAttribute{
-                MarkdownDescription: "URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]",
+                MarkdownDescription: "URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Footer Link]",
                 Required: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Footer Link]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Footer Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Footer Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Footer Link]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

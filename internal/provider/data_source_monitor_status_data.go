@@ -80,11 +80,11 @@ func (d *MonitorStatusDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -100,15 +100,15 @@ func (d *MonitorStatusDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "is_operational_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this monitor in operational state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Is this monitor in operational state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Computed: true,
             },
             "is_offline_state": schema.BoolAttribute{
-                MarkdownDescription: "Is this monitor in offline state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Is this monitor in offline state?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Computed: true,
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this status. For example: Operational has priority 1, Degraded has 2, Offline has 3. Lower priority would mean bad state of the resource. . Permissions - Create: [Project Owner, Project Admin, Project Member, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Status]",
+                MarkdownDescription: "Order / Priority of this status. For example: Operational has priority 1, Degraded has 2, Offline has 3. Lower priority would mean bad state of the resource. . Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Status]",
                 Computed: true,
             },
         },

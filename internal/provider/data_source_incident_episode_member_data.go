@@ -92,7 +92,7 @@ func (d *IncidentEpisodeMemberDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "added_by": schema.StringAttribute{
-                MarkdownDescription: "How this incident was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Member], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How this incident was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "added_by_user_id": schema.StringAttribute{

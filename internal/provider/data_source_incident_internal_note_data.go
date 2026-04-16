@@ -87,20 +87,20 @@ func (d *IncidentInternalNoteDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Internal Note]",
+                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Internal Note]",
                 Computed: true,
             },
             "attachments": schema.SetAttribute{
-                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Internal Note]",
+                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Internal Note]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "posted_from_slack_message_id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Internal Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

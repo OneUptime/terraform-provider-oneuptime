@@ -83,7 +83,7 @@ func (r *TeamMemberResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Required: true,
             },
             "has_accepted_invitation": schema.BoolAttribute{
-                MarkdownDescription: "Has this team member accepted invitation. Permissions - Create: [Project Owner, Project Admin, Create Team, Invite New Members], Read: [Project Owner, Project Admin, Project Member, Read Teams, Logged in User], Update: [Logged in User]",
+                MarkdownDescription: "Has this team member accepted invitation. Permissions - Create: [Project Owner, Project Admin, Create Team, Invite New Members], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Teams, Logged in User], Update: [Logged in User]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

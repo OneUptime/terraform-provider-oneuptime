@@ -81,11 +81,11 @@ func (d *IncidentRoleDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Role, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Role, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Role], Read: [Project Owner, Project Admin, Project Member, Read Incident Role, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Role]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Role], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Role, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Role]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -101,19 +101,19 @@ func (d *IncidentRoleDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "role_icon": schema.StringAttribute{
-                MarkdownDescription: "Icon for this incident role (e.g., User, Shield, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Role], Read: [Project Owner, Project Admin, Project Member, Read Incident Role, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Role]",
+                MarkdownDescription: "Icon for this incident role (e.g., User, Shield, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Role], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Role, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Role]",
                 Computed: true,
             },
             "is_primary_role": schema.BoolAttribute{
-                MarkdownDescription: "Is this the primary incident role? Primary roles like Incident Commander have special significance.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Role, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this the primary incident role? Primary roles like Incident Commander have special significance.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Role, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_deleteable": schema.BoolAttribute{
-                MarkdownDescription: "Can this role be deleted? Primary roles cannot be deleted.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Role, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Can this role be deleted? Primary roles cannot be deleted.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Role, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "can_assign_multiple_users": schema.BoolAttribute{
-                MarkdownDescription: "Can multiple users be assigned to this role? If false, only one user can be assigned.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Role], Read: [Project Owner, Project Admin, Project Member, Read Incident Role, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Role]",
+                MarkdownDescription: "Can multiple users be assigned to this role? If false, only one user can be assigned.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Role], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Role, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Role]",
                 Computed: true,
             },
         },

@@ -26,7 +26,7 @@ resource "oneuptime_incident_episode_member" "example" {
 - `incident_episode_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `added_at` (String) A date time object.. Computed.
-- `added_by` (String) How this incident was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Member], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `added_by` (String) How this incident was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `added_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `matched_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_at` (String) A date time object.. Computed.

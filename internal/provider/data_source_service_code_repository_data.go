@@ -88,7 +88,7 @@ func (d *ServiceCodeRepositoryDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "service_path_in_repository": schema.StringAttribute{
-                MarkdownDescription: "The path in the repository where the service code lives (e.g., /services/api or /src/backend). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Service Code Repository]",
+                MarkdownDescription: "The path in the repository where the service code lives (e.g., /services/api or /src/backend). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service Code Repository]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -100,15 +100,15 @@ func (d *ServiceCodeRepositoryDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "enable_automatic_improvements": schema.BoolAttribute{
-                MarkdownDescription: "Enable OneUptime to automatically create pull requests to improve the code for this service.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Service Code Repository]",
+                MarkdownDescription: "Enable OneUptime to automatically create pull requests to improve the code for this service.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service Code Repository]",
                 Computed: true,
             },
             "max_open_pull_requests": schema.NumberAttribute{
-                MarkdownDescription: "Maximum number of open pull requests that OneUptime can create for this service at any given time.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Service Code Repository]",
+                MarkdownDescription: "Maximum number of open pull requests that OneUptime can create for this service at any given time.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service Code Repository]",
                 Computed: true,
             },
             "restricted_improvement_actions": schema.StringAttribute{
-                MarkdownDescription: "Restrict code improvements to only these actions. If empty, all improvement actions are allowed.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Service Code Repository]",
+                MarkdownDescription: "Restrict code improvements to only these actions. If empty, all improvement actions are allowed.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Service Code Repository, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service Code Repository]",
                 Computed: true,
             },
         },

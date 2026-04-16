@@ -28,7 +28,7 @@ resource "oneuptime_incident_sla" "example" {
 - `incident_sla_rule_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `response_deadline` (String) A date time object.. Computed.
 - `resolution_deadline` (String) A date time object.. Computed.
-- `status` (String) Current SLA status (On Track, At Risk, Breached, Met). Permissions - Create: [Project Owner, Project Admin, Create Incident SLA], Read: [Project Owner, Project Admin, Project Member, Read Incident SLA, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA]. Computed.
+- `status` (String) Current SLA status (On Track, At Risk, Breached, Met). Permissions - Create: [Project Owner, Project Admin, Create Incident SLA], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA]. Computed.
 - `responded_at` (String) A date time object.. Computed.
 - `resolved_at` (String) A date time object.. Computed.
 - `last_internal_note_reminder_sent_at` (String) A date time object.. Computed.

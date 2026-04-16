@@ -83,7 +83,7 @@ func (r *ScheduledMaintenanceStateTimelineResource) Schema(ctx context.Context, 
                 Required: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]",
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State Timeline]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *ScheduledMaintenanceStateTimelineResource) Schema(ctx context.Context, 
                 },
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -135,11 +135,11 @@ func (r *ScheduledMaintenanceStateTimelineResource) Schema(ctx context.Context, 
                 Computed: true,
             },
             "subscriber_notification_status": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers about this scheduled maintenance state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance State Timeline]",
+                MarkdownDescription: "Status of notification sent to subscribers about this scheduled maintenance state change. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance State Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance State Timeline]",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

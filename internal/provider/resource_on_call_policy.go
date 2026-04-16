@@ -80,11 +80,11 @@ func (r *OnCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy]",
                 Required: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -93,7 +93,7 @@ func (r *OnCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -101,7 +101,7 @@ func (r *OnCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "repeat_policy_if_no_one_acknowledges": schema.BoolAttribute{
-                MarkdownDescription: "Repeat the policy if no one acknowledges the alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Repeat the policy if no one acknowledges the alert. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -110,7 +110,7 @@ func (r *OnCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "repeat_policy_if_no_one_acknowledges_no_of_times": schema.NumberAttribute{
-                MarkdownDescription: "Repeat the policy X number of times if no one acknowledges the alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Repeat the policy X number of times if no one acknowledges the alert. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -119,7 +119,7 @@ func (r *OnCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit On-Call Duty Policy]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -143,7 +143,7 @@ func (r *OnCallPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Read On-Call Duty Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

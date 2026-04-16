@@ -82,11 +82,11 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Friendly name for this Kubernetes cluster. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Friendly name for this Kubernetes cluster. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Kubernetes Cluster]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description for this Kubernetes cluster. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Friendly description for this Kubernetes cluster. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Kubernetes Cluster]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -94,11 +94,11 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "cluster_identifier": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for this cluster, sourced from the k8s.cluster.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Unique identifier for this cluster, sourced from the k8s.cluster.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Kubernetes Cluster]",
                 Required: true,
             },
             "provider_value": schema.StringAttribute{
-                MarkdownDescription: "Cloud provider or platform running this cluster (EKS, GKE, AKS, self-managed, unknown). Permissions - Create: [Project Owner, Project Admin, Project Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Cloud provider or platform running this cluster (EKS, GKE, AKS, self-managed, unknown). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Kubernetes Cluster]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -106,7 +106,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Kubernetes Cluster]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -115,7 +115,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -131,7 +131,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "node_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of nodes in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Cached count of nodes in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -139,7 +139,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "pod_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of pods in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Cached count of pods in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -147,7 +147,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "namespace_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of namespaces in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
+                MarkdownDescription: "Cached count of namespaces in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -171,7 +171,7 @@ func (r *KubernetesClusterResource) Schema(ctx context.Context, req resource.Sch
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Kubernetes Cluster, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Kubernetes Cluster, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

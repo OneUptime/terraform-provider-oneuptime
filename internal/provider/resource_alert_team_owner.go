@@ -80,7 +80,7 @@ func (r *AlertTeamOwnerResource) Schema(ctx context.Context, req resource.Schema
                 Required: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Team Owner], Read: [Project Owner, Project Admin, Project Member, Read Alert Team Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Team Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Team Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

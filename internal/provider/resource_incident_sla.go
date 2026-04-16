@@ -102,7 +102,7 @@ func (r *IncidentSlaResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current SLA status (On Track, At Risk, Breached, Met). Permissions - Create: [Project Owner, Project Admin, Create Incident SLA], Read: [Project Owner, Project Admin, Project Member, Read Incident SLA, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA]",
+                MarkdownDescription: "Current SLA status (On Track, At Risk, Breached, Met). Permissions - Create: [Project Owner, Project Admin, Create Incident SLA], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA]",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("On Track"),

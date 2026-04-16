@@ -106,7 +106,7 @@ func (r *OnCallTimeLogResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "more_info": schema.StringAttribute{
-                MarkdownDescription: "More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Create On-Call Policy Time Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Create On-Call Policy Time Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

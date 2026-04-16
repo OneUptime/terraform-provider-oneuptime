@@ -27,14 +27,14 @@ resource "oneuptime_monitor_probe" "example" {
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `last_ping_at` (String) A date time object.. Computed.
 - `next_ping_at` (String) A date time object.. Computed.
-- `is_enabled` (Bool) Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Read Monitor Probe, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Monitor Probe]. Computed.
+- `is_enabled` (Bool) Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Probe, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Probe]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `last_monitoring_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Monitor Probe, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `last_monitoring_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Probe, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

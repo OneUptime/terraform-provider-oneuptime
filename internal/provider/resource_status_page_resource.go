@@ -109,11 +109,11 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "display_name": schema.StringAttribute{
-                MarkdownDescription: "Display name of the monitor on the Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Display name of the monitor on the Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Required: true,
             },
             "display_description": schema.StringAttribute{
-                MarkdownDescription: "Display description of the monitor on the Status Page. This is in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Display description of the monitor on the Status Page. This is in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -121,7 +121,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "display_tooltip": schema.StringAttribute{
-                MarkdownDescription: "Tooltip of the monitor on the Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Tooltip of the monitor on the Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -129,7 +129,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "show_current_status": schema.BoolAttribute{
-                MarkdownDescription: "Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -138,7 +138,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "show_uptime_percent": schema.BoolAttribute{
-                MarkdownDescription: "Show uptime percent of this monitor for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Show uptime percent of this monitor for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -147,7 +147,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "uptime_percent_precision": schema.StringAttribute{
-                MarkdownDescription: "Precision of uptime percent of this monitor for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Precision of uptime percent of this monitor for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -155,7 +155,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "show_status_history_chart": schema.BoolAttribute{
-                MarkdownDescription: "Show a 90 day uptime history of this monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Show a 90 day uptime history of this monitor. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -164,7 +164,7 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Status Page Resource]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Resource, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Resource]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

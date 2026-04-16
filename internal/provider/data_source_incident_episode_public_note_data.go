@@ -91,28 +91,28 @@ func (d *IncidentEpisodePublicNoteDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode Public Note]",
+                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode Public Note]",
                 Computed: true,
             },
             "attachments": schema.SetAttribute{
-                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode Public Note]",
+                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode Public Note]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "subscriber_notification_status_on_note_created": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers about this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode Public Note]",
+                MarkdownDescription: "Status of notification sent to subscribers about this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode Public Note]",
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident Episode Public Note]",
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Public Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode Public Note]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Public Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this note?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Public Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Public Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Public Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "posted_at": schema.StringAttribute{
@@ -120,7 +120,7 @@ func (d *IncidentEpisodePublicNoteDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "posted_from_slack_message_id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Read Incident Episode Public Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Public Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Public Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

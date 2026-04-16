@@ -75,15 +75,15 @@ func (r *TableViewResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
                 Required: true,
             },
             "table_id": schema.StringAttribute{
-                MarkdownDescription: "ID of the table this view is for. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "ID of the table this view is for. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *TableViewResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Filters for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Filters for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -99,7 +99,7 @@ func (r *TableViewResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "sort": schema.StringAttribute{
-                MarkdownDescription: "Sort for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Sort for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -107,7 +107,7 @@ func (r *TableViewResource) Schema(ctx context.Context, req resource.SchemaReque
                 },
             },
             "items_on_page": schema.NumberAttribute{
-                MarkdownDescription: "Items on page. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
+                MarkdownDescription: "Items on page. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Table View, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Table View]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(10)),

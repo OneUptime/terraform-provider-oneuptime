@@ -69,7 +69,7 @@ func (r *ScheduledMaintenanceNoteTemplateResource) Schema(ctx context.Context, r
                 },
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
+                MarkdownDescription: "Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance Note Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -77,11 +77,11 @@ func (r *ScheduledMaintenanceNoteTemplateResource) Schema(ctx context.Context, r
                 },
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
+                MarkdownDescription: "Name of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance Note Template]",
                 Required: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Read Scheduled Maintenance Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Scheduled Maintenance Note Template]",
+                MarkdownDescription: "Description of the Incident Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Create Scheduled Maintenance Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Manager, Edit Scheduled Maintenance Note Template]",
                 Required: true,
             },
             "created_at": schema.StringAttribute{

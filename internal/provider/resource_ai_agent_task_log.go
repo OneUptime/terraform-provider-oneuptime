@@ -78,11 +78,11 @@ func (r *AiAgentTaskLogResource) Schema(ctx context.Context, req resource.Schema
                 Required: true,
             },
             "severity": schema.StringAttribute{
-                MarkdownDescription: "Severity level of this log entry (e.g., Information, Warning, Error).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Severity level of this log entry (e.g., Information, Warning, Error).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
                 Required: true,
             },
             "message": schema.StringAttribute{
-                MarkdownDescription: "The log message content.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "The log message content.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
                 Required: true,
             },
             "created_at": schema.StringAttribute{

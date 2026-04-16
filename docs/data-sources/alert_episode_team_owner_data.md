@@ -31,4 +31,4 @@ data "oneuptime_alert_episode_team_owner_data" "example" {
 - `alert_episode_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Episode Team Owner], Read: [Project Owner, Project Admin, Project Member, Read Alert Episode Team Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode Team Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode Team Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.

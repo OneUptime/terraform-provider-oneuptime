@@ -21,11 +21,11 @@ resource "oneuptime_metric_type" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `services` (Set) List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Incident]. Computed.
+- `services` (Set) List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Telemetry Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Telemetry Manager, Edit Incident]. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Required.
-- `description` (String) Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Computed.
-- `unit` (String) Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Required.
+- `description` (String) Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Computed.
+- `unit` (String) Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

@@ -78,7 +78,7 @@ func (r *AlertInternalNoteResource) Schema(ctx context.Context, req resource.Sch
                 Required: true,
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]",
+                MarkdownDescription: "Notes in markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Internal Note]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -86,7 +86,7 @@ func (r *AlertInternalNoteResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "attachments": schema.SetAttribute{
-                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit Alert Internal Note]",
+                MarkdownDescription: "Files attached to this note. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Internal Note, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Internal Note]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -95,7 +95,7 @@ func (r *AlertInternalNoteResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "posted_from_slack_message_id": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Internal Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -123,7 +123,7 @@ func (r *AlertInternalNoteResource) Schema(ctx context.Context, req resource.Sch
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Read Alert Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Internal Note, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
