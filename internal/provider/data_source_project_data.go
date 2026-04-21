@@ -59,6 +59,7 @@ type ProjectDataDataSourceModel struct {
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
     EnableSmsNotifications types.Bool `tfsdk:"enable_sms_notifications"`
     EnableWhatsAppNotifications types.Bool `tfsdk:"enable_whats_app_notifications"`
+    EnableTelegramNotifications types.Bool `tfsdk:"enable_telegram_notifications"`
     EnableCallNotifications types.Bool `tfsdk:"enable_call_notifications"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AiCurrentBalanceInUsdCents types.Number `tfsdk:"ai_current_balance_in_usd_cents"`
@@ -73,6 +74,8 @@ type ProjectDataDataSourceModel struct {
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
+    DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
+    DefaultMetricDownsamplingRetentionDays types.String `tfsdk:"default_metric_downsampling_retention_days"`
 }
 
 func (d *ProjectDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -220,6 +223,10 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Enable WhatsApp notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
+            "enable_telegram_notifications": schema.BoolAttribute{
+                MarkdownDescription: "Enable Telegram notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
             "enable_call_notifications": schema.BoolAttribute{
                 MarkdownDescription: "Enable call notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
                 Computed: true,
@@ -274,6 +281,14 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "git_hub_app_installation_id": schema.StringAttribute{
                 MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "default_metric_cardinality_budget": schema.NumberAttribute{
+                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "default_metric_downsampling_retention_days": schema.StringAttribute{
+                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
         },
@@ -441,6 +456,9 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := projectDataResponse["enable_whats_app_notifications"].(bool); ok {
         data.EnableWhatsAppNotifications = types.BoolValue(val)
     }
+    if val, ok := projectDataResponse["enable_telegram_notifications"].(bool); ok {
+        data.EnableTelegramNotifications = types.BoolValue(val)
+    }
     if val, ok := projectDataResponse["enable_call_notifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
     }
@@ -482,6 +500,12 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["git_hub_app_installation_id"].(string); ok {
         data.GitHubAppInstallationId = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["default_metric_cardinality_budget"].(float64); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["default_metric_downsampling_retention_days"].(string); ok {
+        data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
     }
 
     // Write logs using the tflog package

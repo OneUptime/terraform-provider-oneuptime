@@ -42,6 +42,8 @@ type ServiceDataDataSourceModel struct {
     ServiceLanguage types.String `tfsdk:"service_language"`
     TechStack types.String `tfsdk:"tech_stack"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
+    MetricCardinalityBudget types.Number `tfsdk:"metric_cardinality_budget"`
+    MetricDownsamplingRetentionDays types.String `tfsdk:"metric_downsampling_retention_days"`
 }
 
 func (d *ServiceDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -116,6 +118,14 @@ func (d *ServiceDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
                 MarkdownDescription: "Number of days to retain telemetry data for this service.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Project Member, Viewer, Settings Manager, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service]",
+                Computed: true,
+            },
+            "metric_cardinality_budget": schema.NumberAttribute{
+                MarkdownDescription: "Max number of distinct metric series this service may emit per metric. When exceeded, the highest-cardinality attribute is auto-bucketed. Null inherits the project default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service]",
+                Computed: true,
+            },
+            "metric_downsampling_retention_days": schema.StringAttribute{
+                MarkdownDescription: "Per-tier retention override (raw, 1m, 5m, 1h, 1d) in days. Null fields inherit the project default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service]",
                 Computed: true,
             },
         },
@@ -237,6 +247,12 @@ func (d *ServiceDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := serviceDataResponse["retain_telemetry_data_for_days"].(float64); ok {
         data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := serviceDataResponse["metric_cardinality_budget"].(float64); ok {
+        data.MetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := serviceDataResponse["metric_downsampling_retention_days"].(string); ok {
+        data.MetricDownsamplingRetentionDays = types.StringValue(val)
     }
 
     // Write logs using the tflog package

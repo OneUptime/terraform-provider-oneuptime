@@ -58,6 +58,7 @@ type ProjectResourceModel struct {
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
     EnableSmsNotifications types.Bool `tfsdk:"enable_sms_notifications"`
     EnableWhatsAppNotifications types.Bool `tfsdk:"enable_whats_app_notifications"`
+    EnableTelegramNotifications types.Bool `tfsdk:"enable_telegram_notifications"`
     EnableCallNotifications types.Bool `tfsdk:"enable_call_notifications"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
@@ -66,6 +67,8 @@ type ProjectResourceModel struct {
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
+    DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
+    DefaultMetricDownsamplingRetentionDays types.String `tfsdk:"default_metric_downsampling_retention_days"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -265,6 +268,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "enable_telegram_notifications": schema.BoolAttribute{
+                MarkdownDescription: "Enable Telegram notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_call_notifications": schema.BoolAttribute{
                 MarkdownDescription: "Enable call notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
                 Optional: true,
@@ -330,6 +342,22 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             },
             "git_hub_app_installation_id": schema.StringAttribute{
                 MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "default_metric_cardinality_budget": schema.NumberAttribute{
+                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "default_metric_downsampling_retention_days": schema.StringAttribute{
+                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -481,6 +509,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.ValueBigFloat()),
         "enableSmsNotifications": data.EnableSmsNotifications.ValueBool(),
         "enableWhatsAppNotifications": data.EnableWhatsAppNotifications.ValueBool(),
+        "enableTelegramNotifications": data.EnableTelegramNotifications.ValueBool(),
         "enableCallNotifications": data.EnableCallNotifications.ValueBool(),
         "enableAutoRechargeSmsOrCallBalance": data.EnableAutoRechargeSmsOrCallBalance.ValueBool(),
         "autoAiRechargeByBalanceInUSD": r.bigFloatToFloat64(data.AutoAiRechargeByBalanceInUsd.ValueBigFloat()),
@@ -489,6 +518,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableAutoRechargeAiBalance": data.EnableAutoRechargeAiBalance.ValueBool(),
         "doNotAddGlobalProbesByDefaultOnNewMonitors": data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool(),
         "gitHubAppInstallationId": data.GitHubAppInstallationId.ValueString(),
+        "defaultMetricCardinalityBudget": r.bigFloatToFloat64(data.DefaultMetricCardinalityBudget.ValueBigFloat()),
+        "defaultMetricDownsamplingRetentionDays": r.parseJSONField(data.DefaultMetricDownsamplingRetentionDays),
         },
     }
 
@@ -1049,6 +1080,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["enableWhatsAppNotifications"].(bool); ok {
         data.EnableWhatsAppNotifications = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableTelegramNotifications"].(bool); ok {
+        data.EnableTelegramNotifications = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableCallNotifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
     }
@@ -1118,6 +1152,52 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
+    }
+    if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["defaultMetricCardinalityBudget"] == nil {
+        data.DefaultMetricCardinalityBudget = types.NumberNull()
+    }
+    if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok && val != "" {
+        data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+    } else {
+        data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1768,6 +1848,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
         "enableSmsNotifications": true,
         "enableWhatsAppNotifications": true,
+        "enableTelegramNotifications": true,
         "enableCallNotifications": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
@@ -1776,6 +1857,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
+        "defaultMetricCardinalityBudget": true,
+        "defaultMetricDownsamplingRetentionDays": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2362,6 +2445,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["enableWhatsAppNotifications"].(bool); ok {
         data.EnableWhatsAppNotifications = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableTelegramNotifications"].(bool); ok {
+        data.EnableTelegramNotifications = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableCallNotifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
     }
@@ -2431,6 +2517,52 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
+    }
+    if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["defaultMetricCardinalityBudget"] == nil {
+        data.DefaultMetricCardinalityBudget = types.NumberNull()
+    }
+    if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok && val != "" {
+        data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+    } else {
+        data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3123,6 +3255,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableWhatsAppNotifications.IsUnknown() && !state.EnableWhatsAppNotifications.IsUnknown() && !data.EnableWhatsAppNotifications.Equal(state.EnableWhatsAppNotifications) {
         requestDataMap["enableWhatsAppNotifications"] = data.EnableWhatsAppNotifications.ValueBool()
     }
+    if !data.EnableTelegramNotifications.IsUnknown() && !state.EnableTelegramNotifications.IsUnknown() && !data.EnableTelegramNotifications.Equal(state.EnableTelegramNotifications) {
+        requestDataMap["enableTelegramNotifications"] = data.EnableTelegramNotifications.ValueBool()
+    }
     if !data.EnableCallNotifications.IsUnknown() && !state.EnableCallNotifications.IsUnknown() && !data.EnableCallNotifications.Equal(state.EnableCallNotifications) {
         requestDataMap["enableCallNotifications"] = data.EnableCallNotifications.ValueBool()
     }
@@ -3149,6 +3284,17 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.GitHubAppInstallationId.IsUnknown() && !state.GitHubAppInstallationId.IsUnknown() && !data.GitHubAppInstallationId.Equal(state.GitHubAppInstallationId) {
         requestDataMap["gitHubAppInstallationId"] = data.GitHubAppInstallationId.ValueString()
+    }
+    if !data.DefaultMetricCardinalityBudget.IsUnknown() && !state.DefaultMetricCardinalityBudget.IsUnknown() && !data.DefaultMetricCardinalityBudget.Equal(state.DefaultMetricCardinalityBudget) {
+        requestDataMap["defaultMetricCardinalityBudget"] = r.bigFloatToFloat64(data.DefaultMetricCardinalityBudget.ValueBigFloat())
+    }
+    if !data.DefaultMetricDownsamplingRetentionDays.IsUnknown() && !state.DefaultMetricDownsamplingRetentionDays.IsUnknown() && !data.DefaultMetricDownsamplingRetentionDays.Equal(state.DefaultMetricDownsamplingRetentionDays) {
+        var defaultmetricdownsamplingretentiondaysData interface{}
+        if err := json.Unmarshal([]byte(data.DefaultMetricDownsamplingRetentionDays.ValueString()), &defaultmetricdownsamplingretentiondaysData); err == nil {
+            requestDataMap["defaultMetricDownsamplingRetentionDays"] = defaultmetricdownsamplingretentiondaysData
+        } else {
+            requestDataMap["defaultMetricDownsamplingRetentionDays"] = data.DefaultMetricDownsamplingRetentionDays.ValueString()
+        }
     }
 
     // Make API call
@@ -3189,6 +3335,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
         "enableSmsNotifications": true,
         "enableWhatsAppNotifications": true,
+        "enableTelegramNotifications": true,
         "enableCallNotifications": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
@@ -3197,6 +3344,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
+        "defaultMetricCardinalityBudget": true,
+        "defaultMetricDownsamplingRetentionDays": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3777,6 +3926,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["enableWhatsAppNotifications"].(bool); ok {
         data.EnableWhatsAppNotifications = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableTelegramNotifications"].(bool); ok {
+        data.EnableTelegramNotifications = types.BoolValue(val)
+    }
     if val, ok := dataMap["enableCallNotifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
     }
@@ -3846,6 +3998,52 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.GitHubAppInstallationId = types.StringValue(val)
     } else {
         data.GitHubAppInstallationId = types.StringNull()
+    }
+    if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
+        data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["defaultMetricCardinalityBudget"] == nil {
+        data.DefaultMetricCardinalityBudget = types.NumberNull()
+    }
+    if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultMetricDownsamplingRetentionDays = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultMetricDownsamplingRetentionDays = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok && val != "" {
+        data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+    } else {
+        data.DefaultMetricDownsamplingRetentionDays = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
