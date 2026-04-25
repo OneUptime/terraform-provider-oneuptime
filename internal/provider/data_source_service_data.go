@@ -117,7 +117,7 @@ func (d *ServiceDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this service.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Project Member, Viewer, Settings Manager, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service]",
+                MarkdownDescription: "Number of days to retain telemetry data for this service. Leave blank to use the project-wide default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Project Member, Viewer, Settings Manager, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Service]",
                 Computed: true,
             },
             "metric_cardinality_budget": schema.NumberAttribute{

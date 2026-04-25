@@ -60,6 +60,8 @@ type IncidentDataDataSourceModel struct {
     CreatedStateLog types.String `tfsdk:"created_state_log"`
     CreatedCriteriaId types.String `tfsdk:"created_criteria_id"`
     CreatedIncidentTemplateId types.String `tfsdk:"created_incident_template_id"`
+    SeriesFingerprint types.String `tfsdk:"series_fingerprint"`
+    SeriesLabels types.String `tfsdk:"series_labels"`
     CreatedByProbeId types.String `tfsdk:"created_by_probe_id"`
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
     RemediationNotes types.String `tfsdk:"remediation_notes"`
@@ -217,6 +219,14 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "created_incident_template_id": schema.StringAttribute{
                 MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "series_fingerprint": schema.StringAttribute{
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "series_labels": schema.StringAttribute{
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
@@ -451,6 +461,12 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     }
     if val, ok := incidentDataResponse["created_incident_template_id"].(string); ok {
         data.CreatedIncidentTemplateId = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["series_fingerprint"].(string); ok {
+        data.SeriesFingerprint = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["series_labels"].(string); ok {
+        data.SeriesLabels = types.StringValue(val)
     }
     if val, ok := incidentDataResponse["created_by_probe_id"].(string); ok {
         data.CreatedByProbeId = types.StringValue(val)

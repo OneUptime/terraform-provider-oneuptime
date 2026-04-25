@@ -75,7 +75,10 @@ type ProjectDataDataSourceModel struct {
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
+    DefaultTelemetryRetentionInDays types.Number `tfsdk:"default_telemetry_retention_in_days"`
     DefaultMetricDownsamplingRetentionDays types.String `tfsdk:"default_metric_downsampling_retention_days"`
+    EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
+    AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
 }
 
 func (d *ProjectDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -148,7 +151,7 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Email object",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
                 Computed: true,
             },
             "payment_provider_subscription_status": schema.StringAttribute{
@@ -287,8 +290,20 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
+            "default_telemetry_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
             "default_metric_downsampling_retention_days": schema.StringAttribute{
                 MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "enable_audit_logs": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "audit_logs_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
                 Computed: true,
             },
         },
@@ -504,8 +519,17 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := projectDataResponse["default_metric_cardinality_budget"].(float64); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
     }
+    if val, ok := projectDataResponse["default_telemetry_retention_in_days"].(float64); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+    }
     if val, ok := projectDataResponse["default_metric_downsampling_retention_days"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["enable_audit_logs"].(bool); ok {
+        data.EnableAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["audit_logs_retention_in_days"].(float64); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

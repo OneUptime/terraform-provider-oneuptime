@@ -74,6 +74,8 @@ type IncidentResourceModel struct {
     CreatedStateLog types.String `tfsdk:"created_state_log"`
     CreatedCriteriaId types.String `tfsdk:"created_criteria_id"`
     CreatedIncidentTemplateId types.String `tfsdk:"created_incident_template_id"`
+    SeriesFingerprint types.String `tfsdk:"series_fingerprint"`
+    SeriesLabels types.String `tfsdk:"series_labels"`
     CreatedByProbeId types.String `tfsdk:"created_by_probe_id"`
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
@@ -334,6 +336,14 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "created_incident_template_id": schema.StringAttribute{
                 MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "series_fingerprint": schema.StringAttribute{
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "series_labels": schema.StringAttribute{
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
@@ -1568,6 +1578,80 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.CreatedIncidentTemplateId = types.StringNull()
     }
+    if obj, ok := dataMap["seriesFingerprint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SeriesFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SeriesFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeriesFingerprint = types.StringNull()
+        }
+    } else if val, ok := dataMap["seriesFingerprint"].(string); ok && val != "" {
+        data.SeriesFingerprint = types.StringValue(val)
+    } else {
+        data.SeriesFingerprint = types.StringNull()
+    }
+    if obj, ok := dataMap["seriesLabels"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SeriesLabels = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SeriesLabels = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SeriesLabels = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SeriesLabels = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SeriesLabels = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeriesLabels = types.StringNull()
+        }
+    } else if val, ok := dataMap["seriesLabels"].(string); ok && val != "" {
+        data.SeriesLabels = types.StringValue(val)
+    } else {
+        data.SeriesLabels = types.StringNull()
+    }
     if obj, ok := dataMap["createdByProbeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1715,6 +1799,8 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "createdStateLog": true,
         "createdCriteriaId": true,
         "createdIncidentTemplateId": true,
+        "seriesFingerprint": true,
+        "seriesLabels": true,
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "incidentNumber": true,
@@ -2877,6 +2963,80 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.CreatedIncidentTemplateId = types.StringNull()
     }
+    if obj, ok := dataMap["seriesFingerprint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SeriesFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SeriesFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeriesFingerprint = types.StringNull()
+        }
+    } else if val, ok := dataMap["seriesFingerprint"].(string); ok && val != "" {
+        data.SeriesFingerprint = types.StringValue(val)
+    } else {
+        data.SeriesFingerprint = types.StringNull()
+    }
+    if obj, ok := dataMap["seriesLabels"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SeriesLabels = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SeriesLabels = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SeriesLabels = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SeriesLabels = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SeriesLabels = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeriesLabels = types.StringNull()
+        }
+    } else if val, ok := dataMap["seriesLabels"].(string); ok && val != "" {
+        data.SeriesLabels = types.StringValue(val)
+    } else {
+        data.SeriesLabels = types.StringNull()
+    }
     if obj, ok := dataMap["createdByProbeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3138,6 +3298,8 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "createdStateLog": true,
         "createdCriteriaId": true,
         "createdIncidentTemplateId": true,
+        "seriesFingerprint": true,
+        "seriesLabels": true,
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
         "incidentNumber": true,
@@ -4294,6 +4456,80 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.CreatedIncidentTemplateId = types.StringNull()
     }
+    if obj, ok := dataMap["seriesFingerprint"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SeriesFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SeriesFingerprint = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesFingerprint = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SeriesFingerprint = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeriesFingerprint = types.StringNull()
+        }
+    } else if val, ok := dataMap["seriesFingerprint"].(string); ok && val != "" {
+        data.SeriesFingerprint = types.StringValue(val)
+    } else {
+        data.SeriesFingerprint = types.StringNull()
+    }
+    if obj, ok := dataMap["seriesLabels"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SeriesLabels = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SeriesLabels = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SeriesLabels = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SeriesLabels = types.StringValue(string(jsonBytes))
+            } else {
+                data.SeriesLabels = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SeriesLabels = types.StringValue(string(jsonBytes))
+        } else {
+            data.SeriesLabels = types.StringNull()
+        }
+    } else if val, ok := dataMap["seriesLabels"].(string); ok && val != "" {
+        data.SeriesLabels = types.StringValue(val)
+    } else {
+        data.SeriesLabels = types.StringNull()
+    }
     if obj, ok := dataMap["createdByProbeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4574,6 +4810,11 @@ func (r *IncidentResource) isValidOneUptimeObjectType(typeStr string) bool {
         "NotNull": true,
         "IsNull": true,
         "Includes": true,
+        "IncludesAll": true,
+        "IncludesNone": true,
+        "StartsWith": true,
+        "EndsWith": true,
+        "NotContains": true,
         "DashboardComponent": true,
         "DashboardViewConfig": true,
     }

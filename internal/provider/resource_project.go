@@ -53,6 +53,8 @@ type ProjectResourceModel struct {
     AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     UtmContent types.String `tfsdk:"utm_content"`
+    EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
+    AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
@@ -68,6 +70,7 @@ type ProjectResourceModel struct {
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
+    DefaultTelemetryRetentionInDays types.Number `tfsdk:"default_telemetry_retention_in_days"`
     DefaultMetricDownsamplingRetentionDays types.String `tfsdk:"default_metric_downsampling_retention_days"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
@@ -138,7 +141,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Email object",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -222,6 +225,24 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             "utm_content": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
+            },
+            "enable_audit_logs": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "audit_logs_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(7)),
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
             },
             "require_sso_for_login": schema.BoolAttribute{
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
@@ -350,6 +371,14 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             },
             "default_metric_cardinality_budget": schema.NumberAttribute{
                 MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "default_telemetry_retention_in_days": schema.NumberAttribute{
+                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -492,7 +521,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "paymentProviderPlanId": data.PaymentProviderPlanId.ValueString(),
         "businessDetails": data.BusinessDetails.ValueString(),
         "businessDetailsCountry": data.BusinessDetailsCountry.ValueString(),
-        "financeAccountingEmail": r.parseJSONField(data.FinanceAccountingEmail),
+        "financeAccountingEmail": data.FinanceAccountingEmail.ValueString(),
         "paymentProviderPromoCode": data.PaymentProviderPromoCode.ValueString(),
         "isFeatureFlagMonitorGroupsEnabled": data.IsFeatureFlagMonitorGroupsEnabled.ValueBool(),
         "activeMonitorsLimit": r.bigFloatToFloat64(data.ActiveMonitorsLimit.ValueBigFloat()),
@@ -504,6 +533,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "alertEpisodeNumberPrefix": data.AlertEpisodeNumberPrefix.ValueString(),
         "sendInvoicesByEmail": data.SendInvoicesByEmail.ValueBool(),
         "utmContent": data.UtmContent.ValueString(),
+        "enableAuditLogs": data.EnableAuditLogs.ValueBool(),
+        "auditLogsRetentionInDays": r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat()),
         "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
         "autoRechargeSmsOrCallByBalanceInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat()),
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.ValueBigFloat()),
@@ -519,6 +550,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "doNotAddGlobalProbesByDefaultOnNewMonitors": data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool(),
         "gitHubAppInstallationId": data.GitHubAppInstallationId.ValueString(),
         "defaultMetricCardinalityBudget": r.bigFloatToFloat64(data.DefaultMetricCardinalityBudget.ValueBigFloat()),
+        "defaultTelemetryRetentionInDays": r.bigFloatToFloat64(data.DefaultTelemetryRetentionInDays.ValueBigFloat()),
         "defaultMetricDownsamplingRetentionDays": r.parseJSONField(data.DefaultMetricDownsamplingRetentionDays),
         },
     }
@@ -1053,6 +1085,18 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.UtmContent = types.StringNull()
     }
+    if val, ok := dataMap["enableAuditLogs"].(bool); ok {
+        data.EnableAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["auditLogsRetentionInDays"] == nil {
+        data.AuditLogsRetentionInDays = types.NumberNull()
+    }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
     }
@@ -1161,6 +1205,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["defaultMetricCardinalityBudget"] == nil {
         data.DefaultMetricCardinalityBudget = types.NumberNull()
+    }
+    if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["defaultTelemetryRetentionInDays"] == nil {
+        data.DefaultTelemetryRetentionInDays = types.NumberNull()
     }
     if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1843,6 +1896,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "alertEpisodeNumberPrefix": true,
         "sendInvoicesByEmail": true,
         "utmContent": true,
+        "enableAuditLogs": true,
+        "auditLogsRetentionInDays": true,
         "requireSsoForLogin": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
@@ -1858,6 +1913,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
         "defaultMetricCardinalityBudget": true,
+        "defaultTelemetryRetentionInDays": true,
         "defaultMetricDownsamplingRetentionDays": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2418,6 +2474,18 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.UtmContent = types.StringNull()
     }
+    if val, ok := dataMap["enableAuditLogs"].(bool); ok {
+        data.EnableAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["auditLogsRetentionInDays"] == nil {
+        data.AuditLogsRetentionInDays = types.NumberNull()
+    }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
     }
@@ -2526,6 +2594,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["defaultMetricCardinalityBudget"] == nil {
         data.DefaultMetricCardinalityBudget = types.NumberNull()
+    }
+    if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["defaultTelemetryRetentionInDays"] == nil {
+        data.DefaultTelemetryRetentionInDays = types.NumberNull()
     }
     if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3215,12 +3292,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         requestDataMap["businessDetailsCountry"] = data.BusinessDetailsCountry.ValueString()
     }
     if !data.FinanceAccountingEmail.IsUnknown() && !state.FinanceAccountingEmail.IsUnknown() && !data.FinanceAccountingEmail.Equal(state.FinanceAccountingEmail) {
-        var financeaccountingemailData interface{}
-        if err := json.Unmarshal([]byte(data.FinanceAccountingEmail.ValueString()), &financeaccountingemailData); err == nil {
-            requestDataMap["financeAccountingEmail"] = financeaccountingemailData
-        } else {
-            requestDataMap["financeAccountingEmail"] = data.FinanceAccountingEmail.ValueString()
-        }
+        requestDataMap["financeAccountingEmail"] = data.FinanceAccountingEmail.ValueString()
     }
     if !data.IsFeatureFlagMonitorGroupsEnabled.IsUnknown() && !state.IsFeatureFlagMonitorGroupsEnabled.IsUnknown() && !data.IsFeatureFlagMonitorGroupsEnabled.Equal(state.IsFeatureFlagMonitorGroupsEnabled) {
         requestDataMap["isFeatureFlagMonitorGroupsEnabled"] = data.IsFeatureFlagMonitorGroupsEnabled.ValueBool()
@@ -3288,6 +3360,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.DefaultMetricCardinalityBudget.IsUnknown() && !state.DefaultMetricCardinalityBudget.IsUnknown() && !data.DefaultMetricCardinalityBudget.Equal(state.DefaultMetricCardinalityBudget) {
         requestDataMap["defaultMetricCardinalityBudget"] = r.bigFloatToFloat64(data.DefaultMetricCardinalityBudget.ValueBigFloat())
     }
+    if !data.DefaultTelemetryRetentionInDays.IsUnknown() && !state.DefaultTelemetryRetentionInDays.IsUnknown() && !data.DefaultTelemetryRetentionInDays.Equal(state.DefaultTelemetryRetentionInDays) {
+        requestDataMap["defaultTelemetryRetentionInDays"] = r.bigFloatToFloat64(data.DefaultTelemetryRetentionInDays.ValueBigFloat())
+    }
     if !data.DefaultMetricDownsamplingRetentionDays.IsUnknown() && !state.DefaultMetricDownsamplingRetentionDays.IsUnknown() && !data.DefaultMetricDownsamplingRetentionDays.Equal(state.DefaultMetricDownsamplingRetentionDays) {
         var defaultmetricdownsamplingretentiondaysData interface{}
         if err := json.Unmarshal([]byte(data.DefaultMetricDownsamplingRetentionDays.ValueString()), &defaultmetricdownsamplingretentiondaysData); err == nil {
@@ -3295,6 +3370,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             requestDataMap["defaultMetricDownsamplingRetentionDays"] = data.DefaultMetricDownsamplingRetentionDays.ValueString()
         }
+    }
+    if !data.EnableAuditLogs.IsUnknown() && !state.EnableAuditLogs.IsUnknown() && !data.EnableAuditLogs.Equal(state.EnableAuditLogs) {
+        requestDataMap["enableAuditLogs"] = data.EnableAuditLogs.ValueBool()
+    }
+    if !data.AuditLogsRetentionInDays.IsUnknown() && !state.AuditLogsRetentionInDays.IsUnknown() && !data.AuditLogsRetentionInDays.Equal(state.AuditLogsRetentionInDays) {
+        requestDataMap["auditLogsRetentionInDays"] = r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat())
     }
 
     // Make API call
@@ -3330,6 +3411,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "alertEpisodeNumberPrefix": true,
         "sendInvoicesByEmail": true,
         "utmContent": true,
+        "enableAuditLogs": true,
+        "auditLogsRetentionInDays": true,
         "requireSsoForLogin": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
@@ -3345,6 +3428,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
         "defaultMetricCardinalityBudget": true,
+        "defaultTelemetryRetentionInDays": true,
         "defaultMetricDownsamplingRetentionDays": true,
         "createdAt": true,
         "updatedAt": true,
@@ -3899,6 +3983,18 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.UtmContent = types.StringNull()
     }
+    if val, ok := dataMap["enableAuditLogs"].(bool); ok {
+        data.EnableAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
+        data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["auditLogsRetentionInDays"] == nil {
+        data.AuditLogsRetentionInDays = types.NumberNull()
+    }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
     }
@@ -4007,6 +4103,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["defaultMetricCardinalityBudget"] == nil {
         data.DefaultMetricCardinalityBudget = types.NumberNull()
+    }
+    if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
+        data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["defaultTelemetryRetentionInDays"] == nil {
+        data.DefaultTelemetryRetentionInDays = types.NumberNull()
     }
     if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4842,6 +4947,11 @@ func (r *ProjectResource) isValidOneUptimeObjectType(typeStr string) bool {
         "NotNull": true,
         "IsNull": true,
         "Includes": true,
+        "IncludesAll": true,
+        "IncludesNone": true,
+        "StartsWith": true,
+        "EndsWith": true,
+        "NotContains": true,
         "DashboardComponent": true,
         "DashboardViewConfig": true,
     }

@@ -98,6 +98,8 @@ type StatusPageResourceModel struct {
     EnableEmbeddedOverallStatus types.Bool `tfsdk:"enable_embedded_overall_status"`
     ShowUptimeHistoryInDays types.Number `tfsdk:"show_uptime_history_in_days"`
     EmbeddedOverallStatusToken types.String `tfsdk:"embedded_overall_status_token"`
+    DefaultLanguage types.String `tfsdk:"default_language"`
+    EnabledLanguages types.String `tfsdk:"enabled_languages"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
@@ -607,6 +609,23 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "default_language": schema.StringAttribute{
+                MarkdownDescription: "Default language that the status page is shown in when a visitor arrives for the first time.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("en"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enabled_languages": schema.StringAttribute{
+                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
@@ -736,6 +755,8 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "enableEmbeddedOverallStatus": data.EnableEmbeddedOverallStatus.ValueBool(),
         "showUptimeHistoryInDays": r.bigFloatToFloat64(data.ShowUptimeHistoryInDays.ValueBigFloat()),
         "embeddedOverallStatusToken": data.EmbeddedOverallStatusToken.ValueString(),
+        "defaultLanguage": data.DefaultLanguage.ValueString(),
+        "enabledLanguages": r.parseJSONField(data.EnabledLanguages),
         },
     }
 
@@ -1929,6 +1950,80 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.EmbeddedOverallStatusToken = types.StringNull()
     }
+    if obj, ok := dataMap["defaultLanguage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultLanguage = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultLanguage"].(string); ok && val != "" {
+        data.DefaultLanguage = types.StringValue(val)
+    } else {
+        data.DefaultLanguage = types.StringNull()
+    }
+    if obj, ok := dataMap["enabledLanguages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EnabledLanguages = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EnabledLanguages = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EnabledLanguages = types.StringValue(string(jsonBytes))
+            } else {
+                data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EnabledLanguages = types.StringValue(string(jsonBytes))
+            } else {
+                data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EnabledLanguages = types.StringValue(string(jsonBytes))
+        } else {
+            data.EnabledLanguages = types.StringNull()
+        }
+    } else if val, ok := dataMap["enabledLanguages"].(string); ok && val != "" {
+        data.EnabledLanguages = types.StringValue(val)
+    } else {
+        data.EnabledLanguages = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2240,6 +2335,8 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "enableEmbeddedOverallStatus": true,
         "showUptimeHistoryInDays": true,
         "embeddedOverallStatusToken": true,
+        "defaultLanguage": true,
+        "enabledLanguages": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3446,6 +3543,80 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.EmbeddedOverallStatusToken = types.StringNull()
     }
+    if obj, ok := dataMap["defaultLanguage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultLanguage = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultLanguage"].(string); ok && val != "" {
+        data.DefaultLanguage = types.StringValue(val)
+    } else {
+        data.DefaultLanguage = types.StringNull()
+    }
+    if obj, ok := dataMap["enabledLanguages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EnabledLanguages = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EnabledLanguages = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EnabledLanguages = types.StringValue(string(jsonBytes))
+            } else {
+                data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EnabledLanguages = types.StringValue(string(jsonBytes))
+            } else {
+                data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EnabledLanguages = types.StringValue(string(jsonBytes))
+        } else {
+            data.EnabledLanguages = types.StringNull()
+        }
+    } else if val, ok := dataMap["enabledLanguages"].(string); ok && val != "" {
+        data.EnabledLanguages = types.StringValue(val)
+    } else {
+        data.EnabledLanguages = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3908,6 +4079,17 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.EmbeddedOverallStatusToken.IsUnknown() && !state.EmbeddedOverallStatusToken.IsUnknown() && !data.EmbeddedOverallStatusToken.Equal(state.EmbeddedOverallStatusToken) {
         requestDataMap["embeddedOverallStatusToken"] = data.EmbeddedOverallStatusToken.ValueString()
     }
+    if !data.DefaultLanguage.IsUnknown() && !state.DefaultLanguage.IsUnknown() && !data.DefaultLanguage.Equal(state.DefaultLanguage) {
+        requestDataMap["defaultLanguage"] = data.DefaultLanguage.ValueString()
+    }
+    if !data.EnabledLanguages.IsUnknown() && !state.EnabledLanguages.IsUnknown() && !data.EnabledLanguages.Equal(state.EnabledLanguages) {
+        var enabledlanguagesData interface{}
+        if err := json.Unmarshal([]byte(data.EnabledLanguages.ValueString()), &enabledlanguagesData); err == nil {
+            requestDataMap["enabledLanguages"] = enabledlanguagesData
+        } else {
+            requestDataMap["enabledLanguages"] = data.EnabledLanguages.ValueString()
+        }
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/status-page/" + data.Id.ValueString() + "", statusPageRequest)
@@ -3983,6 +4165,8 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "enableEmbeddedOverallStatus": true,
         "showUptimeHistoryInDays": true,
         "embeddedOverallStatusToken": true,
+        "defaultLanguage": true,
+        "enabledLanguages": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -5183,6 +5367,80 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.EmbeddedOverallStatusToken = types.StringNull()
     }
+    if obj, ok := dataMap["defaultLanguage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DefaultLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DefaultLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DefaultLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DefaultLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.DefaultLanguage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DefaultLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.DefaultLanguage = types.StringNull()
+        }
+    } else if val, ok := dataMap["defaultLanguage"].(string); ok && val != "" {
+        data.DefaultLanguage = types.StringValue(val)
+    } else {
+        data.DefaultLanguage = types.StringNull()
+    }
+    if obj, ok := dataMap["enabledLanguages"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.EnabledLanguages = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.EnabledLanguages = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.EnabledLanguages = types.StringValue(string(jsonBytes))
+            } else {
+                data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.EnabledLanguages = types.StringValue(string(jsonBytes))
+            } else {
+                data.EnabledLanguages = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.EnabledLanguages = types.StringValue(string(jsonBytes))
+        } else {
+            data.EnabledLanguages = types.StringNull()
+        }
+    } else if val, ok := dataMap["enabledLanguages"].(string); ok && val != "" {
+        data.EnabledLanguages = types.StringValue(val)
+    } else {
+        data.EnabledLanguages = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -5606,6 +5864,11 @@ func (r *StatusPageResource) isValidOneUptimeObjectType(typeStr string) bool {
         "NotNull": true,
         "IsNull": true,
         "Includes": true,
+        "IncludesAll": true,
+        "IncludesNone": true,
+        "StartsWith": true,
+        "EndsWith": true,
+        "NotContains": true,
         "DashboardComponent": true,
         "DashboardViewConfig": true,
     }

@@ -1601,6 +1601,11 @@ func (r *StatusPageCustomFieldResource) isValidOneUptimeObjectType(typeStr strin
         "NotNull": true,
         "IsNull": true,
         "Includes": true,
+        "IncludesAll": true,
+        "IncludesNone": true,
+        "StartsWith": true,
+        "EndsWith": true,
+        "NotContains": true,
         "DashboardComponent": true,
         "DashboardViewConfig": true,
     }

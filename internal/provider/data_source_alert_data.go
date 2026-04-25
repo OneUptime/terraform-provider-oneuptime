@@ -47,6 +47,8 @@ type AlertDataDataSourceModel struct {
     RootCause types.String `tfsdk:"root_cause"`
     CreatedStateLog types.String `tfsdk:"created_state_log"`
     CreatedCriteriaId types.String `tfsdk:"created_criteria_id"`
+    SeriesFingerprint types.String `tfsdk:"series_fingerprint"`
+    SeriesLabels types.String `tfsdk:"series_labels"`
     CreatedByProbeId types.String `tfsdk:"created_by_probe_id"`
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
     RemediationNotes types.String `tfsdk:"remediation_notes"`
@@ -149,6 +151,14 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "created_criteria_id": schema.StringAttribute{
                 MarkdownDescription: "If this alert was created by a Probe, this is the ID of the criteria that created it.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "series_fingerprint": schema.StringAttribute{
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one alert is created per affected series.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "series_labels": schema.StringAttribute{
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
@@ -322,6 +332,12 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := alertDataResponse["created_criteria_id"].(string); ok {
         data.CreatedCriteriaId = types.StringValue(val)
+    }
+    if val, ok := alertDataResponse["series_fingerprint"].(string); ok {
+        data.SeriesFingerprint = types.StringValue(val)
+    }
+    if val, ok := alertDataResponse["series_labels"].(string); ok {
+        data.SeriesLabels = types.StringValue(val)
     }
     if val, ok := alertDataResponse["created_by_probe_id"].(string); ok {
         data.CreatedByProbeId = types.StringValue(val)

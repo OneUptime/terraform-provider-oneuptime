@@ -1716,6 +1716,11 @@ func (r *IncidentEpisodeRoleMemberResource) isValidOneUptimeObjectType(typeStr s
         "NotNull": true,
         "IsNull": true,
         "Includes": true,
+        "IncludesAll": true,
+        "IncludesNone": true,
+        "StartsWith": true,
+        "EndsWith": true,
+        "NotContains": true,
         "DashboardComponent": true,
         "DashboardViewConfig": true,
     }

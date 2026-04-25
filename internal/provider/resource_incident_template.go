@@ -2570,6 +2570,11 @@ func (r *IncidentTemplateResource) isValidOneUptimeObjectType(typeStr string) bo
         "NotNull": true,
         "IsNull": true,
         "Includes": true,
+        "IncludesAll": true,
+        "IncludesNone": true,
+        "StartsWith": true,
+        "EndsWith": true,
+        "NotContains": true,
         "DashboardComponent": true,
         "DashboardViewConfig": true,
     }

@@ -92,6 +92,8 @@ type StatusPageDataDataSourceModel struct {
     EnableEmbeddedOverallStatus types.Bool `tfsdk:"enable_embedded_overall_status"`
     ShowUptimeHistoryInDays types.Number `tfsdk:"show_uptime_history_in_days"`
     EmbeddedOverallStatusToken types.String `tfsdk:"embedded_overall_status_token"`
+    DefaultLanguage types.String `tfsdk:"default_language"`
+    EnabledLanguages types.String `tfsdk:"enabled_languages"`
 }
 
 func (d *StatusPageDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -367,6 +369,14 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "embedded_overall_status_token": schema.StringAttribute{
                 MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
+                Computed: true,
+            },
+            "default_language": schema.StringAttribute{
+                MarkdownDescription: "Default language that the status page is shown in when a visitor arrives for the first time.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
+                Computed: true,
+            },
+            "enabled_languages": schema.StringAttribute{
+                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
                 Computed: true,
             },
         },
@@ -647,6 +657,12 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := statusPageDataResponse["embedded_overall_status_token"].(string); ok {
         data.EmbeddedOverallStatusToken = types.StringValue(val)
+    }
+    if val, ok := statusPageDataResponse["default_language"].(string); ok {
+        data.DefaultLanguage = types.StringValue(val)
+    }
+    if val, ok := statusPageDataResponse["enabled_languages"].(string); ok {
+        data.EnabledLanguages = types.StringValue(val)
     }
 
     // Write logs using the tflog package
