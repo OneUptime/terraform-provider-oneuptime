@@ -82,11 +82,11 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "llm_type": schema.StringAttribute{
-                MarkdownDescription: "The type of LLM provider (OpenAI, Anthropic, Ollama, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
+                MarkdownDescription: "The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Required: true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI and Anthropic.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
+                MarkdownDescription: "The API key for the LLM provider. Required for OpenAI, Azure OpenAI, Anthropic, Groq, and Mistral.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Project Owner, Project Admin, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -102,7 +102,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "base_url": schema.StringAttribute{
-                MarkdownDescription: "The base URL for the LLM API. Required for Ollama, optional for others.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
+                MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create LLM], Read: [Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit LLM]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

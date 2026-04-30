@@ -55,6 +55,7 @@ type ProjectResourceModel struct {
     UtmContent types.String `tfsdk:"utm_content"`
     EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
+    StoreSystemEventsInAuditLogs types.Bool `tfsdk:"store_system_events_in_audit_logs"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
@@ -242,6 +243,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Default: numberdefault.StaticBigFloat(big.NewFloat(7)),
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "store_system_events_in_audit_logs": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "require_sso_for_login": schema.BoolAttribute{
@@ -535,6 +545,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "utmContent": data.UtmContent.ValueString(),
         "enableAuditLogs": data.EnableAuditLogs.ValueBool(),
         "auditLogsRetentionInDays": r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat()),
+        "storeSystemEventsInAuditLogs": data.StoreSystemEventsInAuditLogs.ValueBool(),
         "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
         "autoRechargeSmsOrCallByBalanceInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat()),
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.ValueBigFloat()),
@@ -1096,6 +1107,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["auditLogsRetentionInDays"] == nil {
         data.AuditLogsRetentionInDays = types.NumberNull()
+    }
+    if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
+        data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
@@ -1898,6 +1912,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "utmContent": true,
         "enableAuditLogs": true,
         "auditLogsRetentionInDays": true,
+        "storeSystemEventsInAuditLogs": true,
         "requireSsoForLogin": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
@@ -2485,6 +2500,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["auditLogsRetentionInDays"] == nil {
         data.AuditLogsRetentionInDays = types.NumberNull()
+    }
+    if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
+        data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
@@ -3377,6 +3395,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.AuditLogsRetentionInDays.IsUnknown() && !state.AuditLogsRetentionInDays.IsUnknown() && !data.AuditLogsRetentionInDays.Equal(state.AuditLogsRetentionInDays) {
         requestDataMap["auditLogsRetentionInDays"] = r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat())
     }
+    if !data.StoreSystemEventsInAuditLogs.IsUnknown() && !state.StoreSystemEventsInAuditLogs.IsUnknown() && !data.StoreSystemEventsInAuditLogs.Equal(state.StoreSystemEventsInAuditLogs) {
+        requestDataMap["storeSystemEventsInAuditLogs"] = data.StoreSystemEventsInAuditLogs.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/project/" + data.Id.ValueString() + "", projectRequest)
@@ -3413,6 +3434,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "utmContent": true,
         "enableAuditLogs": true,
         "auditLogsRetentionInDays": true,
+        "storeSystemEventsInAuditLogs": true,
         "requireSsoForLogin": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
@@ -3994,6 +4016,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["auditLogsRetentionInDays"] == nil {
         data.AuditLogsRetentionInDays = types.NumberNull()
+    }
+    if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
+        data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)

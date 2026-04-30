@@ -40,7 +40,15 @@ resource "oneuptime_metric" "example" {
 - `min` (Number) Min. Computed.
 - `max` (Number) Max. Computed.
 - `bucket_counts` (String) Bucket Counts. Computed.
-- `explicit_bounds` (String) Explicit Bonds. Computed.
+- `explicit_bounds` (String) Explicit Bounds. Computed.
+- `scale` (Number) Scale. Computed.
+- `zero_count` (String) Zero Count. Computed.
+- `positive_offset` (Number) Positive Bucket Offset. Computed.
+- `positive_bucket_counts` (String) Positive Bucket Counts. Computed.
+- `negative_offset` (Number) Negative Bucket Offset. Computed.
+- `negative_bucket_counts` (String) Negative Bucket Counts. Computed.
+- `summary_quantiles` (String) Summary Quantiles. Computed.
+- `summary_values` (String) Summary Values. Computed.
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.
 

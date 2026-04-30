@@ -47,6 +47,7 @@ func GetResources() []func() resource.Resource {
         NewMonitorSecretResource,
         NewMonitorStatusResource,
         NewMonitorCustomFieldResource,
+        NewMonitorTemplateResource,
         NewIncidentStateResource,
         NewIncidentResource,
         NewIncidentFeedResource,

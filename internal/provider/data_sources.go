@@ -47,6 +47,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewMonitorSecretDataDataSource,
         NewMonitorStatusDataDataSource,
         NewMonitorCustomFieldDataDataSource,
+        NewMonitorTemplateDataDataSource,
         NewIncidentStateDataDataSource,
         NewIncidentDataDataSource,
         NewIncidentFeedDataDataSource,

@@ -79,6 +79,7 @@ type ProjectDataDataSourceModel struct {
     DefaultMetricDownsamplingRetentionDays types.String `tfsdk:"default_metric_downsampling_retention_days"`
     EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
+    StoreSystemEventsInAuditLogs types.Bool `tfsdk:"store_system_events_in_audit_logs"`
 }
 
 func (d *ProjectDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -306,6 +307,10 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
                 Computed: true,
             },
+            "store_system_events_in_audit_logs": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
         },
     }
 }
@@ -530,6 +535,9 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["audit_logs_retention_in_days"].(float64); ok {
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["store_system_events_in_audit_logs"].(bool); ok {
+        data.StoreSystemEventsInAuditLogs = types.BoolValue(val)
     }
 
     // Write logs using the tflog package

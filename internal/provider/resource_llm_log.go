@@ -106,7 +106,7 @@ func (r *LlmLogResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 Computed: true,
             },
             "llm_type": schema.StringAttribute{
-                MarkdownDescription: "Type of LLM (OpenAI, Anthropic, Ollama). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of LLM (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "model_name": schema.StringAttribute{

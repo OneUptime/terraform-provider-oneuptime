@@ -47,6 +47,14 @@ type MetricDataDataSourceModel struct {
     Max types.Number `tfsdk:"max"`
     BucketCounts types.String `tfsdk:"bucket_counts"`
     ExplicitBounds types.String `tfsdk:"explicit_bounds"`
+    Scale types.Number `tfsdk:"scale"`
+    ZeroCount types.String `tfsdk:"zero_count"`
+    PositiveOffset types.Number `tfsdk:"positive_offset"`
+    PositiveBucketCounts types.String `tfsdk:"positive_bucket_counts"`
+    NegativeOffset types.Number `tfsdk:"negative_offset"`
+    NegativeBucketCounts types.String `tfsdk:"negative_bucket_counts"`
+    SummaryQuantiles types.String `tfsdk:"summary_quantiles"`
+    SummaryValues types.String `tfsdk:"summary_values"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
 }
@@ -142,7 +150,39 @@ func (d *MetricDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "explicit_bounds": schema.StringAttribute{
-                MarkdownDescription: "Explicit Bonds",
+                MarkdownDescription: "Explicit Bounds",
+                Computed: true,
+            },
+            "scale": schema.NumberAttribute{
+                MarkdownDescription: "Scale",
+                Computed: true,
+            },
+            "zero_count": schema.StringAttribute{
+                MarkdownDescription: "Zero Count",
+                Computed: true,
+            },
+            "positive_offset": schema.NumberAttribute{
+                MarkdownDescription: "Positive Bucket Offset",
+                Computed: true,
+            },
+            "positive_bucket_counts": schema.StringAttribute{
+                MarkdownDescription: "Positive Bucket Counts",
+                Computed: true,
+            },
+            "negative_offset": schema.NumberAttribute{
+                MarkdownDescription: "Negative Bucket Offset",
+                Computed: true,
+            },
+            "negative_bucket_counts": schema.StringAttribute{
+                MarkdownDescription: "Negative Bucket Counts",
+                Computed: true,
+            },
+            "summary_quantiles": schema.StringAttribute{
+                MarkdownDescription: "Summary Quantiles",
+                Computed: true,
+            },
+            "summary_values": schema.StringAttribute{
+                MarkdownDescription: "Summary Values",
                 Computed: true,
             },
             "trace_id": schema.StringAttribute{
@@ -287,6 +327,30 @@ func (d *MetricDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     }
     if val, ok := metricDataResponse["explicit_bounds"].(string); ok {
         data.ExplicitBounds = types.StringValue(val)
+    }
+    if val, ok := metricDataResponse["scale"].(float64); ok {
+        data.Scale = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := metricDataResponse["zero_count"].(string); ok {
+        data.ZeroCount = types.StringValue(val)
+    }
+    if val, ok := metricDataResponse["positive_offset"].(float64); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := metricDataResponse["positive_bucket_counts"].(string); ok {
+        data.PositiveBucketCounts = types.StringValue(val)
+    }
+    if val, ok := metricDataResponse["negative_offset"].(float64); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := metricDataResponse["negative_bucket_counts"].(string); ok {
+        data.NegativeBucketCounts = types.StringValue(val)
+    }
+    if val, ok := metricDataResponse["summary_quantiles"].(string); ok {
+        data.SummaryQuantiles = types.StringValue(val)
+    }
+    if val, ok := metricDataResponse["summary_values"].(string); ok {
+        data.SummaryValues = types.StringValue(val)
     }
     if val, ok := metricDataResponse["trace_id"].(string); ok {
         data.TraceId = types.StringValue(val)

@@ -55,6 +55,14 @@ type MetricResourceModel struct {
     Max types.Number `tfsdk:"max"`
     BucketCounts types.String `tfsdk:"bucket_counts"`
     ExplicitBounds types.String `tfsdk:"explicit_bounds"`
+    Scale types.Number `tfsdk:"scale"`
+    ZeroCount types.String `tfsdk:"zero_count"`
+    PositiveOffset types.Number `tfsdk:"positive_offset"`
+    PositiveBucketCounts types.String `tfsdk:"positive_bucket_counts"`
+    NegativeOffset types.Number `tfsdk:"negative_offset"`
+    NegativeBucketCounts types.String `tfsdk:"negative_bucket_counts"`
+    SummaryQuantiles types.String `tfsdk:"summary_quantiles"`
+    SummaryValues types.String `tfsdk:"summary_values"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
 }
@@ -154,7 +162,39 @@ func (r *MetricResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 Computed: true,
             },
             "explicit_bounds": schema.StringAttribute{
-                MarkdownDescription: "Explicit Bonds",
+                MarkdownDescription: "Explicit Bounds",
+                Computed: true,
+            },
+            "scale": schema.NumberAttribute{
+                MarkdownDescription: "Scale",
+                Computed: true,
+            },
+            "zero_count": schema.StringAttribute{
+                MarkdownDescription: "Zero Count",
+                Computed: true,
+            },
+            "positive_offset": schema.NumberAttribute{
+                MarkdownDescription: "Positive Bucket Offset",
+                Computed: true,
+            },
+            "positive_bucket_counts": schema.StringAttribute{
+                MarkdownDescription: "Positive Bucket Counts",
+                Computed: true,
+            },
+            "negative_offset": schema.NumberAttribute{
+                MarkdownDescription: "Negative Bucket Offset",
+                Computed: true,
+            },
+            "negative_bucket_counts": schema.StringAttribute{
+                MarkdownDescription: "Negative Bucket Counts",
+                Computed: true,
+            },
+            "summary_quantiles": schema.StringAttribute{
+                MarkdownDescription: "Summary Quantiles",
+                Computed: true,
+            },
+            "summary_values": schema.StringAttribute{
+                MarkdownDescription: "Summary Values",
                 Computed: true,
             },
             "trace_id": schema.StringAttribute{
@@ -780,6 +820,218 @@ func (r *MetricResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.ExplicitBounds = types.StringNull()
     }
+    if val, ok := dataMap["scale"].(float64); ok {
+        data.Scale = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["scale"].(int); ok {
+        data.Scale = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["scale"].(int64); ok {
+        data.Scale = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["scale"] == nil {
+        data.Scale = types.NumberNull()
+    }
+    if obj, ok := dataMap["zeroCount"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ZeroCount = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ZeroCount = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ZeroCount = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ZeroCount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ZeroCount = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ZeroCount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ZeroCount = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ZeroCount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ZeroCount = types.StringNull()
+        }
+    } else if val, ok := dataMap["zeroCount"].(string); ok && val != "" {
+        data.ZeroCount = types.StringValue(val)
+    } else {
+        data.ZeroCount = types.StringNull()
+    }
+    if val, ok := dataMap["positiveOffset"].(float64); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["positiveOffset"].(int); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["positiveOffset"].(int64); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["positiveOffset"] == nil {
+        data.PositiveOffset = types.NumberNull()
+    }
+    if obj, ok := dataMap["positiveBucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PositiveBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PositiveBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.PositiveBucketCounts = types.StringNull()
+        }
+    } else if val, ok := dataMap["positiveBucketCounts"].(string); ok && val != "" {
+        data.PositiveBucketCounts = types.StringValue(val)
+    } else {
+        data.PositiveBucketCounts = types.StringNull()
+    }
+    if val, ok := dataMap["negativeOffset"].(float64); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["negativeOffset"].(int); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["negativeOffset"].(int64); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["negativeOffset"] == nil {
+        data.NegativeOffset = types.NumberNull()
+    }
+    if obj, ok := dataMap["negativeBucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NegativeBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NegativeBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.NegativeBucketCounts = types.StringNull()
+        }
+    } else if val, ok := dataMap["negativeBucketCounts"].(string); ok && val != "" {
+        data.NegativeBucketCounts = types.StringValue(val)
+    } else {
+        data.NegativeBucketCounts = types.StringNull()
+    }
+    if obj, ok := dataMap["summaryQuantiles"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SummaryQuantiles = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SummaryQuantiles = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+        } else {
+            data.SummaryQuantiles = types.StringNull()
+        }
+    } else if val, ok := dataMap["summaryQuantiles"].(string); ok && val != "" {
+        data.SummaryQuantiles = types.StringValue(val)
+    } else {
+        data.SummaryQuantiles = types.StringNull()
+    }
+    if obj, ok := dataMap["summaryValues"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SummaryValues = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SummaryValues = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SummaryValues = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SummaryValues = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryValues = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SummaryValues = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryValues = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SummaryValues = types.StringValue(string(jsonBytes))
+        } else {
+            data.SummaryValues = types.StringNull()
+        }
+    } else if val, ok := dataMap["summaryValues"].(string); ok && val != "" {
+        data.SummaryValues = types.StringValue(val)
+    } else {
+        data.SummaryValues = types.StringNull()
+    }
     if obj, ok := dataMap["traceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -899,6 +1151,14 @@ func (r *MetricResource) Read(ctx context.Context, req resource.ReadRequest, res
         "max": true,
         "bucketCounts": true,
         "explicitBounds": true,
+        "scale": true,
+        "zeroCount": true,
+        "positiveOffset": true,
+        "positiveBucketCounts": true,
+        "negativeOffset": true,
+        "negativeBucketCounts": true,
+        "summaryQuantiles": true,
+        "summaryValues": true,
         "traceId": true,
         "spanId": true,
         "_id": true,
@@ -1480,6 +1740,218 @@ func (r *MetricResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.ExplicitBounds = types.StringNull()
     }
+    if val, ok := dataMap["scale"].(float64); ok {
+        data.Scale = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["scale"].(int); ok {
+        data.Scale = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["scale"].(int64); ok {
+        data.Scale = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["scale"] == nil {
+        data.Scale = types.NumberNull()
+    }
+    if obj, ok := dataMap["zeroCount"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ZeroCount = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ZeroCount = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ZeroCount = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ZeroCount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ZeroCount = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ZeroCount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ZeroCount = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ZeroCount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ZeroCount = types.StringNull()
+        }
+    } else if val, ok := dataMap["zeroCount"].(string); ok && val != "" {
+        data.ZeroCount = types.StringValue(val)
+    } else {
+        data.ZeroCount = types.StringNull()
+    }
+    if val, ok := dataMap["positiveOffset"].(float64); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["positiveOffset"].(int); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["positiveOffset"].(int64); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["positiveOffset"] == nil {
+        data.PositiveOffset = types.NumberNull()
+    }
+    if obj, ok := dataMap["positiveBucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PositiveBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PositiveBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.PositiveBucketCounts = types.StringNull()
+        }
+    } else if val, ok := dataMap["positiveBucketCounts"].(string); ok && val != "" {
+        data.PositiveBucketCounts = types.StringValue(val)
+    } else {
+        data.PositiveBucketCounts = types.StringNull()
+    }
+    if val, ok := dataMap["negativeOffset"].(float64); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["negativeOffset"].(int); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["negativeOffset"].(int64); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["negativeOffset"] == nil {
+        data.NegativeOffset = types.NumberNull()
+    }
+    if obj, ok := dataMap["negativeBucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NegativeBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NegativeBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.NegativeBucketCounts = types.StringNull()
+        }
+    } else if val, ok := dataMap["negativeBucketCounts"].(string); ok && val != "" {
+        data.NegativeBucketCounts = types.StringValue(val)
+    } else {
+        data.NegativeBucketCounts = types.StringNull()
+    }
+    if obj, ok := dataMap["summaryQuantiles"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SummaryQuantiles = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SummaryQuantiles = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+        } else {
+            data.SummaryQuantiles = types.StringNull()
+        }
+    } else if val, ok := dataMap["summaryQuantiles"].(string); ok && val != "" {
+        data.SummaryQuantiles = types.StringValue(val)
+    } else {
+        data.SummaryQuantiles = types.StringNull()
+    }
+    if obj, ok := dataMap["summaryValues"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SummaryValues = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SummaryValues = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SummaryValues = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SummaryValues = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryValues = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SummaryValues = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryValues = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SummaryValues = types.StringValue(string(jsonBytes))
+        } else {
+            data.SummaryValues = types.StringNull()
+        }
+    } else if val, ok := dataMap["summaryValues"].(string); ok && val != "" {
+        data.SummaryValues = types.StringValue(val)
+    } else {
+        data.SummaryValues = types.StringNull()
+    }
     if obj, ok := dataMap["traceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1626,6 +2098,14 @@ func (r *MetricResource) Update(ctx context.Context, req resource.UpdateRequest,
         "max": true,
         "bucketCounts": true,
         "explicitBounds": true,
+        "scale": true,
+        "zeroCount": true,
+        "positiveOffset": true,
+        "positiveBucketCounts": true,
+        "negativeOffset": true,
+        "negativeBucketCounts": true,
+        "summaryQuantiles": true,
+        "summaryValues": true,
         "traceId": true,
         "spanId": true,
         "_id": true,
@@ -2200,6 +2680,218 @@ func (r *MetricResource) Update(ctx context.Context, req resource.UpdateRequest,
         data.ExplicitBounds = types.StringValue(val)
     } else {
         data.ExplicitBounds = types.StringNull()
+    }
+    if val, ok := dataMap["scale"].(float64); ok {
+        data.Scale = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["scale"].(int); ok {
+        data.Scale = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["scale"].(int64); ok {
+        data.Scale = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["scale"] == nil {
+        data.Scale = types.NumberNull()
+    }
+    if obj, ok := dataMap["zeroCount"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ZeroCount = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ZeroCount = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ZeroCount = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ZeroCount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ZeroCount = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ZeroCount = types.StringValue(string(jsonBytes))
+            } else {
+                data.ZeroCount = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ZeroCount = types.StringValue(string(jsonBytes))
+        } else {
+            data.ZeroCount = types.StringNull()
+        }
+    } else if val, ok := dataMap["zeroCount"].(string); ok && val != "" {
+        data.ZeroCount = types.StringValue(val)
+    } else {
+        data.ZeroCount = types.StringNull()
+    }
+    if val, ok := dataMap["positiveOffset"].(float64); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["positiveOffset"].(int); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["positiveOffset"].(int64); ok {
+        data.PositiveOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["positiveOffset"] == nil {
+        data.PositiveOffset = types.NumberNull()
+    }
+    if obj, ok := dataMap["positiveBucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PositiveBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PositiveBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.PositiveBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PositiveBucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.PositiveBucketCounts = types.StringNull()
+        }
+    } else if val, ok := dataMap["positiveBucketCounts"].(string); ok && val != "" {
+        data.PositiveBucketCounts = types.StringValue(val)
+    } else {
+        data.PositiveBucketCounts = types.StringNull()
+    }
+    if val, ok := dataMap["negativeOffset"].(float64); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["negativeOffset"].(int); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["negativeOffset"].(int64); ok {
+        data.NegativeOffset = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["negativeOffset"] == nil {
+        data.NegativeOffset = types.NumberNull()
+    }
+    if obj, ok := dataMap["negativeBucketCounts"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NegativeBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NegativeBucketCounts = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+            } else {
+                data.NegativeBucketCounts = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NegativeBucketCounts = types.StringValue(string(jsonBytes))
+        } else {
+            data.NegativeBucketCounts = types.StringNull()
+        }
+    } else if val, ok := dataMap["negativeBucketCounts"].(string); ok && val != "" {
+        data.NegativeBucketCounts = types.StringValue(val)
+    } else {
+        data.NegativeBucketCounts = types.StringNull()
+    }
+    if obj, ok := dataMap["summaryQuantiles"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SummaryQuantiles = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SummaryQuantiles = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryQuantiles = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SummaryQuantiles = types.StringValue(string(jsonBytes))
+        } else {
+            data.SummaryQuantiles = types.StringNull()
+        }
+    } else if val, ok := dataMap["summaryQuantiles"].(string); ok && val != "" {
+        data.SummaryQuantiles = types.StringValue(val)
+    } else {
+        data.SummaryQuantiles = types.StringNull()
+    }
+    if obj, ok := dataMap["summaryValues"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SummaryValues = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SummaryValues = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SummaryValues = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SummaryValues = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryValues = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SummaryValues = types.StringValue(string(jsonBytes))
+            } else {
+                data.SummaryValues = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SummaryValues = types.StringValue(string(jsonBytes))
+        } else {
+            data.SummaryValues = types.StringNull()
+        }
+    } else if val, ok := dataMap["summaryValues"].(string); ok && val != "" {
+        data.SummaryValues = types.StringValue(val)
+    } else {
+        data.SummaryValues = types.StringNull()
     }
     if obj, ok := dataMap["traceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
