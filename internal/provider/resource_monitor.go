@@ -43,6 +43,7 @@ type MonitorResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Labels types.Set `tfsdk:"labels"`
+    MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     MonitorType types.String `tfsdk:"monitor_type"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitorSteps types.String `tfsdk:"monitor_steps"`
@@ -118,6 +119,14 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "monitor_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "monitor_type": schema.StringAttribute{
@@ -332,6 +341,7 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "name": data.Name.ValueString(),
         "description": data.Description.ValueString(),
         "labels": r.convertTerraformSetToInterface(data.Labels),
+        "monitorTemplateId": data.MonitorTemplateId.ValueString(),
         "monitorType": data.MonitorType.ValueString(),
         "currentMonitorStatusId": data.CurrentMonitorStatusId.ValueString(),
         "monitorSteps": r.parseJSONField(data.MonitorSteps),
@@ -526,6 +536,43 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok && val != "" {
+        data.MonitorTemplateId = types.StringValue(val)
+    } else {
+        data.MonitorTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["monitorType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1406,6 +1453,7 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "name": true,
         "description": true,
         "labels": true,
+        "monitorTemplateId": true,
         "monitorType": true,
         "currentMonitorStatusId": true,
         "monitorSteps": true,
@@ -1622,6 +1670,43 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok && val != "" {
+        data.MonitorTemplateId = types.StringValue(val)
+    } else {
+        data.MonitorTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["monitorType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2517,6 +2602,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
+    if !data.MonitorTemplateId.IsUnknown() && !state.MonitorTemplateId.IsUnknown() && !data.MonitorTemplateId.Equal(state.MonitorTemplateId) {
+        requestDataMap["monitorTemplateId"] = data.MonitorTemplateId.ValueString()
+    }
     if !data.CurrentMonitorStatusId.IsUnknown() && !state.CurrentMonitorStatusId.IsUnknown() && !data.CurrentMonitorStatusId.Equal(state.CurrentMonitorStatusId) {
         requestDataMap["currentMonitorStatusId"] = data.CurrentMonitorStatusId.ValueString()
     }
@@ -2567,6 +2655,7 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "name": true,
         "description": true,
         "labels": true,
+        "monitorTemplateId": true,
         "monitorType": true,
         "currentMonitorStatusId": true,
         "monitorSteps": true,
@@ -2777,6 +2866,43 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok && val != "" {
+        data.MonitorTemplateId = types.StringValue(val)
+    } else {
+        data.MonitorTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["monitorType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

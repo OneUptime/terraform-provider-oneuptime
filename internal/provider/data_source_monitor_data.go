@@ -37,6 +37,7 @@ type MonitorDataDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
+    MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     MonitorType types.String `tfsdk:"monitor_type"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitorSteps types.String `tfsdk:"monitor_steps"`
@@ -116,6 +117,10 @@ func (d *MonitorDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor]",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "monitor_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
             },
             "monitor_type": schema.StringAttribute{
                 MarkdownDescription: "What is the type of this monitor? Website? API? etc.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
@@ -317,6 +322,9 @@ func (d *MonitorDataDataSource) Read(ctx context.Context, req datasource.ReadReq
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.Labels = setValue
+    }
+    if val, ok := monitorDataResponse["monitor_template_id"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
     }
     if val, ok := monitorDataResponse["monitor_type"].(string); ok {
         data.MonitorType = types.StringValue(val)

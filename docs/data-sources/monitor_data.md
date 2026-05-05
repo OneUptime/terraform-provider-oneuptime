@@ -31,6 +31,7 @@ data "oneuptime_monitor_data" "example" {
 - `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor]. Computed.
+- `monitor_template_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_type` (String) What is the type of this monitor? Website? API? etc.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_steps` (String) MonitorSteps object. Computed.
