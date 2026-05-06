@@ -38,6 +38,7 @@ type AlertDataDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    Hosts types.Set `tfsdk:"hosts"`
     Labels types.Set `tfsdk:"labels"`
     CurrentAlertStateId types.String `tfsdk:"current_alert_state_id"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
@@ -113,6 +114,11 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "on_call_duty_policies": schema.SetAttribute{
                 MarkdownDescription: "List of on-call duty policies affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "hosts": schema.SetAttribute{
+                MarkdownDescription: "List of hosts affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -296,6 +302,18 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.OnCallDutyPolicies = setValue
+    }
+    if val, ok := alertDataResponse["hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Hosts = setValue
     }
     if val, ok := alertDataResponse["labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

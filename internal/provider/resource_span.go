@@ -7,6 +7,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-framework/types/basetypes"
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
@@ -49,7 +50,7 @@ type SpanResourceModel struct {
     Attributes types.String `tfsdk:"attributes"`
     AttributeKeys types.Set `tfsdk:"attribute_keys"`
     Events types.Set `tfsdk:"events"`
-    Links types.String `tfsdk:"links"`
+    Links JSONSubsetValue `tfsdk:"links"`
     StatusCode types.Number `tfsdk:"status_code"`
     StatusMessage types.String `tfsdk:"status_message"`
     Name types.String `tfsdk:"name"`
@@ -135,6 +136,7 @@ func (r *SpanResource) Schema(ctx context.Context, req resource.SchemaRequest, r
             },
             "links": schema.StringAttribute{
                 MarkdownDescription: "Links",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "status_code": schema.NumberAttribute{
@@ -668,39 +670,39 @@ func (r *SpanResource) Create(ctx context.Context, req resource.CreateRequest, r
     if obj, ok := dataMap["links"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Links = types.StringValue(val)
+            data.Links = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Links = types.StringValue(val)
+            data.Links = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Links = types.StringValue(fmt.Sprintf("%v", val))
+            data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Links = types.StringValue(string(jsonBytes))
+                data.Links = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Links = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Links = types.StringValue(string(jsonBytes))
+                data.Links = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Links = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Links = types.StringValue(string(jsonBytes))
+            data.Links = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Links = types.StringNull()
+            data.Links = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["links"].(string); ok && val != "" {
-        data.Links = types.StringValue(val)
+        data.Links = NewJSONSubsetValue(val)
     } else {
-        data.Links = types.StringNull()
+        data.Links = NewJSONSubsetNull()
     }
     if val, ok := dataMap["statusCode"].(float64); ok {
         data.StatusCode = types.NumberValue(big.NewFloat(val))
@@ -1345,39 +1347,39 @@ func (r *SpanResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     if obj, ok := dataMap["links"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Links = types.StringValue(val)
+            data.Links = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Links = types.StringValue(val)
+            data.Links = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Links = types.StringValue(fmt.Sprintf("%v", val))
+            data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Links = types.StringValue(string(jsonBytes))
+                data.Links = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Links = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Links = types.StringValue(string(jsonBytes))
+                data.Links = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Links = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Links = types.StringValue(string(jsonBytes))
+            data.Links = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Links = types.StringNull()
+            data.Links = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["links"].(string); ok && val != "" {
-        data.Links = types.StringValue(val)
+        data.Links = NewJSONSubsetValue(val)
     } else {
-        data.Links = types.StringNull()
+        data.Links = NewJSONSubsetNull()
     }
     if val, ok := dataMap["statusCode"].(float64); ok {
         data.StatusCode = types.NumberValue(big.NewFloat(val))
@@ -2043,39 +2045,39 @@ func (r *SpanResource) Update(ctx context.Context, req resource.UpdateRequest, r
     if obj, ok := dataMap["links"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Links = types.StringValue(val)
+            data.Links = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Links = types.StringValue(val)
+            data.Links = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Links = types.StringValue(fmt.Sprintf("%v", val))
+            data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Links = types.StringValue(string(jsonBytes))
+                data.Links = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Links = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Links = types.StringValue(string(jsonBytes))
+                data.Links = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Links = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.Links = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Links = types.StringValue(string(jsonBytes))
+            data.Links = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Links = types.StringNull()
+            data.Links = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["links"].(string); ok && val != "" {
-        data.Links = types.StringValue(val)
+        data.Links = NewJSONSubsetValue(val)
     } else {
-        data.Links = types.StringNull()
+        data.Links = NewJSONSubsetNull()
     }
     if val, ok := dataMap["statusCode"].(float64); ok {
         data.StatusCode = types.NumberValue(big.NewFloat(val))
@@ -2297,15 +2299,16 @@ func (r *SpanResource) convertTerraformSetToInterface(terraformSet types.Set) in
 }
 
 // Helper method to parse JSON field for complex objects
-func (r *SpanResource) parseJSONField(terraformString types.String) interface{} {
-    if terraformString.IsNull() || terraformString.IsUnknown() || terraformString.ValueString() == "" {
+func (r *SpanResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+    sv, _ := terraformString.ToStringValue(context.Background())
+    if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
     }
 
     var result interface{}
-    if err := json.Unmarshal([]byte(terraformString.ValueString()), &result); err != nil {
+    if err := json.Unmarshal([]byte(sv.ValueString()), &result); err != nil {
         // If JSON parsing fails, return the raw string
-        return terraformString.ValueString()
+        return sv.ValueString()
     }
 
     return result

@@ -7,6 +7,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-framework/types/basetypes"
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
@@ -36,7 +37,7 @@ type MonitorLogResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     Time types.String `tfsdk:"time"`
-    LogBody types.String `tfsdk:"log_body"`
+    LogBody JSONSubsetValue `tfsdk:"log_body"`
 }
 
 func (r *MonitorLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -70,6 +71,7 @@ func (r *MonitorLogResource) Schema(ctx context.Context, req resource.SchemaRequ
             },
             "log_body": schema.StringAttribute{
                 MarkdownDescription: "Log Body",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
         },
@@ -266,39 +268,39 @@ func (r *MonitorLogResource) Create(ctx context.Context, req resource.CreateRequ
     if obj, ok := dataMap["logBody"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LogBody = types.StringValue(val)
+            data.LogBody = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LogBody = types.StringValue(val)
+            data.LogBody = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.LogBody = types.StringValue(fmt.Sprintf("%v", val))
+            data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LogBody = types.StringValue(string(jsonBytes))
+                data.LogBody = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LogBody = types.StringValue(string(jsonBytes))
+                data.LogBody = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.LogBody = types.StringValue(string(jsonBytes))
+            data.LogBody = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.LogBody = types.StringNull()
+            data.LogBody = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["logBody"].(string); ok && val != "" {
-        data.LogBody = types.StringValue(val)
+        data.LogBody = NewJSONSubsetValue(val)
     } else {
-        data.LogBody = types.StringNull()
+        data.LogBody = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -487,39 +489,39 @@ func (r *MonitorLogResource) Read(ctx context.Context, req resource.ReadRequest,
     if obj, ok := dataMap["logBody"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LogBody = types.StringValue(val)
+            data.LogBody = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LogBody = types.StringValue(val)
+            data.LogBody = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.LogBody = types.StringValue(fmt.Sprintf("%v", val))
+            data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LogBody = types.StringValue(string(jsonBytes))
+                data.LogBody = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LogBody = types.StringValue(string(jsonBytes))
+                data.LogBody = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.LogBody = types.StringValue(string(jsonBytes))
+            data.LogBody = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.LogBody = types.StringNull()
+            data.LogBody = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["logBody"].(string); ok && val != "" {
-        data.LogBody = types.StringValue(val)
+        data.LogBody = NewJSONSubsetValue(val)
     } else {
-        data.LogBody = types.StringNull()
+        data.LogBody = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -729,39 +731,39 @@ func (r *MonitorLogResource) Update(ctx context.Context, req resource.UpdateRequ
     if obj, ok := dataMap["logBody"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LogBody = types.StringValue(val)
+            data.LogBody = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LogBody = types.StringValue(val)
+            data.LogBody = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.LogBody = types.StringValue(fmt.Sprintf("%v", val))
+            data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LogBody = types.StringValue(string(jsonBytes))
+                data.LogBody = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LogBody = types.StringValue(string(jsonBytes))
+                data.LogBody = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.LogBody = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LogBody = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.LogBody = types.StringValue(string(jsonBytes))
+            data.LogBody = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.LogBody = types.StringNull()
+            data.LogBody = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["logBody"].(string); ok && val != "" {
-        data.LogBody = types.StringValue(val)
+        data.LogBody = NewJSONSubsetValue(val)
     } else {
-        data.LogBody = types.StringNull()
+        data.LogBody = NewJSONSubsetNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -857,15 +859,16 @@ func (r *MonitorLogResource) convertTerraformSetToInterface(terraformSet types.S
 }
 
 // Helper method to parse JSON field for complex objects
-func (r *MonitorLogResource) parseJSONField(terraformString types.String) interface{} {
-    if terraformString.IsNull() || terraformString.IsUnknown() || terraformString.ValueString() == "" {
+func (r *MonitorLogResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+    sv, _ := terraformString.ToStringValue(context.Background())
+    if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
     }
 
     var result interface{}
-    if err := json.Unmarshal([]byte(terraformString.ValueString()), &result); err != nil {
+    if err := json.Unmarshal([]byte(sv.ValueString()), &result); err != nil {
         // If JSON parsing fails, return the raw string
-        return terraformString.ValueString()
+        return sv.ValueString()
     }
 
     return result

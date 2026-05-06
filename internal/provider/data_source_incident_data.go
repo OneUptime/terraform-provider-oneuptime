@@ -39,6 +39,7 @@ type IncidentDataDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
+    Hosts types.Set `tfsdk:"hosts"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Labels types.Set `tfsdk:"labels"`
     CurrentIncidentStateId types.String `tfsdk:"current_incident_state_id"`
@@ -131,6 +132,11 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "hosts": schema.SetAttribute{
+                MarkdownDescription: "List of hosts affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -371,6 +377,18 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.Monitors = setValue
+    }
+    if val, ok := incidentDataResponse["hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Hosts = setValue
     }
     if val, ok := incidentDataResponse["on_call_duty_policies"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
