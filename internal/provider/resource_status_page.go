@@ -67,6 +67,7 @@ type StatusPageResourceModel struct {
     EnableSmsSubscribers types.Bool `tfsdk:"enable_sms_subscribers"`
     EnableSlackSubscribers types.Bool `tfsdk:"enable_slack_subscribers"`
     EnableMicrosoftTeamsSubscribers types.Bool `tfsdk:"enable_microsoft_teams_subscribers"`
+    EnableWebhookSubscribers types.Bool `tfsdk:"enable_webhook_subscribers"`
     CopyrightText types.String `tfsdk:"copyright_text"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
@@ -328,6 +329,15 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
             },
             "enable_microsoft_teams_subscribers": schema.BoolAttribute{
                 MarkdownDescription: "Can Microsoft Teams subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_webhook_subscribers": schema.BoolAttribute{
+                MarkdownDescription: "Can Webhook subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -734,6 +744,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "enableSmsSubscribers": data.EnableSmsSubscribers.ValueBool(),
         "enableSlackSubscribers": data.EnableSlackSubscribers.ValueBool(),
         "enableMicrosoftTeamsSubscribers": data.EnableMicrosoftTeamsSubscribers.ValueBool(),
+        "enableWebhookSubscribers": data.EnableWebhookSubscribers.ValueBool(),
         "copyrightText": data.CopyrightText.ValueString(),
         "customFields": r.parseJSONField(data.CustomFields),
         "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
@@ -1352,6 +1363,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     }
     if val, ok := dataMap["enableMicrosoftTeamsSubscribers"].(bool); ok {
         data.EnableMicrosoftTeamsSubscribers = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableWebhookSubscribers"].(bool); ok {
+        data.EnableWebhookSubscribers = types.BoolValue(val)
     }
     if obj, ok := dataMap["copyrightText"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2314,6 +2328,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "enableSmsSubscribers": true,
         "enableSlackSubscribers": true,
         "enableMicrosoftTeamsSubscribers": true,
+        "enableWebhookSubscribers": true,
         "copyrightText": true,
         "customFields": true,
         "requireSsoForLogin": true,
@@ -2945,6 +2960,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     }
     if val, ok := dataMap["enableMicrosoftTeamsSubscribers"].(bool); ok {
         data.EnableMicrosoftTeamsSubscribers = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableWebhookSubscribers"].(bool); ok {
+        data.EnableWebhookSubscribers = types.BoolValue(val)
     }
     if obj, ok := dataMap["copyrightText"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3964,6 +3982,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.EnableMicrosoftTeamsSubscribers.IsUnknown() && !state.EnableMicrosoftTeamsSubscribers.IsUnknown() && !data.EnableMicrosoftTeamsSubscribers.Equal(state.EnableMicrosoftTeamsSubscribers) {
         requestDataMap["enableMicrosoftTeamsSubscribers"] = data.EnableMicrosoftTeamsSubscribers.ValueBool()
     }
+    if !data.EnableWebhookSubscribers.IsUnknown() && !state.EnableWebhookSubscribers.IsUnknown() && !data.EnableWebhookSubscribers.Equal(state.EnableWebhookSubscribers) {
+        requestDataMap["enableWebhookSubscribers"] = data.EnableWebhookSubscribers.ValueBool()
+    }
     if !data.CopyrightText.IsUnknown() && !state.CopyrightText.IsUnknown() && !data.CopyrightText.Equal(state.CopyrightText) {
         requestDataMap["copyrightText"] = data.CopyrightText.ValueString()
     }
@@ -4144,6 +4165,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "enableSmsSubscribers": true,
         "enableSlackSubscribers": true,
         "enableMicrosoftTeamsSubscribers": true,
+        "enableWebhookSubscribers": true,
         "copyrightText": true,
         "customFields": true,
         "requireSsoForLogin": true,
@@ -4769,6 +4791,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if val, ok := dataMap["enableMicrosoftTeamsSubscribers"].(bool); ok {
         data.EnableMicrosoftTeamsSubscribers = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableWebhookSubscribers"].(bool); ok {
+        data.EnableWebhookSubscribers = types.BoolValue(val)
     }
     if obj, ok := dataMap["copyrightText"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

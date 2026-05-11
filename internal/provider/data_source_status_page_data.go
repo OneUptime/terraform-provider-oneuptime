@@ -58,6 +58,7 @@ type StatusPageDataDataSourceModel struct {
     EnableSmsSubscribers types.Bool `tfsdk:"enable_sms_subscribers"`
     EnableSlackSubscribers types.Bool `tfsdk:"enable_slack_subscribers"`
     EnableMicrosoftTeamsSubscribers types.Bool `tfsdk:"enable_microsoft_teams_subscribers"`
+    EnableWebhookSubscribers types.Bool `tfsdk:"enable_webhook_subscribers"`
     CopyrightText types.String `tfsdk:"copyright_text"`
     CustomFields types.String `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
@@ -232,6 +233,10 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "enable_microsoft_teams_subscribers": schema.BoolAttribute{
                 MarkdownDescription: "Can Microsoft Teams subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
+                Computed: true,
+            },
+            "enable_webhook_subscribers": schema.BoolAttribute{
+                MarkdownDescription: "Can Webhook subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page]",
                 Computed: true,
             },
             "copyright_text": schema.StringAttribute{
@@ -546,6 +551,9 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := statusPageDataResponse["enable_microsoft_teams_subscribers"].(bool); ok {
         data.EnableMicrosoftTeamsSubscribers = types.BoolValue(val)
+    }
+    if val, ok := statusPageDataResponse["enable_webhook_subscribers"].(bool); ok {
+        data.EnableWebhookSubscribers = types.BoolValue(val)
     }
     if val, ok := statusPageDataResponse["copyright_text"].(string); ok {
         data.CopyrightText = types.StringValue(val)
