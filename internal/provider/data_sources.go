@@ -147,6 +147,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewSmsLogDataDataSource,
         NewWhatsAppLogDataDataSource,
         NewTelegramLogDataDataSource,
+        NewWebhookLogDataDataSource,
         NewPushNotificationLogDataDataSource,
         NewWorkspaceNotificationLogDataDataSource,
         NewCallLogDataDataSource,

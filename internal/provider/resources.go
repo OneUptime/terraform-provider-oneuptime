@@ -147,6 +147,7 @@ func GetResources() []func() resource.Resource {
         NewSmsLogResource,
         NewWhatsAppLogResource,
         NewTelegramLogResource,
+        NewWebhookLogResource,
         NewPushNotificationLogResource,
         NewWorkspaceNotificationLogResource,
         NewCallLogResource,
