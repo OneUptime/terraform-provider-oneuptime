@@ -14,10 +14,12 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
 
@@ -52,6 +54,7 @@ type AlertResourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery JSONSubsetValue `tfsdk:"telemetry_query"`
     AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -201,6 +204,15 @@ func (r *AlertResource) Schema(ctx context.Context, req resource.SchemaRequest, 
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -316,6 +328,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         "remediationNotes": data.RemediationNotes.ValueString(),
         "telemetryQuery": r.parseJSONField(data.TelemetryQuery),
         "alertEpisodeId": data.AlertEpisodeId.ValueString(),
+        "isPrivate": data.IsPrivate.ValueBool(),
         },
     }
 
@@ -895,6 +908,9 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         data.AlertEpisodeId = types.StringNull()
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1329,6 +1345,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "remediationNotes": true,
         "telemetryQuery": true,
         "alertEpisodeId": true,
+        "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1927,6 +1944,9 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         data.AlertEpisodeId = types.StringNull()
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2405,6 +2425,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     if !data.AlertEpisodeId.IsUnknown() && !state.AlertEpisodeId.IsUnknown() && !data.AlertEpisodeId.Equal(state.AlertEpisodeId) {
         requestDataMap["alertEpisodeId"] = data.AlertEpisodeId.ValueString()
     }
+    if !data.IsPrivate.IsUnknown() && !state.IsPrivate.IsUnknown() && !data.IsPrivate.Equal(state.IsPrivate) {
+        requestDataMap["isPrivate"] = data.IsPrivate.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/alert/" + data.Id.ValueString() + "", alertRequest)
@@ -2438,6 +2461,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "remediationNotes": true,
         "telemetryQuery": true,
         "alertEpisodeId": true,
+        "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3029,6 +3053,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         data.AlertEpisodeId = types.StringValue(val)
     } else {
         data.AlertEpisodeId = types.StringNull()
+    }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

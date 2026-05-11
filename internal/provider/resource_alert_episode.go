@@ -60,6 +60,7 @@ type AlertEpisodeResourceModel struct {
     GroupingKey types.String `tfsdk:"grouping_key"`
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     PostUpdatesToWorkspaceChannels JSONSubsetValue `tfsdk:"post_updates_to_workspace_channels"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -250,6 +251,15 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -353,6 +363,7 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
         "groupingKey": data.GroupingKey.ValueString(),
         "remediationNotes": data.RemediationNotes.ValueString(),
         "postUpdatesToWorkspaceChannels": r.parseJSONField(data.PostUpdatesToWorkspaceChannels),
+        "isPrivate": data.IsPrivate.ValueBool(),
         },
     }
 
@@ -1060,6 +1071,9 @@ func (r *AlertEpisodeResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.PostUpdatesToWorkspaceChannels = NewJSONSubsetNull()
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1351,6 +1365,7 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
         "groupingKey": true,
         "remediationNotes": true,
         "postUpdatesToWorkspaceChannels": true,
+        "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2073,6 +2088,9 @@ func (r *AlertEpisodeResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.PostUpdatesToWorkspaceChannels = NewJSONSubsetNull()
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2411,6 +2429,9 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
             requestDataMap["postUpdatesToWorkspaceChannels"] = data.PostUpdatesToWorkspaceChannels.ValueString()
         }
     }
+    if !data.IsPrivate.IsUnknown() && !state.IsPrivate.IsUnknown() && !data.IsPrivate.Equal(state.IsPrivate) {
+        requestDataMap["isPrivate"] = data.IsPrivate.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/alert-episode/" + data.Id.ValueString() + "", alertEpisodeRequest)
@@ -2449,6 +2470,7 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
         "groupingKey": true,
         "remediationNotes": true,
         "postUpdatesToWorkspaceChannels": true,
+        "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3164,6 +3186,9 @@ func (r *AlertEpisodeResource) Update(ctx context.Context, req resource.UpdateRe
         data.PostUpdatesToWorkspaceChannels = NewJSONSubsetValue(val)
     } else {
         data.PostUpdatesToWorkspaceChannels = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

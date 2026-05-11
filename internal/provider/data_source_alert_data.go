@@ -57,6 +57,7 @@ type AlertDataDataSourceModel struct {
     AlertNumber types.Number `tfsdk:"alert_number"`
     AlertNumberWithPrefix types.String `tfsdk:"alert_number_with_prefix"`
     AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
 }
 
 func (d *AlertDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -193,6 +194,10 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "alert_episode_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
                 Computed: true,
             },
         },
@@ -377,6 +382,9 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := alertDataResponse["alert_episode_id"].(string); ok {
         data.AlertEpisodeId = types.StringValue(val)
+    }
+    if val, ok := alertDataResponse["is_private"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
 
     // Write logs using the tflog package

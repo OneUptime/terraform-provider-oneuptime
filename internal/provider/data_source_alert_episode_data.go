@@ -58,6 +58,7 @@ type AlertEpisodeDataDataSourceModel struct {
     GroupingKey types.String `tfsdk:"grouping_key"`
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     PostUpdatesToWorkspaceChannels types.String `tfsdk:"post_updates_to_workspace_channels"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
 }
 
 func (d *AlertEpisodeDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -197,6 +198,10 @@ func (d *AlertEpisodeDataDataSource) Schema(ctx context.Context, req datasource.
             },
             "post_updates_to_workspace_channels": schema.StringAttribute{
                 MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                Computed: true,
+            },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
                 Computed: true,
             },
         },
@@ -375,6 +380,9 @@ func (d *AlertEpisodeDataDataSource) Read(ctx context.Context, req datasource.Re
     }
     if val, ok := alertEpisodeDataResponse["post_updates_to_workspace_channels"].(string); ok {
         data.PostUpdatesToWorkspaceChannels = types.StringValue(val)
+    }
+    if val, ok := alertEpisodeDataResponse["is_private"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
 
     // Write logs using the tflog package

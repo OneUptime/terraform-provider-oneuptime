@@ -64,6 +64,7 @@ type IncidentEpisodeDataDataSourceModel struct {
     ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_episode_created"`
     SubscriberNotificationStatusOnEpisodeCreated types.String `tfsdk:"subscriber_notification_status_on_episode_created"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
 }
 
 func (d *IncidentEpisodeDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -227,6 +228,10 @@ func (d *IncidentEpisodeDataDataSource) Schema(ctx context.Context, req datasour
             },
             "subscriber_notification_status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode]",
                 Computed: true,
             },
         },
@@ -423,6 +428,9 @@ func (d *IncidentEpisodeDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := incidentEpisodeDataResponse["subscriber_notification_status_message"].(string); ok {
         data.SubscriberNotificationStatusMessage = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeDataResponse["is_private"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
 
     // Write logs using the tflog package

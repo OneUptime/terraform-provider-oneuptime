@@ -64,6 +64,7 @@ type IncidentEpisodeResourceModel struct {
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
     DeclaredAt JSONSubsetValue `tfsdk:"declared_at"`
     ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_episode_created"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -291,6 +292,15 @@ func (r *IncidentEpisodeResource) Schema(ctx context.Context, req resource.Schem
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this incident episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -406,6 +416,7 @@ func (r *IncidentEpisodeResource) Create(ctx context.Context, req resource.Creat
         "isVisibleOnStatusPage": data.IsVisibleOnStatusPage.ValueBool(),
         "declaredAt": r.parseJSONField(data.DeclaredAt),
         "shouldStatusPageSubscribersBeNotifiedOnEpisodeCreated": data.ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated.ValueBool(),
+        "isPrivate": data.IsPrivate.ValueBool(),
         },
     }
 
@@ -1193,6 +1204,9 @@ func (r *IncidentEpisodeResource) Create(ctx context.Context, req resource.Creat
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEpisodeCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated = types.BoolValue(val)
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1562,6 +1576,7 @@ func (r *IncidentEpisodeResource) Read(ctx context.Context, req resource.ReadReq
         "isVisibleOnStatusPage": true,
         "declaredAt": true,
         "shouldStatusPageSubscribersBeNotifiedOnEpisodeCreated": true,
+        "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2366,6 +2381,9 @@ func (r *IncidentEpisodeResource) Read(ctx context.Context, req resource.ReadReq
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEpisodeCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated = types.BoolValue(val)
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2789,6 +2807,9 @@ func (r *IncidentEpisodeResource) Update(ctx context.Context, req resource.Updat
             requestDataMap["declaredAt"] = data.DeclaredAt.ValueString()
         }
     }
+    if !data.IsPrivate.IsUnknown() && !state.IsPrivate.IsUnknown() && !data.IsPrivate.Equal(state.IsPrivate) {
+        requestDataMap["isPrivate"] = data.IsPrivate.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/incident-episode/" + data.Id.ValueString() + "", incidentEpisodeRequest)
@@ -2831,6 +2852,7 @@ func (r *IncidentEpisodeResource) Update(ctx context.Context, req resource.Updat
         "isVisibleOnStatusPage": true,
         "declaredAt": true,
         "shouldStatusPageSubscribersBeNotifiedOnEpisodeCreated": true,
+        "isPrivate": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3628,6 +3650,9 @@ func (r *IncidentEpisodeResource) Update(ctx context.Context, req resource.Updat
     }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEpisodeCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEpisodeCreated = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

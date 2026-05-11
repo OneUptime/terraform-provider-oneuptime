@@ -37,6 +37,7 @@ type FileResourceModel struct {
     Name types.String `tfsdk:"name"`
     FileType types.String `tfsdk:"file_type"`
     IsPublic types.String `tfsdk:"is_public"`
+    ImageAccessToken types.String `tfsdk:"image_access_token"`
 }
 
 func (r *FileResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -69,6 +70,10 @@ func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 Required: true,
             },
             "is_public": schema.StringAttribute{
+                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+            },
+            "image_access_token": schema.StringAttribute{
                 MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
             },
@@ -118,6 +123,7 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         "name": data.Name.ValueString(),
         "fileType": data.FileType.ValueString(),
         "isPublic": data.IsPublic.ValueString(),
+        "imageAccessToken": data.ImageAccessToken.ValueString(),
         },
     }
 
@@ -299,6 +305,43 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         data.IsPublic = types.StringValue(val)
     } else {
         data.IsPublic = types.StringNull()
+    }
+    if obj, ok := dataMap["imageAccessToken"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImageAccessToken = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImageAccessToken = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImageAccessToken = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImageAccessToken = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImageAccessToken = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImageAccessToken = types.StringNull()
+        }
+    } else if val, ok := dataMap["imageAccessToken"].(string); ok && val != "" {
+        data.ImageAccessToken = types.StringValue(val)
+    } else {
+        data.ImageAccessToken = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

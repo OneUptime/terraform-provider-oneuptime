@@ -63,6 +63,7 @@ type IncidentResourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery JSONSubsetValue `tfsdk:"telemetry_query"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
     IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
@@ -297,6 +298,15 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "incident_episode_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
@@ -445,6 +455,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "remediationNotes": data.RemediationNotes.ValueString(),
         "telemetryQuery": r.parseJSONField(data.TelemetryQuery),
         "isVisibleOnStatusPage": data.IsVisibleOnStatusPage.ValueBool(),
+        "isPrivate": data.IsPrivate.ValueBool(),
         "incidentEpisodeId": data.IncidentEpisodeId.ValueString(),
         },
     }
@@ -1212,6 +1223,9 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1840,6 +1854,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
+        "isPrivate": true,
         "incidentEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2630,6 +2645,9 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
+    }
     if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3330,6 +3348,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.IsVisibleOnStatusPage.IsUnknown() && !state.IsVisibleOnStatusPage.IsUnknown() && !data.IsVisibleOnStatusPage.Equal(state.IsVisibleOnStatusPage) {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
     }
+    if !data.IsPrivate.IsUnknown() && !state.IsPrivate.IsUnknown() && !data.IsPrivate.Equal(state.IsPrivate) {
+        requestDataMap["isPrivate"] = data.IsPrivate.ValueBool()
+    }
     if !data.IncidentEpisodeId.IsUnknown() && !state.IncidentEpisodeId.IsUnknown() && !data.IncidentEpisodeId.Equal(state.IncidentEpisodeId) {
         requestDataMap["incidentEpisodeId"] = data.IncidentEpisodeId.ValueString()
     }
@@ -3375,6 +3396,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
+        "isPrivate": true,
         "incidentEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -4158,6 +4180,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     }
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isPrivate"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
     if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

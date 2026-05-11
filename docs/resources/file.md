@@ -26,6 +26,7 @@ resource "oneuptime_file" "example" {
 - `name` (String) Any friendly name of this object. Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Required.
 - `file_type` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Required.
 - `is_public` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Optional.
+- `image_access_token` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Optional.
 
 ## Import
 

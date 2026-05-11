@@ -70,6 +70,7 @@ type IncidentDataDataSourceModel struct {
     IncidentNumber types.Number `tfsdk:"incident_number"`
     IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    IsPrivate types.Bool `tfsdk:"is_private"`
     IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
 }
 
@@ -261,6 +262,10 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "is_visible_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident]",
+                Computed: true,
+            },
+            "is_private": schema.BoolAttribute{
+                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident]",
                 Computed: true,
             },
             "incident_episode_id": schema.StringAttribute{
@@ -506,6 +511,9 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     }
     if val, ok := incidentDataResponse["is_visible_on_status_page"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := incidentDataResponse["is_private"].(bool); ok {
+        data.IsPrivate = types.BoolValue(val)
     }
     if val, ok := incidentDataResponse["incident_episode_id"].(string); ok {
         data.IncidentEpisodeId = types.StringValue(val)
