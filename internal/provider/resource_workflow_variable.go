@@ -1737,6 +1737,7 @@ func (r *WorkflowVariableResource) isValidOneUptimeObjectType(typeStr string) bo
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

@@ -1833,6 +1833,7 @@ func (r *StatusPageGroupResource) isValidOneUptimeObjectType(typeStr string) boo
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

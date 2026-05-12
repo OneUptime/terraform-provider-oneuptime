@@ -1430,6 +1430,7 @@ func (r *StatusPageHistoryChartBarColorResource) isValidOneUptimeObjectType(type
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

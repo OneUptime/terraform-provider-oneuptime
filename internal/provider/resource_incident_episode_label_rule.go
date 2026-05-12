@@ -1968,6 +1968,7 @@ func (r *IncidentEpisodeLabelRuleResource) isValidOneUptimeObjectType(typeStr st
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

@@ -1472,6 +1472,7 @@ func (r *ScheduledMaintenanceNoteTemplateResource) isValidOneUptimeObjectType(ty
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

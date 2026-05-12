@@ -1601,6 +1601,7 @@ func (r *AlertInternalNoteResource) isValidOneUptimeObjectType(typeStr string) b
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

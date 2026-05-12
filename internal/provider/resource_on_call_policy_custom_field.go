@@ -1592,6 +1592,7 @@ func (r *OnCallPolicyCustomFieldResource) isValidOneUptimeObjectType(typeStr str
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

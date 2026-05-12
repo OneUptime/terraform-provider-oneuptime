@@ -2150,6 +2150,7 @@ func (r *OnCallScheduleLayerResource) isValidOneUptimeObjectType(typeStr string)
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,

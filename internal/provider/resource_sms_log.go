@@ -2041,6 +2041,7 @@ func (r *SmsLogResource) isValidOneUptimeObjectType(typeStr string) bool {
         "URL": true,
         "Permission": true,
         "Search": true,
+        "MultiSearch": true,
         "GreaterThan": true,
         "GreaterThanOrEqual": true,
         "GreaterThanOrNull": true,
