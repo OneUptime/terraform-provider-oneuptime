@@ -105,6 +105,8 @@ func GetDataSources() []func() datasource.DataSource {
         NewIncidentOwnerRuleDataDataSource,
         NewIncidentPrivacyRuleDataDataSource,
         NewIncidentLabelRuleDataDataSource,
+        NewScheduledMaintenanceOwnerRuleDataDataSource,
+        NewScheduledMaintenanceLabelRuleDataDataSource,
         NewIncidentEpisodeOnCallRuleDataDataSource,
         NewIncidentEpisodeOwnerRuleDataDataSource,
         NewIncidentEpisodePrivacyRuleDataDataSource,

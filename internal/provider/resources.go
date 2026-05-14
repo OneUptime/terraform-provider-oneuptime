@@ -105,6 +105,8 @@ func GetResources() []func() resource.Resource {
         NewIncidentOwnerRuleResource,
         NewIncidentPrivacyRuleResource,
         NewIncidentLabelRuleResource,
+        NewScheduledMaintenanceOwnerRuleResource,
+        NewScheduledMaintenanceLabelRuleResource,
         NewIncidentEpisodeOnCallRuleResource,
         NewIncidentEpisodeOwnerRuleResource,
         NewIncidentEpisodePrivacyRuleResource,
