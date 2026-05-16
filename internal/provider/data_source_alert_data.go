@@ -98,11 +98,11 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "Title of this alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Short description of this alert. This will be visible on the status page. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "Short description of this alert. This will be visible on the status page. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -114,17 +114,17 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "List of on-call duty policies affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "List of hosts affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -141,31 +141,31 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
             },
             "is_owner_notified_of_alert_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this alert is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of when this alert is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "What is the root cause of this alert?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_state_log": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
-                MarkdownDescription: "If this alert was created by a Probe, this is the ID of the criteria that created it.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "If this alert was created by a Probe, this is the ID of the criteria that created it.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "series_fingerprint": schema.StringAttribute{
-                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one alert is created per affected series.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one alert is created per affected series.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this alert was created from a per-series metric breach.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_probe_id": schema.StringAttribute{
@@ -173,23 +173,23 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "is_created_automatically": schema.BoolAttribute{
-                MarkdownDescription: "Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this alert created by OneUptime Probe or Workers automatically (and not created manually by a user)?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Notes on how to remediate this alert. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "Notes on how to remediate this alert. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Telemetry query for this alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "Telemetry query for this alert. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
             },
             "alert_number": schema.NumberAttribute{
-                MarkdownDescription: "Alert Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Alert Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "alert_number_with_prefix": schema.StringAttribute{
-                MarkdownDescription: "Alert number with prefix (e.g., 'ALT-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Alert number with prefix (e.g., 'ALT-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "alert_episode_id": schema.StringAttribute{
@@ -197,7 +197,7 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert]",
+                MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
             },
         },

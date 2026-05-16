@@ -91,51 +91,51 @@ func (d *MetricPipelineRuleDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of what this rule does.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "Description of what this rule does.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "rule_type": schema.StringAttribute{
-                MarkdownDescription: "One of: Filter, Drop, RenameMetric, RenameAttribute, AddAttribute, RemoveAttribute, RedactAttribute, Sample.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "One of: Filter, Drop, RenameMetric, RenameAttribute, AddAttribute, RemoveAttribute, RedactAttribute, Sample.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "filter_condition": schema.StringAttribute{
-                MarkdownDescription: "How to combine filters: 'All' requires every filter to match (AND), 'Any' requires at least one to match (OR).. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "How to combine filters: 'All' requires every filter to match (AND), 'Any' requires at least one to match (OR).. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "List of filters evaluated against each metric data point. An empty list matches every data point.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "List of filters evaluated against each metric data point. An empty list matches every data point.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "rename_from_key": schema.StringAttribute{
-                MarkdownDescription: "For RenameMetric: the existing metric name. For RenameAttribute: the existing attribute key.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "For RenameMetric: the existing metric name. For RenameAttribute: the existing attribute key.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "rename_to_key": schema.StringAttribute{
-                MarkdownDescription: "For RenameMetric: the new metric name. For RenameAttribute: the new attribute key.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "For RenameMetric: the new metric name. For RenameAttribute: the new attribute key.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "add_attribute_key": schema.StringAttribute{
-                MarkdownDescription: "For AddAttribute / RemoveAttribute / RedactAttribute: the attribute key to act on.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "For AddAttribute / RemoveAttribute / RedactAttribute: the attribute key to act on.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "add_attribute_value": schema.StringAttribute{
-                MarkdownDescription: "For AddAttribute: the attribute value to set.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "For AddAttribute: the attribute value to set.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "redact_replacement": schema.StringAttribute{
-                MarkdownDescription: "For RedactAttribute: the literal string to replace the value with. Defaults to [REDACTED].. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "For RedactAttribute: the literal string to replace the value with. Defaults to [REDACTED].. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "sample_percentage": schema.NumberAttribute{
-                MarkdownDescription: "For Sample: percentage of matched rows to keep (0-100). 100 keeps all.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "For Sample: percentage of matched rows to keep (0-100). 100 keeps all.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is active.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "Whether this rule is active.. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Evaluation order within its scope (service-level or project-level).. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
+                MarkdownDescription: "Evaluation order within its scope (service-level or project-level).. Permissions - Create: [Project Owner, Project Admin, Create Metric Pipeline Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Metric Pipeline Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Metric Pipeline Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

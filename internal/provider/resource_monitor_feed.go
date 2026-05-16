@@ -78,11 +78,11 @@ func (r *MonitorFeedResource) Schema(ctx context.Context, req resource.SchemaReq
                 Required: true,
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire monitor state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Log of the entire monitor state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -90,7 +90,7 @@ func (r *MonitorFeedResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "monitor_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "Monitor Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Monitor Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "display_color": schema.StringAttribute{

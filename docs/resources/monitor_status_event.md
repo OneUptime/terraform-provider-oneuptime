@@ -25,7 +25,7 @@ resource "oneuptime_monitor_status_event" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Manager, Create Monitor Status Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `root_cause` (String) What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Status Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Status Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 - `ends_at` (String) A date time object.. Computed.
 - `starts_at` (String) A date time object.. Computed.
 - `created_at` (String) A date time object.. Computed.
@@ -33,8 +33,8 @@ resource "oneuptime_monitor_status_event" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Are owners notified of status change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
-- `status_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Status Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of status change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Status Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `status_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Status Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

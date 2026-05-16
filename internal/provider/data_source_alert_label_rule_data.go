@@ -86,56 +86,56 @@ func (d *AlertLabelRuleDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert label rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Description of this alert label rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts that already have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts that already have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "alert_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor name.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor name.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the alert when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Labels to attach to the alert when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "inherit_labels_from_monitors": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the alert's monitor onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's monitor onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

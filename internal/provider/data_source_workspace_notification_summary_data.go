@@ -88,23 +88,23 @@ func (d *WorkspaceNotificationSummaryDataDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Summary Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "Description of the Summary Rule. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "workspace_type": schema.StringAttribute{
-                MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams, etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams, etc.. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "summary_type": schema.StringAttribute{
-                MarkdownDescription: "Type of summary - Incident, Alert, Incident Episode, or Alert Episode. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "Type of summary - Incident, Alert, Incident Episode, or Alert Episode. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often should the summary be sent?. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "How often should the summary be sent?. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "number_of_days_of_data": schema.NumberAttribute{
-                MarkdownDescription: "How many days of data to include in the summary. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "How many days of data to include in the summary. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "send_first_report_at": schema.StringAttribute{
@@ -112,23 +112,23 @@ func (d *WorkspaceNotificationSummaryDataDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "channel_names": schema.StringAttribute{
-                MarkdownDescription: "List of channel names to post the summary to. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "List of channel names to post the summary to. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "team_name": schema.StringAttribute{
-                MarkdownDescription: "Microsoft Teams team name (only for Microsoft Teams). Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "Microsoft Teams team name (only for Microsoft Teams). Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "summary_items": schema.StringAttribute{
-                MarkdownDescription: "Checklist of items to include in the summary. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "Checklist of items to include in the summary. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "filters": schema.StringAttribute{
-                MarkdownDescription: "Filter conditions for which items to include in the summary. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "Filter conditions for which items to include in the summary. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "filter_condition": schema.StringAttribute{
-                MarkdownDescription: "How to combine filters - Any or All. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "How to combine filters - Any or All. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "next_send_at": schema.StringAttribute{
@@ -140,7 +140,7 @@ func (d *WorkspaceNotificationSummaryDataDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Is this summary rule enabled?. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Manager, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Manager, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Manager, Edit Workspace Notification Summary]",
+                MarkdownDescription: "Is this summary rule enabled?. Permissions - Create: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Create Workspace Notification Summary], Read: [Project Admin, Project Owner, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Workspace Notification Summary, Read All Project Resources], Update: [Project Admin, Project Owner, Project Member, Settings Admin, Settings Member, Edit Workspace Notification Summary]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -44,6 +45,7 @@ type TeamPermissionResourceModel struct {
     Permission JSONSubsetValue `tfsdk:"permission"`
     Labels types.Set `tfsdk:"labels"`
     IsBlockPermission types.Bool `tfsdk:"is_block_permission"`
+    Scope types.String `tfsdk:"scope"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -84,7 +86,7 @@ func (r *TeamPermissionResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "permission": schema.StringAttribute{
-                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Invite New Members, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Invite New Members, Edit Team Permissions, Edit Team]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -93,7 +95,7 @@ func (r *TeamPermissionResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -102,12 +104,21 @@ func (r *TeamPermissionResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_block_permission": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "scope": schema.StringAttribute{
+                MarkdownDescription: "Scope of this permission row. One of: All, Owned, Labels. Defaults to All so new permissions apply to every resource in the project unless explicitly narrowed.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("All"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -177,6 +188,7 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
         "permission": r.parseJSONField(data.Permission),
         "labels": r.convertTerraformSetToInterface(data.Labels),
         "isBlockPermission": data.IsBlockPermission.ValueBool(),
+        "scope": data.Scope.ValueString(),
         },
     }
 
@@ -361,6 +373,43 @@ func (r *TeamPermissionResource) Create(ctx context.Context, req resource.Create
     }
     if val, ok := dataMap["isBlockPermission"].(bool); ok {
         data.IsBlockPermission = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok && val != "" {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -549,6 +598,7 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
         "permission": true,
         "labels": true,
         "isBlockPermission": true,
+        "scope": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -743,6 +793,43 @@ func (r *TeamPermissionResource) Read(ctx context.Context, req resource.ReadRequ
     }
     if val, ok := dataMap["isBlockPermission"].(bool); ok {
         data.IsBlockPermission = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok && val != "" {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -950,6 +1037,9 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
     if !data.IsBlockPermission.IsUnknown() && !state.IsBlockPermission.IsUnknown() && !data.IsBlockPermission.Equal(state.IsBlockPermission) {
         requestDataMap["isBlockPermission"] = data.IsBlockPermission.ValueBool()
     }
+    if !data.Scope.IsUnknown() && !state.Scope.IsUnknown() && !data.Scope.Equal(state.Scope) {
+        requestDataMap["scope"] = data.Scope.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/team-permission/" + data.Id.ValueString() + "", teamPermissionRequest)
@@ -973,6 +1063,7 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
         "permission": true,
         "labels": true,
         "isBlockPermission": true,
+        "scope": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1161,6 +1252,43 @@ func (r *TeamPermissionResource) Update(ctx context.Context, req resource.Update
     }
     if val, ok := dataMap["isBlockPermission"].(bool); ok {
         data.IsBlockPermission = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok && val != "" {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

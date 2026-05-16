@@ -79,11 +79,11 @@ func (r *IncidentEpisodePrivacyRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incident episode privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
+                MarkdownDescription: "Name of this incident episode privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident episode privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
+                MarkdownDescription: "Description of this incident episode privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *IncidentEpisodePrivacyRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -100,7 +100,7 @@ func (r *IncidentEpisodePrivacyRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match episodes of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match episodes of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -109,7 +109,7 @@ func (r *IncidentEpisodePrivacyRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of episode labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
+                MarkdownDescription: "Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of episode labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -118,7 +118,7 @@ func (r *IncidentEpisodePrivacyRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -126,7 +126,7 @@ func (r *IncidentEpisodePrivacyRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

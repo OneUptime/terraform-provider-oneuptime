@@ -81,7 +81,7 @@ func (d *EscalationRuleDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -89,11 +89,11 @@ func (d *EscalationRuleDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "escalate_after_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How long should we wait before we execute the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "How long should we wait before we execute the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order of this rule. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "Order of this rule. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
                 Computed: true,
             },
         },

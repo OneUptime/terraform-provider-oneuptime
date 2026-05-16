@@ -102,7 +102,7 @@ func (r *MonitorProbeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Probe, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Manager, Edit Monitor Probe]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Monitor Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Probe]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -138,7 +138,7 @@ func (r *MonitorProbeResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "last_monitoring_log": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Manager, Read Monitor Probe, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },

@@ -78,11 +78,11 @@ func (r *AlertEpisodeFeedResource) Schema(ctx context.Context, req resource.Sche
                 Required: true,
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire alert episode activity in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Log of the entire alert episode activity in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -90,7 +90,7 @@ func (r *AlertEpisodeFeedResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "alert_episode_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "Alert Episode Feed Event Type. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Alert Episode Feed Event Type. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "display_color": schema.StringAttribute{

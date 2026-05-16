@@ -87,60 +87,60 @@ func (d *IncidentLabelRuleDataDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident label rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Description of this incident label rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents that already have at least one of these labels. Leave empty to match regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Only trigger for incidents that already have at least one of these labels. Leave empty to match regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incident title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incident title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incident description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incident description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the incident when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "Labels to attach to the incident when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "inherit_labels_from_monitors": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's monitors onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's monitors onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "inherit_labels_from_hosts": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected hosts onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected hosts onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

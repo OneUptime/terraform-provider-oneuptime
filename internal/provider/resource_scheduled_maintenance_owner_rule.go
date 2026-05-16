@@ -86,11 +86,11 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this scheduled maintenance owner rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Name of this scheduled maintenance owner rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled maintenance owner rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Description of this scheduled maintenance owner rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -98,7 +98,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -107,7 +107,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -116,7 +116,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for scheduled maintenance events on these monitors. Leave empty to match events on any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Only trigger for scheduled maintenance events on these monitors. Leave empty to match events on any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -125,7 +125,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "scheduled_maintenance_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for events that have at least one of these labels. Leave empty to match regardless of event labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Only trigger for events that have at least one of these labels. Leave empty to match regardless of event labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -134,7 +134,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -143,7 +143,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the scheduled maintenance event title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the scheduled maintenance event title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -151,7 +151,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the scheduled maintenance event description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the scheduled maintenance event description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -159,7 +159,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -167,7 +167,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -175,7 +175,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the scheduled maintenance event when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the scheduled maintenance event when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -184,7 +184,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the scheduled maintenance event when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the scheduled maintenance event when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -193,7 +193,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "inherit_owners_from_monitors": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also assign every owner of the event's monitors to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's monitors to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

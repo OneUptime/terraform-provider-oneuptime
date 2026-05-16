@@ -85,7 +85,7 @@ func (r *TraceScrubRuleResource) Schema(ctx context.Context, req resource.Schema
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of what this scrub rule does.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
+                MarkdownDescription: "Description of what this scrub rule does.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -93,11 +93,11 @@ func (r *TraceScrubRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "pattern_type": schema.StringAttribute{
-                MarkdownDescription: "The type of sensitive data pattern to detect: email, creditCard, ssn, phoneNumber, ipAddress, or custom.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
+                MarkdownDescription: "The type of sensitive data pattern to detect: email, creditCard, ssn, phoneNumber, ipAddress, or custom.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
                 Required: true,
             },
             "custom_regex": schema.StringAttribute{
-                MarkdownDescription: "A custom regular expression pattern to match. Only used when patternType is 'custom'.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
+                MarkdownDescription: "A custom regular expression pattern to match. Only used when patternType is 'custom'.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -105,15 +105,15 @@ func (r *TraceScrubRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "scrub_action": schema.StringAttribute{
-                MarkdownDescription: "How to scrub matched data: 'mask' partially hides it, 'hash' replaces with a hash, 'redact' removes entirely.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
+                MarkdownDescription: "How to scrub matched data: 'mask' partially hides it, 'hash' replaces with a hash, 'redact' removes entirely.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
                 Required: true,
             },
             "fields_to_scrub": schema.StringAttribute{
-                MarkdownDescription: "Which span fields to scrub: 'name' (span name), 'attributes' (attribute values), 'events' (span event attributes), or 'all'.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
+                MarkdownDescription: "Which span fields to scrub: 'name' (span name), 'attributes' (attribute values), 'events' (span event attributes), or 'all'.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
                 Required: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this scrub rule is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
+                MarkdownDescription: "Whether this scrub rule is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -122,7 +122,7 @@ func (r *TraceScrubRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the evaluation order of this rule relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
+                MarkdownDescription: "Determines the evaluation order of this rule relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Trace Scrub Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Scrub Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Scrub Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

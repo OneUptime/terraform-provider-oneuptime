@@ -92,7 +92,7 @@ func (r *IncidentEpisodeMemberResource) Schema(ctx context.Context, req resource
                 },
             },
             "added_by": schema.StringAttribute{
-                MarkdownDescription: "How this incident was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How this incident was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Episode Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("rule"),

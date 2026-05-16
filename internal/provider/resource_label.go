@@ -65,7 +65,7 @@ func (r *LabelResource) Schema(ctx context.Context, req resource.SchemaRequest, 
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Label, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Label]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Label, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Label]",
                 Required: true,
             },
             "project_id": schema.StringAttribute{
@@ -76,7 +76,7 @@ func (r *LabelResource) Schema(ctx context.Context, req resource.SchemaRequest, 
                 },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Label, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Label]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Label, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Label]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -108,7 +108,7 @@ func (r *LabelResource) Schema(ctx context.Context, req resource.SchemaRequest, 
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Label, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Label, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

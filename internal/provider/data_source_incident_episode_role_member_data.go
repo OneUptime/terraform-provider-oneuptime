@@ -90,7 +90,7 @@ func (d *IncidentEpisodeRoleMemberDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "notes": schema.StringAttribute{
-                MarkdownDescription: "Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode Role Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Role Member, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Episode Role Member]",
+                MarkdownDescription: "Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Episode Role Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Role Member, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Episode Role Member]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

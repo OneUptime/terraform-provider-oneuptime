@@ -83,11 +83,11 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this alert privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Name of this alert privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Description of this alert privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -95,7 +95,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -104,7 +104,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -113,7 +113,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -122,7 +122,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts that have at least one of these labels. Leave empty to match regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Only trigger for alerts that have at least one of these labels. Leave empty to match regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -131,7 +131,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -140,7 +140,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "alert_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -148,7 +148,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "alert_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -156,7 +156,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor name. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor name. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -164,7 +164,7 @@ func (r *AlertPrivacyRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Privacy Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

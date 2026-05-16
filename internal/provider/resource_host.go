@@ -91,11 +91,11 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Friendly name for this host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Host]",
+                MarkdownDescription: "Friendly name for this host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Host]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description for this host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Host]",
+                MarkdownDescription: "Friendly description for this host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -103,11 +103,11 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "host_identifier": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for this host, sourced from the host.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Host]",
+                MarkdownDescription: "Unique identifier for this host, sourced from the host.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Host]",
                 Required: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Host]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Host]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -116,7 +116,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Connection status of the OTel Collector reporting on this host (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Connection status of the OTel Collector reporting on this host (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -133,7 +133,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "os_type": schema.StringAttribute{
-                MarkdownDescription: "Operating system type of the host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Operating system type of the host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -141,7 +141,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "os_version": schema.StringAttribute{
-                MarkdownDescription: "Operating system version of the host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Operating system version of the host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -149,7 +149,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "host_id": schema.StringAttribute{
-                MarkdownDescription: "Stable host identifier reported by the OTel host.id resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Stable host identifier reported by the OTel host.id resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -157,7 +157,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "host_arch": schema.StringAttribute{
-                MarkdownDescription: "CPU architecture from the OTel host.arch resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "CPU architecture from the OTel host.arch resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -165,7 +165,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "host_type": schema.StringAttribute{
-                MarkdownDescription: "Cloud-instance class reported by the OTel host.type resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Cloud-instance class reported by the OTel host.type resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -173,7 +173,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "host_ip_addresses": schema.StringAttribute{
-                MarkdownDescription: "Comma-separated list of IP addresses reported by the OTel host.ip resource attribute. The first non-loopback IPv4 is used for display.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Comma-separated list of IP addresses reported by the OTel host.ip resource attribute. The first non-loopback IPv4 is used for display.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -181,7 +181,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "cpu_cores": schema.NumberAttribute{
-                MarkdownDescription: "Logical CPU core count, sourced from system.cpu.logical.count metric. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Logical CPU core count, sourced from system.cpu.logical.count metric. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -189,7 +189,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "total_memory_bytes": schema.NumberAttribute{
-                MarkdownDescription: "Total physical memory in bytes, sourced from system.memory.usage metric (sum of all states).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Total physical memory in bytes, sourced from system.memory.usage metric (sum of all states).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -197,7 +197,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "process_count": schema.NumberAttribute{
-                MarkdownDescription: "Most recent process count from system.processes.count metric. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Most recent process count from system.processes.count metric. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -205,7 +205,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "container_runtime": schema.StringAttribute{
-                MarkdownDescription: "Container runtime detected on this host, if any (e.g. docker, containerd). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
+                MarkdownDescription: "Container runtime detected on this host, if any (e.g. docker, containerd). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -232,7 +232,7 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Host, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "docker_host_id": schema.StringAttribute{

@@ -84,11 +84,11 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this scheduled maintenance label rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Name of this scheduled maintenance label rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled maintenance label rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Description of this scheduled maintenance label rule. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -96,7 +96,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -105,7 +105,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for events on these monitors. Leave empty to match events on any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Only trigger for events on these monitors. Leave empty to match events on any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -114,7 +114,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "scheduled_maintenance_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for events that already have at least one of these labels. Leave empty to match regardless of event labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Only trigger for events that already have at least one of these labels. Leave empty to match regardless of event labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -123,7 +123,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Only trigger for events on monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -132,7 +132,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the event title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the event title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -140,7 +140,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the event description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the event description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -148,7 +148,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -156,7 +156,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the event's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -164,7 +164,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the event when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "Labels to attach to the event when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -173,7 +173,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                 },
             },
             "inherit_labels_from_monitors": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the event's monitors onto the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Manager, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                MarkdownDescription: "When this rule matches, also copy every label of the event's monitors onto the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

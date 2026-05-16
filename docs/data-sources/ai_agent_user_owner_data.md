@@ -31,4 +31,4 @@ data "oneuptime_ai_agent_user_owner_data" "example" {
 - `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent Owner User, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent Owner User, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.

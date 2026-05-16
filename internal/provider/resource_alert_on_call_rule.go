@@ -84,11 +84,11 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this alert on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Name of this alert on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Description of this alert on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -96,7 +96,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -105,7 +105,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -114,7 +114,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -123,7 +123,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -132,7 +132,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -141,7 +141,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -149,7 +149,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -157,7 +157,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -165,7 +165,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -173,7 +173,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an alert matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "On-call duty policies to execute when an alert matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

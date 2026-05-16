@@ -81,7 +81,7 @@ func (r *OnCallScheduleLayerUserResource) Schema(ctx context.Context, req resour
                 Required: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Schedule Layer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Schedule Layer]",
+                MarkdownDescription: "Order / Priority of this layer. Lower the number, higher the priority.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Schedule Layer], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Schedule Layer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Schedule Layer]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

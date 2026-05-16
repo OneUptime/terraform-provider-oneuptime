@@ -87,7 +87,7 @@ func (r *IncidentEpisodeStateTimelineResource) Schema(ctx context.Context, req r
                 Required: true,
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "What is the root cause of this status change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -113,7 +113,7 @@ func (r *IncidentEpisodeStateTimelineResource) Schema(ctx context.Context, req r
                 },
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Should status page subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should status page subscribers be notified about this state change?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Episode State Timeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -145,20 +145,20 @@ func (r *IncidentEpisodeStateTimelineResource) Schema(ctx context.Context, req r
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of state change?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "state_change_log": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "subscriber_notification_status": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers about this state change. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of notification sent to subscribers about this state change. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode State Timeline, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

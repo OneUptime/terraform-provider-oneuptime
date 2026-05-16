@@ -88,15 +88,15 @@ func (d *OnCallDutyPolicyFeedDataDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire onCallDutyPolicy state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On Call Duty Policy Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On Call Duty Policy Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Log of the entire onCallDutyPolicy state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On Call Duty Policy Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On Call Duty Policy Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On Call Duty Policy Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On Call Duty Policy Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On Call Duty Policy Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On Call Duty Policy Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "on_call_duty_policy_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "On Call Duty Policy Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On Call Duty Policy Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On Call Duty Policy Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "On Call Duty Policy Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On Call Duty Policy Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On Call Duty Policy Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "display_color": schema.StringAttribute{

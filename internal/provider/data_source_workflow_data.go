@@ -81,11 +81,11 @@ func (d *WorkflowDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Manager, Read Workflow, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Manager], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Manager, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Admin, Workflow Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -97,20 +97,20 @@ func (d *WorkflowDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Is this workflow enabled?. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Manager], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Manager, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Is this workflow enabled?. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Admin, Workflow Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
             },
             "graph": schema.StringAttribute{
-                MarkdownDescription: "Workflow Graph in JSON. Ideally, create this via UI and not via API.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Manager], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Manager, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Workflow Graph in JSON. Ideally, create this via UI and not via API.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Admin, Workflow Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Manager], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Manager, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Create Workflow, Project Member, Workflow Admin, Workflow Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Delete Workflow, Edit Workflow]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "webhook_secret_key": schema.StringAttribute{
-                MarkdownDescription: "Secret key used to trigger this workflow via webhook. Use this instead of the workflow ID for security.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Manager, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow]",
+                MarkdownDescription: "Secret key used to trigger this workflow via webhook. Use this instead of the workflow ID for security.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow]",
                 Computed: true,
             },
         },

@@ -68,7 +68,7 @@ func (r *MetricTypeResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Telemetry Manager, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Telemetry Manager, Edit Incident]",
+                MarkdownDescription: "List of services this metric is related to. Permissions - Create: [Project Owner, Project Admin, Project Member, Telemetry Admin, Telemetry Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Telemetry Admin, Telemetry Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -84,11 +84,11 @@ func (r *MetricTypeResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -96,7 +96,7 @@ func (r *MetricTypeResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Metrics, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

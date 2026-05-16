@@ -82,11 +82,11 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incident episode owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Name of this incident episode owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident episode owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Description of this incident episode owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -94,7 +94,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -103,7 +103,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -112,7 +112,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -121,7 +121,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -130,7 +130,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -138,7 +138,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -146,7 +146,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -155,7 +155,7 @@ func (r *IncidentEpisodeOwnerRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

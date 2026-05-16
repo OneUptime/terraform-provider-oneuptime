@@ -85,11 +85,11 @@ func (d *StatusPageGroupDataDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Group, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description for this group. This is visible on Status Page. This can be in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Group]",
+                MarkdownDescription: "Description for this group. This is visible on Status Page. This can be in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -97,23 +97,23 @@ func (d *StatusPageGroupDataDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Group]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
                 Computed: true,
             },
             "is_expanded_by_default": schema.BoolAttribute{
-                MarkdownDescription: "Is this group expanded by default on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Group]",
+                MarkdownDescription: "Is this group expanded by default on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
                 Computed: true,
             },
             "show_current_status": schema.BoolAttribute{
-                MarkdownDescription: "Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Group]",
+                MarkdownDescription: "Show current status like offline, operational or degraded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
                 Computed: true,
             },
             "show_uptime_percent": schema.BoolAttribute{
-                MarkdownDescription: "Show uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Group]",
+                MarkdownDescription: "Show uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
                 Computed: true,
             },
             "uptime_percent_precision": schema.StringAttribute{
-                MarkdownDescription: "Precision of uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Status Page Group]",
+                MarkdownDescription: "Precision of uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
                 Computed: true,
             },
         },

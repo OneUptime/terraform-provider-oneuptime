@@ -31,4 +31,4 @@ data "oneuptime_incident_template_team_owner_data" "example" {
 - `incident_template_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read IncidentTemplate Team Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read IncidentTemplate Team Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.

@@ -100,7 +100,7 @@ func (d *IncidentSlaDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current SLA status (On Track, At Risk, Breached, Met). Permissions - Create: [Project Owner, Project Admin, Create Incident SLA], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA]",
+                MarkdownDescription: "Current SLA status (On Track, At Risk, Breached, Met). Permissions - Create: [Project Owner, Project Admin, Create Incident SLA], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA]",
                 Computed: true,
             },
             "responded_at": schema.StringAttribute{

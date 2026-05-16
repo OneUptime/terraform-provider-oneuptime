@@ -30,6 +30,6 @@ data "oneuptime_incident_member_data" "example" {
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incident_role_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `notes` (String) Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Manager, Create Incident Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Member, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Manager, Edit Incident Member]. Computed.
+- `notes` (String) Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Member, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Member]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

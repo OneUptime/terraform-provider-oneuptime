@@ -80,11 +80,11 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incident episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "Name of this incident episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "Description of this incident episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,7 +92,7 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -101,7 +101,7 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -110,7 +110,7 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -119,7 +119,7 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -127,7 +127,7 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -135,7 +135,7 @@ func (r *IncidentEpisodeOnCallRuleResource) Schema(ctx context.Context, req reso
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an incident episode matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
+                MarkdownDescription: "On-call duty policies to execute when an incident episode matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

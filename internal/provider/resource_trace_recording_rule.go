@@ -83,7 +83,7 @@ func (r *TraceRecordingRuleResource) Schema(ctx context.Context, req resource.Sc
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "What this recording rule computes and why.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
+                MarkdownDescription: "What this recording rule computes and why.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,11 +91,11 @@ func (r *TraceRecordingRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "output_metric_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the new metric this rule writes (e.g. http.error_rate). Must be unique per project.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
+                MarkdownDescription: "Name of the new metric this rule writes (e.g. http.error_rate). Must be unique per project.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
                 Required: true,
             },
             "definition": schema.StringAttribute{
-                MarkdownDescription: "Sources (aliased span aggregations), arithmetic expression, and optional group-by attribute.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
+                MarkdownDescription: "Sources (aliased span aggregations), arithmetic expression, and optional group-by attribute.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -104,7 +104,7 @@ func (r *TraceRecordingRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is evaluated by the recording rule cron.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
+                MarkdownDescription: "Whether this rule is evaluated by the recording rule cron.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -113,7 +113,7 @@ func (r *TraceRecordingRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Evaluation order when multiple rules exist.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Manager, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
+                MarkdownDescription: "Evaluation order when multiple rules exist.. Permissions - Create: [Project Owner, Project Admin, Create Trace Recording Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Recording Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Recording Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

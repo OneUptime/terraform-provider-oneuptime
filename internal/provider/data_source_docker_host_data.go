@@ -86,19 +86,19 @@ func (d *DockerHostDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description for this Docker host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Docker Host]",
+                MarkdownDescription: "Friendly description for this Docker host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Docker Host]",
                 Computed: true,
             },
             "host_identifier": schema.StringAttribute{
-                MarkdownDescription: "Unique identifier for this Docker host, sourced from the host.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Docker Host]",
+                MarkdownDescription: "Unique identifier for this Docker host, sourced from the host.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Docker Host]",
                 Computed: true,
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -106,23 +106,23 @@ func (d *DockerHostDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "containers_running": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of running containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Cached count of running containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Computed: true,
             },
             "containers_stopped": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of stopped containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Cached count of stopped containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Computed: true,
             },
             "containers_paused": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of paused containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Cached count of paused containers on this host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Computed: true,
             },
             "os_type": schema.StringAttribute{
-                MarkdownDescription: "Operating system type of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Operating system type of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Computed: true,
             },
             "os_version": schema.StringAttribute{
-                MarkdownDescription: "Operating system version of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                MarkdownDescription: "Operating system version of the Docker host. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -134,7 +134,7 @@ func (d *DockerHostDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit Docker Host]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Docker Host]",
                 Computed: true,
                 ElementType: types.StringType,
             },

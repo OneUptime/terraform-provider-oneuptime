@@ -98,11 +98,11 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this alert episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "Title of this alert episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert episode. This is in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "Description of this alert episode. This is in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -110,7 +110,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "episode_number": schema.NumberAttribute{
-                MarkdownDescription: "Auto-incrementing episode number per project. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Auto-incrementing episode number per project. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -134,7 +134,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "User-documented root cause of this episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "User-documented root cause of this episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -184,7 +184,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for this episode.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "List of on-call duty policies to execute for this episode.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -193,7 +193,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "title_template": schema.StringAttribute{
-                MarkdownDescription: "Template used to generate the episode title. Stored for dynamic variable updates.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Template used to generate the episode title. Stored for dynamic variable updates.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -201,7 +201,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "description_template": schema.StringAttribute{
-                MarkdownDescription: "Template used to generate the episode description. Stored for dynamic variable updates.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Template used to generate the episode description. Stored for dynamic variable updates.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -209,7 +209,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "is_manually_created": schema.BoolAttribute{
-                MarkdownDescription: "Whether this episode was manually created vs auto-created by a rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Whether this episode was manually created vs auto-created by a rule. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -218,7 +218,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -227,7 +227,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "grouping_key": schema.StringAttribute{
-                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -235,7 +235,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "User-documented remediation steps and notes for this episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "User-documented remediation steps and notes for this episode. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -243,7 +243,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "post_updates_to_workspace_channels": schema.StringAttribute{
-                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams). Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -252,7 +252,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Manager, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Manager, Edit Alert Episode]",
+                MarkdownDescription: "If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Episode]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -280,7 +280,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "episode_number_with_prefix": schema.StringAttribute{
-                MarkdownDescription: "Episode number with prefix (e.g., 'AE-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Episode number with prefix (e.g., 'AE-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "all_alerts_resolved_at": schema.StringAttribute{
@@ -289,11 +289,11 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "is_on_call_policy_executed": schema.BoolAttribute{
-                MarkdownDescription: "Whether the on-call policy has been executed for this episode. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Whether the on-call policy has been executed for this episode. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "alert_count": schema.NumberAttribute{
-                MarkdownDescription: "Denormalized count of alerts in this episode. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Denormalized count of alerts in this episode. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -301,7 +301,7 @@ func (r *AlertEpisodeResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "is_owner_notified_of_episode_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified when this episode is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified when this episode is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

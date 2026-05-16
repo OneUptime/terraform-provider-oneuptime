@@ -91,11 +91,11 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this SLA rule. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Name of this SLA rule. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this SLA rule. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Description of this SLA rule. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -103,7 +103,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order/priority of this rule. Rules are evaluated in order (lowest first). First matching rule wins.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Order/priority of this rule. Rules are evaluated in order (lowest first). First matching rule wins.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
@@ -112,7 +112,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this SLA rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Whether this SLA rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -121,7 +121,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "response_time_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Target response time in minutes. This is the maximum time allowed before the incident must be acknowledged.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Target response time in minutes. This is the maximum time allowed before the incident must be acknowledged.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -129,7 +129,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "resolution_time_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -137,7 +137,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "at_risk_threshold_in_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of the deadline at which the SLA status changes to At Risk. For example, 80 means the status becomes At Risk when 80% of the time has elapsed.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Percentage of the deadline at which the SLA status changes to At Risk. For example, 80 means the status becomes At Risk when 80% of the time has elapsed.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(80)),
@@ -146,7 +146,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "internal_note_reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "How often (in minutes) to automatically post internal notes to unresolved incidents. Internal notes are only visible to your team. For example, set to 30 to remind your team every 30 minutes to provide an update. Leave empty to disable.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -154,7 +154,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "public_note_reminder_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often (in minutes) to automatically post public notes to unresolved incidents. Public notes are visible to external stakeholders on your status page. For example, set to 60 to post a status update every hour. Leave empty to disable.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "How often (in minutes) to automatically post public notes to unresolved incidents. Public notes are visible to external stakeholders on your status page. For example, set to 60 to post a status update every hour. Leave empty to disable.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -162,7 +162,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "internal_note_reminder_template": schema.StringAttribute{
-                MarkdownDescription: "The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "The content of the automatic internal note posted to your team. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -170,7 +170,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "public_note_reminder_template": schema.StringAttribute{
-                MarkdownDescription: "The content of the automatic public note shown on your status page. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "The content of the automatic public note shown on your status page. Use variables like {{incidentTitle}}, {{elapsedTime}}, {{slaStatus}}, {{timeToResolutionDeadline}} to include dynamic incident data. If left empty, a default template will be used.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -178,7 +178,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents affecting these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Only apply this SLA rule to incidents affecting these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -187,7 +187,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Only apply this SLA rule to incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -196,7 +196,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents that have at least one of these labels. Leave empty to match incidents regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Only apply this SLA rule to incidents that have at least one of these labels. Leave empty to match incidents regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -205,7 +205,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -214,7 +214,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -222,7 +222,7 @@ func (r *IncidentSlaRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Manager, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident SLA Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident SLA Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident SLA Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

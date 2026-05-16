@@ -80,11 +80,11 @@ func (r *OnCallPolicyScheduleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy Schedule]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Schedule]",
                 Required: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy Schedule]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Schedule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -93,7 +93,7 @@ func (r *OnCallPolicyScheduleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Manager, Edit On-Call Duty Policy Schedule]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Schedule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -120,7 +120,7 @@ func (r *OnCallPolicyScheduleResource) Schema(ctx context.Context, req resource.
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

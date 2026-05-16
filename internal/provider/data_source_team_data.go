@@ -79,11 +79,11 @@ func (d *TeamDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Teams, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -91,19 +91,19 @@ func (d *TeamDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "is_permissions_editable": schema.BoolAttribute{
-                MarkdownDescription: "Can you edit team permissions? Teams auto-created for you are uneditable but you should be able to edit permissions on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Can you edit team permissions? Teams auto-created for you are uneditable but you should be able to edit permissions on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_team_deleteable": schema.BoolAttribute{
-                MarkdownDescription: "Can you delete this team? Teams auto-created for you are not deleteable but you should be able to delete permissions on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Can you delete this team? Teams auto-created for you are not deleteable but you should be able to delete permissions on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "should_have_at_least_one_member": schema.BoolAttribute{
-                MarkdownDescription: "Can this team have no members? Owner team should have at least 1 member, other teams can have no members. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Can this team have no members? Owner team should have at least 1 member, other teams can have no members. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_team_editable": schema.BoolAttribute{
-                MarkdownDescription: "Can you edit team? Teams auto-created for you are uneditable but you should be able to edit on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Can you edit team? Teams auto-created for you are uneditable but you should be able to edit on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Edit Team, Edit Team Permissions, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

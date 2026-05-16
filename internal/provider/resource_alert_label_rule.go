@@ -85,11 +85,11 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this alert label rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Name of this alert label rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert label rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Description of this alert label rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -97,7 +97,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -106,7 +106,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -115,7 +115,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -124,7 +124,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts that already have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts that already have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -133,7 +133,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -142,7 +142,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "alert_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -150,7 +150,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "alert_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -158,7 +158,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor name.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor name.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -166,7 +166,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the alert's monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -174,7 +174,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the alert when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "Labels to attach to the alert when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -183,7 +183,7 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "inherit_labels_from_monitors": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also copy every label of the alert's monitor onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Manager, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's monitor onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

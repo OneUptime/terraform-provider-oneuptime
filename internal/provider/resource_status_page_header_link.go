@@ -76,15 +76,15 @@ func (r *StatusPageHeaderLinkResource) Schema(ctx context.Context, req resource.
                 Required: true,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Header Link]",
+                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Header Link]",
                 Required: true,
             },
             "link": schema.StringAttribute{
-                MarkdownDescription: "URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Header Link]",
+                MarkdownDescription: "URL to a website or any other resource on the internet. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Header Link]",
                 Required: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Manager, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Manager, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Manager, Edit Header Link]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Header Link], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Header Link, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Header Link]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

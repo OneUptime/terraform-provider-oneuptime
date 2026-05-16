@@ -82,7 +82,7 @@ func (d *AiAgentTaskDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent Task]",
+                MarkdownDescription: "Description of the AI Agent Task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent Task]",
                 Computed: true,
             },
             "ai_agent_id": schema.StringAttribute{
@@ -90,19 +90,19 @@ func (d *AiAgentTaskDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "task_type": schema.StringAttribute{
-                MarkdownDescription: "Type of task to be performed by the AI agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent Task, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of task to be performed by the AI agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent Task, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of the task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent Task]",
+                MarkdownDescription: "Current status of the task.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent Task]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "A message describing the current status or result of the task.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent Task]",
+                MarkdownDescription: "A message describing the current status or result of the task.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent Task]",
                 Computed: true,
             },
             "metadata": schema.StringAttribute{
-                MarkdownDescription: "Task-specific metadata containing context for the AI agent. Structure varies based on task type.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Manager, Edit AI Agent Task]",
+                MarkdownDescription: "Task-specific metadata containing context for the AI agent. Structure varies based on task type.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit AI Agent Task]",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -118,7 +118,7 @@ func (d *AiAgentTaskDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "task_number": schema.NumberAttribute{
-                MarkdownDescription: "A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Manager, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read AI Agent Task, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "A unique, sequential number assigned to each AI Agent Task within a project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read AI Agent Task, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

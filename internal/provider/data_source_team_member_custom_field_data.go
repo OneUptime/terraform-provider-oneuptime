@@ -76,11 +76,11 @@ func (d *TeamMemberCustomFieldDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Member Custom Field]",
+                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Member Custom Field]",
                 Computed: true,
             },
             "custom_field_type": schema.StringAttribute{
-                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Manager, Read Team Member Custom Field, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

@@ -97,7 +97,7 @@ func (d *OnCallTimeLogDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "more_info": schema.StringAttribute{
-                MarkdownDescription: "More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Manager], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Manager, Create On-Call Policy Time Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Create On-Call Policy Time Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
