@@ -93,7 +93,7 @@ func (d *AlertUserOwnerDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert User Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert User Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert User Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert User Owner], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

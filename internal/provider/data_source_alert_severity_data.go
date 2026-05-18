@@ -78,11 +78,11 @@ func (d *AlertSeverityDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Severity, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Severity], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert Severity]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Severity], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert Severity]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -98,7 +98,7 @@ func (d *AlertSeverityDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert Severity]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Severity], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert Severity]",
                 Computed: true,
             },
         },

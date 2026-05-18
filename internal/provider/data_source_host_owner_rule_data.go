@@ -82,37 +82,37 @@ func (d *HostOwnerRuleDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this host owner rule. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Description of this host owner rule. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
             },
             "host_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for hosts that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Only trigger for hosts that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "host_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the host name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the host name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
             },
             "host_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the host description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the host description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the host when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the host when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the host when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the host when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Host Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Host Owner Rule], Update: [Project Owner, Project Admin, Edit Host Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

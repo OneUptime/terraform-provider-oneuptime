@@ -82,37 +82,37 @@ func (d *StatusPageOwnerRuleDataDataSource) Schema(ctx context.Context, req data
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this status page owner rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Description of this status page owner rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
             },
             "status_page_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for status pages that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Only trigger for status pages that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "status_page_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the status page name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the status page name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
             },
             "status_page_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the status page description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the status page description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the status page when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the status page when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the status page when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the status page when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Owner Rule], Update: [Project Owner, Project Admin, Edit Status Page Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

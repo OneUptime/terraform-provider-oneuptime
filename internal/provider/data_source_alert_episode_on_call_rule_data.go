@@ -81,33 +81,33 @@ func (d *AlertEpisodeOnCallRuleDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Description of this alert episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Computed: true,
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Computed: true,
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an alert episode matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "On-call duty policies to execute when an alert episode matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

@@ -80,7 +80,7 @@ func (d *ProjectUserProfileDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Logged in User]",
+                MarkdownDescription: "Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Team Member Custom Field], Update: [Project Owner, Project Admin, Logged in User]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

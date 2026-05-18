@@ -79,11 +79,11 @@ func (r *KubernetesClusterLabelRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this Kubernetes cluster label rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
+                MarkdownDescription: "Name of this Kubernetes cluster label rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this Kubernetes cluster label rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
+                MarkdownDescription: "Description of this Kubernetes cluster label rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *KubernetesClusterLabelRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -100,7 +100,7 @@ func (r *KubernetesClusterLabelRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "kubernetes_cluster_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for Kubernetes clusters that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
+                MarkdownDescription: "Only trigger for Kubernetes clusters that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -109,7 +109,7 @@ func (r *KubernetesClusterLabelRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "kubernetes_cluster_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *KubernetesClusterLabelRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "kubernetes_cluster_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -125,7 +125,7 @@ func (r *KubernetesClusterLabelRuleResource) Schema(ctx context.Context, req res
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the Kubernetes cluster when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
+                MarkdownDescription: "Labels to attach to the Kubernetes cluster when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Label Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

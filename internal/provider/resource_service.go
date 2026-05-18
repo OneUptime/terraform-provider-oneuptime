@@ -83,11 +83,11 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -95,7 +95,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -121,7 +121,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "tech_stack": schema.StringAttribute{
-                MarkdownDescription: "Tech stack used in the service. This will help other developers understand the service better.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Tech stack used in the service. This will help other developers understand the service better.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -130,7 +130,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this service. Leave blank to use the project-wide default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Number of days to retain telemetry data for this service. Leave blank to use the project-wide default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -138,7 +138,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "metric_cardinality_budget": schema.NumberAttribute{
-                MarkdownDescription: "Max number of distinct metric series this service may emit per metric. When exceeded, the highest-cardinality attribute is auto-bucketed. Null inherits the project default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Max number of distinct metric series this service may emit per metric. When exceeded, the highest-cardinality attribute is auto-bucketed. Null inherits the project default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -146,7 +146,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "metric_downsampling_retention_days": schema.StringAttribute{
-                MarkdownDescription: "Per-tier retention override (raw, 1m, 5m, 1h, 1d) in days. Null fields inherit the project default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Per-tier retention override (raw, 1m, 5m, 1h, 1d) in days. Null fields inherit the project default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -174,7 +174,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

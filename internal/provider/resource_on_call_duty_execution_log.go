@@ -122,15 +122,15 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status message of this execution. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "user_notification_event_type": schema.StringAttribute{
-                MarkdownDescription: "Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of event that triggered this on-call duty policy.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "acknowledged_by_user_id": schema.StringAttribute{

@@ -23,7 +23,7 @@ resource "oneuptime_project_user_profile" "example" {
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `custom_fields` (String) Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Logged in User]. Computed.
+- `custom_fields` (String) Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Team Member Custom Field], Update: [Project Owner, Project Admin, Logged in User]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

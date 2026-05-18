@@ -82,37 +82,37 @@ func (d *OnCallPolicyOwnerRuleDataDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this on-call policy owner rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Description of this on-call policy owner rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
             },
             "on_call_duty_policy_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for on-call policies that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Only trigger for on-call policies that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "on_call_duty_policy_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
             },
             "on_call_duty_policy_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the on-call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the on-call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the on-call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the on-call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

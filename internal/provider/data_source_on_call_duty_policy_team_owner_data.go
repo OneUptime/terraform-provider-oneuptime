@@ -93,7 +93,7 @@ func (d *OnCallDutyPolicyTeamOwnerDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On Call Duty Policy Team Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On Call Duty Policy Team Owner], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

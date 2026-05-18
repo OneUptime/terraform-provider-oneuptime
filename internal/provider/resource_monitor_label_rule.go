@@ -79,11 +79,11 @@ func (r *MonitorLabelRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this monitor label rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Name of this monitor label rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this monitor label rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Description of this monitor label rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *MonitorLabelRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -100,7 +100,7 @@ func (r *MonitorLabelRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for monitors that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Only trigger for monitors that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -109,7 +109,7 @@ func (r *MonitorLabelRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *MonitorLabelRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -125,7 +125,7 @@ func (r *MonitorLabelRuleResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the monitor when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Labels to attach to the monitor when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

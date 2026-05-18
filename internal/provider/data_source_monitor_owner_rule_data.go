@@ -82,37 +82,37 @@ func (d *MonitorOwnerRuleDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this monitor owner rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Description of this monitor owner rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for monitors that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Only trigger for monitors that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the monitor when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the monitor when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the monitor when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the monitor when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Owner Rule], Update: [Project Owner, Project Admin, Edit Monitor Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

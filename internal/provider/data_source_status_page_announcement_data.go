@@ -85,17 +85,17 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "Status Pages to show show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Status Pages to show show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors affected by this announcement. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "List of monitors affected by this announcement. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Title of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
                 Computed: true,
             },
             "show_announcement_at": schema.StringAttribute{
@@ -107,11 +107,11 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Text of the announcement. This can be in Markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Text of the announcement. This can be in Markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
                 Computed: true,
             },
             "attachments": schema.SetAttribute{
-                MarkdownDescription: "Files attached to this announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Files attached to this announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -120,19 +120,19 @@ func (d *StatusPageAnnouncementDataDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "subscriber_notification_status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
                 Computed: true,
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement]",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of this announcement?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

@@ -82,37 +82,37 @@ func (d *ServiceOwnerRuleDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this service owner rule. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Description of this service owner rule. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
             },
             "service_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for services that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Only trigger for services that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "service_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the service name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the service name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
             },
             "service_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the service description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the service description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the service when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the service when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the service when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the service when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Service Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Owner Rule], Update: [Project Owner, Project Admin, Edit Service Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

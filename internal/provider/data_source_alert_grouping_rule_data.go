@@ -107,119 +107,119 @@ func (d *AlertGroupingRuleDataDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Description of this alert grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "match_criteria": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the criteria for matching alerts to this rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "JSON object defining the criteria for matching alerts to this rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Only group alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Only group alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Only group alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Only group alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "alert_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "group_by_monitor": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts from different monitors will be grouped into separate episodes. When disabled, alerts from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "When enabled, alerts from different monitors will be grouped into separate episodes. When disabled, alerts from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "group_by_severity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts with different severities will be grouped into separate episodes. When disabled, alerts of any severity can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "When enabled, alerts with different severities will be grouped into separate episodes. When disabled, alerts of any severity can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "group_by_alert_title": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts with different titles will be grouped into separate episodes. When disabled, alerts with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "When enabled, alerts with different titles will be grouped into separate episodes. When disabled, alerts with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "group_by_service": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts from monitors belonging to different services will be grouped into separate episodes. When disabled, alerts can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "When enabled, alerts from monitors belonging to different services will be grouped into separate episodes. When disabled, alerts can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "enable_time_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Enable time-based grouping. When enabled, alerts are grouped within the specified time window. When disabled, all matching alerts are grouped into a single ongoing episode regardless of time.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "time_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Rolling time window in minutes. Alerts are grouped if they arrive within this gap from the last alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Rolling time window in minutes. Alerts are grouped if they arrive within this gap from the last alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "group_by_fields": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the fields to group alerts by (e.g., monitorId, severity). Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "JSON object defining the fields to group alerts by (e.g., monitorId, severity). Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "episode_title_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{alertSeverity}}, {{monitorName}}, {{alertTitle}}, {{alertDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{alertSeverity}}, {{monitorName}}, {{alertTitle}}, {{alertDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "episode_description_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{alertSeverity}}, {{monitorName}}, {{alertTitle}}, {{alertDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{alertSeverity}}, {{monitorName}}, {{alertTitle}}, {{alertDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "enable_resolve_delay": schema.BoolAttribute{
-                MarkdownDescription: "Enable grace period before auto-resolving episode after all alerts resolve. Helps prevent rapid state changes during alert flapping.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Enable grace period before auto-resolving episode after all alerts resolve. Helps prevent rapid state changes during alert flapping.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "resolve_delay_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all alerts are resolved. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all alerts are resolved. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "enable_reopen_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "reopen_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "enable_inactivity_timeout": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new alerts arrive.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new alerts arrive.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "inactivity_timeout_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -232,17 +232,17 @@ func (d *AlertGroupingRuleDataDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Labels to automatically apply to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Labels to automatically apply to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Users to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                MarkdownDescription: "Teams to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

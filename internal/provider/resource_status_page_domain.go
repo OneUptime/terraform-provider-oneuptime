@@ -86,7 +86,7 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
                 Required: true,
             },
             "subdomain": schema.StringAttribute{
-                MarkdownDescription: "Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
+                MarkdownDescription: "Subdomain label for your status page such as 'status'. Leave blank or enter @ to use the root domain.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -94,7 +94,7 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "custom_certificate": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -102,7 +102,7 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "custom_certificate_key": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -110,7 +110,7 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "is_custom_certificate": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Domain]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Bool{
@@ -137,7 +137,7 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
                 Computed: true,
             },
             "full_domain": schema.StringAttribute{
-                MarkdownDescription: "Full domain of your status page (like status.acmeinc.com). This is autogenerated and is derived from subdomain and domain.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Full domain of your status page (like status.acmeinc.com). This is autogenerated and is derived from subdomain and domain.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -145,15 +145,15 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
                 Computed: true,
             },
             "is_cname_verified": schema.BoolAttribute{
-                MarkdownDescription: "Is CNAME Verified?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is CNAME Verified?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_ssl_ordered": schema.BoolAttribute{
-                MarkdownDescription: "Is SSL ordered?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is SSL ordered?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_ssl_provisioned": schema.BoolAttribute{
-                MarkdownDescription: "Is SSL provisioned?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is SSL provisioned?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Domain], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Domain], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

@@ -89,27 +89,27 @@ func (d *WebhookLogDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "webhook_url": schema.StringAttribute{
-                MarkdownDescription: "URL the request was sent to. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "URL the request was sent to. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "request_body": schema.StringAttribute{
-                MarkdownDescription: "JSON body that was POSTed to the webhook URL. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "JSON body that was POSTed to the webhook URL. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "response_status_code": schema.NumberAttribute{
-                MarkdownDescription: "HTTP status code returned by the webhook endpoint. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "HTTP status code returned by the webhook endpoint. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "response_body": schema.StringAttribute{
-                MarkdownDescription: "Response body returned by the webhook endpoint (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Response body returned by the webhook endpoint (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the Webhook request. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the Webhook request. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Webhook Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{

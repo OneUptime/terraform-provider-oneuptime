@@ -91,11 +91,11 @@ func (r *WorkflowLogResource) Schema(ctx context.Context, req resource.SchemaReq
                 Computed: true,
             },
             "logs": schema.StringAttribute{
-                MarkdownDescription: "Logs. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Logs. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "workflow_status": schema.StringAttribute{
-                MarkdownDescription: "Status of this workflow. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of this workflow. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{

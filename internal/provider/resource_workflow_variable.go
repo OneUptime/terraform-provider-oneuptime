@@ -83,11 +83,11 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Variable Name. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Variables, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Variables]",
+                MarkdownDescription: "Variable Name. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Variables], Update: [Project Owner, Project Admin, Edit Workflow Variables]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Variables, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Variables]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Variables], Update: [Project Owner, Project Admin, Edit Workflow Variables]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -99,7 +99,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 Required: true,
             },
             "is_secret": schema.BoolAttribute{
-                MarkdownDescription: "Is this variable a secret. If true, then it'll not be in the logs. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Variables, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this variable a secret. If true, then it'll not be in the logs. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Variables], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

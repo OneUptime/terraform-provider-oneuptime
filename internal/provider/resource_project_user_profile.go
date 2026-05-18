@@ -74,7 +74,7 @@ func (r *ProjectUserProfileResource) Schema(ctx context.Context, req resource.Sc
                 Required: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Logged in User]",
+                MarkdownDescription: "Custom Fields for this user in this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Team Member Custom Field], Update: [Project Owner, Project Admin, Logged in User]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

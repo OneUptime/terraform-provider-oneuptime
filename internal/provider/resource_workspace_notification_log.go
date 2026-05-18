@@ -103,35 +103,35 @@ func (r *WorkspaceNotificationLogResource) Schema(ctx context.Context, req resou
                 Computed: true,
             },
             "workspace_type": schema.StringAttribute{
-                MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of Workspace - Slack, Microsoft Teams. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "channel_id": schema.StringAttribute{
-                MarkdownDescription: "Channel ID where the message was sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Channel ID where the message was sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "channel_name": schema.StringAttribute{
-                MarkdownDescription: "Channel Name where the message was sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Channel Name where the message was sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "thread_id": schema.StringAttribute{
-                MarkdownDescription: "Thread ID of the message in the channel (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Thread ID of the message in the channel (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "message": schema.StringAttribute{
-                MarkdownDescription: "Content of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Content of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "action_type": schema.StringAttribute{
-                MarkdownDescription: "Type of workspace action performed. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of workspace action performed. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workspace Notification Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{

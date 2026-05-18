@@ -98,23 +98,23 @@ func (d *WhatsAppLogDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "message_text": schema.StringAttribute{
-                MarkdownDescription: "Text content of the WhatsApp message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Text content of the WhatsApp message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "whats_app_message_id": schema.StringAttribute{
-                MarkdownDescription: "Message ID returned by Meta's API. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Message ID returned by Meta's API. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the WhatsApp message sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the WhatsApp message sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "whats_app_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "WhatsApp Message Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "WhatsApp Message Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read WhatsApp Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{

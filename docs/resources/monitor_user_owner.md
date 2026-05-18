@@ -25,7 +25,7 @@ resource "oneuptime_monitor_user_owner" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor User Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor User Owner, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor User Owner], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor User Owner], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

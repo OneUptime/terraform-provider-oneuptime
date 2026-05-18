@@ -115,11 +115,11 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing, Edit Project]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]",
                 Required: true,
             },
             "payment_provider_plan_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -127,7 +127,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "business_details": schema.StringAttribute{
-                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -135,7 +135,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "business_details_country": schema.StringAttribute{
-                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE).. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE).. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -143,7 +143,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -151,7 +151,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "payment_provider_promo_code": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -159,7 +159,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "is_feature_flag_monitor_groups_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Is Feature Flag Monitor Groups Enabled. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing, Edit Project]",
+                MarkdownDescription: "Is Feature Flag Monitor Groups Enabled. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -176,7 +176,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Optional: true,
             },
             "incident_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -184,7 +184,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -192,7 +192,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "scheduled_maintenance_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -200,7 +200,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -208,7 +208,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -216,7 +216,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "send_invoices_by_email": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -229,7 +229,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Optional: true,
             },
             "enable_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -238,7 +238,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "audit_logs_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(7)),
@@ -247,7 +247,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "store_system_events_in_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -256,7 +256,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "require_sso_for_login": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -265,7 +265,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_recharge_sms_or_call_by_balance_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(20)),
@@ -274,7 +274,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_recharge_sms_or_call_when_current_balance_falls_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(10)),
@@ -283,7 +283,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_sms_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable SMS notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable SMS notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -292,7 +292,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_whats_app_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable WhatsApp notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable WhatsApp notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -301,7 +301,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_telegram_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable Telegram notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable Telegram notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -310,7 +310,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_call_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable call notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable call notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -319,7 +319,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -328,7 +328,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_ai_recharge_by_balance_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(20)),
@@ -337,7 +337,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_recharge_ai_when_current_balance_falls_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(10)),
@@ -346,7 +346,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_ai": schema.BoolAttribute{
-                MarkdownDescription: "Enable AI services for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable AI services for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -355,7 +355,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -364,7 +364,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "do_not_add_global_probes_by_default_on_new_monitors": schema.BoolAttribute{
-                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -373,7 +373,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "git_hub_app_installation_id": schema.StringAttribute{
-                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -381,7 +381,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "default_metric_cardinality_budget": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -389,7 +389,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "default_telemetry_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -397,7 +397,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "default_metric_downsampling_retention_days": schema.StringAttribute{
-                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -425,19 +425,19 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "payment_provider_subscription_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "payment_provider_metered_subscription_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "payment_provider_subscription_seats": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "trial_ends_at": schema.StringAttribute{
@@ -446,15 +446,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "payment_provider_customer_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "payment_provider_subscription_status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "payment_provider_metered_subscription_status": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -466,19 +466,19 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "workflow_runs_in_last30_days": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read Workflow, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read Workflow], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "sms_or_call_current_balance_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Balance in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Balance in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "ai_current_balance_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Balance in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Balance in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "plan_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the plan this project is subscribed to.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the plan this project is subscribed to.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "reseller_id": schema.StringAttribute{
@@ -490,7 +490,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "let_customer_support_access_project": schema.BoolAttribute{
-                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read All Project Resources], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
         },

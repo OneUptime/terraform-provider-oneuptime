@@ -99,31 +99,31 @@ func (d *IncomingCallLogDataDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "call_provider_call_id": schema.StringAttribute{
-                MarkdownDescription: "Call provider's call identifier. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Call provider's call identifier. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of the incoming call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Current status of the incoming call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Additional status information. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Additional status information. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "call_duration_in_seconds": schema.NumberAttribute{
-                MarkdownDescription: "Total call duration in seconds. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Total call duration in seconds. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "call_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Total cost for this call in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Total cost for this call in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incoming_call_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Cost for incoming leg in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Cost for incoming leg in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "outgoing_call_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Cost for all forwarding attempts in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Cost for all forwarding attempts in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -139,11 +139,11 @@ func (d *IncomingCallLogDataDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "current_escalation_rule_order": schema.NumberAttribute{
-                MarkdownDescription: "The current escalation rule order being processed. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The current escalation rule order being processed. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "repeat_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of times the policy has been repeated. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Number of times the policy has been repeated. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

@@ -77,11 +77,11 @@ func (r *EscalationRuleResource) Schema(ctx context.Context, req resource.Schema
                 Required: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -89,7 +89,7 @@ func (r *EscalationRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "escalate_after_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How long should we wait before we execute the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "How long should we wait before we execute the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -97,7 +97,7 @@ func (r *EscalationRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order of this rule. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
+                MarkdownDescription: "Order of this rule. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Escalation Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Escalation Rule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Escalation Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

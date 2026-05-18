@@ -81,11 +81,11 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this workflow owner rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Name of this workflow owner rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this workflow owner rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Description of this workflow owner rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -93,7 +93,7 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -102,7 +102,7 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -111,7 +111,7 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "workflow_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for workflows that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Only trigger for workflows that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -120,7 +120,7 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "workflow_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -128,7 +128,7 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "workflow_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -136,7 +136,7 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the workflow when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the workflow when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -145,7 +145,7 @@ func (r *WorkflowOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the workflow when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the workflow when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Owner Rule], Update: [Project Owner, Project Admin, Edit Workflow Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

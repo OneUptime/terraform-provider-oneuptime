@@ -70,7 +70,7 @@ func (r *AlertNoteTemplateResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "note": schema.StringAttribute{
-                MarkdownDescription: "Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Note Template]",
+                MarkdownDescription: "Note template for public or private notes. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Note Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -78,11 +78,11 @@ func (r *AlertNoteTemplateResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Note Template]",
+                MarkdownDescription: "Name of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Note Template]",
                 Required: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Note Template]",
+                MarkdownDescription: "Description of the Alert Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Note Template], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert Note Template]",
                 Required: true,
             },
             "created_at": schema.StringAttribute{

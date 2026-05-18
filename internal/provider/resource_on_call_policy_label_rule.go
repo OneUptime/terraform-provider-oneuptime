@@ -79,11 +79,11 @@ func (r *OnCallPolicyLabelRuleResource) Schema(ctx context.Context, req resource
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this on-call policy label rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
+                MarkdownDescription: "Name of this on-call policy label rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this on-call policy label rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
+                MarkdownDescription: "Description of this on-call policy label rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *OnCallPolicyLabelRuleResource) Schema(ctx context.Context, req resource
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -100,7 +100,7 @@ func (r *OnCallPolicyLabelRuleResource) Schema(ctx context.Context, req resource
                 },
             },
             "on_call_duty_policy_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for on-call policies that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
+                MarkdownDescription: "Only trigger for on-call policies that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -109,7 +109,7 @@ func (r *OnCallPolicyLabelRuleResource) Schema(ctx context.Context, req resource
                 },
             },
             "on_call_duty_policy_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *OnCallPolicyLabelRuleResource) Schema(ctx context.Context, req resource
                 },
             },
             "on_call_duty_policy_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call policy description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -125,7 +125,7 @@ func (r *OnCallPolicyLabelRuleResource) Schema(ctx context.Context, req resource
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the on-call policy when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
+                MarkdownDescription: "Labels to attach to the on-call policy when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Duty Policy Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Duty Policy Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Duty Policy Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

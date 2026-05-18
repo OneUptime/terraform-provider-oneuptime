@@ -87,20 +87,20 @@ func (d *TeamPermissionDataDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "permission": schema.StringAttribute{
-                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Invite New Members, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Invite New Members, Edit Team Permissions, Edit Team]",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "is_block_permission": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
                 Computed: true,
             },
             "scope": schema.StringAttribute{
-                MarkdownDescription: "Scope of this permission row. One of: All, Owned, Labels. Defaults to All so new permissions apply to every resource in the project unless explicitly narrowed.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
+                MarkdownDescription: "Scope of this permission row. One of: All, Owned, Labels. Defaults to All so new permissions apply to every resource in the project unless explicitly narrowed.. Permissions - Create: [Project Owner, Project Admin, Create Team, Edit Team Permissions], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team Permissions, Edit Team]",
                 Computed: true,
             },
         },

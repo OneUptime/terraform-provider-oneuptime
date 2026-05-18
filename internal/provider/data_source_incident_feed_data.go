@@ -88,15 +88,15 @@ func (d *IncidentFeedDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "feed_info_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "Log of the entire incident state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Log of the entire incident state change in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Feed], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "more_information_in_markdown": schema.StringAttribute{
-                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "More information in Markdown. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Feed], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_feed_event_type": schema.StringAttribute{
-                MarkdownDescription: "Incident Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Feed, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Incident Feed Event. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Feed], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Feed], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "display_color": schema.StringAttribute{

@@ -28,9 +28,9 @@ resource "oneuptime_email_log" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `to_email` (String) Email object. Computed.
 - `from_email` (String) Email object. Computed.
-- `subject` (String) Subject of the email sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Email Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
-- `status_message` (String) Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Email Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
-- `status` (String) Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Email Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `subject` (String) Subject of the email sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Email Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `status_message` (String) Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Email Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `status` (String) Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Email Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `project_smtp_config_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

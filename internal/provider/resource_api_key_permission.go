@@ -80,7 +80,7 @@ func (r *ApiKeyPermissionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "permission": schema.StringAttribute{
-                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key, Read All Project Resources], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
+                MarkdownDescription: "Permission. You can find list of permissions on the Permissions page.. Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -89,7 +89,7 @@ func (r *ApiKeyPermissionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key, Read All Project Resources], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
+                MarkdownDescription: "Relation to Labels Array where this permission is scoped at.. Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -98,7 +98,7 @@ func (r *ApiKeyPermissionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "is_block_permission": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key, Read All Project Resources], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create API Key, Edit API Key Permissions], Read: [Project Owner, Project Admin, Read API Key], Update: [Project Owner, Project Admin, Edit API Key Permissions, Edit API Key]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

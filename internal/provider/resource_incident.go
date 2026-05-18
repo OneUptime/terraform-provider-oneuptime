@@ -110,11 +110,11 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Title of this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Short description of this incident. This is in markdown and will be visible on the status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -131,7 +131,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "List of monitors affected by this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -140,7 +140,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "List of hosts affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -149,7 +149,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "List of on-call duty policies affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -158,7 +158,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -187,7 +187,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -195,7 +195,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "subscriber_notification_status_message_on_postmortem_published": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications on postmortem published - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Status message for subscriber notifications on postmortem published - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -203,7 +203,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "should_status_page_subscribers_be_notified_on_incident_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -212,7 +212,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -221,7 +221,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "root_cause": schema.StringAttribute{
-                MarkdownDescription: "What is the root cause of this incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "What is the root cause of this incident?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -229,7 +229,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "postmortem_note": schema.StringAttribute{
-                MarkdownDescription: "Document the postmortem summary for this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Document the postmortem summary for this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -237,7 +237,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "show_postmortem_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should the postmortem note and attachments be visible on the status page once published?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Should the postmortem note and attachments be visible on the status page once published?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -246,7 +246,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "notify_subscribers_on_postmortem_published": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified when the postmortem is published?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Should subscribers be notified when the postmortem is published?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -264,7 +264,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "postmortem_attachments": schema.SetAttribute{
-                MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Files that accompany the postmortem note and can be shared publicly when enabled.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -273,7 +273,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "remediation_notes": schema.StringAttribute{
-                MarkdownDescription: "Notes on how to remediate this incident. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Notes on how to remediate this incident. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -281,7 +281,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "telemetry_query": schema.StringAttribute{
-                MarkdownDescription: "Telemetry query for this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Telemetry query for this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -290,7 +290,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -299,7 +299,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "is_private": schema.BoolAttribute{
-                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -335,7 +335,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -343,36 +343,36 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "subscriber_notification_status_on_incident_created": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers about this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Status of notification sent to subscribers about this incident. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Computed: true,
             },
             "subscriber_notification_status_on_postmortem_published": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers about this incident postmortem. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                MarkdownDescription: "Status of notification sent to subscribers about this incident postmortem. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_state_log": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_criteria_id": schema.StringAttribute{
-                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the criteria that created it.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the criteria that created it.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "If this incident was created by a Probe, this is the ID of the incident template that was used for creation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "series_fingerprint": schema.StringAttribute{
-                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "For metric monitors with per-series alerting (e.g. grouped by host.name), this is a stable hash of the series label values so one incident is created per affected series.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "series_labels": schema.StringAttribute{
-                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Attribute key/value pairs that identify the affected series (e.g. {host.name: prod-db-01}) when this incident was created from a per-series metric breach.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -381,15 +381,15 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
             },
             "is_created_automatically": schema.BoolAttribute{
-                MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_number": schema.NumberAttribute{
-                MarkdownDescription: "Incident Number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Incident Number. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_number_with_prefix": schema.StringAttribute{
-                MarkdownDescription: "Incident number with prefix (e.g., 'INC-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Incident number with prefix (e.g., 'INC-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

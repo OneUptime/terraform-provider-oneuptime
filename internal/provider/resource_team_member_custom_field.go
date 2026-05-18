@@ -71,11 +71,11 @@ func (r *TeamMemberCustomFieldResource) Schema(ctx context.Context, req resource
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Member Custom Field]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field], Update: [Project Owner, Project Admin, Edit Team Member Custom Field]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Team Member Custom Field]",
+                MarkdownDescription: "Friendly description of this custom field that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field], Update: [Project Owner, Project Admin, Edit Team Member Custom Field]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -83,7 +83,7 @@ func (r *TeamMemberCustomFieldResource) Schema(ctx context.Context, req resource
                 },
             },
             "custom_field_type": schema.StringAttribute{
-                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Team Member Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Team Member Custom Field], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

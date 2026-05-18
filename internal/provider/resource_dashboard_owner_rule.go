@@ -81,11 +81,11 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this dashboard owner rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Name of this dashboard owner rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this dashboard owner rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Description of this dashboard owner rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -93,7 +93,7 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -102,7 +102,7 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -111,7 +111,7 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "dashboard_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for dashboards that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Only trigger for dashboards that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -120,7 +120,7 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "dashboard_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -128,7 +128,7 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "dashboard_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -136,7 +136,7 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -145,7 +145,7 @@ func (r *DashboardOwnerRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

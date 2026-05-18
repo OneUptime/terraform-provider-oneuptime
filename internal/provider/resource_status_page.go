@@ -137,11 +137,11 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Required: true,
             },
             "page_title": schema.StringAttribute{
-                MarkdownDescription: "Title of your Status Page. This is used for SEO.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Title of your Status Page. This is used for SEO.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -149,7 +149,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "page_description": schema.StringAttribute{
-                MarkdownDescription: "Description of your Status Page. This is used for SEO.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Description of your Status Page. This is used for SEO.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -157,7 +157,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -165,7 +165,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -198,7 +198,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "header_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Header. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Status Page Custom HTML Header. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -206,7 +206,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "footer_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Footer. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Status Page Custom HTML Footer. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -214,7 +214,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_css": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom CSS Header. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Status Page Custom CSS Header. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -222,7 +222,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_java_script": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -230,7 +230,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "is_public_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Is this status page public?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Is this status page public?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -239,7 +239,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_master_password": schema.BoolAttribute{
-                MarkdownDescription: "Require visitors to enter a master password before viewing a private status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Require visitors to enter a master password before viewing a private status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -248,7 +248,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "master_password": schema.StringAttribute{
-                MarkdownDescription: "Password required to unlock a private status page. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Password required to unlock a private status page. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -256,7 +256,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_incident_labels_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Incident Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Incident Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -265,7 +265,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_scheduled_event_labels_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Scheduled Event Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Scheduled Event Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -274,7 +274,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -283,7 +283,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_email_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can email subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can email subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -292,7 +292,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "allow_subscribers_to_choose_resources": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers choose which resources to subscribe to?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can subscribers choose which resources to subscribe to?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -301,7 +301,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "allow_subscribers_to_choose_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can subscribers choose which event type like Announcements, Incidents, Scheduled Events to subscribe to?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -310,7 +310,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_sms_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can SMS subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can SMS subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -319,7 +319,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_slack_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can Slack subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can Slack subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -328,7 +328,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_microsoft_teams_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can Microsoft Teams subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can Microsoft Teams subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -337,7 +337,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_webhook_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can Webhook subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Can Webhook subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -346,7 +346,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "copyright_text": schema.StringAttribute{
-                MarkdownDescription: "Copyright Text. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Copyright Text. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -354,7 +354,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -363,7 +363,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "require_sso_for_login": schema.BoolAttribute{
-                MarkdownDescription: "Should SSO be required to login to Private Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Public, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Should SSO be required to login to Private Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Public], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -388,7 +388,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_incident_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of incident history should be shown on the status page (in days)?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "How many days of incident history should be shown on the status page (in days)?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
@@ -397,7 +397,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_announcement_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of announcement history should be shown on the status page (in days)?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "How many days of announcement history should be shown on the status page (in days)?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
@@ -406,7 +406,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_scheduled_event_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of scheduled event history should be shown on the status page (in days)?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "How many days of scheduled event history should be shown on the status page (in days)?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
@@ -415,7 +415,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "overview_page_description": schema.StringAttribute{
-                MarkdownDescription: "Overview Page description for your status page. This is a markdown field.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Overview Page description for your status page. This is a markdown field.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -423,7 +423,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "hide_powered_by_one_uptime_branding": schema.BoolAttribute{
-                MarkdownDescription: "Hide Powered By OneUptime Branding?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Hide Powered By OneUptime Branding?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -441,7 +441,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "subscriber_timezones": schema.StringAttribute{
-                MarkdownDescription: "Timezones of subscribers to this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Timezones of subscribers to this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -450,7 +450,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "is_report_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Is Report Enabled for this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Is Report Enabled for this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -468,7 +468,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "report_recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often would you like to send the report?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "How often would you like to send the report?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -486,7 +486,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "report_data_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of data should be included in the report?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "How many days of data should be included in the report?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(30)),
@@ -495,7 +495,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_overall_uptime_percent_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Overall Uptime Percent on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Overall Uptime Percent on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -504,7 +504,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "overall_uptime_percent_precision": schema.StringAttribute{
-                MarkdownDescription: "Overall Precision of uptime percent for this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Overall Precision of uptime percent for this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("99.99% (Two Decimal)"),
@@ -513,7 +513,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "subscriber_email_notification_footer_text": schema.StringAttribute{
-                MarkdownDescription: "Text to send to subscribers in the footer of the email.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Text to send to subscribers in the footer of the email.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -521,7 +521,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_custom_subscriber_email_notification_footer_text": schema.BoolAttribute{
-                MarkdownDescription: "Enable custom footer text in subscriber email notifications.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Enable custom footer text in subscriber email notifications.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -530,7 +530,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_incidents_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Incidents on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Incidents on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -539,7 +539,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_announcements_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Announcements on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Announcements on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -548,7 +548,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_episodes_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Incident Episodes on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Incident Episodes on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -557,7 +557,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_episode_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of episode history to show on the status page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "How many days of episode history to show on the status page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(14)),
@@ -566,7 +566,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_episode_labels_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Episode Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Episode Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -575,7 +575,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_scheduled_maintenance_events_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Scheduled Maintenance Events on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Scheduled Maintenance Events on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -584,7 +584,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_subscriber_page_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Show Subscriber Page on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Show Subscriber Page on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -593,7 +593,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "ip_whitelist": schema.StringAttribute{
-                MarkdownDescription: "IP Whitelist for this Status Page. One IP per line. Only used if the status page is private.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "IP Whitelist for this Status Page. One IP per line. Only used if the status page is private.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -601,7 +601,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enable_embedded_overall_status": schema.BoolAttribute{
-                MarkdownDescription: "Enable embedded overall status badge that can be displayed on external websites?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Enable embedded overall status badge that can be displayed on external websites?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -610,7 +610,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "show_uptime_history_in_days": schema.NumberAttribute{
-                MarkdownDescription: "How many days of uptime history should be shown on the status page? Maximum is 90 days.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "How many days of uptime history should be shown on the status page? Maximum is 90 days.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(90)),
@@ -619,7 +619,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "embedded_overall_status_token": schema.StringAttribute{
-                MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Security token required to access the embedded overall status badge. This token must be provided in the URL.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -627,7 +627,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "default_language": schema.StringAttribute{
-                MarkdownDescription: "Default language that the status page is shown in when a visitor arrives for the first time.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Default language that the status page is shown in when a visitor arrives for the first time.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: stringdefault.StaticString("en"),
@@ -636,7 +636,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "enabled_languages": schema.StringAttribute{
-                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "Languages offered in the footer language switcher. Leave empty to offer all supported languages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -664,7 +664,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -672,11 +672,11 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "downtime_monitor_statuses": schema.SetAttribute{
-                MarkdownDescription: "List of monitors statuses that are considered as \"down\" for this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                MarkdownDescription: "List of monitors statuses that are considered as \"down\" for this status page.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Computed: true,
                 ElementType: types.StringType,
             },

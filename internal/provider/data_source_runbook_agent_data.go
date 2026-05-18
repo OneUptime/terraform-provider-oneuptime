@@ -82,15 +82,15 @@ func (d *RunbookAgentDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Optional description for this agent. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
+                MarkdownDescription: "Optional description for this agent. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Secret key the agent presents on every request. Never share this key. Reset it to revoke the agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Runbook Admin, Runbook Member, Runbook Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
+                MarkdownDescription: "Secret key the agent presents on every request. Never share this key. Reset it to revoke the agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Runbook Admin, Runbook Member, Runbook Viewer], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
                 Computed: true,
             },
             "agent_version": schema.StringAttribute{
@@ -102,11 +102,11 @@ func (d *RunbookAgentDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "connection_status": schema.StringAttribute{
-                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "host_info": schema.StringAttribute{
-                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -114,7 +114,7 @@ func (d *RunbookAgentDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Edit Runbook Agent]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Edit Runbook Agent]",
                 Computed: true,
                 ElementType: types.StringType,
             },

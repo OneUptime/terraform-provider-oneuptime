@@ -97,19 +97,19 @@ func (d *SmsLogDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "sms_text": schema.StringAttribute{
-                MarkdownDescription: "Text content of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Text content of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "sms_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "SMS Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "SMS Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{

@@ -27,8 +27,8 @@ resource "oneuptime_ai_agent_task_log" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `ai_agent_task_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `severity` (String) Severity level of this log entry (e.g., Information, Warning, Error).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
-- `message` (String) The log message content.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
+- `severity` (String) Severity level of this log entry (e.g., Information, Warning, Error).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
+- `message` (String) The log message content.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

@@ -23,15 +23,15 @@ resource "oneuptime_incident_severity" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Incident Admin, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Incident Admin, Edit Incident Severity]. Required.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Incident Admin, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Incident Admin, Edit Incident Severity]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Incident Admin, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity], Update: [Project Owner, Project Admin, Incident Admin, Edit Incident Severity]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Incident Admin, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity], Update: [Project Owner, Project Admin, Incident Admin, Edit Incident Severity]. Computed.
 - `color` (String) Color object. Required.
-- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Incident Admin, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity, Read All Project Resources], Update: [Project Owner, Project Admin, Incident Admin, Edit Incident Severity]. Computed.
+- `order` (Number) Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Incident Admin, Create Incident Severity], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity], Update: [Project Owner, Project Admin, Incident Admin, Edit Incident Severity]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
-- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Severity], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

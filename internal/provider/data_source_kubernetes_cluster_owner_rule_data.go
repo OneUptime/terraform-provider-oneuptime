@@ -82,37 +82,37 @@ func (d *KubernetesClusterOwnerRuleDataDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this Kubernetes cluster owner rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Description of this Kubernetes cluster owner rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
             },
             "kubernetes_cluster_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for Kubernetes clusters that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Only trigger for Kubernetes clusters that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "kubernetes_cluster_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
             },
             "kubernetes_cluster_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the Kubernetes cluster description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the Kubernetes cluster when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the Kubernetes cluster when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the Kubernetes cluster when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the Kubernetes cluster when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Kubernetes Cluster Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Kubernetes Cluster Owner Rule], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

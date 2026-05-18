@@ -27,8 +27,8 @@ data "oneuptime_label_data" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Label, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Label, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Label]. Computed.
+- `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Label], Update: [No access - you don't have permission for this operation]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Label], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Label], Update: [Project Owner, Project Admin, Edit Label]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `color` (String) Color object. Computed.

@@ -79,11 +79,11 @@ func (r *StatusPageLabelRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this status page label rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
+                MarkdownDescription: "Name of this status page label rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this status page label rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
+                MarkdownDescription: "Description of this status page label rule. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *StatusPageLabelRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -100,7 +100,7 @@ func (r *StatusPageLabelRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "status_page_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for status pages that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
+                MarkdownDescription: "Only trigger for status pages that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -109,7 +109,7 @@ func (r *StatusPageLabelRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "status_page_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the status page name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the status page name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *StatusPageLabelRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "status_page_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the status page description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the status page description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -125,7 +125,7 @@ func (r *StatusPageLabelRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the status page when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
+                MarkdownDescription: "Labels to attach to the status page when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page Label Rule], Update: [Project Owner, Project Admin, Edit Status Page Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

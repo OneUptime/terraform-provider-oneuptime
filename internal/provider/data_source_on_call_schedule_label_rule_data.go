@@ -80,28 +80,28 @@ func (d *OnCallScheduleLabelRuleDataDataSource) Schema(ctx context.Context, req 
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this on-call schedule label rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
+                MarkdownDescription: "Description of this on-call schedule label rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
                 Computed: true,
             },
             "on_call_duty_policy_schedule_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for on-call schedules that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
+                MarkdownDescription: "Only trigger for on-call schedules that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "on_call_duty_policy_schedule_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
                 Computed: true,
             },
             "on_call_duty_policy_schedule_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
                 Computed: true,
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the on-call schedule when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
+                MarkdownDescription: "Labels to attach to the on-call schedule when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Label Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

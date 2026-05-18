@@ -84,7 +84,7 @@ func (r *TraceDropFilterResource) Schema(ctx context.Context, req resource.Schem
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of what this drop filter does.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
+                MarkdownDescription: "Description of what this drop filter does.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,15 +92,15 @@ func (r *TraceDropFilterResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "filter_query": schema.StringAttribute{
-                MarkdownDescription: "Filter expression that identifies which spans to drop or sample.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
+                MarkdownDescription: "Filter expression that identifies which spans to drop or sample.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
                 Required: true,
             },
             "action": schema.StringAttribute{
-                MarkdownDescription: "What to do with matching spans: 'drop' to discard entirely, 'sample' to keep a percentage.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
+                MarkdownDescription: "What to do with matching spans: 'drop' to discard entirely, 'sample' to keep a percentage.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
                 Required: true,
             },
             "sample_percentage": schema.NumberAttribute{
-                MarkdownDescription: "When action is 'sample', the percentage of matching spans to keep (1-99).. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
+                MarkdownDescription: "When action is 'sample', the percentage of matching spans to keep (1-99).. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -108,7 +108,7 @@ func (r *TraceDropFilterResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this drop filter is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
+                MarkdownDescription: "Whether this drop filter is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -117,7 +117,7 @@ func (r *TraceDropFilterResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the evaluation order of this filter relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
+                MarkdownDescription: "Determines the evaluation order of this filter relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

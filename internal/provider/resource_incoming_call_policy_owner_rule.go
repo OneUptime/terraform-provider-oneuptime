@@ -81,11 +81,11 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incoming call policy owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Name of this incoming call policy owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incoming call policy owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Description of this incoming call policy owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -93,7 +93,7 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -102,7 +102,7 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -111,7 +111,7 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "incoming_call_policy_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incoming call policies that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Only trigger for incoming call policies that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -120,7 +120,7 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "incoming_call_policy_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incoming call policy name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incoming call policy name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -128,7 +128,7 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "incoming_call_policy_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incoming call policy description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incoming call policy description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -136,7 +136,7 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the incoming call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the incoming call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -145,7 +145,7 @@ func (r *IncomingCallPolicyOwnerRuleResource) Schema(ctx context.Context, req re
                 },
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the incoming call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the incoming call policy when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incoming Call Policy Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Incoming Call Policy Owner Rule], Update: [Project Owner, Project Admin, Edit Incoming Call Policy Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

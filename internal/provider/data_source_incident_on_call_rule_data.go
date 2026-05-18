@@ -85,51 +85,51 @@ func (d *IncidentOnCallRuleDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Description of this incident on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Only trigger for incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an incident matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
+                MarkdownDescription: "On-call duty policies to execute when an incident matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident On-Call Rule], Update: [Project Owner, Project Admin, Edit Incident On-Call Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

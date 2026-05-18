@@ -86,11 +86,11 @@ func (r *LogPipelineProcessorResource) Schema(ctx context.Context, req resource.
                 Required: true,
             },
             "processor_type": schema.StringAttribute{
-                MarkdownDescription: "The type of processor: GrokParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
+                MarkdownDescription: "The type of processor: GrokParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
                 Required: true,
             },
             "configuration": schema.StringAttribute{
-                MarkdownDescription: "Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules).. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
+                MarkdownDescription: "Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules).. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -99,7 +99,7 @@ func (r *LogPipelineProcessorResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this processor is active.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
+                MarkdownDescription: "Whether this processor is active.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -108,7 +108,7 @@ func (r *LogPipelineProcessorResource) Schema(ctx context.Context, req resource.
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the execution order of this processor within its pipeline.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
+                MarkdownDescription: "Determines the execution order of this processor within its pipeline.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline Processor], Update: [Project Owner, Project Admin, Edit Log Pipeline Processor]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

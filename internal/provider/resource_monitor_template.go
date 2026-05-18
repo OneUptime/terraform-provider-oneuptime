@@ -82,19 +82,19 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Monitor Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Name of the Monitor Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 Required: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Monitor Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Description of the Monitor Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 Required: true,
             },
             "monitor_name": schema.StringAttribute{
-                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 Required: true,
             },
             "monitor_description": schema.StringAttribute{
-                MarkdownDescription: "Default description applied to monitors created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Default description applied to monitors created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -102,7 +102,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_type": schema.StringAttribute{
-                MarkdownDescription: "What is the type of monitor created from this template?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "What is the type of monitor created from this template?. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "monitor_steps": schema.StringAttribute{
@@ -115,7 +115,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitoring_interval": schema.StringAttribute{
-                MarkdownDescription: "Default monitoring interval for monitors created from this template. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Default monitoring interval for monitors created from this template. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -123,7 +123,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Default labels applied to monitors created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Default labels applied to monitors created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -132,7 +132,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -141,7 +141,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "minimum_probe_agreement": schema.NumberAttribute{
-                MarkdownDescription: "Default minimum number of probes that must agree on a status before the monitor status changes.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
+                MarkdownDescription: "Default minimum number of probes that must agree on a status before the monitor status changes.. Permissions - Create: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Create Monitor Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [Project Owner, Project Admin, Project Member, Monitor Admin, Monitor Member, Edit Monitor Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -168,7 +168,7 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Template], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

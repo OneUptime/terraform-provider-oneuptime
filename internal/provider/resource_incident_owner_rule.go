@@ -88,11 +88,11 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incident owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Name of this incident owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Description of this incident owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -100,7 +100,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -109,7 +109,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -118,7 +118,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Only trigger for incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -127,7 +127,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Only trigger for incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -136,7 +136,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents that have at least one of these labels. Leave empty to match regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Only trigger for incidents that have at least one of these labels. Leave empty to match regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -145,7 +145,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Only trigger for incidents from monitors that have at least one of these labels. Leave empty to match regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -154,7 +154,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incident title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incident title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -162,7 +162,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the incident description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the incident description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -170,7 +170,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor names. Leave empty to match any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -178,7 +178,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against any of the incident's monitor descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -186,7 +186,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the incident when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the incident when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -195,7 +195,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the incident when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the incident when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -204,7 +204,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_owners_from_monitors": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also assign every owner of the incident's monitors to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "When this rule matches, also assign every owner of the incident's monitors to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -213,7 +213,7 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "inherit_owners_from_hosts": schema.BoolAttribute{
-                MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected hosts to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected hosts to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

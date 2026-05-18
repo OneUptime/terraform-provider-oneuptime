@@ -77,11 +77,11 @@ func (d *RunbookSecretDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
                 Computed: true,
             },
             "runbook_agents": schema.SetAttribute{
-                MarkdownDescription: "List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
+                MarkdownDescription: "List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
                 Computed: true,
                 ElementType: types.StringType,
             },

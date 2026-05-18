@@ -96,31 +96,31 @@ func (r *ScimLogResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "operation_type": schema.StringAttribute{
-                MarkdownDescription: "Type of SCIM operation (e.g., CreateUser, UpdateUser, DeleteUser, ListUsers, GetUser, CreateGroup, UpdateGroup, DeleteGroup, ListGroups, GetGroup, BulkOperation). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of SCIM operation (e.g., CreateUser, UpdateUser, DeleteUser, ListUsers, GetUser, CreateGroup, UpdateGroup, DeleteGroup, ListGroups, GetGroup, BulkOperation). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the SCIM operation. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Status of the SCIM operation. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status_message": schema.StringAttribute{
-                MarkdownDescription: "Short error or status description. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Short error or status description. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "log_body": schema.StringAttribute{
-                MarkdownDescription: "Detailed JSON with request/response data. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Detailed JSON with request/response data. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "http_method": schema.StringAttribute{
-                MarkdownDescription: "HTTP method used (GET, POST, PUT, PATCH, DELETE). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "HTTP method used (GET, POST, PUT, PATCH, DELETE). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "request_path": schema.StringAttribute{
-                MarkdownDescription: "The SCIM endpoint path. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The SCIM endpoint path. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "http_status_code": schema.NumberAttribute{
-                MarkdownDescription: "Response HTTP status code. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Response HTTP status code. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "affected_user_email": schema.StringAttribute{
@@ -129,7 +129,7 @@ func (r *ScimLogResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "affected_group_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the group/team affected by this operation. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the group/team affected by this operation. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project SCIM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

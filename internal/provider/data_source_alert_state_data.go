@@ -80,7 +80,7 @@ func (d *AlertStateDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -96,19 +96,19 @@ func (d *AlertStateDataDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "is_created_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the created state of the alert?. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
+                MarkdownDescription: "Is it the created state of the alert?. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
                 Computed: true,
             },
             "is_acknowledged_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the acknowledged state of the alert?. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
+                MarkdownDescription: "Is it the acknowledged state of the alert?. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
                 Computed: true,
             },
             "is_resolved_state": schema.BoolAttribute{
-                MarkdownDescription: "Is it the resolved state of the alert?. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
+                MarkdownDescription: "Is it the resolved state of the alert?. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State, Read All Project Resources], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
+                MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Alert Admin, Create Alert State], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert State], Update: [Project Owner, Project Admin, Alert Admin, Edit Alert State]",
                 Computed: true,
             },
         },

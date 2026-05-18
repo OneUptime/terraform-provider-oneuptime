@@ -80,11 +80,11 @@ func (r *AlertEpisodeOnCallRuleResource) Schema(ctx context.Context, req resourc
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this alert episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Name of this alert episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Description of this alert episode on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,7 +92,7 @@ func (r *AlertEpisodeOnCallRuleResource) Schema(ctx context.Context, req resourc
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -101,7 +101,7 @@ func (r *AlertEpisodeOnCallRuleResource) Schema(ctx context.Context, req resourc
                 },
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -110,7 +110,7 @@ func (r *AlertEpisodeOnCallRuleResource) Schema(ctx context.Context, req resourc
                 },
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -119,7 +119,7 @@ func (r *AlertEpisodeOnCallRuleResource) Schema(ctx context.Context, req resourc
                 },
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -127,7 +127,7 @@ func (r *AlertEpisodeOnCallRuleResource) Schema(ctx context.Context, req resourc
                 },
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -135,7 +135,7 @@ func (r *AlertEpisodeOnCallRuleResource) Schema(ctx context.Context, req resourc
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an alert episode matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
+                MarkdownDescription: "On-call duty policies to execute when an alert episode matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert Episode On-Call Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

@@ -80,28 +80,28 @@ func (d *MonitorLabelRuleDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this monitor label rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Description of this monitor label rule. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Computed: true,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for monitors that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Only trigger for monitors that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Computed: true,
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Computed: true,
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the monitor when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
+                MarkdownDescription: "Labels to attach to the monitor when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Monitor Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Label Rule], Update: [Project Owner, Project Admin, Edit Monitor Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

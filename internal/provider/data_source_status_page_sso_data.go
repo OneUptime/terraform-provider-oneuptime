@@ -87,27 +87,27 @@ func (d *StatusPageSsoDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "signature_method": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "digest_method": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "sign_on_url": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Project User, Public, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Project User, Public], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "issuer_url": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "public_certificate": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -119,11 +119,11 @@ func (d *StatusPageSsoDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project User, Public, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Computed: true,
             },
             "is_tested": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },

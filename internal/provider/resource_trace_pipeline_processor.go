@@ -86,11 +86,11 @@ func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resourc
                 Required: true,
             },
             "processor_type": schema.StringAttribute{
-                MarkdownDescription: "The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
+                MarkdownDescription: "The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
                 Required: true,
             },
             "configuration": schema.StringAttribute{
-                MarkdownDescription: "Processor-specific configuration as JSON (e.g., source/target fields, mapping rules).. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
+                MarkdownDescription: "Processor-specific configuration as JSON (e.g., source/target fields, mapping rules).. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -99,7 +99,7 @@ func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resourc
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this processor is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
+                MarkdownDescription: "Whether this processor is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -108,7 +108,7 @@ func (r *TracePipelineProcessorResource) Schema(ctx context.Context, req resourc
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the execution order of this processor within its pipeline.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
+                MarkdownDescription: "Determines the execution order of this processor within its pipeline.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline Processor], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline Processor], Update: [Project Owner, Project Admin, Edit Trace Pipeline Processor]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

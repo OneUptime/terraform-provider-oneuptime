@@ -111,7 +111,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "subscriber_webhook": schema.StringAttribute{
-                MarkdownDescription: "Webhook to ping when events happen on Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Webhook to ping when events happen on Status Page. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -123,7 +123,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 Optional: true,
             },
             "slack_workspace_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Slack workspace for validation and identification. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Name of the Slack workspace for validation and identification. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -135,7 +135,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 Optional: true,
             },
             "microsoft_teams_workspace_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Microsoft Teams workspace for validation and identification. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Name of the Microsoft Teams workspace for validation and identification. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -143,7 +143,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_subscription_confirmed": schema.BoolAttribute{
-                MarkdownDescription: "Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email). Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -156,7 +156,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 Optional: true,
             },
             "is_unsubscribed": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Unsubscribed?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Is Subscriber Unsubscribed?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -165,7 +165,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "send_you_have_subscribed_message": schema.BoolAttribute{
-                MarkdownDescription: "Send You Have Subscribed Message when subscriber is created?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Send You Have Subscribed Message when subscriber is created?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -174,7 +174,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_subscribed_to_all_resources": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Resources on this status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Is Subscriber Subscribed to All Resources on this status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -183,7 +183,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_subscribed_to_all_event_types": schema.BoolAttribute{
-                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -192,7 +192,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "status_page_resources": schema.SetAttribute{
-                MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Relation to Status Page Resources where this subscriber is subscribed to. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -201,7 +201,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "status_page_event_types": schema.StringAttribute{
-                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Which event types is the subscriber subscribed to (like Incidents, Scheduled Events, Announcements). Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -210,7 +210,7 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 },
             },
             "internal_note": schema.StringAttribute{
-                MarkdownDescription: "Any notes or text you would like to add to this subscriber object. This is for internal use only.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
+                MarkdownDescription: "Any notes or text you would like to add to this subscriber object. This is for internal use only.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Subscriber, Public], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Subscriber], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Subscriber]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

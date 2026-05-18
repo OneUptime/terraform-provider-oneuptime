@@ -79,11 +79,11 @@ func (r *WorkflowLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this workflow label rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Name of this workflow label rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this workflow label rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Description of this workflow label rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *WorkflowLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -100,7 +100,7 @@ func (r *WorkflowLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "workflow_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for workflows that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Only trigger for workflows that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -109,7 +109,7 @@ func (r *WorkflowLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "workflow_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -117,7 +117,7 @@ func (r *WorkflowLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "workflow_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -125,7 +125,7 @@ func (r *WorkflowLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the workflow when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Labels to attach to the workflow when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

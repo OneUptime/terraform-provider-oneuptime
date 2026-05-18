@@ -78,19 +78,19 @@ func (d *TracePipelineDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of what this trace pipeline does.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
+                MarkdownDescription: "Description of what this trace pipeline does.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
                 Computed: true,
             },
             "filter_query": schema.StringAttribute{
-                MarkdownDescription: "Filter expression that determines which spans this pipeline applies to.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
+                MarkdownDescription: "Filter expression that determines which spans this pipeline applies to.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this trace pipeline is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
+                MarkdownDescription: "Whether this trace pipeline is active.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
                 Computed: true,
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the execution order of this pipeline relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
+                MarkdownDescription: "Determines the execution order of this pipeline relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Trace Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Pipeline], Update: [Project Owner, Project Admin, Edit Trace Pipeline]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

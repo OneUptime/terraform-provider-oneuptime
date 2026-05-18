@@ -82,37 +82,37 @@ func (d *OnCallScheduleOwnerRuleDataDataSource) Schema(ctx context.Context, req 
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this on-call schedule owner rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Description of this on-call schedule owner rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
             },
             "on_call_duty_policy_schedule_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for on-call schedules that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Only trigger for on-call schedules that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "on_call_duty_policy_schedule_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
             },
             "on_call_duty_policy_schedule_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the on-call schedule description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the on-call schedule when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the on-call schedule when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the on-call schedule when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the on-call schedule when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Schedule Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read On-Call Schedule Owner Rule], Update: [Project Owner, Project Admin, Edit On-Call Schedule Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

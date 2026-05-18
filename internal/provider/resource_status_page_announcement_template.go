@@ -79,11 +79,11 @@ func (r *StatusPageAnnouncementTemplateResource) Schema(ctx context.Context, req
                 },
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the announcement template. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
+                MarkdownDescription: "Name of the announcement template. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
                 Required: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the announcement template. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
+                MarkdownDescription: "Description of the announcement template. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,15 +91,15 @@ func (r *StatusPageAnnouncementTemplateResource) Schema(ctx context.Context, req
                 },
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
+                MarkdownDescription: "Title of the announcement. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Text of the announcement. This is in Markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
+                MarkdownDescription: "Text of the announcement. This is in Markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
                 Required: true,
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "Status Pages to show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
+                MarkdownDescription: "Status Pages to show this announcement on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -108,7 +108,7 @@ func (r *StatusPageAnnouncementTemplateResource) Schema(ctx context.Context, req
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors affected by this announcement template. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
+                MarkdownDescription: "List of monitors affected by this announcement template. If none are selected, all subscribers will be notified.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -117,7 +117,7 @@ func (r *StatusPageAnnouncementTemplateResource) Schema(ctx context.Context, req
                 },
             },
             "should_status_page_subscribers_be_notified": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about announcements created from this template?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
+                MarkdownDescription: "Should subscribers be notified about announcements created from this template?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Announcement Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Announcement Template], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Announcement Template]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),

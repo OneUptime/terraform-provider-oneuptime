@@ -80,29 +80,29 @@ func (d *AlertEpisodePrivacyRuleDataDataSource) Schema(ctx context.Context, req 
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert episode privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
+                MarkdownDescription: "Description of this alert episode privacy rule. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
                 Computed: true,
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match episodes of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match episodes of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of episode labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
+                MarkdownDescription: "Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of episode labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
                 Computed: true,
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert Episode Privacy Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Privacy Rule], Update: [Project Owner, Project Admin, Edit Alert Episode Privacy Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

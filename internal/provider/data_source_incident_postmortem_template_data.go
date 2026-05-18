@@ -76,15 +76,15 @@ func (d *IncidentPostmortemTemplateDataDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "postmortem_note": schema.StringAttribute{
-                MarkdownDescription: "Markdown template used when documenting an incident postmortem.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Note Template]",
+                MarkdownDescription: "Markdown template used when documenting an incident postmortem.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Note Template], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Note Template]",
                 Computed: true,
             },
             "template_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the Postmortem Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Note Template]",
+                MarkdownDescription: "Name of the Postmortem Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Note Template], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Note Template]",
                 Computed: true,
             },
             "template_description": schema.StringAttribute{
-                MarkdownDescription: "Description of the Postmortem Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Note Template, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Note Template]",
+                MarkdownDescription: "Description of the Postmortem Template. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Note Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Note Template], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Note Template]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

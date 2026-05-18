@@ -82,7 +82,7 @@ func (r *LogPipelineResource) Schema(ctx context.Context, req resource.SchemaReq
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of what this log pipeline does.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
+                MarkdownDescription: "Description of what this log pipeline does.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -90,7 +90,7 @@ func (r *LogPipelineResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "filter_query": schema.StringAttribute{
-                MarkdownDescription: "Filter expression that determines which logs this pipeline applies to.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
+                MarkdownDescription: "Filter expression that determines which logs this pipeline applies to.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -98,7 +98,7 @@ func (r *LogPipelineResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this log pipeline is active.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
+                MarkdownDescription: "Whether this log pipeline is active.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -107,7 +107,7 @@ func (r *LogPipelineResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the execution order of this pipeline relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
+                MarkdownDescription: "Determines the execution order of this pipeline relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Log Pipeline], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Pipeline], Update: [Project Owner, Project Admin, Edit Log Pipeline]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

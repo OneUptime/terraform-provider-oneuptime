@@ -27,7 +27,7 @@ data "oneuptime_runbook_secret_data" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
-- `runbook_agents` (Set) List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
+- `runbook_agents` (Set) List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

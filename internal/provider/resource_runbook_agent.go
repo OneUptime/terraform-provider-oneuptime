@@ -79,11 +79,11 @@ func (r *RunbookAgentResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Friendly name for this agent. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
+                MarkdownDescription: "Friendly name for this agent. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Optional description for this agent. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
+                MarkdownDescription: "Optional description for this agent. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,11 +91,11 @@ func (r *RunbookAgentResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Secret key the agent presents on every request. Never share this key. Reset it to revoke the agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Runbook Admin, Runbook Member, Runbook Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
+                MarkdownDescription: "Secret key the agent presents on every request. Never share this key. Reset it to revoke the agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Runbook Admin, Runbook Member, Runbook Viewer], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
                 Required: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Edit Runbook Agent]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Edit Runbook Agent]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -123,7 +123,7 @@ func (r *RunbookAgentResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "agent_version": schema.StringAttribute{
@@ -137,11 +137,11 @@ func (r *RunbookAgentResource) Schema(ctx context.Context, req resource.SchemaRe
                 Computed: true,
             },
             "connection_status": schema.StringAttribute{
-                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "host_info": schema.StringAttribute{
-                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Self-reported host info (hostname, OS, arch). Updated on each heartbeat.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },

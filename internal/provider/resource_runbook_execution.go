@@ -74,11 +74,11 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 Required: true,
             },
             "runbook_name_snapshot": schema.StringAttribute{
-                MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).. Permissions - Create: [Project Owner, Project Admin, Create Runbook Execution, Project Member, Runbook Admin, Runbook Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the runbook at the time this execution was created (preserved even if the runbook is later renamed or deleted).. Permissions - Create: [Project Owner, Project Admin, Create Runbook Execution, Project Member, Runbook Admin, Runbook Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "step_executions": schema.StringAttribute{
-                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Execution, Project Member, Runbook Admin, Runbook Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Execution, Runbook Admin]",
+                MarkdownDescription: "Per-step execution state. Each entry mirrors a step from the runbook with status, output, and timestamps.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Execution, Project Member, Runbook Admin, Runbook Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution], Update: [Project Owner, Project Admin, Edit Runbook Execution, Runbook Admin]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -119,7 +119,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of this runbook execution.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Execution, Runbook Admin]",
+                MarkdownDescription: "Current status of this runbook execution.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution], Update: [Project Owner, Project Admin, Edit Runbook Execution, Runbook Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -145,7 +145,7 @@ func (r *RunbookExecutionResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "failure_reason": schema.StringAttribute{
-                MarkdownDescription: "Reason this runbook execution failed (if it did).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Execution, Runbook Admin]",
+                MarkdownDescription: "Reason this runbook execution failed (if it did).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Execution], Update: [Project Owner, Project Admin, Edit Runbook Execution, Runbook Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

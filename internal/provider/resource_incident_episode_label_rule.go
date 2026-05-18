@@ -80,11 +80,11 @@ func (r *IncidentEpisodeLabelRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incident episode label rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Name of this incident episode label rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident episode label rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Description of this incident episode label rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,7 +92,7 @@ func (r *IncidentEpisodeLabelRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -101,7 +101,7 @@ func (r *IncidentEpisodeLabelRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -110,7 +110,7 @@ func (r *IncidentEpisodeLabelRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that already have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Only trigger for episodes that already have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -119,7 +119,7 @@ func (r *IncidentEpisodeLabelRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -127,7 +127,7 @@ func (r *IncidentEpisodeLabelRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -135,7 +135,7 @@ func (r *IncidentEpisodeLabelRuleResource) Schema(ctx context.Context, req resou
                 },
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the episode when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
+                MarkdownDescription: "Labels to attach to the episode when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Label Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Label Rule]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

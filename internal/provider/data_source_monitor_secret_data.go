@@ -77,11 +77,11 @@ func (d *MonitorSecretDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
                 Computed: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
+                MarkdownDescription: "List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
                 Computed: true,
                 ElementType: types.StringType,
             },

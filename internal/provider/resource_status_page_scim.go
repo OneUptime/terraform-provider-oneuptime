@@ -80,11 +80,11 @@ func (r *StatusPageScimResource) Schema(ctx context.Context, req resource.Schema
                 Required: true,
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name for this SCIM configuration. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Any friendly name for this SCIM configuration. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description to help you remember. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Friendly description to help you remember. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -92,11 +92,11 @@ func (r *StatusPageScimResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "bearer_token": schema.StringAttribute{
-                MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Bearer token for SCIM authentication. Keep this secure.. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Required: true,
             },
             "auto_provision_users": schema.BoolAttribute{
-                MarkdownDescription: "Automatically create status page users when they are added via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Automatically create status page users when they are added via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -105,7 +105,7 @@ func (r *StatusPageScimResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "auto_deprovision_users": schema.BoolAttribute{
-                MarkdownDescription: "Automatically remove status page users when they are removed via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
+                MarkdownDescription: "Automatically remove status page users when they are removed via SCIM. Permissions - Create: [Project Owner, Project Admin, Create Status Page SSO], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Status Page SSO], Update: [Project Owner, Project Admin, Edit Status Page SSO]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),

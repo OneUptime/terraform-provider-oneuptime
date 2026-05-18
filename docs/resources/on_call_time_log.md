@@ -27,7 +27,7 @@ resource "oneuptime_on_call_time_log" "example" {
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `more_info` (String) More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Create On-Call Policy Time Log, Read All Project Resources], Update: [No access - you don't have permission for this operation]. Computed.
+- `more_info` (String) More information about this log record.. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Create On-Call Policy Time Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `starts_at` (String) A date time object.. Required.
 - `ends_at` (String) A date time object.. Computed.

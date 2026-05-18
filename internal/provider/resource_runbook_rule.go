@@ -79,11 +79,11 @@ func (r *RunbookRuleResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this runbook rule.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
+                MarkdownDescription: "Name of this runbook rule.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this runbook rule.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
+                MarkdownDescription: "Description of this runbook rule.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *RunbookRuleResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
+                MarkdownDescription: "Whether this rule is enabled.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -100,11 +100,11 @@ func (r *RunbookRuleResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "trigger_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Entity type that triggers this rule on creation: Incident, Alert, or ScheduledMaintenance.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Entity type that triggers this rule on creation: Incident, Alert, or ScheduledMaintenance.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the entity's title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
+                MarkdownDescription: "Case-insensitive regex matched against the entity's title. Leave empty to match any title.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -112,7 +112,7 @@ func (r *RunbookRuleResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Case-insensitive regex matched against the entity's description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
+                MarkdownDescription: "Case-insensitive regex matched against the entity's description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -120,7 +120,7 @@ func (r *RunbookRuleResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "runbooks": schema.SetAttribute{
-                MarkdownDescription: "Runbooks to start when this rule matches. Each runbook produces its own execution.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
+                MarkdownDescription: "Runbooks to start when this rule matches. Each runbook produces its own execution.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Rule, Runbook Admin], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Rule], Update: [Project Owner, Project Admin, Edit Runbook Rule, Runbook Admin]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

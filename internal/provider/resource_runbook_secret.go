@@ -75,11 +75,11 @@ func (r *RunbookSecretResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *RunbookSecretResource) Schema(ctx context.Context, req resource.SchemaR
                 Optional: true,
             },
             "runbook_agents": schema.SetAttribute{
-                MarkdownDescription: "List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
+                MarkdownDescription: "List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

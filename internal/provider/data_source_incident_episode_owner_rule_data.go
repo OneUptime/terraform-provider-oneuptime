@@ -83,42 +83,42 @@ func (d *IncidentEpisodeOwnerRuleDataDataSource) Schema(ctx context.Context, req
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident episode owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Description of this incident episode owner rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Only trigger for episodes with these severities. Leave empty to match any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Only trigger for episodes that have at least one of these labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "episode_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode title.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
             },
             "episode_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the episode description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the incident episode when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Incident Episode Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Episode Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

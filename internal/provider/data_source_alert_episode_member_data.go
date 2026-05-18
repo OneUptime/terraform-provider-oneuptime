@@ -92,7 +92,7 @@ func (d *AlertEpisodeMemberDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "added_by": schema.StringAttribute{
-                MarkdownDescription: "How this alert was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Member, Read All Project Resources], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How this alert was added to the episode (rule, manual, or api). Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert Episode Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "added_by_user_id": schema.StringAttribute{

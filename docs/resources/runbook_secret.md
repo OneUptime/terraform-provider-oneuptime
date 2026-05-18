@@ -22,10 +22,10 @@ resource "oneuptime_runbook_secret" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Required.
-- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
+- `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Required.
+- `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
 - `secret_value` (String) Secret value that you want to store in this object. This value will be encrypted and only accessible by the assigned runbook agent.. Permissions - Create: [Project Owner, Project Admin, Create Runbook Secret], Read: [No access - you don't have permission for this operation], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Optional.
-- `runbook_agents` (Set) List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
+- `runbook_agents` (Set) List of runbook agents that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Runbook Secret], Read: [Project Owner, Project Admin, Read Runbook Secret], Update: [Project Owner, Project Admin, Edit Runbook Secret]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

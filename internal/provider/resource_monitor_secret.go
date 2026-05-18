@@ -75,11 +75,11 @@ func (r *MonitorSecretResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
+                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
+                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -91,7 +91,7 @@ func (r *MonitorSecretResource) Schema(ctx context.Context, req resource.SchemaR
                 Optional: true,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
+                MarkdownDescription: "List of monitors that can access this secret. Permissions - Create: [Project Owner, Project Admin, Read Monitor Secret], Read: [Project Owner, Project Admin, Read Monitor Secret], Update: [Project Owner, Project Admin, Edit Monitor Secret]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

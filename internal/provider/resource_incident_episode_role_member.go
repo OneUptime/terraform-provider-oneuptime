@@ -84,7 +84,7 @@ func (r *IncidentEpisodeRoleMemberResource) Schema(ctx context.Context, req reso
                 Required: true,
             },
             "notes": schema.StringAttribute{
-                MarkdownDescription: "Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Episode Role Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Role Member, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Episode Role Member]",
+                MarkdownDescription: "Assignment context or notes. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Episode Role Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Role Member], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Episode Role Member]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

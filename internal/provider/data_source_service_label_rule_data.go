@@ -80,28 +80,28 @@ func (d *ServiceLabelRuleDataDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this service label rule. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
+                MarkdownDescription: "Description of this service label rule. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
                 Computed: true,
             },
             "service_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for services that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
+                MarkdownDescription: "Only trigger for services that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "service_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the service name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the service name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
                 Computed: true,
             },
             "service_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the service description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the service description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
                 Computed: true,
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the service when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
+                MarkdownDescription: "Labels to attach to the service when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Service Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Service Label Rule], Update: [Project Owner, Project Admin, Edit Service Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

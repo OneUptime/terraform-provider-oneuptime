@@ -88,27 +88,27 @@ func (d *LogSavedViewDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Serialized log query for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Serialized log query for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
                 Computed: true,
             },
             "columns": schema.StringAttribute{
-                MarkdownDescription: "Selected log table columns for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Selected log table columns for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
                 Computed: true,
             },
             "sort_field": schema.StringAttribute{
-                MarkdownDescription: "Active sort field for this saved log view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Active sort field for this saved log view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
                 Computed: true,
             },
             "sort_order": schema.StringAttribute{
-                MarkdownDescription: "Sort order for this saved log view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Sort order for this saved log view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
                 Computed: true,
             },
             "page_size": schema.NumberAttribute{
-                MarkdownDescription: "Number of logs per page for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Number of logs per page for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
                 Computed: true,
             },
             "is_default": schema.BoolAttribute{
-                MarkdownDescription: "Whether this saved log view should be applied by default.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Read All Project Resources], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Whether this saved log view should be applied by default.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
                 Computed: true,
             },
         },

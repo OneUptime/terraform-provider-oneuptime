@@ -82,37 +82,37 @@ func (d *DashboardOwnerRuleDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this dashboard owner rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Description of this dashboard owner rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
             },
             "notify_owners": schema.BoolAttribute{
-                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
             },
             "dashboard_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for dashboards that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Only trigger for dashboards that have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "dashboard_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
             },
             "dashboard_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the dashboard description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
             },
             "owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Users to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
+                MarkdownDescription: "Teams to add as owners on the dashboard when this rule matches.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Dashboard Owner Rule], Update: [Project Owner, Project Admin, Edit Dashboard Owner Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },

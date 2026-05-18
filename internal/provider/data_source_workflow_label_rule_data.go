@@ -80,28 +80,28 @@ func (d *WorkflowLabelRuleDataDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this workflow label rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Description of this workflow label rule. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Computed: true,
             },
             "workflow_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for workflows that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Only trigger for workflows that already have at least one of these labels. Leave empty to match regardless of labels.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "workflow_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the workflow name. Leave empty to match any name.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Computed: true,
             },
             "workflow_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Regex (case-insensitive) matched against the workflow description. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Computed: true,
             },
             "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the workflow when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule, Read All Project Resources], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
+                MarkdownDescription: "Labels to attach to the workflow when this rule matches. Already-attached labels are not duplicated.. Permissions - Create: [Project Owner, Project Admin, Create Workflow Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Workflow Label Rule], Update: [Project Owner, Project Admin, Edit Workflow Label Rule]",
                 Computed: true,
                 ElementType: types.StringType,
             },
