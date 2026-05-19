@@ -48,6 +48,7 @@ type ServiceResourceModel struct {
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     MetricCardinalityBudget types.Number `tfsdk:"metric_cardinality_budget"`
     MetricDownsamplingRetentionDays JSONSubsetValue `tfsdk:"metric_downsampling_retention_days"`
+    TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -154,6 +155,15 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "telemetry_retention_config": schema.StringAttribute{
+                MarkdownDescription: "Per-pillar retention overrides for this service (logs by severity, traces by status, metrics, profiles). Unset fields inherit the project-level config and umbrella default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -239,6 +249,7 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
         "retainTelemetryDataForDays": r.bigFloatToFloat64(data.RetainTelemetryDataForDays.ValueBigFloat()),
         "metricCardinalityBudget": r.bigFloatToFloat64(data.MetricCardinalityBudget.ValueBigFloat()),
         "metricDownsamplingRetentionDays": r.parseJSONField(data.MetricDownsamplingRetentionDays),
+        "telemetryRetentionConfig": r.parseJSONField(data.TelemetryRetentionConfig),
         },
     }
 
@@ -587,6 +598,43 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.MetricDownsamplingRetentionDays = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+        data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+    } else {
+        data.TelemetryRetentionConfig = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -890,6 +938,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
         "retainTelemetryDataForDays": true,
         "metricCardinalityBudget": true,
         "metricDownsamplingRetentionDays": true,
+        "telemetryRetentionConfig": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1251,6 +1300,43 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.MetricDownsamplingRetentionDays = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+        data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+    } else {
+        data.TelemetryRetentionConfig = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1596,6 +1682,14 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
             requestDataMap["metricDownsamplingRetentionDays"] = data.MetricDownsamplingRetentionDays.ValueString()
         }
     }
+    if !data.TelemetryRetentionConfig.IsUnknown() && !state.TelemetryRetentionConfig.IsUnknown() && !data.TelemetryRetentionConfig.Equal(state.TelemetryRetentionConfig) {
+        var telemetryretentionconfigData interface{}
+        if err := json.Unmarshal([]byte(data.TelemetryRetentionConfig.ValueString()), &telemetryretentionconfigData); err == nil {
+            requestDataMap["telemetryRetentionConfig"] = telemetryretentionconfigData
+        } else {
+            requestDataMap["telemetryRetentionConfig"] = data.TelemetryRetentionConfig.ValueString()
+        }
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/service/" + data.Id.ValueString() + "", serviceRequest)
@@ -1624,6 +1718,7 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
         "retainTelemetryDataForDays": true,
         "metricCardinalityBudget": true,
         "metricDownsamplingRetentionDays": true,
+        "telemetryRetentionConfig": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1978,6 +2073,43 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
         data.MetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
     } else {
         data.MetricDownsamplingRetentionDays = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TelemetryRetentionConfig = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TelemetryRetentionConfig = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TelemetryRetentionConfig = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+        data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
+    } else {
+        data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

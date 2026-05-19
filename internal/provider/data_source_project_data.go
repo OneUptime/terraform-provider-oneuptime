@@ -76,6 +76,7 @@ type ProjectDataDataSourceModel struct {
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
     DefaultTelemetryRetentionInDays types.Number `tfsdk:"default_telemetry_retention_in_days"`
+    TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
     DefaultMetricDownsamplingRetentionDays types.String `tfsdk:"default_metric_downsampling_retention_days"`
     EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
@@ -293,6 +294,10 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "default_telemetry_retention_in_days": schema.NumberAttribute{
                 MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "telemetry_retention_config": schema.StringAttribute{
+                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "default_metric_downsampling_retention_days": schema.StringAttribute{
@@ -526,6 +531,9 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["default_telemetry_retention_in_days"].(float64); ok {
         data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["telemetry_retention_config"].(string); ok {
+        data.TelemetryRetentionConfig = types.StringValue(val)
     }
     if val, ok := projectDataResponse["default_metric_downsampling_retention_days"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = types.StringValue(val)

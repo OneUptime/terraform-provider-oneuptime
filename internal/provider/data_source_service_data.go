@@ -44,6 +44,7 @@ type ServiceDataDataSourceModel struct {
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     MetricCardinalityBudget types.Number `tfsdk:"metric_cardinality_budget"`
     MetricDownsamplingRetentionDays types.String `tfsdk:"metric_downsampling_retention_days"`
+    TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
 }
 
@@ -127,6 +128,10 @@ func (d *ServiceDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "metric_downsampling_retention_days": schema.StringAttribute{
                 MarkdownDescription: "Per-tier retention override (raw, 1m, 5m, 1h, 1d) in days. Null fields inherit the project default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                Computed: true,
+            },
+            "telemetry_retention_config": schema.StringAttribute{
+                MarkdownDescription: "Per-pillar retention overrides for this service (logs by severity, traces by status, metrics, profiles). Unset fields inherit the project-level config and umbrella default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -258,6 +263,9 @@ func (d *ServiceDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := serviceDataResponse["metric_downsampling_retention_days"].(string); ok {
         data.MetricDownsamplingRetentionDays = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["telemetry_retention_config"].(string); ok {
+        data.TelemetryRetentionConfig = types.StringValue(val)
     }
     if val, ok := serviceDataResponse["last_seen_at"].(string); ok {
         data.LastSeenAt = types.StringValue(val)
