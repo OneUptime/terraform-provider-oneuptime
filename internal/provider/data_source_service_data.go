@@ -131,7 +131,7 @@ func (d *ServiceDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this service (logs by severity, traces by status, metrics, profiles). Unset fields inherit the project-level config and umbrella default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
+                MarkdownDescription: "Per-pillar retention overrides for this service (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the service default, then the project's retention settings.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Service]",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
