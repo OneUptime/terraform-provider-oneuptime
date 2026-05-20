@@ -29,6 +29,7 @@ type ExceptionInstanceDataDataSourceModel struct {
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     ServiceId types.String `tfsdk:"service_id"`
+    ServiceType types.String `tfsdk:"service_type"`
     Time types.String `tfsdk:"time"`
     TimeUnixNano types.Number `tfsdk:"time_unix_nano"`
     ExceptionType types.String `tfsdk:"exception_type"`
@@ -69,6 +70,10 @@ func (d *ExceptionInstanceDataDataSource) Schema(ctx context.Context, req dataso
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
+                Computed: true,
+            },
+            "service_type": schema.StringAttribute{
+                MarkdownDescription: "Service Type",
                 Computed: true,
             },
             "time": schema.StringAttribute{
@@ -205,6 +210,9 @@ func (d *ExceptionInstanceDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := exceptionInstanceDataResponse["service_id"].(string); ok {
         data.ServiceId = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["service_type"].(string); ok {
+        data.ServiceType = types.StringValue(val)
     }
     if val, ok := exceptionInstanceDataResponse["time"].(string); ok {
         data.Time = types.StringValue(val)

@@ -30,6 +30,7 @@ type ProfileDataDataSourceModel struct {
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     ServiceId types.String `tfsdk:"service_id"`
+    ServiceType types.String `tfsdk:"service_type"`
     ProfileId types.String `tfsdk:"profile_id"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
@@ -71,6 +72,10 @@ func (d *ProfileDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
+                Computed: true,
+            },
+            "service_type": schema.StringAttribute{
+                MarkdownDescription: "Service Type",
                 Computed: true,
             },
             "profile_id": schema.StringAttribute{
@@ -212,6 +217,9 @@ func (d *ProfileDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := profileDataResponse["service_id"].(string); ok {
         data.ServiceId = types.StringValue(val)
+    }
+    if val, ok := profileDataResponse["service_type"].(string); ok {
+        data.ServiceType = types.StringValue(val)
     }
     if val, ok := profileDataResponse["profile_id"].(string); ok {
         data.ProfileId = types.StringValue(val)

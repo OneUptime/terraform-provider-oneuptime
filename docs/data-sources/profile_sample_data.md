@@ -24,6 +24,7 @@ data "oneuptime_profile_sample_data" "example" {
 - `name` (String) Name to filter by. Optional.
 - `project_id` (String) Project ID. Computed.
 - `service_id` (String) Service ID. Computed.
+- `service_type` (String) Service Type. Computed.
 - `profile_id` (String) Profile ID. Computed.
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.

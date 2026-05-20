@@ -45,6 +45,8 @@ type KubernetesClusterDataDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
+    RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
+    TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
 }
 
 func (d *KubernetesClusterDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -132,6 +134,14 @@ func (d *KubernetesClusterDataDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Kubernetes Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Kubernetes Cluster]",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "retain_telemetry_data_for_days": schema.NumberAttribute{
+                MarkdownDescription: "Number of days to retain telemetry data for this Kubernetes cluster. Leave blank to use the project-wide default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Kubernetes Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Kubernetes Cluster]",
+                Computed: true,
+            },
+            "telemetry_retention_config": schema.StringAttribute{
+                MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Kubernetes Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Kubernetes Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Kubernetes Cluster]",
+                Computed: true,
             },
         },
     }
@@ -261,6 +271,12 @@ func (d *KubernetesClusterDataDataSource) Read(ctx context.Context, req datasour
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.Labels = setValue
+    }
+    if val, ok := kubernetesClusterDataResponse["retain_telemetry_data_for_days"].(float64); ok {
+        data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := kubernetesClusterDataResponse["telemetry_retention_config"].(string); ok {
+        data.TelemetryRetentionConfig = types.StringValue(val)
     }
 
     // Write logs using the tflog package

@@ -214,7 +214,6 @@ func GetResources() []func() resource.Resource {
         NewServiceResource,
         NewServiceTeamOwnerResource,
         NewServiceUserOwnerResource,
-        NewServiceDependencyResource,
         NewServiceMonitorResource,
         NewServiceCodeRepositoryResource,
         NewCodeRepositoryResource,

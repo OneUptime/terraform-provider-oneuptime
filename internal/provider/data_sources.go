@@ -214,7 +214,6 @@ func GetDataSources() []func() datasource.DataSource {
         NewServiceDataDataSource,
         NewServiceTeamOwnerDataDataSource,
         NewServiceUserOwnerDataDataSource,
-        NewServiceDependencyDataDataSource,
         NewServiceMonitorDataDataSource,
         NewServiceCodeRepositoryDataDataSource,
         NewCodeRepositoryDataDataSource,

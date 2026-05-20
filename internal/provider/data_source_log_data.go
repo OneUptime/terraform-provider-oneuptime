@@ -30,6 +30,7 @@ type LogDataDataSourceModel struct {
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     ServiceId types.String `tfsdk:"service_id"`
+    ServiceType types.String `tfsdk:"service_type"`
     Time types.String `tfsdk:"time"`
     TimeUnixNano types.Number `tfsdk:"time_unix_nano"`
     SeverityText types.String `tfsdk:"severity_text"`
@@ -67,6 +68,10 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
+                Computed: true,
+            },
+            "service_type": schema.StringAttribute{
+                MarkdownDescription: "Service Type",
                 Computed: true,
             },
             "time": schema.StringAttribute{
@@ -192,6 +197,9 @@ func (d *LogDataDataSource) Read(ctx context.Context, req datasource.ReadRequest
     }
     if val, ok := logDataResponse["service_id"].(string); ok {
         data.ServiceId = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["service_type"].(string); ok {
+        data.ServiceType = types.StringValue(val)
     }
     if val, ok := logDataResponse["time"].(string); ok {
         data.Time = types.StringValue(val)

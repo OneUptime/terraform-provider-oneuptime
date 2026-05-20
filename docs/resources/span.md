@@ -23,6 +23,7 @@ resource "oneuptime_span" "example" {
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) Project ID. Computed.
 - `service_id` (String) Service ID. Computed.
+- `service_type` (String) Service Type. Computed.
 - `start_time` (String) Start Time. Computed.
 - `end_time` (String) End Time. Computed.
 - `start_time_unix_nano` (Number) Start Time in Unix Nano. Computed.

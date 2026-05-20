@@ -24,6 +24,7 @@ data "oneuptime_log_data" "example" {
 - `name` (String) Name to filter by. Optional.
 - `project_id` (String) Project ID. Computed.
 - `service_id` (String) Service ID. Computed.
+- `service_type` (String) Service Type. Computed.
 - `time` (String) Time. Computed.
 - `time_unix_nano` (Number) Time (in Unix Nano). Computed.
 - `severity_text` (String) Severity Text. Computed.

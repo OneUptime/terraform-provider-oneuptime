@@ -30,6 +30,7 @@ type SpanDataDataSourceModel struct {
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
     ServiceId types.String `tfsdk:"service_id"`
+    ServiceType types.String `tfsdk:"service_type"`
     StartTime types.String `tfsdk:"start_time"`
     EndTime types.String `tfsdk:"end_time"`
     StartTimeUnixNano types.Number `tfsdk:"start_time_unix_nano"`
@@ -73,6 +74,10 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
+                Computed: true,
+            },
+            "service_type": schema.StringAttribute{
+                MarkdownDescription: "Service Type",
                 Computed: true,
             },
             "start_time": schema.StringAttribute{
@@ -223,6 +228,9 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := spanDataResponse["service_id"].(string); ok {
         data.ServiceId = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["service_type"].(string); ok {
+        data.ServiceType = types.StringValue(val)
     }
     if val, ok := spanDataResponse["start_time"].(string); ok {
         data.StartTime = types.StringValue(val)
