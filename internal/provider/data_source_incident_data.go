@@ -40,6 +40,12 @@ type IncidentDataDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
     Hosts types.Set `tfsdk:"hosts"`
+    KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
+    KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
+    KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
+    DockerHosts types.Set `tfsdk:"docker_hosts"`
+    DockerResources types.Set `tfsdk:"docker_resources"`
+    Services types.Set `tfsdk:"services"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Labels types.Set `tfsdk:"labels"`
     CurrentIncidentStateId types.String `tfsdk:"current_incident_state_id"`
@@ -138,6 +144,36 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Kubernetes clusters affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_resources": schema.SetAttribute{
+                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_containers": schema.SetAttribute{
+                MarkdownDescription: "List of Kubernetes containers affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Docker hosts affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_resources": schema.SetAttribute{
+                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "List of services affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -394,6 +430,78 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.Hosts = setValue
+    }
+    if val, ok := incidentDataResponse["kubernetes_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.KubernetesClusters = setValue
+    }
+    if val, ok := incidentDataResponse["kubernetes_resources"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.KubernetesResources = setValue
+    }
+    if val, ok := incidentDataResponse["kubernetes_containers"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.KubernetesContainers = setValue
+    }
+    if val, ok := incidentDataResponse["docker_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerHosts = setValue
+    }
+    if val, ok := incidentDataResponse["docker_resources"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerResources = setValue
+    }
+    if val, ok := incidentDataResponse["services"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Services = setValue
     }
     if val, ok := incidentDataResponse["on_call_duty_policies"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

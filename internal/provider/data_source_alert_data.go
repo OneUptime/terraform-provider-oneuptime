@@ -39,6 +39,12 @@ type AlertDataDataSourceModel struct {
     MonitorId types.String `tfsdk:"monitor_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Hosts types.Set `tfsdk:"hosts"`
+    KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
+    KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
+    KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
+    DockerHosts types.Set `tfsdk:"docker_hosts"`
+    DockerResources types.Set `tfsdk:"docker_resources"`
+    Services types.Set `tfsdk:"services"`
     Labels types.Set `tfsdk:"labels"`
     CurrentAlertStateId types.String `tfsdk:"current_alert_state_id"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
@@ -120,6 +126,36 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "hosts": schema.SetAttribute{
                 MarkdownDescription: "List of hosts affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Kubernetes clusters affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_resources": schema.SetAttribute{
+                MarkdownDescription: "List of Kubernetes resources (pods, deployments, nodes, etc.) affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_containers": schema.SetAttribute{
+                MarkdownDescription: "List of Kubernetes containers affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Docker hosts affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_resources": schema.SetAttribute{
+                MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "List of services affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -319,6 +355,78 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.Hosts = setValue
+    }
+    if val, ok := alertDataResponse["kubernetes_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.KubernetesClusters = setValue
+    }
+    if val, ok := alertDataResponse["kubernetes_resources"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.KubernetesResources = setValue
+    }
+    if val, ok := alertDataResponse["kubernetes_containers"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.KubernetesContainers = setValue
+    }
+    if val, ok := alertDataResponse["docker_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerHosts = setValue
+    }
+    if val, ok := alertDataResponse["docker_resources"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerResources = setValue
+    }
+    if val, ok := alertDataResponse["services"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Services = setValue
     }
     if val, ok := alertDataResponse["labels"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

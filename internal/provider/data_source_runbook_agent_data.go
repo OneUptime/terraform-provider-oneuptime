@@ -102,7 +102,7 @@ func (d *RunbookAgentDataDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "connection_status": schema.StringAttribute{
-                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "host_info": schema.StringAttribute{

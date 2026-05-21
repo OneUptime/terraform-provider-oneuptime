@@ -41,15 +41,15 @@ type RunbookAgentResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Key types.String `tfsdk:"key"`
+    AgentVersion JSONSubsetValue `tfsdk:"agent_version"`
+    ConnectionStatus types.String `tfsdk:"connection_status"`
     Labels types.Set `tfsdk:"labels"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
-    AgentVersion JSONSubsetValue `tfsdk:"agent_version"`
     LastAlive JSONSubsetValue `tfsdk:"last_alive"`
-    ConnectionStatus types.String `tfsdk:"connection_status"`
     HostInfo JSONSubsetValue `tfsdk:"host_info"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -94,6 +94,23 @@ func (r *RunbookAgentResource) Schema(ctx context.Context, req resource.SchemaRe
                 MarkdownDescription: "Secret key the agent presents on every request. Never share this key. Reset it to revoke the agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Runbook Admin, Runbook Member, Runbook Viewer], Update: [Project Owner, Project Admin, Runbook Admin, Edit Runbook Agent]",
                 Required: true,
             },
+            "agent_version": schema.StringAttribute{
+                MarkdownDescription: "Version object",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "connection_status": schema.StringAttribute{
+                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Create Runbook Agent], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [Project Owner, Project Admin, Project Member, Runbook Admin, Runbook Member, Edit Runbook Agent]",
                 Optional: true,
@@ -126,18 +143,9 @@ func (r *RunbookAgentResource) Schema(ctx context.Context, req resource.SchemaRe
                 MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
-            "agent_version": schema.StringAttribute{
-                MarkdownDescription: "Version object",
-                CustomType: JSONSubsetType{},
-                Computed: true,
-            },
             "last_alive": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
-                Computed: true,
-            },
-            "connection_status": schema.StringAttribute{
-                MarkdownDescription: "Connected if the agent has heartbeated recently.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook Agent], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "host_info": schema.StringAttribute{
@@ -192,6 +200,8 @@ func (r *RunbookAgentResource) Create(ctx context.Context, req resource.CreateRe
         "name": data.Name.ValueString(),
         "description": data.Description.ValueString(),
         "key": data.Key.ValueString(),
+        "agentVersion": r.parseJSONField(data.AgentVersion),
+        "connectionStatus": data.ConnectionStatus.ValueString(),
         "labels": r.convertTerraformSetToInterface(data.Labels),
         },
     }
@@ -379,6 +389,80 @@ func (r *RunbookAgentResource) Create(ctx context.Context, req resource.CreateRe
         data.Key = types.StringValue(val)
     } else {
         data.Key = types.StringNull()
+    }
+    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AgentVersion = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AgentVersion = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+        data.AgentVersion = NewJSONSubsetValue(val)
+    } else {
+        data.AgentVersion = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["connectionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectionStatus"].(string); ok && val != "" {
+        data.ConnectionStatus = types.StringValue(val)
+    } else {
+        data.ConnectionStatus = types.StringNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -569,43 +653,6 @@ func (r *RunbookAgentResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.Slug = types.StringNull()
     }
-    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AgentVersion = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AgentVersion = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.AgentVersion = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
-        data.AgentVersion = NewJSONSubsetValue(val)
-    } else {
-        data.AgentVersion = NewJSONSubsetNull()
-    }
     if obj, ok := dataMap["lastAlive"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -642,43 +689,6 @@ func (r *RunbookAgentResource) Create(ctx context.Context, req resource.CreateRe
         data.LastAlive = NewJSONSubsetValue(val)
     } else {
         data.LastAlive = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["connectionStatus"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ConnectionStatus = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ConnectionStatus = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ConnectionStatus = types.StringValue(string(jsonBytes))
-            } else {
-                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ConnectionStatus = types.StringValue(string(jsonBytes))
-            } else {
-                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ConnectionStatus = types.StringValue(string(jsonBytes))
-        } else {
-            data.ConnectionStatus = types.StringNull()
-        }
-    } else if val, ok := dataMap["connectionStatus"].(string); ok && val != "" {
-        data.ConnectionStatus = types.StringValue(val)
-    } else {
-        data.ConnectionStatus = types.StringNull()
     }
     if obj, ok := dataMap["hostInfo"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -783,15 +793,15 @@ func (r *RunbookAgentResource) Read(ctx context.Context, req resource.ReadReques
         "name": true,
         "description": true,
         "key": true,
+        "agentVersion": true,
+        "connectionStatus": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "agentVersion": true,
         "lastAlive": true,
-        "connectionStatus": true,
         "hostInfo": true,
         "createdByUserId": true,
         "_id": true,
@@ -986,6 +996,80 @@ func (r *RunbookAgentResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.Key = types.StringNull()
     }
+    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AgentVersion = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AgentVersion = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+        data.AgentVersion = NewJSONSubsetValue(val)
+    } else {
+        data.AgentVersion = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["connectionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectionStatus"].(string); ok && val != "" {
+        data.ConnectionStatus = types.StringValue(val)
+    } else {
+        data.ConnectionStatus = types.StringNull()
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1175,43 +1259,6 @@ func (r *RunbookAgentResource) Read(ctx context.Context, req resource.ReadReques
     } else {
         data.Slug = types.StringNull()
     }
-    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AgentVersion = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AgentVersion = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.AgentVersion = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
-        data.AgentVersion = NewJSONSubsetValue(val)
-    } else {
-        data.AgentVersion = NewJSONSubsetNull()
-    }
     if obj, ok := dataMap["lastAlive"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1248,43 +1295,6 @@ func (r *RunbookAgentResource) Read(ctx context.Context, req resource.ReadReques
         data.LastAlive = NewJSONSubsetValue(val)
     } else {
         data.LastAlive = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["connectionStatus"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ConnectionStatus = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ConnectionStatus = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ConnectionStatus = types.StringValue(string(jsonBytes))
-            } else {
-                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ConnectionStatus = types.StringValue(string(jsonBytes))
-            } else {
-                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ConnectionStatus = types.StringValue(string(jsonBytes))
-        } else {
-            data.ConnectionStatus = types.StringNull()
-        }
-    } else if val, ok := dataMap["connectionStatus"].(string); ok && val != "" {
-        data.ConnectionStatus = types.StringValue(val)
-    } else {
-        data.ConnectionStatus = types.StringNull()
     }
     if obj, ok := dataMap["hostInfo"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1429,15 +1439,15 @@ func (r *RunbookAgentResource) Update(ctx context.Context, req resource.UpdateRe
         "name": true,
         "description": true,
         "key": true,
+        "agentVersion": true,
+        "connectionStatus": true,
         "labels": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "agentVersion": true,
         "lastAlive": true,
-        "connectionStatus": true,
         "hostInfo": true,
         "createdByUserId": true,
         "_id": true,
@@ -1626,6 +1636,80 @@ func (r *RunbookAgentResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.Key = types.StringNull()
     }
+    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AgentVersion = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AgentVersion = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+        data.AgentVersion = NewJSONSubsetValue(val)
+    } else {
+        data.AgentVersion = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["connectionStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ConnectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ConnectionStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ConnectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ConnectionStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ConnectionStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.ConnectionStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["connectionStatus"].(string); ok && val != "" {
+        data.ConnectionStatus = types.StringValue(val)
+    } else {
+        data.ConnectionStatus = types.StringNull()
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1815,43 +1899,6 @@ func (r *RunbookAgentResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.Slug = types.StringNull()
     }
-    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AgentVersion = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AgentVersion = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.AgentVersion = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AgentVersion = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.AgentVersion = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
-        data.AgentVersion = NewJSONSubsetValue(val)
-    } else {
-        data.AgentVersion = NewJSONSubsetNull()
-    }
     if obj, ok := dataMap["lastAlive"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1888,43 +1935,6 @@ func (r *RunbookAgentResource) Update(ctx context.Context, req resource.UpdateRe
         data.LastAlive = NewJSONSubsetValue(val)
     } else {
         data.LastAlive = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["connectionStatus"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ConnectionStatus = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ConnectionStatus = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ConnectionStatus = types.StringValue(string(jsonBytes))
-            } else {
-                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ConnectionStatus = types.StringValue(string(jsonBytes))
-            } else {
-                data.ConnectionStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ConnectionStatus = types.StringValue(string(jsonBytes))
-        } else {
-            data.ConnectionStatus = types.StringNull()
-        }
-    } else if val, ok := dataMap["connectionStatus"].(string); ok && val != "" {
-        data.ConnectionStatus = types.StringValue(val)
-    } else {
-        data.ConnectionStatus = types.StringNull()
     }
     if obj, ok := dataMap["hostInfo"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
