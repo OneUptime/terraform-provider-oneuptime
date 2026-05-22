@@ -38,6 +38,7 @@ type KubernetesClusterDataDataSourceModel struct {
     ClusterIdentifier types.String `tfsdk:"cluster_identifier"`
     ProviderValue types.String `tfsdk:"provider_value"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
+    AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     NodeCount types.Number `tfsdk:"node_count"`
     PodCount types.Number `tfsdk:"pod_count"`
@@ -104,6 +105,10 @@ func (d *KubernetesClusterDataDataSource) Schema(ctx context.Context, req dataso
             },
             "otel_collector_status": schema.StringAttribute{
                 MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Kubernetes Cluster], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
+                Computed: true,
+            },
+            "agent_version": schema.StringAttribute{
+                MarkdownDescription: "Version of the OneUptime Kubernetes agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Kubernetes Cluster], Update: [Project Owner, Project Admin, Edit Kubernetes Cluster]",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -241,6 +246,9 @@ func (d *KubernetesClusterDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := kubernetesClusterDataResponse["otel_collector_status"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
+    }
+    if val, ok := kubernetesClusterDataResponse["agent_version"].(string); ok {
+        data.AgentVersion = types.StringValue(val)
     }
     if val, ok := kubernetesClusterDataResponse["last_seen_at"].(string); ok {
         data.LastSeenAt = types.StringValue(val)

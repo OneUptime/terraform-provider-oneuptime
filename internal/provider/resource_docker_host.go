@@ -46,6 +46,7 @@ type DockerHostResourceModel struct {
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
+    AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt JSONSubsetValue `tfsdk:"last_seen_at"`
     ContainersRunning types.Number `tfsdk:"containers_running"`
     ContainersStopped types.Number `tfsdk:"containers_stopped"`
@@ -129,6 +130,14 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
             },
             "otel_collector_status": schema.StringAttribute{
                 MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "agent_version": schema.StringAttribute{
+                MarkdownDescription: "Version of the OneUptime Docker agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -262,6 +271,7 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         "retainTelemetryDataForDays": r.bigFloatToFloat64(data.RetainTelemetryDataForDays.ValueBigFloat()),
         "telemetryRetentionConfig": r.parseJSONField(data.TelemetryRetentionConfig),
         "otelCollectorStatus": data.OtelCollectorStatus.ValueString(),
+        "agentVersion": data.AgentVersion.ValueString(),
         "lastSeenAt": r.parseJSONField(data.LastSeenAt),
         "containersRunning": r.bigFloatToFloat64(data.ContainersRunning.ValueBigFloat()),
         "containersStopped": r.bigFloatToFloat64(data.ContainersStopped.ValueBigFloat()),
@@ -569,6 +579,43 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
         data.OtelCollectorStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AgentVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AgentVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AgentVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AgentVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AgentVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+        data.AgentVersion = types.StringValue(val)
+    } else {
+        data.AgentVersion = types.StringNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -972,6 +1019,7 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
         "otelCollectorStatus": true,
+        "agentVersion": true,
         "lastSeenAt": true,
         "containersRunning": true,
         "containersStopped": true,
@@ -1291,6 +1339,43 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
         data.OtelCollectorStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AgentVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AgentVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AgentVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AgentVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AgentVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+        data.AgentVersion = types.StringValue(val)
+    } else {
+        data.AgentVersion = types.StringNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1708,6 +1793,9 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.OtelCollectorStatus.IsUnknown() && !state.OtelCollectorStatus.IsUnknown() && !data.OtelCollectorStatus.Equal(state.OtelCollectorStatus) {
         requestDataMap["otelCollectorStatus"] = data.OtelCollectorStatus.ValueString()
     }
+    if !data.AgentVersion.IsUnknown() && !state.AgentVersion.IsUnknown() && !data.AgentVersion.Equal(state.AgentVersion) {
+        requestDataMap["agentVersion"] = data.AgentVersion.ValueString()
+    }
     if !data.LastSeenAt.IsUnknown() && !state.LastSeenAt.IsUnknown() && !data.LastSeenAt.Equal(state.LastSeenAt) {
         var lastseenatData interface{}
         if err := json.Unmarshal([]byte(data.LastSeenAt.ValueString()), &lastseenatData); err == nil {
@@ -1771,6 +1859,7 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
         "otelCollectorStatus": true,
+        "agentVersion": true,
         "lastSeenAt": true,
         "containersRunning": true,
         "containersStopped": true,
@@ -2084,6 +2173,43 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
         data.OtelCollectorStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["agentVersion"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AgentVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AgentVersion = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AgentVersion = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AgentVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AgentVersion = types.StringValue(string(jsonBytes))
+            } else {
+                data.AgentVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AgentVersion = types.StringValue(string(jsonBytes))
+        } else {
+            data.AgentVersion = types.StringNull()
+        }
+    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+        data.AgentVersion = types.StringValue(val)
+    } else {
+        data.AgentVersion = types.StringNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

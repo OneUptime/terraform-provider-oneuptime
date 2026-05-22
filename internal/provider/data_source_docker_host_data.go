@@ -37,6 +37,7 @@ type DockerHostDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     HostIdentifier types.String `tfsdk:"host_identifier"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
+    AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     ContainersRunning types.Number `tfsdk:"containers_running"`
     ContainersStopped types.Number `tfsdk:"containers_stopped"`
@@ -101,6 +102,10 @@ func (d *DockerHostDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "otel_collector_status": schema.StringAttribute{
                 MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host], Update: [Project Owner, Project Admin, Edit Docker Host]",
+                Computed: true,
+            },
+            "agent_version": schema.StringAttribute{
+                MarkdownDescription: "Version of the OneUptime Docker agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host], Update: [Project Owner, Project Admin, Edit Docker Host]",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -243,6 +248,9 @@ func (d *DockerHostDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := dockerHostDataResponse["otel_collector_status"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
+    }
+    if val, ok := dockerHostDataResponse["agent_version"].(string); ok {
+        data.AgentVersion = types.StringValue(val)
     }
     if val, ok := dockerHostDataResponse["last_seen_at"].(string); ok {
         data.LastSeenAt = types.StringValue(val)

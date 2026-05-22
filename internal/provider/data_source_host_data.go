@@ -37,6 +37,7 @@ type HostDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     HostIdentifier types.String `tfsdk:"host_identifier"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
+    AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     OsType types.String `tfsdk:"os_type"`
     OsVersion types.String `tfsdk:"os_version"`
@@ -108,6 +109,10 @@ func (d *HostDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "otel_collector_status": schema.StringAttribute{
                 MarkdownDescription: "Connection status of the OTel Collector reporting on this host (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [Project Owner, Project Admin, Edit Host]",
+                Computed: true,
+            },
+            "agent_version": schema.StringAttribute{
+                MarkdownDescription: "Version of the OneUptime agent reporting telemetry on this host, as self-reported via the oneuptime.agent.version resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [Project Owner, Project Admin, Edit Host]",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -278,6 +283,9 @@ func (d *HostDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := hostDataResponse["otel_collector_status"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["agent_version"].(string); ok {
+        data.AgentVersion = types.StringValue(val)
     }
     if val, ok := hostDataResponse["last_seen_at"].(string); ok {
         data.LastSeenAt = types.StringValue(val)
