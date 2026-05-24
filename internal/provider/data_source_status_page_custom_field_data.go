@@ -34,6 +34,7 @@ type StatusPageCustomFieldDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
     CustomFieldType types.String `tfsdk:"custom_field_type"`
+    DropdownOptions types.String `tfsdk:"dropdown_options"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -81,6 +82,10 @@ func (d *StatusPageCustomFieldDataDataSource) Schema(ctx context.Context, req da
             },
             "custom_field_type": schema.StringAttribute{
                 MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Status Page Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Custom Field], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "dropdown_options": schema.StringAttribute{
+                MarkdownDescription: "Options for the dropdown field, one per line. Only used when Custom Field Type is Dropdown.. Permissions - Create: [Project Owner, Project Admin, Create Status Page Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Custom Field], Update: [Project Owner, Project Admin, Edit Status Page Custom Field]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -180,6 +185,9 @@ func (d *StatusPageCustomFieldDataDataSource) Read(ctx context.Context, req data
     }
     if val, ok := statusPageCustomFieldDataResponse["custom_field_type"].(string); ok {
         data.CustomFieldType = types.StringValue(val)
+    }
+    if val, ok := statusPageCustomFieldDataResponse["dropdown_options"].(string); ok {
+        data.DropdownOptions = types.StringValue(val)
     }
     if val, ok := statusPageCustomFieldDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

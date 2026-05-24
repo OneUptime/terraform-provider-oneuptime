@@ -34,6 +34,7 @@ type IncidentCustomFieldDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
     CustomFieldType types.String `tfsdk:"custom_field_type"`
+    DropdownOptions types.String `tfsdk:"dropdown_options"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -81,6 +82,10 @@ func (d *IncidentCustomFieldDataDataSource) Schema(ctx context.Context, req data
             },
             "custom_field_type": schema.StringAttribute{
                 MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create Incident Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Custom Field], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "dropdown_options": schema.StringAttribute{
+                MarkdownDescription: "Options for the dropdown field, one per line. Only used when Custom Field Type is Dropdown.. Permissions - Create: [Project Owner, Project Admin, Create Incident Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Custom Field], Update: [Project Owner, Project Admin, Edit Incident Custom Field]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -180,6 +185,9 @@ func (d *IncidentCustomFieldDataDataSource) Read(ctx context.Context, req dataso
     }
     if val, ok := incidentCustomFieldDataResponse["custom_field_type"].(string); ok {
         data.CustomFieldType = types.StringValue(val)
+    }
+    if val, ok := incidentCustomFieldDataResponse["dropdown_options"].(string); ok {
+        data.DropdownOptions = types.StringValue(val)
     }
     if val, ok := incidentCustomFieldDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

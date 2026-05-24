@@ -38,6 +38,7 @@ type OnCallPolicyCustomFieldResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     CustomFieldType JSONSubsetValue `tfsdk:"custom_field_type"`
+    DropdownOptions types.String `tfsdk:"dropdown_options"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -85,6 +86,14 @@ func (r *OnCallPolicyCustomFieldResource) Schema(ctx context.Context, req resour
             "custom_field_type": schema.StringAttribute{
                 MarkdownDescription: "Is this field Text, Number or Boolean?. Permissions - Create: [Project Owner, Project Admin, Create On-Call Policy Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Policy Custom Field], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "dropdown_options": schema.StringAttribute{
+                MarkdownDescription: "Options for the dropdown field, one per line. Only used when Custom Field Type is Dropdown.. Permissions - Create: [Project Owner, Project Admin, Create On-Call Policy Custom Field], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Policy Custom Field], Update: [Project Owner, Project Admin, Edit On-Call Policy Custom Field]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -161,6 +170,7 @@ func (r *OnCallPolicyCustomFieldResource) Create(ctx context.Context, req resour
         "name": data.Name.ValueString(),
         "description": data.Description.ValueString(),
         "customFieldType": r.parseJSONField(data.CustomFieldType),
+        "dropdownOptions": data.DropdownOptions.ValueString(),
         },
     }
 
@@ -347,6 +357,43 @@ func (r *OnCallPolicyCustomFieldResource) Create(ctx context.Context, req resour
         data.CustomFieldType = NewJSONSubsetValue(val)
     } else {
         data.CustomFieldType = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["dropdownOptions"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DropdownOptions = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DropdownOptions = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DropdownOptions = types.StringValue(string(jsonBytes))
+            } else {
+                data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DropdownOptions = types.StringValue(string(jsonBytes))
+            } else {
+                data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DropdownOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.DropdownOptions = types.StringNull()
+        }
+    } else if val, ok := dataMap["dropdownOptions"].(string); ok && val != "" {
+        data.DropdownOptions = types.StringValue(val)
+    } else {
+        data.DropdownOptions = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -571,6 +618,7 @@ func (r *OnCallPolicyCustomFieldResource) Read(ctx context.Context, req resource
         "name": true,
         "description": true,
         "customFieldType": true,
+        "dropdownOptions": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -768,6 +816,43 @@ func (r *OnCallPolicyCustomFieldResource) Read(ctx context.Context, req resource
         data.CustomFieldType = NewJSONSubsetValue(val)
     } else {
         data.CustomFieldType = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["dropdownOptions"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DropdownOptions = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DropdownOptions = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DropdownOptions = types.StringValue(string(jsonBytes))
+            } else {
+                data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DropdownOptions = types.StringValue(string(jsonBytes))
+            } else {
+                data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DropdownOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.DropdownOptions = types.StringNull()
+        }
+    } else if val, ok := dataMap["dropdownOptions"].(string); ok && val != "" {
+        data.DropdownOptions = types.StringValue(val)
+    } else {
+        data.DropdownOptions = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1004,6 +1089,9 @@ func (r *OnCallPolicyCustomFieldResource) Update(ctx context.Context, req resour
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.DropdownOptions.IsUnknown() && !state.DropdownOptions.IsUnknown() && !data.DropdownOptions.Equal(state.DropdownOptions) {
+        requestDataMap["dropdownOptions"] = data.DropdownOptions.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-custom-field/" + data.Id.ValueString() + "", onCallPolicyCustomFieldRequest)
@@ -1026,6 +1114,7 @@ func (r *OnCallPolicyCustomFieldResource) Update(ctx context.Context, req resour
         "name": true,
         "description": true,
         "customFieldType": true,
+        "dropdownOptions": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1217,6 +1306,43 @@ func (r *OnCallPolicyCustomFieldResource) Update(ctx context.Context, req resour
         data.CustomFieldType = NewJSONSubsetValue(val)
     } else {
         data.CustomFieldType = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["dropdownOptions"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DropdownOptions = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DropdownOptions = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DropdownOptions = types.StringValue(string(jsonBytes))
+            } else {
+                data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DropdownOptions = types.StringValue(string(jsonBytes))
+            } else {
+                data.DropdownOptions = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DropdownOptions = types.StringValue(string(jsonBytes))
+        } else {
+            data.DropdownOptions = types.StringNull()
+        }
+    } else if val, ok := dataMap["dropdownOptions"].(string); ok && val != "" {
+        data.DropdownOptions = types.StringValue(val)
+    } else {
+        data.DropdownOptions = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
