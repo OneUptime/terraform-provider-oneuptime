@@ -45,6 +45,10 @@ type AlertLabelRuleDataDataSourceModel struct {
     MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
     LabelsToAdd types.Set `tfsdk:"labels_to_add"`
     InheritLabelsFromMonitors types.Bool `tfsdk:"inherit_labels_from_monitors"`
+    InheritLabelsFromHosts types.Bool `tfsdk:"inherit_labels_from_hosts"`
+    InheritLabelsFromKubernetesClusters types.Bool `tfsdk:"inherit_labels_from_kubernetes_clusters"`
+    InheritLabelsFromDockerHosts types.Bool `tfsdk:"inherit_labels_from_docker_hosts"`
+    InheritLabelsFromServices types.Bool `tfsdk:"inherit_labels_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -136,6 +140,22 @@ func (d *AlertLabelRuleDataDataSource) Schema(ctx context.Context, req datasourc
             },
             "inherit_labels_from_monitors": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also copy every label of the alert's monitor onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Computed: true,
+            },
+            "inherit_labels_from_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected hosts onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Computed: true,
+            },
+            "inherit_labels_from_kubernetes_clusters": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected Kubernetes clusters onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Computed: true,
+            },
+            "inherit_labels_from_docker_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected Docker hosts onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Computed: true,
+            },
+            "inherit_labels_from_services": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected services onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -306,6 +326,18 @@ func (d *AlertLabelRuleDataDataSource) Read(ctx context.Context, req datasource.
     }
     if val, ok := alertLabelRuleDataResponse["inherit_labels_from_monitors"].(bool); ok {
         data.InheritLabelsFromMonitors = types.BoolValue(val)
+    }
+    if val, ok := alertLabelRuleDataResponse["inherit_labels_from_hosts"].(bool); ok {
+        data.InheritLabelsFromHosts = types.BoolValue(val)
+    }
+    if val, ok := alertLabelRuleDataResponse["inherit_labels_from_kubernetes_clusters"].(bool); ok {
+        data.InheritLabelsFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := alertLabelRuleDataResponse["inherit_labels_from_docker_hosts"].(bool); ok {
+        data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := alertLabelRuleDataResponse["inherit_labels_from_services"].(bool); ok {
+        data.InheritLabelsFromServices = types.BoolValue(val)
     }
     if val, ok := alertLabelRuleDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

@@ -48,7 +48,6 @@ type IncidentGroupingRuleDataDataSourceModel struct {
     GroupByMonitor types.Bool `tfsdk:"group_by_monitor"`
     GroupBySeverity types.Bool `tfsdk:"group_by_severity"`
     GroupByIncidentTitle types.Bool `tfsdk:"group_by_incident_title"`
-    GroupByService types.Bool `tfsdk:"group_by_service"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     GroupByFields types.String `tfsdk:"group_by_fields"`
@@ -171,10 +170,6 @@ func (d *IncidentGroupingRuleDataDataSource) Schema(ctx context.Context, req dat
             },
             "group_by_incident_title": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
-                Computed: true,
-            },
-            "group_by_service": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from monitors belonging to different services will be grouped into separate episodes. When disabled, incidents can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "enable_time_window": schema.BoolAttribute{
@@ -430,9 +425,6 @@ func (d *IncidentGroupingRuleDataDataSource) Read(ctx context.Context, req datas
     }
     if val, ok := incidentGroupingRuleDataResponse["group_by_incident_title"].(bool); ok {
         data.GroupByIncidentTitle = types.BoolValue(val)
-    }
-    if val, ok := incidentGroupingRuleDataResponse["group_by_service"].(bool); ok {
-        data.GroupByService = types.BoolValue(val)
     }
     if val, ok := incidentGroupingRuleDataResponse["enable_time_window"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)

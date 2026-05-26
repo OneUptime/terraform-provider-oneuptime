@@ -48,6 +48,9 @@ type AlertOwnerRuleDataDataSourceModel struct {
     OwnerTeams types.Set `tfsdk:"owner_teams"`
     InheritOwnersFromMonitors types.Bool `tfsdk:"inherit_owners_from_monitors"`
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
+    InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
+    InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -152,6 +155,18 @@ func (d *AlertOwnerRuleDataDataSource) Schema(ctx context.Context, req datasourc
             },
             "inherit_owners_from_hosts": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also assign every owner of the alert's affected hosts to the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Owner Rule], Update: [Project Owner, Project Admin, Edit Alert Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_kubernetes_clusters": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the alert's affected Kubernetes clusters to the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Owner Rule], Update: [Project Owner, Project Admin, Edit Alert Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_docker_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the alert's affected Docker hosts to the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Owner Rule], Update: [Project Owner, Project Admin, Edit Alert Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_services": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the alert's affected services to the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Owner Rule], Update: [Project Owner, Project Admin, Edit Alert Owner Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -340,6 +355,15 @@ func (d *AlertOwnerRuleDataDataSource) Read(ctx context.Context, req datasource.
     }
     if val, ok := alertOwnerRuleDataResponse["inherit_owners_from_hosts"].(bool); ok {
         data.InheritOwnersFromHosts = types.BoolValue(val)
+    }
+    if val, ok := alertOwnerRuleDataResponse["inherit_owners_from_kubernetes_clusters"].(bool); ok {
+        data.InheritOwnersFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := alertOwnerRuleDataResponse["inherit_owners_from_docker_hosts"].(bool); ok {
+        data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := alertOwnerRuleDataResponse["inherit_owners_from_services"].(bool); ok {
+        data.InheritOwnersFromServices = types.BoolValue(val)
     }
     if val, ok := alertOwnerRuleDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

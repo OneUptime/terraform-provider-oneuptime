@@ -53,6 +53,10 @@ type AlertLabelRuleResourceModel struct {
     MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
     LabelsToAdd types.Set `tfsdk:"labels_to_add"`
     InheritLabelsFromMonitors types.Bool `tfsdk:"inherit_labels_from_monitors"`
+    InheritLabelsFromHosts types.Bool `tfsdk:"inherit_labels_from_hosts"`
+    InheritLabelsFromKubernetesClusters types.Bool `tfsdk:"inherit_labels_from_kubernetes_clusters"`
+    InheritLabelsFromDockerHosts types.Bool `tfsdk:"inherit_labels_from_docker_hosts"`
+    InheritLabelsFromServices types.Bool `tfsdk:"inherit_labels_from_services"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -191,6 +195,42 @@ func (r *AlertLabelRuleResource) Schema(ctx context.Context, req resource.Schema
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "inherit_labels_from_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected hosts onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "inherit_labels_from_kubernetes_clusters": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected Kubernetes clusters onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "inherit_labels_from_docker_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected Docker hosts onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "inherit_labels_from_services": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected services onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -267,6 +307,10 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
         "monitorDescriptionPattern": data.MonitorDescriptionPattern.ValueString(),
         "labelsToAdd": r.convertTerraformSetToInterface(data.LabelsToAdd),
         "inheritLabelsFromMonitors": data.InheritLabelsFromMonitors.ValueBool(),
+        "inheritLabelsFromHosts": data.InheritLabelsFromHosts.ValueBool(),
+        "inheritLabelsFromKubernetesClusters": data.InheritLabelsFromKubernetesClusters.ValueBool(),
+        "inheritLabelsFromDockerHosts": data.InheritLabelsFromDockerHosts.ValueBool(),
+        "inheritLabelsFromServices": data.InheritLabelsFromServices.ValueBool(),
         },
     }
 
@@ -731,6 +775,18 @@ func (r *AlertLabelRuleResource) Create(ctx context.Context, req resource.Create
     if val, ok := dataMap["inheritLabelsFromMonitors"].(bool); ok {
         data.InheritLabelsFromMonitors = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritLabelsFromHosts"].(bool); ok {
+        data.InheritLabelsFromHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromKubernetesClusters"].(bool); ok {
+        data.InheritLabelsFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
+        data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
+        data.InheritLabelsFromServices = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -927,6 +983,10 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
         "monitorDescriptionPattern": true,
         "labelsToAdd": true,
         "inheritLabelsFromMonitors": true,
+        "inheritLabelsFromHosts": true,
+        "inheritLabelsFromKubernetesClusters": true,
+        "inheritLabelsFromDockerHosts": true,
+        "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1401,6 +1461,18 @@ func (r *AlertLabelRuleResource) Read(ctx context.Context, req resource.ReadRequ
     if val, ok := dataMap["inheritLabelsFromMonitors"].(bool); ok {
         data.InheritLabelsFromMonitors = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritLabelsFromHosts"].(bool); ok {
+        data.InheritLabelsFromHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromKubernetesClusters"].(bool); ok {
+        data.InheritLabelsFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
+        data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
+        data.InheritLabelsFromServices = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1632,6 +1704,18 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
     if !data.InheritLabelsFromMonitors.IsUnknown() && !state.InheritLabelsFromMonitors.IsUnknown() && !data.InheritLabelsFromMonitors.Equal(state.InheritLabelsFromMonitors) {
         requestDataMap["inheritLabelsFromMonitors"] = data.InheritLabelsFromMonitors.ValueBool()
     }
+    if !data.InheritLabelsFromHosts.IsUnknown() && !state.InheritLabelsFromHosts.IsUnknown() && !data.InheritLabelsFromHosts.Equal(state.InheritLabelsFromHosts) {
+        requestDataMap["inheritLabelsFromHosts"] = data.InheritLabelsFromHosts.ValueBool()
+    }
+    if !data.InheritLabelsFromKubernetesClusters.IsUnknown() && !state.InheritLabelsFromKubernetesClusters.IsUnknown() && !data.InheritLabelsFromKubernetesClusters.Equal(state.InheritLabelsFromKubernetesClusters) {
+        requestDataMap["inheritLabelsFromKubernetesClusters"] = data.InheritLabelsFromKubernetesClusters.ValueBool()
+    }
+    if !data.InheritLabelsFromDockerHosts.IsUnknown() && !state.InheritLabelsFromDockerHosts.IsUnknown() && !data.InheritLabelsFromDockerHosts.Equal(state.InheritLabelsFromDockerHosts) {
+        requestDataMap["inheritLabelsFromDockerHosts"] = data.InheritLabelsFromDockerHosts.ValueBool()
+    }
+    if !data.InheritLabelsFromServices.IsUnknown() && !state.InheritLabelsFromServices.IsUnknown() && !data.InheritLabelsFromServices.Equal(state.InheritLabelsFromServices) {
+        requestDataMap["inheritLabelsFromServices"] = data.InheritLabelsFromServices.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/alert-label-rule/" + data.Id.ValueString() + "", alertLabelRuleRequest)
@@ -1664,6 +1748,10 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
         "monitorDescriptionPattern": true,
         "labelsToAdd": true,
         "inheritLabelsFromMonitors": true,
+        "inheritLabelsFromHosts": true,
+        "inheritLabelsFromKubernetesClusters": true,
+        "inheritLabelsFromDockerHosts": true,
+        "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2131,6 +2219,18 @@ func (r *AlertLabelRuleResource) Update(ctx context.Context, req resource.Update
     }
     if val, ok := dataMap["inheritLabelsFromMonitors"].(bool); ok {
         data.InheritLabelsFromMonitors = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromHosts"].(bool); ok {
+        data.InheritLabelsFromHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromKubernetesClusters"].(bool); ok {
+        data.InheritLabelsFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
+        data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
+        data.InheritLabelsFromServices = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -58,7 +58,6 @@ type AlertGroupingRuleResourceModel struct {
     GroupByMonitor types.Bool `tfsdk:"group_by_monitor"`
     GroupBySeverity types.Bool `tfsdk:"group_by_severity"`
     GroupByAlertTitle types.Bool `tfsdk:"group_by_alert_title"`
-    GroupByService types.Bool `tfsdk:"group_by_service"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     GroupByFields JSONSubsetValue `tfsdk:"group_by_fields"`
@@ -234,15 +233,6 @@ func (r *AlertGroupingRuleResource) Schema(ctx context.Context, req resource.Sch
             },
             "group_by_alert_title": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, alerts with different titles will be grouped into separate episodes. When disabled, alerts with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "group_by_service": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, alerts from monitors belonging to different services will be grouped into separate episodes. When disabled, alerts can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -478,7 +468,6 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
         "groupByMonitor": data.GroupByMonitor.ValueBool(),
         "groupBySeverity": data.GroupBySeverity.ValueBool(),
         "groupByAlertTitle": data.GroupByAlertTitle.ValueBool(),
-        "groupByService": data.GroupByService.ValueBool(),
         "enableTimeWindow": data.EnableTimeWindow.ValueBool(),
         "timeWindowMinutes": r.bigFloatToFloat64(data.TimeWindowMinutes.ValueBigFloat()),
         "groupByFields": r.parseJSONField(data.GroupByFields),
@@ -979,9 +968,6 @@ func (r *AlertGroupingRuleResource) Create(ctx context.Context, req resource.Cre
     }
     if val, ok := dataMap["groupByAlertTitle"].(bool); ok {
         data.GroupByAlertTitle = types.BoolValue(val)
-    }
-    if val, ok := dataMap["groupByService"].(bool); ok {
-        data.GroupByService = types.BoolValue(val)
     }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
@@ -1543,7 +1529,6 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
         "groupByMonitor": true,
         "groupBySeverity": true,
         "groupByAlertTitle": true,
-        "groupByService": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "groupByFields": true,
@@ -2054,9 +2039,6 @@ func (r *AlertGroupingRuleResource) Read(ctx context.Context, req resource.ReadR
     }
     if val, ok := dataMap["groupByAlertTitle"].(bool); ok {
         data.GroupByAlertTitle = types.BoolValue(val)
-    }
-    if val, ok := dataMap["groupByService"].(bool); ok {
-        data.GroupByService = types.BoolValue(val)
     }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
@@ -2664,9 +2646,6 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.GroupByAlertTitle.IsUnknown() && !state.GroupByAlertTitle.IsUnknown() && !data.GroupByAlertTitle.Equal(state.GroupByAlertTitle) {
         requestDataMap["groupByAlertTitle"] = data.GroupByAlertTitle.ValueBool()
     }
-    if !data.GroupByService.IsUnknown() && !state.GroupByService.IsUnknown() && !data.GroupByService.Equal(state.GroupByService) {
-        requestDataMap["groupByService"] = data.GroupByService.ValueBool()
-    }
     if !data.EnableTimeWindow.IsUnknown() && !state.EnableTimeWindow.IsUnknown() && !data.EnableTimeWindow.Equal(state.EnableTimeWindow) {
         requestDataMap["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
     }
@@ -2758,7 +2737,6 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
         "groupByMonitor": true,
         "groupBySeverity": true,
         "groupByAlertTitle": true,
-        "groupByService": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "groupByFields": true,
@@ -3263,9 +3241,6 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
     }
     if val, ok := dataMap["groupByAlertTitle"].(bool); ok {
         data.GroupByAlertTitle = types.BoolValue(val)
-    }
-    if val, ok := dataMap["groupByService"].(bool); ok {
-        data.GroupByService = types.BoolValue(val)
     }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)

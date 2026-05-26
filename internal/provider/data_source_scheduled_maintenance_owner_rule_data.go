@@ -46,6 +46,10 @@ type ScheduledMaintenanceOwnerRuleDataDataSourceModel struct {
     OwnerUsers types.Set `tfsdk:"owner_users"`
     OwnerTeams types.Set `tfsdk:"owner_teams"`
     InheritOwnersFromMonitors types.Bool `tfsdk:"inherit_owners_from_monitors"`
+    InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
+    InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
+    InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -141,6 +145,22 @@ func (d *ScheduledMaintenanceOwnerRuleDataDataSource) Schema(ctx context.Context
             },
             "inherit_owners_from_monitors": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also assign every owner of the event's monitors to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected hosts to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_kubernetes_clusters": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected Kubernetes clusters to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_docker_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected Docker hosts to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_services": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected services to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -314,6 +334,18 @@ func (d *ScheduledMaintenanceOwnerRuleDataDataSource) Read(ctx context.Context, 
     }
     if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_monitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)
+    }
+    if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_hosts"].(bool); ok {
+        data.InheritOwnersFromHosts = types.BoolValue(val)
+    }
+    if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_kubernetes_clusters"].(bool); ok {
+        data.InheritOwnersFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_docker_hosts"].(bool); ok {
+        data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_services"].(bool); ok {
+        data.InheritOwnersFromServices = types.BoolValue(val)
     }
     if val, ok := scheduledMaintenanceOwnerRuleDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

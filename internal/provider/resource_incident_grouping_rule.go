@@ -58,7 +58,6 @@ type IncidentGroupingRuleResourceModel struct {
     GroupByMonitor types.Bool `tfsdk:"group_by_monitor"`
     GroupBySeverity types.Bool `tfsdk:"group_by_severity"`
     GroupByIncidentTitle types.Bool `tfsdk:"group_by_incident_title"`
-    GroupByService types.Bool `tfsdk:"group_by_service"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     GroupByFields JSONSubsetValue `tfsdk:"group_by_fields"`
@@ -237,15 +236,6 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
             },
             "group_by_incident_title": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "group_by_service": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from monitors belonging to different services will be grouped into separate episodes. When disabled, incidents can be grouped together regardless of which service the monitor belongs to.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -508,7 +498,6 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         "groupByMonitor": data.GroupByMonitor.ValueBool(),
         "groupBySeverity": data.GroupBySeverity.ValueBool(),
         "groupByIncidentTitle": data.GroupByIncidentTitle.ValueBool(),
-        "groupByService": data.GroupByService.ValueBool(),
         "enableTimeWindow": data.EnableTimeWindow.ValueBool(),
         "timeWindowMinutes": r.bigFloatToFloat64(data.TimeWindowMinutes.ValueBigFloat()),
         "groupByFields": r.parseJSONField(data.GroupByFields),
@@ -1012,9 +1001,6 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
     }
     if val, ok := dataMap["groupByIncidentTitle"].(bool); ok {
         data.GroupByIncidentTitle = types.BoolValue(val)
-    }
-    if val, ok := dataMap["groupByService"].(bool); ok {
-        data.GroupByService = types.BoolValue(val)
     }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
@@ -1648,7 +1634,6 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         "groupByMonitor": true,
         "groupBySeverity": true,
         "groupByIncidentTitle": true,
-        "groupByService": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "groupByFields": true,
@@ -2162,9 +2147,6 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
     }
     if val, ok := dataMap["groupByIncidentTitle"].(bool); ok {
         data.GroupByIncidentTitle = types.BoolValue(val)
-    }
-    if val, ok := dataMap["groupByService"].(bool); ok {
-        data.GroupByService = types.BoolValue(val)
     }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
@@ -2844,9 +2826,6 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
     if !data.GroupByIncidentTitle.IsUnknown() && !state.GroupByIncidentTitle.IsUnknown() && !data.GroupByIncidentTitle.Equal(state.GroupByIncidentTitle) {
         requestDataMap["groupByIncidentTitle"] = data.GroupByIncidentTitle.ValueBool()
     }
-    if !data.GroupByService.IsUnknown() && !state.GroupByService.IsUnknown() && !data.GroupByService.Equal(state.GroupByService) {
-        requestDataMap["groupByService"] = data.GroupByService.ValueBool()
-    }
     if !data.EnableTimeWindow.IsUnknown() && !state.EnableTimeWindow.IsUnknown() && !data.EnableTimeWindow.Equal(state.EnableTimeWindow) {
         requestDataMap["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
     }
@@ -2952,7 +2931,6 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         "groupByMonitor": true,
         "groupBySeverity": true,
         "groupByIncidentTitle": true,
-        "groupByService": true,
         "enableTimeWindow": true,
         "timeWindowMinutes": true,
         "groupByFields": true,
@@ -3460,9 +3438,6 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
     }
     if val, ok := dataMap["groupByIncidentTitle"].(bool); ok {
         data.GroupByIncidentTitle = types.BoolValue(val)
-    }
-    if val, ok := dataMap["groupByService"].(bool); ok {
-        data.GroupByService = types.BoolValue(val)
     }
     if val, ok := dataMap["enableTimeWindow"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)

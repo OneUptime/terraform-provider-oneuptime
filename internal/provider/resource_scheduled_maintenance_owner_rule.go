@@ -54,6 +54,10 @@ type ScheduledMaintenanceOwnerRuleResourceModel struct {
     OwnerUsers types.Set `tfsdk:"owner_users"`
     OwnerTeams types.Set `tfsdk:"owner_teams"`
     InheritOwnersFromMonitors types.Bool `tfsdk:"inherit_owners_from_monitors"`
+    InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
+    InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
+    InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -201,6 +205,42 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "inherit_owners_from_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected hosts to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "inherit_owners_from_kubernetes_clusters": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected Kubernetes clusters to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "inherit_owners_from_docker_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected Docker hosts to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "inherit_owners_from_services": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected services to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -278,6 +318,10 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Create(ctx context.Context, req 
         "ownerUsers": r.convertTerraformSetToInterface(data.OwnerUsers),
         "ownerTeams": r.convertTerraformSetToInterface(data.OwnerTeams),
         "inheritOwnersFromMonitors": data.InheritOwnersFromMonitors.ValueBool(),
+        "inheritOwnersFromHosts": data.InheritOwnersFromHosts.ValueBool(),
+        "inheritOwnersFromKubernetesClusters": data.InheritOwnersFromKubernetesClusters.ValueBool(),
+        "inheritOwnersFromDockerHosts": data.InheritOwnersFromDockerHosts.ValueBool(),
+        "inheritOwnersFromServices": data.InheritOwnersFromServices.ValueBool(),
         },
     }
 
@@ -745,6 +789,18 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Create(ctx context.Context, req 
     if val, ok := dataMap["inheritOwnersFromMonitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritOwnersFromHosts"].(bool); ok {
+        data.InheritOwnersFromHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromKubernetesClusters"].(bool); ok {
+        data.InheritOwnersFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
+        data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
+        data.InheritOwnersFromServices = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -942,6 +998,10 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Read(ctx context.Context, req re
         "ownerUsers": true,
         "ownerTeams": true,
         "inheritOwnersFromMonitors": true,
+        "inheritOwnersFromHosts": true,
+        "inheritOwnersFromKubernetesClusters": true,
+        "inheritOwnersFromDockerHosts": true,
+        "inheritOwnersFromServices": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1419,6 +1479,18 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Read(ctx context.Context, req re
     if val, ok := dataMap["inheritOwnersFromMonitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritOwnersFromHosts"].(bool); ok {
+        data.InheritOwnersFromHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromKubernetesClusters"].(bool); ok {
+        data.InheritOwnersFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
+        data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
+        data.InheritOwnersFromServices = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1653,6 +1725,18 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Update(ctx context.Context, req 
     if !data.InheritOwnersFromMonitors.IsUnknown() && !state.InheritOwnersFromMonitors.IsUnknown() && !data.InheritOwnersFromMonitors.Equal(state.InheritOwnersFromMonitors) {
         requestDataMap["inheritOwnersFromMonitors"] = data.InheritOwnersFromMonitors.ValueBool()
     }
+    if !data.InheritOwnersFromHosts.IsUnknown() && !state.InheritOwnersFromHosts.IsUnknown() && !data.InheritOwnersFromHosts.Equal(state.InheritOwnersFromHosts) {
+        requestDataMap["inheritOwnersFromHosts"] = data.InheritOwnersFromHosts.ValueBool()
+    }
+    if !data.InheritOwnersFromKubernetesClusters.IsUnknown() && !state.InheritOwnersFromKubernetesClusters.IsUnknown() && !data.InheritOwnersFromKubernetesClusters.Equal(state.InheritOwnersFromKubernetesClusters) {
+        requestDataMap["inheritOwnersFromKubernetesClusters"] = data.InheritOwnersFromKubernetesClusters.ValueBool()
+    }
+    if !data.InheritOwnersFromDockerHosts.IsUnknown() && !state.InheritOwnersFromDockerHosts.IsUnknown() && !data.InheritOwnersFromDockerHosts.Equal(state.InheritOwnersFromDockerHosts) {
+        requestDataMap["inheritOwnersFromDockerHosts"] = data.InheritOwnersFromDockerHosts.ValueBool()
+    }
+    if !data.InheritOwnersFromServices.IsUnknown() && !state.InheritOwnersFromServices.IsUnknown() && !data.InheritOwnersFromServices.Equal(state.InheritOwnersFromServices) {
+        requestDataMap["inheritOwnersFromServices"] = data.InheritOwnersFromServices.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/scheduled-maintenance-owner-rule/" + data.Id.ValueString() + "", scheduledMaintenanceOwnerRuleRequest)
@@ -1686,6 +1770,10 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Update(ctx context.Context, req 
         "ownerUsers": true,
         "ownerTeams": true,
         "inheritOwnersFromMonitors": true,
+        "inheritOwnersFromHosts": true,
+        "inheritOwnersFromKubernetesClusters": true,
+        "inheritOwnersFromDockerHosts": true,
+        "inheritOwnersFromServices": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2156,6 +2244,18 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Update(ctx context.Context, req 
     }
     if val, ok := dataMap["inheritOwnersFromMonitors"].(bool); ok {
         data.InheritOwnersFromMonitors = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromHosts"].(bool); ok {
+        data.InheritOwnersFromHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromKubernetesClusters"].(bool); ok {
+        data.InheritOwnersFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
+        data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
+        data.InheritOwnersFromServices = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

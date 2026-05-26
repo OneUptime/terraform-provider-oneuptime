@@ -24,6 +24,7 @@ resource "oneuptime_team" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `name` (String) Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team]. Required.
 - `description` (String) Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Edit Team]. Computed.
+- `custom_fields` (String) Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Settings Admin, Settings Member, Edit Team]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.

@@ -40,6 +40,10 @@ type ScheduledMaintenanceTemplateDataDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
+    Hosts types.Set `tfsdk:"hosts"`
+    KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
+    DockerHosts types.Set `tfsdk:"docker_hosts"`
+    Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
     Labels types.Set `tfsdk:"labels"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
@@ -119,6 +123,26 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Schema(ctx context.Context,
             },
             "monitors": schema.SetAttribute{
                 MarkdownDescription: "List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance Template]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "hosts": schema.SetAttribute{
+                MarkdownDescription: "List of hosts to pre-populate on scheduled maintenance events created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance Template]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance Template]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Docker hosts to pre-populate on scheduled maintenance events created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance Template]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "List of services to pre-populate on scheduled maintenance events created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -293,6 +317,54 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Read(ctx context.Context, r
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.Monitors = setValue
+    }
+    if val, ok := scheduledMaintenanceTemplateDataResponse["hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Hosts = setValue
+    }
+    if val, ok := scheduledMaintenanceTemplateDataResponse["kubernetes_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.KubernetesClusters = setValue
+    }
+    if val, ok := scheduledMaintenanceTemplateDataResponse["docker_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerHosts = setValue
+    }
+    if val, ok := scheduledMaintenanceTemplateDataResponse["services"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.Services = setValue
     }
     if val, ok := scheduledMaintenanceTemplateDataResponse["status_pages"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

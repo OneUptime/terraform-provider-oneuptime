@@ -39,6 +39,7 @@ type TeamDataDataSourceModel struct {
     IsTeamDeleteable types.Bool `tfsdk:"is_team_deleteable"`
     ShouldHaveAtLeastOneMember types.Bool `tfsdk:"should_have_at_least_one_member"`
     IsTeamEditable types.Bool `tfsdk:"is_team_editable"`
+    CustomFields types.String `tfsdk:"custom_fields"`
 }
 
 func (d *TeamDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -104,6 +105,10 @@ func (d *TeamDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "is_team_editable": schema.BoolAttribute{
                 MarkdownDescription: "Can you edit team? Teams auto-created for you are uneditable but you should be able to edit on the team you create. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Edit Team, Edit Team Permissions], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "custom_fields": schema.StringAttribute{
+                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Team], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Teams], Update: [Project Owner, Project Admin, Settings Admin, Settings Member, Edit Team]",
                 Computed: true,
             },
         },
@@ -210,6 +215,9 @@ func (d *TeamDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := teamDataResponse["is_team_editable"].(bool); ok {
         data.IsTeamEditable = types.BoolValue(val)
+    }
+    if val, ok := teamDataResponse["custom_fields"].(string); ok {
+        data.CustomFields = types.StringValue(val)
     }
 
     // Write logs using the tflog package

@@ -48,6 +48,9 @@ type IncidentOwnerRuleDataDataSourceModel struct {
     OwnerTeams types.Set `tfsdk:"owner_teams"`
     InheritOwnersFromMonitors types.Bool `tfsdk:"inherit_owners_from_monitors"`
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
+    InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
+    InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -152,6 +155,18 @@ func (d *IncidentOwnerRuleDataDataSource) Schema(ctx context.Context, req dataso
             },
             "inherit_owners_from_hosts": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected hosts to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_kubernetes_clusters": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected Kubernetes clusters to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_docker_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected Docker hosts to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_services": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected services to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -340,6 +355,15 @@ func (d *IncidentOwnerRuleDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := incidentOwnerRuleDataResponse["inherit_owners_from_hosts"].(bool); ok {
         data.InheritOwnersFromHosts = types.BoolValue(val)
+    }
+    if val, ok := incidentOwnerRuleDataResponse["inherit_owners_from_kubernetes_clusters"].(bool); ok {
+        data.InheritOwnersFromKubernetesClusters = types.BoolValue(val)
+    }
+    if val, ok := incidentOwnerRuleDataResponse["inherit_owners_from_docker_hosts"].(bool); ok {
+        data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := incidentOwnerRuleDataResponse["inherit_owners_from_services"].(bool); ok {
+        data.InheritOwnersFromServices = types.BoolValue(val)
     }
     if val, ok := incidentOwnerRuleDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
