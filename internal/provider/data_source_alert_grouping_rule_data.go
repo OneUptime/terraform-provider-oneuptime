@@ -48,6 +48,8 @@ type AlertGroupingRuleDataDataSourceModel struct {
     GroupByMonitor types.Bool `tfsdk:"group_by_monitor"`
     GroupBySeverity types.Bool `tfsdk:"group_by_severity"`
     GroupByAlertTitle types.Bool `tfsdk:"group_by_alert_title"`
+    GroupByAlertLabels types.Bool `tfsdk:"group_by_alert_labels"`
+    GroupByMonitorLabels types.Bool `tfsdk:"group_by_monitor_labels"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     GroupByFields types.String `tfsdk:"group_by_fields"`
@@ -167,6 +169,14 @@ func (d *AlertGroupingRuleDataDataSource) Schema(ctx context.Context, req dataso
             },
             "group_by_alert_title": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, alerts with different titles will be grouped into separate episodes. When disabled, alerts with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                Computed: true,
+            },
+            "group_by_alert_labels": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, alerts with different sets of labels will be grouped into separate episodes (exact set match). When disabled, alert labels are ignored for grouping.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
+                Computed: true,
+            },
+            "group_by_monitor_labels": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, alerts whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping.. Permissions - Create: [Project Owner, Project Admin, Create Alert Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Grouping Rule], Update: [Project Owner, Project Admin, Edit Alert Grouping Rule]",
                 Computed: true,
             },
             "enable_time_window": schema.BoolAttribute{
@@ -409,6 +419,12 @@ func (d *AlertGroupingRuleDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := alertGroupingRuleDataResponse["group_by_alert_title"].(bool); ok {
         data.GroupByAlertTitle = types.BoolValue(val)
+    }
+    if val, ok := alertGroupingRuleDataResponse["group_by_alert_labels"].(bool); ok {
+        data.GroupByAlertLabels = types.BoolValue(val)
+    }
+    if val, ok := alertGroupingRuleDataResponse["group_by_monitor_labels"].(bool); ok {
+        data.GroupByMonitorLabels = types.BoolValue(val)
     }
     if val, ok := alertGroupingRuleDataResponse["enable_time_window"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)

@@ -48,6 +48,8 @@ type IncidentGroupingRuleDataDataSourceModel struct {
     GroupByMonitor types.Bool `tfsdk:"group_by_monitor"`
     GroupBySeverity types.Bool `tfsdk:"group_by_severity"`
     GroupByIncidentTitle types.Bool `tfsdk:"group_by_incident_title"`
+    GroupByIncidentLabels types.Bool `tfsdk:"group_by_incident_labels"`
+    GroupByMonitorLabels types.Bool `tfsdk:"group_by_monitor_labels"`
     EnableTimeWindow types.Bool `tfsdk:"enable_time_window"`
     TimeWindowMinutes types.Number `tfsdk:"time_window_minutes"`
     GroupByFields types.String `tfsdk:"group_by_fields"`
@@ -170,6 +172,14 @@ func (d *IncidentGroupingRuleDataDataSource) Schema(ctx context.Context, req dat
             },
             "group_by_incident_title": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Computed: true,
+            },
+            "group_by_incident_labels": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                Computed: true,
+            },
+            "group_by_monitor_labels": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, incidents whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
                 Computed: true,
             },
             "enable_time_window": schema.BoolAttribute{
@@ -425,6 +435,12 @@ func (d *IncidentGroupingRuleDataDataSource) Read(ctx context.Context, req datas
     }
     if val, ok := incidentGroupingRuleDataResponse["group_by_incident_title"].(bool); ok {
         data.GroupByIncidentTitle = types.BoolValue(val)
+    }
+    if val, ok := incidentGroupingRuleDataResponse["group_by_incident_labels"].(bool); ok {
+        data.GroupByIncidentLabels = types.BoolValue(val)
+    }
+    if val, ok := incidentGroupingRuleDataResponse["group_by_monitor_labels"].(bool); ok {
+        data.GroupByMonitorLabels = types.BoolValue(val)
     }
     if val, ok := incidentGroupingRuleDataResponse["enable_time_window"].(bool); ok {
         data.EnableTimeWindow = types.BoolValue(val)
