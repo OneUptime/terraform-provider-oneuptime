@@ -47,6 +47,7 @@ type AlertEpisodeMemberResourceModel struct {
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotifiedOfAlertAdded types.Bool `tfsdk:"is_owner_notified_of_alert_added"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -137,6 +138,10 @@ func (r *AlertEpisodeMemberResource) Schema(ctx context.Context, req resource.Sc
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_owner_notified_of_alert_added": schema.BoolAttribute{
+                MarkdownDescription: "Has the owner been notified that this alert was added to the episode?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Episode Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -644,6 +649,11 @@ func (r *AlertEpisodeMemberResource) Create(ctx context.Context, req resource.Cr
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
+    } else if dataMap["isOwnerNotifiedOfAlertAdded"] == nil {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -718,6 +728,7 @@ func (r *AlertEpisodeMemberResource) Read(ctx context.Context, req resource.Read
         "deletedAt": true,
         "version": true,
         "createdByUserId": true,
+        "isOwnerNotifiedOfAlertAdded": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1179,6 +1190,11 @@ func (r *AlertEpisodeMemberResource) Read(ctx context.Context, req resource.Read
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
+    } else if dataMap["isOwnerNotifiedOfAlertAdded"] == nil {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1280,6 +1296,7 @@ func (r *AlertEpisodeMemberResource) Update(ctx context.Context, req resource.Up
         "deletedAt": true,
         "version": true,
         "createdByUserId": true,
+        "isOwnerNotifiedOfAlertAdded": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1734,6 +1751,11 @@ func (r *AlertEpisodeMemberResource) Update(ctx context.Context, req resource.Up
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
+    } else if dataMap["isOwnerNotifiedOfAlertAdded"] == nil {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

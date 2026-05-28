@@ -47,6 +47,7 @@ type IncidentEpisodeMemberResourceModel struct {
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotifiedOfIncidentAdded types.Bool `tfsdk:"is_owner_notified_of_incident_added"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -137,6 +138,10 @@ func (r *IncidentEpisodeMemberResource) Schema(ctx context.Context, req resource
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_owner_notified_of_incident_added": schema.BoolAttribute{
+                MarkdownDescription: "Has the owner been notified that this incident was added to the episode?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -644,6 +649,11 @@ func (r *IncidentEpisodeMemberResource) Create(ctx context.Context, req resource
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotifiedOfIncidentAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfIncidentAdded = types.BoolValue(val)
+    } else if dataMap["isOwnerNotifiedOfIncidentAdded"] == nil {
+        data.IsOwnerNotifiedOfIncidentAdded = types.BoolNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -718,6 +728,7 @@ func (r *IncidentEpisodeMemberResource) Read(ctx context.Context, req resource.R
         "deletedAt": true,
         "version": true,
         "createdByUserId": true,
+        "isOwnerNotifiedOfIncidentAdded": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1179,6 +1190,11 @@ func (r *IncidentEpisodeMemberResource) Read(ctx context.Context, req resource.R
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotifiedOfIncidentAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfIncidentAdded = types.BoolValue(val)
+    } else if dataMap["isOwnerNotifiedOfIncidentAdded"] == nil {
+        data.IsOwnerNotifiedOfIncidentAdded = types.BoolNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1280,6 +1296,7 @@ func (r *IncidentEpisodeMemberResource) Update(ctx context.Context, req resource
         "deletedAt": true,
         "version": true,
         "createdByUserId": true,
+        "isOwnerNotifiedOfIncidentAdded": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1734,6 +1751,11 @@ func (r *IncidentEpisodeMemberResource) Update(ctx context.Context, req resource
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["isOwnerNotifiedOfIncidentAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfIncidentAdded = types.BoolValue(val)
+    } else if dataMap["isOwnerNotifiedOfIncidentAdded"] == nil {
+        data.IsOwnerNotifiedOfIncidentAdded = types.BoolNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

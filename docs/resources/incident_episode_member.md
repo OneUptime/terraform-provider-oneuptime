@@ -34,6 +34,7 @@ resource "oneuptime_incident_episode_member" "example" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `is_owner_notified_of_incident_added` (Bool) Has the owner been notified that this incident was added to the episode?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

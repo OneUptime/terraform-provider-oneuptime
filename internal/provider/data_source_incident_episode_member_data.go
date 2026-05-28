@@ -39,6 +39,7 @@ type IncidentEpisodeMemberDataDataSourceModel struct {
     AddedByUserId types.String `tfsdk:"added_by_user_id"`
     MatchedRuleId types.String `tfsdk:"matched_rule_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotifiedOfIncidentAdded types.Bool `tfsdk:"is_owner_notified_of_incident_added"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -105,6 +106,10 @@ func (d *IncidentEpisodeMemberDataDataSource) Schema(ctx context.Context, req da
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_owner_notified_of_incident_added": schema.BoolAttribute{
+                MarkdownDescription: "Has the owner been notified that this incident was added to the episode?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Episode Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -215,6 +220,9 @@ func (d *IncidentEpisodeMemberDataDataSource) Read(ctx context.Context, req data
     }
     if val, ok := incidentEpisodeMemberDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
+    }
+    if val, ok := incidentEpisodeMemberDataResponse["is_owner_notified_of_incident_added"].(bool); ok {
+        data.IsOwnerNotifiedOfIncidentAdded = types.BoolValue(val)
     }
     if val, ok := incidentEpisodeMemberDataResponse["deleted_by_user_id"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
