@@ -45,6 +45,8 @@ type StatusPageResourceDataDataSourceModel struct {
     ShowStatusHistoryChart types.Bool `tfsdk:"show_status_history_chart"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Order types.Number `tfsdk:"order"`
+    RowAxisValue types.String `tfsdk:"row_axis_value"`
+    ColumnAxisValue types.String `tfsdk:"column_axis_value"`
 }
 
 func (d *StatusPageResourceDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -134,6 +136,14 @@ func (d *StatusPageResourceDataDataSource) Schema(ctx context.Context, req datas
             },
             "order": schema.NumberAttribute{
                 MarkdownDescription: "Order / Priority of this resource. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Resource]",
+                Computed: true,
+            },
+            "row_axis_value": schema.StringAttribute{
+                MarkdownDescription: "Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Resource]",
+                Computed: true,
+            },
+            "column_axis_value": schema.StringAttribute{
+                MarkdownDescription: "Column this resource belongs to when its status page group is rendered as a grid. Should match one of the column axis values defined on the group.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Resource]",
                 Computed: true,
             },
         },
@@ -258,6 +268,12 @@ func (d *StatusPageResourceDataDataSource) Read(ctx context.Context, req datasou
     }
     if val, ok := statusPageResourceDataResponse["order"].(float64); ok {
         data.Order = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := statusPageResourceDataResponse["row_axis_value"].(string); ok {
+        data.RowAxisValue = types.StringValue(val)
+    }
+    if val, ok := statusPageResourceDataResponse["column_axis_value"].(string); ok {
+        data.ColumnAxisValue = types.StringValue(val)
     }
 
     // Write logs using the tflog package

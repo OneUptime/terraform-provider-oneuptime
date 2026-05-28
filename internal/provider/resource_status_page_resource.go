@@ -50,6 +50,8 @@ type StatusPageResourceResourceModel struct {
     UptimePercentPrecision types.String `tfsdk:"uptime_percent_precision"`
     ShowStatusHistoryChart types.Bool `tfsdk:"show_status_history_chart"`
     Order types.Number `tfsdk:"order"`
+    RowAxisValue types.String `tfsdk:"row_axis_value"`
+    ColumnAxisValue types.String `tfsdk:"column_axis_value"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -172,6 +174,22 @@ func (r *StatusPageResourceResource) Schema(ctx context.Context, req resource.Sc
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "row_axis_value": schema.StringAttribute{
+                MarkdownDescription: "Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Resource]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "column_axis_value": schema.StringAttribute{
+                MarkdownDescription: "Column this resource belongs to when its status page group is rendered as a grid. Should match one of the column axis values defined on the group.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Resource], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Resource]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -247,6 +265,8 @@ func (r *StatusPageResourceResource) Create(ctx context.Context, req resource.Cr
         "uptimePercentPrecision": data.UptimePercentPrecision.ValueString(),
         "showStatusHistoryChart": data.ShowStatusHistoryChart.ValueBool(),
         "order": r.bigFloatToFloat64(data.Order.ValueBigFloat()),
+        "rowAxisValue": data.RowAxisValue.ValueString(),
+        "columnAxisValue": data.ColumnAxisValue.ValueString(),
         },
     }
 
@@ -637,6 +657,80 @@ func (r *StatusPageResourceResource) Create(ctx context.Context, req resource.Cr
     } else if dataMap["order"] == nil {
         data.Order = types.NumberNull()
     }
+    if obj, ok := dataMap["rowAxisValue"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RowAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RowAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RowAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RowAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RowAxisValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.RowAxisValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["rowAxisValue"].(string); ok && val != "" {
+        data.RowAxisValue = types.StringValue(val)
+    } else {
+        data.RowAxisValue = types.StringNull()
+    }
+    if obj, ok := dataMap["columnAxisValue"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ColumnAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ColumnAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ColumnAxisValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["columnAxisValue"].(string); ok && val != "" {
+        data.ColumnAxisValue = types.StringValue(val)
+    } else {
+        data.ColumnAxisValue = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -832,6 +926,8 @@ func (r *StatusPageResourceResource) Read(ctx context.Context, req resource.Read
         "uptimePercentPrecision": true,
         "showStatusHistoryChart": true,
         "order": true,
+        "rowAxisValue": true,
+        "columnAxisValue": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1232,6 +1328,80 @@ func (r *StatusPageResourceResource) Read(ctx context.Context, req resource.Read
     } else if dataMap["order"] == nil {
         data.Order = types.NumberNull()
     }
+    if obj, ok := dataMap["rowAxisValue"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RowAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RowAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RowAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RowAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RowAxisValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.RowAxisValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["rowAxisValue"].(string); ok && val != "" {
+        data.RowAxisValue = types.StringValue(val)
+    } else {
+        data.RowAxisValue = types.StringNull()
+    }
+    if obj, ok := dataMap["columnAxisValue"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ColumnAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ColumnAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ColumnAxisValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["columnAxisValue"].(string); ok && val != "" {
+        data.ColumnAxisValue = types.StringValue(val)
+    } else {
+        data.ColumnAxisValue = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1457,6 +1627,12 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
     if !data.Order.IsUnknown() && !state.Order.IsUnknown() && !data.Order.Equal(state.Order) {
         requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
     }
+    if !data.RowAxisValue.IsUnknown() && !state.RowAxisValue.IsUnknown() && !data.RowAxisValue.Equal(state.RowAxisValue) {
+        requestDataMap["rowAxisValue"] = data.RowAxisValue.ValueString()
+    }
+    if !data.ColumnAxisValue.IsUnknown() && !state.ColumnAxisValue.IsUnknown() && !data.ColumnAxisValue.Equal(state.ColumnAxisValue) {
+        requestDataMap["columnAxisValue"] = data.ColumnAxisValue.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/status-page-resource/" + data.Id.ValueString() + "", statusPageResourceRequest)
@@ -1488,6 +1664,8 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
         "uptimePercentPrecision": true,
         "showStatusHistoryChart": true,
         "order": true,
+        "rowAxisValue": true,
+        "columnAxisValue": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1881,6 +2059,80 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
         data.Order = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["order"] == nil {
         data.Order = types.NumberNull()
+    }
+    if obj, ok := dataMap["rowAxisValue"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RowAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RowAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RowAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RowAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.RowAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RowAxisValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.RowAxisValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["rowAxisValue"].(string); ok && val != "" {
+        data.RowAxisValue = types.StringValue(val)
+    } else {
+        data.RowAxisValue = types.StringNull()
+    }
+    if obj, ok := dataMap["columnAxisValue"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ColumnAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ColumnAxisValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+            } else {
+                data.ColumnAxisValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ColumnAxisValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ColumnAxisValue = types.StringNull()
+        }
+    } else if val, ok := dataMap["columnAxisValue"].(string); ok && val != "" {
+        data.ColumnAxisValue = types.StringValue(val)
+    } else {
+        data.ColumnAxisValue = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -41,6 +41,11 @@ type StatusPageGroupDataDataSourceModel struct {
     ShowCurrentStatus types.Bool `tfsdk:"show_current_status"`
     ShowUptimePercent types.Bool `tfsdk:"show_uptime_percent"`
     UptimePercentPrecision types.String `tfsdk:"uptime_percent_precision"`
+    ViewMode types.String `tfsdk:"view_mode"`
+    RowAxisLabel types.String `tfsdk:"row_axis_label"`
+    ColumnAxisLabel types.String `tfsdk:"column_axis_label"`
+    RowAxisValues types.String `tfsdk:"row_axis_values"`
+    ColumnAxisValues types.String `tfsdk:"column_axis_values"`
 }
 
 func (d *StatusPageGroupDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -114,6 +119,26 @@ func (d *StatusPageGroupDataDataSource) Schema(ctx context.Context, req datasour
             },
             "uptime_percent_precision": schema.StringAttribute{
                 MarkdownDescription: "Precision of uptime percent of this group for the last 90 days. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
+                Computed: true,
+            },
+            "view_mode": schema.StringAttribute{
+                MarkdownDescription: "Layout of this group on the status page. 'List' renders resources stacked vertically (default). 'Grid' renders resources as a matrix using row and column axes.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
+                Computed: true,
+            },
+            "row_axis_label": schema.StringAttribute{
+                MarkdownDescription: "Label shown above the row axis when the group is rendered as a grid (e.g. 'Service', 'Tenant'). Free-form so you can use any dimension you like.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
+                Computed: true,
+            },
+            "column_axis_label": schema.StringAttribute{
+                MarkdownDescription: "Label shown above the column axis when the group is rendered as a grid (e.g. 'Region', 'Environment'). Free-form so you can use any dimension you like.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
+                Computed: true,
+            },
+            "row_axis_values": schema.StringAttribute{
+                MarkdownDescription: "Comma-separated list of row labels for the grid (e.g. 'Auth, API, Database'). Determines row order in the grid layout.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
+                Computed: true,
+            },
+            "column_axis_values": schema.StringAttribute{
+                MarkdownDescription: "Comma-separated list of column labels for the grid (e.g. 'US-East, EU-West, Asia'). Determines column order in the grid layout.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
                 Computed: true,
             },
         },
@@ -226,6 +251,21 @@ func (d *StatusPageGroupDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := statusPageGroupDataResponse["uptime_percent_precision"].(string); ok {
         data.UptimePercentPrecision = types.StringValue(val)
+    }
+    if val, ok := statusPageGroupDataResponse["view_mode"].(string); ok {
+        data.ViewMode = types.StringValue(val)
+    }
+    if val, ok := statusPageGroupDataResponse["row_axis_label"].(string); ok {
+        data.RowAxisLabel = types.StringValue(val)
+    }
+    if val, ok := statusPageGroupDataResponse["column_axis_label"].(string); ok {
+        data.ColumnAxisLabel = types.StringValue(val)
+    }
+    if val, ok := statusPageGroupDataResponse["row_axis_values"].(string); ok {
+        data.RowAxisValues = types.StringValue(val)
+    }
+    if val, ok := statusPageGroupDataResponse["column_axis_values"].(string); ok {
+        data.ColumnAxisValues = types.StringValue(val)
     }
 
     // Write logs using the tflog package
