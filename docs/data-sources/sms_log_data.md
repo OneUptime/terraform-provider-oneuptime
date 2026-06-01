@@ -32,6 +32,7 @@ data "oneuptime_sms_log_data" "example" {
 - `sms_text` (String) Text content of the message. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `status_message` (String) Status Message (if any). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `status` (String) Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]. Computed.
+- `error_code` (String) Error code returned by the SMS provider (e.g. Twilio error code 30007 for carrier filtering) when the message could not be delivered.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `sms_cost_in_usd_cents` (Number) SMS Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
@@ -43,4 +44,5 @@ data "oneuptime_sms_log_data" "example" {
 - `on_call_duty_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `user_on_call_log_timeline_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

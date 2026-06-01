@@ -44,6 +44,7 @@ type SmsLogResourceModel struct {
     SmsText types.String `tfsdk:"sms_text"`
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
+    ErrorCode types.String `tfsdk:"error_code"`
     SmsCostInUsdCents types.Number `tfsdk:"sms_cost_in_usd_cents"`
     IncidentId types.String `tfsdk:"incident_id"`
     UserId types.String `tfsdk:"user_id"`
@@ -55,6 +56,7 @@ type SmsLogResourceModel struct {
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
     OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
+    UserOnCallLogTimelineId types.String `tfsdk:"user_on_call_log_timeline_id"`
     TeamId types.String `tfsdk:"team_id"`
 }
 
@@ -120,6 +122,10 @@ func (r *SmsLogResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 MarkdownDescription: "Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
+            "error_code": schema.StringAttribute{
+                MarkdownDescription: "Error code returned by the SMS provider (e.g. Twilio error code 30007 for carrier filtering) when the message could not be delivered.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
             "sms_cost_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "SMS Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
@@ -161,6 +167,10 @@ func (r *SmsLogResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "user_on_call_log_timeline_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -590,6 +600,43 @@ func (r *SmsLogResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.Status = types.StringNull()
     }
+    if obj, ok := dataMap["errorCode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ErrorCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.ErrorCode = types.StringNull()
+        }
+    } else if val, ok := dataMap["errorCode"].(string); ok && val != "" {
+        data.ErrorCode = types.StringValue(val)
+    } else {
+        data.ErrorCode = types.StringNull()
+    }
     if val, ok := dataMap["smsCostInUSDCents"].(float64); ok {
         data.SmsCostInUsdCents = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["smsCostInUSDCents"].(int); ok {
@@ -969,6 +1016,43 @@ func (r *SmsLogResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.OnCallDutyPolicyScheduleId = types.StringNull()
     }
+    if obj, ok := dataMap["userOnCallLogTimelineId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+            } else {
+                data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+            } else {
+                data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserOnCallLogTimelineId = types.StringNull()
+        }
+    } else if val, ok := dataMap["userOnCallLogTimelineId"].(string); ok && val != "" {
+        data.UserOnCallLogTimelineId = types.StringValue(val)
+    } else {
+        data.UserOnCallLogTimelineId = types.StringNull()
+    }
     if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1041,6 +1125,7 @@ func (r *SmsLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         "smsText": true,
         "statusMessage": true,
         "status": true,
+        "errorCode": true,
         "smsCostInUSDCents": true,
         "incidentId": true,
         "userId": true,
@@ -1052,6 +1137,7 @@ func (r *SmsLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         "onCallDutyPolicyId": true,
         "onCallDutyPolicyEscalationRuleId": true,
         "onCallDutyPolicyScheduleId": true,
+        "userOnCallLogTimelineId": true,
         "teamId": true,
         "_id": true,
     }
@@ -1439,6 +1525,43 @@ func (r *SmsLogResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.Status = types.StringNull()
     }
+    if obj, ok := dataMap["errorCode"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ErrorCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ErrorCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ErrorCode = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorCode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ErrorCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.ErrorCode = types.StringNull()
+        }
+    } else if val, ok := dataMap["errorCode"].(string); ok && val != "" {
+        data.ErrorCode = types.StringValue(val)
+    } else {
+        data.ErrorCode = types.StringNull()
+    }
     if val, ok := dataMap["smsCostInUSDCents"].(float64); ok {
         data.SmsCostInUsdCents = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["smsCostInUSDCents"].(int); ok {
@@ -1817,6 +1940,43 @@ func (r *SmsLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
     } else {
         data.OnCallDutyPolicyScheduleId = types.StringNull()
+    }
+    if obj, ok := dataMap["userOnCallLogTimelineId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.UserOnCallLogTimelineId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+            } else {
+                data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+            } else {
+                data.UserOnCallLogTimelineId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.UserOnCallLogTimelineId = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserOnCallLogTimelineId = types.StringNull()
+        }
+    } else if val, ok := dataMap["userOnCallLogTimelineId"].(string); ok && val != "" {
+        data.UserOnCallLogTimelineId = types.StringValue(val)
+    } else {
+        data.UserOnCallLogTimelineId = types.StringNull()
     }
     if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

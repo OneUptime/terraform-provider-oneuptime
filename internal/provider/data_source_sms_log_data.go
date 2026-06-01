@@ -37,6 +37,7 @@ type SmsLogDataDataSourceModel struct {
     SmsText types.String `tfsdk:"sms_text"`
     StatusMessage types.String `tfsdk:"status_message"`
     Status types.String `tfsdk:"status"`
+    ErrorCode types.String `tfsdk:"error_code"`
     SmsCostInUsdCents types.Number `tfsdk:"sms_cost_in_usd_cents"`
     IncidentId types.String `tfsdk:"incident_id"`
     UserId types.String `tfsdk:"user_id"`
@@ -48,6 +49,7 @@ type SmsLogDataDataSourceModel struct {
     OnCallDutyPolicyId types.String `tfsdk:"on_call_duty_policy_id"`
     OnCallDutyPolicyEscalationRuleId types.String `tfsdk:"on_call_duty_policy_escalation_rule_id"`
     OnCallDutyPolicyScheduleId types.String `tfsdk:"on_call_duty_policy_schedule_id"`
+    UserOnCallLogTimelineId types.String `tfsdk:"user_on_call_log_timeline_id"`
     TeamId types.String `tfsdk:"team_id"`
 }
 
@@ -108,6 +110,10 @@ func (d *SmsLogDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "Status of the SMS sent. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
+            "error_code": schema.StringAttribute{
+                MarkdownDescription: "Error code returned by the SMS provider (e.g. Twilio error code 30007 for carrier filtering) when the message could not be delivered.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
             "sms_cost_in_usd_cents": schema.NumberAttribute{
                 MarkdownDescription: "SMS Cost in USD Cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read SMS Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
@@ -149,6 +155,10 @@ func (d *SmsLogDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "user_on_call_log_timeline_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -255,6 +265,9 @@ func (d *SmsLogDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     if val, ok := smsLogDataResponse["status"].(string); ok {
         data.Status = types.StringValue(val)
     }
+    if val, ok := smsLogDataResponse["error_code"].(string); ok {
+        data.ErrorCode = types.StringValue(val)
+    }
     if val, ok := smsLogDataResponse["sms_cost_in_usd_cents"].(float64); ok {
         data.SmsCostInUsdCents = types.NumberValue(big.NewFloat(val))
     }
@@ -287,6 +300,9 @@ func (d *SmsLogDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     }
     if val, ok := smsLogDataResponse["on_call_duty_policy_schedule_id"].(string); ok {
         data.OnCallDutyPolicyScheduleId = types.StringValue(val)
+    }
+    if val, ok := smsLogDataResponse["user_on_call_log_timeline_id"].(string); ok {
+        data.UserOnCallLogTimelineId = types.StringValue(val)
     }
     if val, ok := smsLogDataResponse["team_id"].(string); ok {
         data.TeamId = types.StringValue(val)
