@@ -40,6 +40,7 @@ type ExceptionResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     ServiceId types.String `tfsdk:"service_id"`
+    ServiceType types.String `tfsdk:"service_type"`
     Message types.String `tfsdk:"message"`
     StackTrace types.String `tfsdk:"stack_trace"`
     ExceptionType types.String `tfsdk:"exception_type"`
@@ -93,6 +94,14 @@ func (r *ExceptionResource) Schema(ctx context.Context, req resource.SchemaReque
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Required: true,
+            },
+            "service_type": schema.StringAttribute{
+                MarkdownDescription: "Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "message": schema.StringAttribute{
                 MarkdownDescription: "Exception message that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
@@ -313,6 +322,7 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
     exceptionRequest := map[string]interface{}{
         "data": map[string]interface{}{
         "serviceId": data.ServiceId.ValueString(),
+        "serviceType": data.ServiceType.ValueString(),
         "message": data.Message.ValueString(),
         "stackTrace": data.StackTrace.ValueString(),
         "exceptionType": data.ExceptionType.ValueString(),
@@ -443,6 +453,43 @@ func (r *ExceptionResource) Create(ctx context.Context, req resource.CreateReque
         data.ServiceId = types.StringValue(val)
     } else {
         data.ServiceId = types.StringNull()
+    }
+    if obj, ok := dataMap["serviceType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ServiceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ServiceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ServiceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ServiceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ServiceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceType = types.StringNull()
+        }
+    } else if val, ok := dataMap["serviceType"].(string); ok && val != "" {
+        data.ServiceType = types.StringValue(val)
+    } else {
+        data.ServiceType = types.StringNull()
     }
     if obj, ok := dataMap["message"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1235,6 +1282,7 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
     selectParam := map[string]interface{}{
         "projectId": true,
         "serviceId": true,
+        "serviceType": true,
         "message": true,
         "stackTrace": true,
         "exceptionType": true,
@@ -1376,6 +1424,43 @@ func (r *ExceptionResource) Read(ctx context.Context, req resource.ReadRequest, 
         data.ServiceId = types.StringValue(val)
     } else {
         data.ServiceId = types.StringNull()
+    }
+    if obj, ok := dataMap["serviceType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ServiceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ServiceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ServiceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ServiceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ServiceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceType = types.StringNull()
+        }
+    } else if val, ok := dataMap["serviceType"].(string); ok && val != "" {
+        data.ServiceType = types.StringValue(val)
+    } else {
+        data.ServiceType = types.StringNull()
     }
     if obj, ok := dataMap["message"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2273,6 +2358,7 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
     selectParam := map[string]interface{}{
         "projectId": true,
         "serviceId": true,
+        "serviceType": true,
         "message": true,
         "stackTrace": true,
         "exceptionType": true,
@@ -2408,6 +2494,43 @@ func (r *ExceptionResource) Update(ctx context.Context, req resource.UpdateReque
         data.ServiceId = types.StringValue(val)
     } else {
         data.ServiceId = types.StringNull()
+    }
+    if obj, ok := dataMap["serviceType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ServiceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ServiceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ServiceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ServiceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ServiceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.ServiceType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ServiceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ServiceType = types.StringNull()
+        }
+    } else if val, ok := dataMap["serviceType"].(string); ok && val != "" {
+        data.ServiceType = types.StringValue(val)
+    } else {
+        data.ServiceType = types.StringNull()
     }
     if obj, ok := dataMap["message"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
