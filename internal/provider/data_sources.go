@@ -19,6 +19,8 @@ func GetDataSources() []func() datasource.DataSource {
         NewApiKeyDataDataSource,
         NewLabelDataDataSource,
         NewLogSavedViewDataDataSource,
+        NewMetricSavedViewDataDataSource,
+        NewTraceSavedViewDataDataSource,
         NewLogPipelineDataDataSource,
         NewLogPipelineProcessorDataDataSource,
         NewLogDropFilterDataDataSource,
@@ -261,5 +263,6 @@ func GetDataSources() []func() datasource.DataSource {
         NewMonitorLogDataDataSource,
         NewProfileDataDataSource,
         NewProfileSampleDataDataSource,
+        NewAuditLogDataDataSource,
     }
 }

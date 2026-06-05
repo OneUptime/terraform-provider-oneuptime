@@ -19,6 +19,8 @@ func GetResources() []func() resource.Resource {
         NewApiKeyResource,
         NewLabelResource,
         NewLogSavedViewResource,
+        NewMetricSavedViewResource,
+        NewTraceSavedViewResource,
         NewLogPipelineResource,
         NewLogPipelineProcessorResource,
         NewLogDropFilterResource,
@@ -261,5 +263,6 @@ func GetResources() []func() resource.Resource {
         NewMonitorLogResource,
         NewProfileResource,
         NewProfileSampleResource,
+        NewAuditLogResource,
     }
 }
