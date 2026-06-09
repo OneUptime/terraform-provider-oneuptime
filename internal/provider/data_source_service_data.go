@@ -46,6 +46,15 @@ type ServiceDataDataSourceModel struct {
     MetricDownsamplingRetentionDays types.String `tfsdk:"metric_downsampling_retention_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
+    ServiceVersion types.String `tfsdk:"service_version"`
+    DeploymentEnvironment types.String `tfsdk:"deployment_environment"`
+    ServiceNamespace types.String `tfsdk:"service_namespace"`
+    RuntimeName types.String `tfsdk:"runtime_name"`
+    RuntimeVersion types.String `tfsdk:"runtime_version"`
+    CloudProvider types.String `tfsdk:"cloud_provider"`
+    CloudPlatform types.String `tfsdk:"cloud_platform"`
+    CloudRegion types.String `tfsdk:"cloud_region"`
+    CloudAccountId types.String `tfsdk:"cloud_account_id"`
 }
 
 func (d *ServiceDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -136,6 +145,42 @@ func (d *ServiceDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "last_seen_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "service_version": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the service.version OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "deployment_environment": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the deployment.environment.name (or deployment.environment) OpenTelemetry resource attribute, e.g. production, staging.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "service_namespace": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the service.namespace OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "runtime_name": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the process.runtime.name OpenTelemetry resource attribute, e.g. nodejs, go, OpenJDK Runtime Environment.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "runtime_version": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the process.runtime.version OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_provider": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_platform": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.platform OpenTelemetry resource attribute, e.g. aws_ecs, gcp_cloud_run, aws_lambda.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_region": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.region OpenTelemetry resource attribute, e.g. us-east-1.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_account_id": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.account.id OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -269,6 +314,33 @@ func (d *ServiceDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := serviceDataResponse["last_seen_at"].(string); ok {
         data.LastSeenAt = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["service_version"].(string); ok {
+        data.ServiceVersion = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["deployment_environment"].(string); ok {
+        data.DeploymentEnvironment = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["service_namespace"].(string); ok {
+        data.ServiceNamespace = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["runtime_name"].(string); ok {
+        data.RuntimeName = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["runtime_version"].(string); ok {
+        data.RuntimeVersion = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["cloud_provider"].(string); ok {
+        data.CloudProvider = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["cloud_platform"].(string); ok {
+        data.CloudPlatform = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["cloud_region"].(string); ok {
+        data.CloudRegion = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["cloud_account_id"].(string); ok {
+        data.CloudAccountId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

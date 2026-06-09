@@ -56,6 +56,13 @@ type HostDataDataSourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
+    DeploymentEnvironment types.String `tfsdk:"deployment_environment"`
+    RuntimeName types.String `tfsdk:"runtime_name"`
+    RuntimeVersion types.String `tfsdk:"runtime_version"`
+    CloudProvider types.String `tfsdk:"cloud_provider"`
+    CloudPlatform types.String `tfsdk:"cloud_platform"`
+    CloudRegion types.String `tfsdk:"cloud_region"`
+    CloudAccountId types.String `tfsdk:"cloud_account_id"`
 }
 
 func (d *HostDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -186,6 +193,34 @@ func (d *HostDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "telemetry_retention_config": schema.StringAttribute{
                 MarkdownDescription: "Per-pillar retention overrides for this host (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the host default, then the project's retention settings.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Host]",
+                Computed: true,
+            },
+            "deployment_environment": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the deployment.environment.name (or deployment.environment) OpenTelemetry resource attribute, e.g. production, staging.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "runtime_name": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the process.runtime.name OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "runtime_version": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the process.runtime.version OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_provider": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_platform": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.platform OpenTelemetry resource attribute, e.g. aws_ec2, gcp_compute_engine.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_region": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.region OpenTelemetry resource attribute, e.g. us-east-1.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cloud_account_id": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the cloud.account.id OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -349,6 +384,27 @@ func (d *HostDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := hostDataResponse["telemetry_retention_config"].(string); ok {
         data.TelemetryRetentionConfig = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["deployment_environment"].(string); ok {
+        data.DeploymentEnvironment = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["runtime_name"].(string); ok {
+        data.RuntimeName = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["runtime_version"].(string); ok {
+        data.RuntimeVersion = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["cloud_provider"].(string); ok {
+        data.CloudProvider = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["cloud_platform"].(string); ok {
+        data.CloudPlatform = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["cloud_region"].(string); ok {
+        data.CloudRegion = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["cloud_account_id"].(string); ok {
+        data.CloudAccountId = types.StringValue(val)
     }
 
     // Write logs using the tflog package

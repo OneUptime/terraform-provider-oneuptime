@@ -31,6 +31,7 @@ resource "oneuptime_workflow_log" "example" {
 - `workflow_status` (String) Status of this workflow. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Workflow Admin, Workflow Member, Workflow Viewer, Read Workflow Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `started_at` (String) A date time object.. Computed.
 - `completed_at` (String) A date time object.. Computed.
+- `resume_at` (String) A date time object.. Computed.
 
 ## Import
 

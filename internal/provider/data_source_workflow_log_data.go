@@ -37,6 +37,7 @@ type WorkflowLogDataDataSourceModel struct {
     WorkflowStatus types.String `tfsdk:"workflow_status"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
+    ResumeAt types.String `tfsdk:"resume_at"`
 }
 
 func (d *WorkflowLogDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -93,6 +94,10 @@ func (d *WorkflowLogDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "completed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "resume_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
@@ -194,6 +199,9 @@ func (d *WorkflowLogDataDataSource) Read(ctx context.Context, req datasource.Rea
     }
     if val, ok := workflowLogDataResponse["completed_at"].(string); ok {
         data.CompletedAt = types.StringValue(val)
+    }
+    if val, ok := workflowLogDataResponse["resume_at"].(string); ok {
+        data.ResumeAt = types.StringValue(val)
     }
 
     // Write logs using the tflog package
