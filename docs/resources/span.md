@@ -22,19 +22,26 @@ resource "oneuptime_span" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) Project ID. Computed.
-- `service_id` (String) Service ID. Computed.
-- `service_type` (String) Service Type. Computed.
+- `primary_entity_id` (String) Service ID. Computed.
+- `primary_entity_type` (String) Service Type. Computed.
 - `start_time` (String) Start Time. Computed.
 - `end_time` (String) End Time. Computed.
-- `start_time_unix_nano` (Number) Start Time in Unix Nano. Computed.
+- `start_time_unix_nano` (String) Start Time in Unix Nano. Computed.
 - `duration_unix_nano` (Number) Duration in Unix Nano. Computed.
-- `end_time_unix_nano` (Number) End Time. Computed.
+- `end_time_unix_nano` (String) End Time. Computed.
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.
 - `parent_span_id` (String) Parent Span ID. Computed.
 - `trace_state` (String) Trace State. Computed.
 - `attributes` (String) Attributes. Computed.
 - `attribute_keys` (Set) Attribute Keys. Computed.
+- `entity_keys` (Set) Entity Keys. Computed.
+- `service_entity_key` (String) Service Entity Key. Computed.
+- `host_entity_key` (String) Host Entity Key. Computed.
+- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key. Computed.
+- `k8s_node_entity_key` (String) Kubernetes Node Entity Key. Computed.
+- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key. Computed.
+- `container_entity_key` (String) Container Entity Key. Computed.
 - `events` (Set) Events. Computed.
 - `links` (String) Links. Computed.
 - `status_code` (Number) Status Code. Computed.

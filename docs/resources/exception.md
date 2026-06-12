@@ -14,7 +14,7 @@ Exception resource
 
 ```terraform
 resource "oneuptime_exception" "example" {
-  service_id = "123e4567-e89b-12d3-a456-426614174000"
+  primary_entity_id = "123e4567-e89b-12d3-a456-426614174000"
 }
 ```
 
@@ -22,8 +22,8 @@ resource "oneuptime_exception" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `service_id` (String) A unique identifier for an object, represented as a UUID.. Required.
-- `service_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]. Computed.
+- `primary_entity_id` (String) A unique identifier for an object, represented as a UUID.. Required.
+- `primary_entity_type` (String) Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]. Computed.
 - `message` (String) Exception message that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
 - `stack_trace` (String) Stack trace of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.
 - `exception_type` (String) Type of the exception that was thrown by the telemetry service. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]. Computed.

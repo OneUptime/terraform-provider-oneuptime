@@ -235,6 +235,8 @@ func GetResources() []func() resource.Resource {
         NewWebAuthnCredentialResource,
         NewTelemetryIngestionKeyResource,
         NewExceptionResource,
+        NewTelemetryEntityResource,
+        NewTelemetryEntityRelationshipResource,
         NewTableViewResource,
         NewDashboardResource,
         NewDashboardDomainResource,

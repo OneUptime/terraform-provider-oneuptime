@@ -51,6 +51,7 @@ type ServiceDataDataSourceModel struct {
     ServiceNamespace types.String `tfsdk:"service_namespace"`
     RuntimeName types.String `tfsdk:"runtime_name"`
     RuntimeVersion types.String `tfsdk:"runtime_version"`
+    TelemetrySdkLanguage types.String `tfsdk:"telemetry_sdk_language"`
     CloudProvider types.String `tfsdk:"cloud_provider"`
     CloudPlatform types.String `tfsdk:"cloud_platform"`
     CloudRegion types.String `tfsdk:"cloud_region"`
@@ -165,6 +166,10 @@ func (d *ServiceDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "runtime_version": schema.StringAttribute{
                 MarkdownDescription: "Last-seen value of the process.runtime.version OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "telemetry_sdk_language": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the telemetry.sdk.language OpenTelemetry resource attribute, e.g. java, dotnet, nodejs, python, go. Drives technology-specific golden metrics on the service overview.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "cloud_provider": schema.StringAttribute{
@@ -329,6 +334,9 @@ func (d *ServiceDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := serviceDataResponse["runtime_version"].(string); ok {
         data.RuntimeVersion = types.StringValue(val)
+    }
+    if val, ok := serviceDataResponse["telemetry_sdk_language"].(string); ok {
+        data.TelemetrySdkLanguage = types.StringValue(val)
     }
     if val, ok := serviceDataResponse["cloud_provider"].(string); ok {
         data.CloudProvider = types.StringValue(val)

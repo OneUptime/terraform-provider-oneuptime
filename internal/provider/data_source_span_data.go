@@ -29,19 +29,26 @@ type SpanDataDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceId types.String `tfsdk:"service_id"`
-    ServiceType types.String `tfsdk:"service_type"`
+    PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
+    PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
     StartTime types.String `tfsdk:"start_time"`
     EndTime types.String `tfsdk:"end_time"`
-    StartTimeUnixNano types.Number `tfsdk:"start_time_unix_nano"`
+    StartTimeUnixNano types.String `tfsdk:"start_time_unix_nano"`
     DurationUnixNano types.Number `tfsdk:"duration_unix_nano"`
-    EndTimeUnixNano types.Number `tfsdk:"end_time_unix_nano"`
+    EndTimeUnixNano types.String `tfsdk:"end_time_unix_nano"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     ParentSpanId types.String `tfsdk:"parent_span_id"`
     TraceState types.String `tfsdk:"trace_state"`
     Attributes types.String `tfsdk:"attributes"`
     AttributeKeys types.Set `tfsdk:"attribute_keys"`
+    EntityKeys types.Set `tfsdk:"entity_keys"`
+    ServiceEntityKey types.String `tfsdk:"service_entity_key"`
+    HostEntityKey types.String `tfsdk:"host_entity_key"`
+    K8sPodEntityKey types.String `tfsdk:"k8s_pod_entity_key"`
+    K8sNodeEntityKey types.String `tfsdk:"k8s_node_entity_key"`
+    K8sClusterEntityKey types.String `tfsdk:"k8s_cluster_entity_key"`
+    ContainerEntityKey types.String `tfsdk:"container_entity_key"`
     Events types.Set `tfsdk:"events"`
     Links types.String `tfsdk:"links"`
     StatusCode types.Number `tfsdk:"status_code"`
@@ -72,11 +79,11 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "Project ID",
                 Computed: true,
             },
-            "service_id": schema.StringAttribute{
+            "primary_entity_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
                 Computed: true,
             },
-            "service_type": schema.StringAttribute{
+            "primary_entity_type": schema.StringAttribute{
                 MarkdownDescription: "Service Type",
                 Computed: true,
             },
@@ -88,7 +95,7 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "End Time",
                 Computed: true,
             },
-            "start_time_unix_nano": schema.NumberAttribute{
+            "start_time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "Start Time in Unix Nano",
                 Computed: true,
             },
@@ -96,7 +103,7 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "Duration in Unix Nano",
                 Computed: true,
             },
-            "end_time_unix_nano": schema.NumberAttribute{
+            "end_time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "End Time",
                 Computed: true,
             },
@@ -124,6 +131,35 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "Attribute Keys",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "entity_keys": schema.SetAttribute{
+                MarkdownDescription: "Entity Keys",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Service Entity Key",
+                Computed: true,
+            },
+            "host_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Host Entity Key",
+                Computed: true,
+            },
+            "k8s_pod_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Pod Entity Key",
+                Computed: true,
+            },
+            "k8s_node_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Node Entity Key",
+                Computed: true,
+            },
+            "k8s_cluster_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                Computed: true,
+            },
+            "container_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Container Entity Key",
+                Computed: true,
             },
             "events": schema.SetAttribute{
                 MarkdownDescription: "Events",
@@ -226,11 +262,11 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     if val, ok := spanDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := spanDataResponse["service_id"].(string); ok {
-        data.ServiceId = types.StringValue(val)
+    if val, ok := spanDataResponse["primary_entity_id"].(string); ok {
+        data.PrimaryEntityId = types.StringValue(val)
     }
-    if val, ok := spanDataResponse["service_type"].(string); ok {
-        data.ServiceType = types.StringValue(val)
+    if val, ok := spanDataResponse["primary_entity_type"].(string); ok {
+        data.PrimaryEntityType = types.StringValue(val)
     }
     if val, ok := spanDataResponse["start_time"].(string); ok {
         data.StartTime = types.StringValue(val)
@@ -238,14 +274,14 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     if val, ok := spanDataResponse["end_time"].(string); ok {
         data.EndTime = types.StringValue(val)
     }
-    if val, ok := spanDataResponse["start_time_unix_nano"].(float64); ok {
-        data.StartTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := spanDataResponse["start_time_unix_nano"].(string); ok {
+        data.StartTimeUnixNano = types.StringValue(val)
     }
     if val, ok := spanDataResponse["duration_unix_nano"].(float64); ok {
         data.DurationUnixNano = types.NumberValue(big.NewFloat(val))
     }
-    if val, ok := spanDataResponse["end_time_unix_nano"].(float64); ok {
-        data.EndTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := spanDataResponse["end_time_unix_nano"].(string); ok {
+        data.EndTimeUnixNano = types.StringValue(val)
     }
     if val, ok := spanDataResponse["trace_id"].(string); ok {
         data.TraceId = types.StringValue(val)
@@ -273,6 +309,36 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.AttributeKeys = setValue
+    }
+    if val, ok := spanDataResponse["entity_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EntityKeys = setValue
+    }
+    if val, ok := spanDataResponse["service_entity_key"].(string); ok {
+        data.ServiceEntityKey = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["host_entity_key"].(string); ok {
+        data.HostEntityKey = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["k8s_pod_entity_key"].(string); ok {
+        data.K8sPodEntityKey = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["k8s_node_entity_key"].(string); ok {
+        data.K8sNodeEntityKey = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["k8s_cluster_entity_key"].(string); ok {
+        data.K8sClusterEntityKey = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["container_entity_key"].(string); ok {
+        data.ContainerEntityKey = types.StringValue(val)
     }
     if val, ok := spanDataResponse["events"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

@@ -32,8 +32,8 @@ type ExceptionDataDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceId types.String `tfsdk:"service_id"`
-    ServiceType types.String `tfsdk:"service_type"`
+    PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
+    PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
     Message types.String `tfsdk:"message"`
     StackTrace types.String `tfsdk:"stack_trace"`
     ExceptionType types.String `tfsdk:"exception_type"`
@@ -93,11 +93,11 @@ func (d *ExceptionDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "service_id": schema.StringAttribute{
+            "primary_entity_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "service_type": schema.StringAttribute{
+            "primary_entity_type": schema.StringAttribute{
                 MarkdownDescription: "Resource type that produced this exception (e.g. OpenTelemetry service, Host, DockerHost, KubernetesCluster, or Unknown for unattributed telemetry).. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
@@ -265,11 +265,11 @@ func (d *ExceptionDataDataSource) Read(ctx context.Context, req datasource.ReadR
     if val, ok := exceptionDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := exceptionDataResponse["service_id"].(string); ok {
-        data.ServiceId = types.StringValue(val)
+    if val, ok := exceptionDataResponse["primary_entity_id"].(string); ok {
+        data.PrimaryEntityId = types.StringValue(val)
     }
-    if val, ok := exceptionDataResponse["service_type"].(string); ok {
-        data.ServiceType = types.StringValue(val)
+    if val, ok := exceptionDataResponse["primary_entity_type"].(string); ok {
+        data.PrimaryEntityType = types.StringValue(val)
     }
     if val, ok := exceptionDataResponse["message"].(string); ok {
         data.Message = types.StringValue(val)

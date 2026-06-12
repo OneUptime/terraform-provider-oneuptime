@@ -23,16 +23,23 @@ data "oneuptime_profile_sample_data" "example" {
 - `id` (String) Identifier to filter by. Optional.
 - `name` (String) Name to filter by. Optional.
 - `project_id` (String) Project ID. Computed.
-- `service_id` (String) Service ID. Computed.
-- `service_type` (String) Service Type. Computed.
+- `primary_entity_id` (String) Service ID. Computed.
+- `primary_entity_type` (String) Service Type. Computed.
 - `profile_id` (String) Profile ID. Computed.
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.
 - `time` (String) Time. Computed.
-- `time_unix_nano` (Number) Time (in Unix Nano). Computed.
+- `time_unix_nano` (String) Time (in Unix Nano). Computed.
 - `stacktrace` (Set) Stacktrace. Computed.
 - `stacktrace_hash` (String) Stacktrace Hash. Computed.
 - `frame_types` (Set) Frame Types. Computed.
-- `value` (Number) Value. Computed.
+- `value` (String) Value. Computed.
 - `profile_type` (String) Profile Type. Computed.
 - `labels` (String) Labels. Computed.
+- `entity_keys` (Set) Entity Keys. Computed.
+- `service_entity_key` (String) Service Entity Key. Computed.
+- `host_entity_key` (String) Host Entity Key. Computed.
+- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key. Computed.
+- `k8s_node_entity_key` (String) Kubernetes Node Entity Key. Computed.
+- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key. Computed.
+- `container_entity_key` (String) Container Entity Key. Computed.

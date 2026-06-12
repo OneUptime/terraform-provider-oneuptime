@@ -22,11 +22,12 @@ resource "oneuptime_file" "example" {
 ## Schema
 
 - `id` (String) Unique identifier for the resource. Computed.
-- `file` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Optional.
+- `file` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
 - `name` (String) Any friendly name of this object. Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Required.
 - `file_type` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Required.
-- `is_public` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Optional.
-- `image_access_token` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Optional.
+- `is_public` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
+- `image_access_token` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
+- `slug` (String) Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

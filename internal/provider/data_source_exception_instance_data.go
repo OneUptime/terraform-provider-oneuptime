@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,10 +29,10 @@ type ExceptionInstanceDataDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceId types.String `tfsdk:"service_id"`
-    ServiceType types.String `tfsdk:"service_type"`
+    PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
+    PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
     Time types.String `tfsdk:"time"`
-    TimeUnixNano types.Number `tfsdk:"time_unix_nano"`
+    TimeUnixNano types.String `tfsdk:"time_unix_nano"`
     ExceptionType types.String `tfsdk:"exception_type"`
     StackTrace types.String `tfsdk:"stack_trace"`
     Message types.String `tfsdk:"message"`
@@ -45,6 +46,13 @@ type ExceptionInstanceDataDataSourceModel struct {
     Environment types.String `tfsdk:"environment"`
     ParsedFrames types.String `tfsdk:"parsed_frames"`
     Attributes types.String `tfsdk:"attributes"`
+    EntityKeys types.Set `tfsdk:"entity_keys"`
+    ServiceEntityKey types.String `tfsdk:"service_entity_key"`
+    HostEntityKey types.String `tfsdk:"host_entity_key"`
+    K8sPodEntityKey types.String `tfsdk:"k8s_pod_entity_key"`
+    K8sNodeEntityKey types.String `tfsdk:"k8s_node_entity_key"`
+    K8sClusterEntityKey types.String `tfsdk:"k8s_cluster_entity_key"`
+    ContainerEntityKey types.String `tfsdk:"container_entity_key"`
 }
 
 func (d *ExceptionInstanceDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -68,11 +76,11 @@ func (d *ExceptionInstanceDataDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Project ID",
                 Computed: true,
             },
-            "service_id": schema.StringAttribute{
+            "primary_entity_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
                 Computed: true,
             },
-            "service_type": schema.StringAttribute{
+            "primary_entity_type": schema.StringAttribute{
                 MarkdownDescription: "Service Type",
                 Computed: true,
             },
@@ -80,7 +88,7 @@ func (d *ExceptionInstanceDataDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Time",
                 Computed: true,
             },
-            "time_unix_nano": schema.NumberAttribute{
+            "time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "Time (in Unix Nano)",
                 Computed: true,
             },
@@ -134,6 +142,35 @@ func (d *ExceptionInstanceDataDataSource) Schema(ctx context.Context, req dataso
             },
             "attributes": schema.StringAttribute{
                 MarkdownDescription: "Attributes",
+                Computed: true,
+            },
+            "entity_keys": schema.SetAttribute{
+                MarkdownDescription: "Entity Keys",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Service Entity Key",
+                Computed: true,
+            },
+            "host_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Host Entity Key",
+                Computed: true,
+            },
+            "k8s_pod_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Pod Entity Key",
+                Computed: true,
+            },
+            "k8s_node_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Node Entity Key",
+                Computed: true,
+            },
+            "k8s_cluster_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                Computed: true,
+            },
+            "container_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Container Entity Key",
                 Computed: true,
             },
         },
@@ -208,17 +245,17 @@ func (d *ExceptionInstanceDataDataSource) Read(ctx context.Context, req datasour
     if val, ok := exceptionInstanceDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := exceptionInstanceDataResponse["service_id"].(string); ok {
-        data.ServiceId = types.StringValue(val)
+    if val, ok := exceptionInstanceDataResponse["primary_entity_id"].(string); ok {
+        data.PrimaryEntityId = types.StringValue(val)
     }
-    if val, ok := exceptionInstanceDataResponse["service_type"].(string); ok {
-        data.ServiceType = types.StringValue(val)
+    if val, ok := exceptionInstanceDataResponse["primary_entity_type"].(string); ok {
+        data.PrimaryEntityType = types.StringValue(val)
     }
     if val, ok := exceptionInstanceDataResponse["time"].(string); ok {
         data.Time = types.StringValue(val)
     }
-    if val, ok := exceptionInstanceDataResponse["time_unix_nano"].(float64); ok {
-        data.TimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := exceptionInstanceDataResponse["time_unix_nano"].(string); ok {
+        data.TimeUnixNano = types.StringValue(val)
     }
     if val, ok := exceptionInstanceDataResponse["exception_type"].(string); ok {
         data.ExceptionType = types.StringValue(val)
@@ -258,6 +295,36 @@ func (d *ExceptionInstanceDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := exceptionInstanceDataResponse["attributes"].(string); ok {
         data.Attributes = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["entity_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EntityKeys = setValue
+    }
+    if val, ok := exceptionInstanceDataResponse["service_entity_key"].(string); ok {
+        data.ServiceEntityKey = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["host_entity_key"].(string); ok {
+        data.HostEntityKey = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["k8s_pod_entity_key"].(string); ok {
+        data.K8sPodEntityKey = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["k8s_node_entity_key"].(string); ok {
+        data.K8sNodeEntityKey = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["k8s_cluster_entity_key"].(string); ok {
+        data.K8sClusterEntityKey = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["container_entity_key"].(string); ok {
+        data.ContainerEntityKey = types.StringValue(val)
     }
 
     // Write logs using the tflog package

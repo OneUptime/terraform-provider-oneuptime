@@ -29,22 +29,29 @@ type ProfileDataDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceId types.String `tfsdk:"service_id"`
-    ServiceType types.String `tfsdk:"service_type"`
+    PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
+    PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
     ProfileId types.String `tfsdk:"profile_id"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     StartTime types.String `tfsdk:"start_time"`
     EndTime types.String `tfsdk:"end_time"`
-    StartTimeUnixNano types.Number `tfsdk:"start_time_unix_nano"`
-    EndTimeUnixNano types.Number `tfsdk:"end_time_unix_nano"`
-    DurationNano types.Number `tfsdk:"duration_nano"`
+    StartTimeUnixNano types.String `tfsdk:"start_time_unix_nano"`
+    EndTimeUnixNano types.String `tfsdk:"end_time_unix_nano"`
+    DurationNano types.String `tfsdk:"duration_nano"`
     ProfileType types.String `tfsdk:"profile_type"`
     Unit types.String `tfsdk:"unit"`
     PeriodType types.String `tfsdk:"period_type"`
-    Period types.Number `tfsdk:"period"`
+    Period types.String `tfsdk:"period"`
     Attributes types.String `tfsdk:"attributes"`
     AttributeKeys types.Set `tfsdk:"attribute_keys"`
+    EntityKeys types.Set `tfsdk:"entity_keys"`
+    ServiceEntityKey types.String `tfsdk:"service_entity_key"`
+    HostEntityKey types.String `tfsdk:"host_entity_key"`
+    K8sPodEntityKey types.String `tfsdk:"k8s_pod_entity_key"`
+    K8sNodeEntityKey types.String `tfsdk:"k8s_node_entity_key"`
+    K8sClusterEntityKey types.String `tfsdk:"k8s_cluster_entity_key"`
+    ContainerEntityKey types.String `tfsdk:"container_entity_key"`
     SampleCount types.Number `tfsdk:"sample_count"`
     OriginalPayloadFormat types.String `tfsdk:"original_payload_format"`
 }
@@ -70,11 +77,11 @@ func (d *ProfileDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Project ID",
                 Computed: true,
             },
-            "service_id": schema.StringAttribute{
+            "primary_entity_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
                 Computed: true,
             },
-            "service_type": schema.StringAttribute{
+            "primary_entity_type": schema.StringAttribute{
                 MarkdownDescription: "Service Type",
                 Computed: true,
             },
@@ -98,15 +105,15 @@ func (d *ProfileDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "End Time",
                 Computed: true,
             },
-            "start_time_unix_nano": schema.NumberAttribute{
+            "start_time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "Start Time in Unix Nano",
                 Computed: true,
             },
-            "end_time_unix_nano": schema.NumberAttribute{
+            "end_time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "End Time in Unix Nano",
                 Computed: true,
             },
-            "duration_nano": schema.NumberAttribute{
+            "duration_nano": schema.StringAttribute{
                 MarkdownDescription: "Duration in Nanoseconds",
                 Computed: true,
             },
@@ -122,7 +129,7 @@ func (d *ProfileDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Period Type",
                 Computed: true,
             },
-            "period": schema.NumberAttribute{
+            "period": schema.StringAttribute{
                 MarkdownDescription: "Period",
                 Computed: true,
             },
@@ -134,6 +141,35 @@ func (d *ProfileDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Attribute Keys",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "entity_keys": schema.SetAttribute{
+                MarkdownDescription: "Entity Keys",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Service Entity Key",
+                Computed: true,
+            },
+            "host_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Host Entity Key",
+                Computed: true,
+            },
+            "k8s_pod_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Pod Entity Key",
+                Computed: true,
+            },
+            "k8s_node_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Node Entity Key",
+                Computed: true,
+            },
+            "k8s_cluster_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                Computed: true,
+            },
+            "container_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Container Entity Key",
+                Computed: true,
             },
             "sample_count": schema.NumberAttribute{
                 MarkdownDescription: "Sample Count",
@@ -215,11 +251,11 @@ func (d *ProfileDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := profileDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := profileDataResponse["service_id"].(string); ok {
-        data.ServiceId = types.StringValue(val)
+    if val, ok := profileDataResponse["primary_entity_id"].(string); ok {
+        data.PrimaryEntityId = types.StringValue(val)
     }
-    if val, ok := profileDataResponse["service_type"].(string); ok {
-        data.ServiceType = types.StringValue(val)
+    if val, ok := profileDataResponse["primary_entity_type"].(string); ok {
+        data.PrimaryEntityType = types.StringValue(val)
     }
     if val, ok := profileDataResponse["profile_id"].(string); ok {
         data.ProfileId = types.StringValue(val)
@@ -236,14 +272,14 @@ func (d *ProfileDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := profileDataResponse["end_time"].(string); ok {
         data.EndTime = types.StringValue(val)
     }
-    if val, ok := profileDataResponse["start_time_unix_nano"].(float64); ok {
-        data.StartTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := profileDataResponse["start_time_unix_nano"].(string); ok {
+        data.StartTimeUnixNano = types.StringValue(val)
     }
-    if val, ok := profileDataResponse["end_time_unix_nano"].(float64); ok {
-        data.EndTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := profileDataResponse["end_time_unix_nano"].(string); ok {
+        data.EndTimeUnixNano = types.StringValue(val)
     }
-    if val, ok := profileDataResponse["duration_nano"].(float64); ok {
-        data.DurationNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := profileDataResponse["duration_nano"].(string); ok {
+        data.DurationNano = types.StringValue(val)
     }
     if val, ok := profileDataResponse["profile_type"].(string); ok {
         data.ProfileType = types.StringValue(val)
@@ -254,8 +290,8 @@ func (d *ProfileDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := profileDataResponse["period_type"].(string); ok {
         data.PeriodType = types.StringValue(val)
     }
-    if val, ok := profileDataResponse["period"].(float64); ok {
-        data.Period = types.NumberValue(big.NewFloat(val))
+    if val, ok := profileDataResponse["period"].(string); ok {
+        data.Period = types.StringValue(val)
     }
     if val, ok := profileDataResponse["attributes"].(string); ok {
         data.Attributes = types.StringValue(val)
@@ -271,6 +307,36 @@ func (d *ProfileDataDataSource) Read(ctx context.Context, req datasource.ReadReq
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.AttributeKeys = setValue
+    }
+    if val, ok := profileDataResponse["entity_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EntityKeys = setValue
+    }
+    if val, ok := profileDataResponse["service_entity_key"].(string); ok {
+        data.ServiceEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileDataResponse["host_entity_key"].(string); ok {
+        data.HostEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileDataResponse["k8s_pod_entity_key"].(string); ok {
+        data.K8sPodEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileDataResponse["k8s_node_entity_key"].(string); ok {
+        data.K8sNodeEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileDataResponse["k8s_cluster_entity_key"].(string); ok {
+        data.K8sClusterEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileDataResponse["container_entity_key"].(string); ok {
+        data.ContainerEntityKey = types.StringValue(val)
     }
     if val, ok := profileDataResponse["sample_count"].(float64); ok {
         data.SampleCount = types.NumberValue(big.NewFloat(val))

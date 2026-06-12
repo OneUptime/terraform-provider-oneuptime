@@ -235,6 +235,8 @@ func GetDataSources() []func() datasource.DataSource {
         NewWebAuthnCredentialDataDataSource,
         NewTelemetryIngestionKeyDataDataSource,
         NewExceptionDataDataSource,
+        NewTelemetryEntityDataDataSource,
+        NewTelemetryEntityRelationshipDataDataSource,
         NewTableViewDataDataSource,
         NewDashboardDataDataSource,
         NewDashboardDomainDataDataSource,

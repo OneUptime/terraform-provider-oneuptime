@@ -62,6 +62,7 @@ type ServiceResourceModel struct {
     ServiceNamespace types.String `tfsdk:"service_namespace"`
     RuntimeName types.String `tfsdk:"runtime_name"`
     RuntimeVersion types.String `tfsdk:"runtime_version"`
+    TelemetrySdkLanguage types.String `tfsdk:"telemetry_sdk_language"`
     CloudProvider types.String `tfsdk:"cloud_provider"`
     CloudPlatform types.String `tfsdk:"cloud_platform"`
     CloudRegion types.String `tfsdk:"cloud_region"`
@@ -227,6 +228,10 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
             },
             "runtime_version": schema.StringAttribute{
                 MarkdownDescription: "Last-seen value of the process.runtime.version OpenTelemetry resource attribute.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "telemetry_sdk_language": schema.StringAttribute{
+                MarkdownDescription: "Last-seen value of the telemetry.sdk.language OpenTelemetry resource attribute, e.g. java, dotnet, nodejs, python, go. Drives technology-specific golden metrics on the service overview.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Service], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "cloud_provider": schema.StringAttribute{
@@ -1133,6 +1138,43 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.RuntimeVersion = types.StringNull()
     }
+    if obj, ok := dataMap["telemetrySdkLanguage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TelemetrySdkLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TelemetrySdkLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetrySdkLanguage = types.StringNull()
+        }
+    } else if val, ok := dataMap["telemetrySdkLanguage"].(string); ok && val != "" {
+        data.TelemetrySdkLanguage = types.StringValue(val)
+    } else {
+        data.TelemetrySdkLanguage = types.StringNull()
+    }
     if obj, ok := dataMap["cloudProvider"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1330,6 +1372,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
         "serviceNamespace": true,
         "runtimeName": true,
         "runtimeVersion": true,
+        "telemetrySdkLanguage": true,
         "cloudProvider": true,
         "cloudPlatform": true,
         "cloudRegion": true,
@@ -2177,6 +2220,43 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.RuntimeVersion = types.StringNull()
     }
+    if obj, ok := dataMap["telemetrySdkLanguage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TelemetrySdkLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TelemetrySdkLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetrySdkLanguage = types.StringNull()
+        }
+    } else if val, ok := dataMap["telemetrySdkLanguage"].(string); ok && val != "" {
+        data.TelemetrySdkLanguage = types.StringValue(val)
+    } else {
+        data.TelemetrySdkLanguage = types.StringNull()
+    }
     if obj, ok := dataMap["cloudProvider"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2452,6 +2532,7 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
         "serviceNamespace": true,
         "runtimeName": true,
         "runtimeVersion": true,
+        "telemetrySdkLanguage": true,
         "cloudProvider": true,
         "cloudPlatform": true,
         "cloudRegion": true,
@@ -3292,6 +3373,43 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
         data.RuntimeVersion = types.StringValue(val)
     } else {
         data.RuntimeVersion = types.StringNull()
+    }
+    if obj, ok := dataMap["telemetrySdkLanguage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TelemetrySdkLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TelemetrySdkLanguage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+            } else {
+                data.TelemetrySdkLanguage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TelemetrySdkLanguage = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetrySdkLanguage = types.StringNull()
+        }
+    } else if val, ok := dataMap["telemetrySdkLanguage"].(string); ok && val != "" {
+        data.TelemetrySdkLanguage = types.StringValue(val)
+    } else {
+        data.TelemetrySdkLanguage = types.StringNull()
     }
     if obj, ok := dataMap["cloudProvider"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

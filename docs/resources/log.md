@@ -22,18 +22,25 @@ resource "oneuptime_log" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) Project ID. Computed.
-- `service_id` (String) Service ID. Computed.
-- `service_type` (String) Service Type. Computed.
+- `primary_entity_id` (String) Service ID. Computed.
+- `primary_entity_type` (String) Service Type. Computed.
 - `time` (String) Time. Computed.
-- `time_unix_nano` (Number) Time (in Unix Nano). Computed.
+- `time_unix_nano` (String) Time (in Unix Nano). Computed.
 - `severity_text` (String) Severity Text. Computed.
 - `severity_number` (Number) Severity Number. Computed.
 - `attributes` (String) Attributes. Computed.
 - `attribute_keys` (Set) Attribute Keys. Computed.
+- `entity_keys` (Set) Entity Keys. Computed.
+- `service_entity_key` (String) Service Entity Key. Computed.
+- `host_entity_key` (String) Host Entity Key. Computed.
+- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key. Computed.
+- `k8s_node_entity_key` (String) Kubernetes Node Entity Key. Computed.
+- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key. Computed.
+- `container_entity_key` (String) Container Entity Key. Computed.
 - `trace_id` (String) Trace ID. Computed.
 - `span_id` (String) Span ID. Computed.
 - `body` (String) Log Body. Computed.
-- `observed_time_unix_nano` (Number) Observed Time (in Unix Nano). Computed.
+- `observed_time_unix_nano` (String) Observed Time (in Unix Nano). Computed.
 - `dropped_attributes_count` (Number) Dropped Attributes Count. Computed.
 - `flags` (Number) Flags. Computed.
 

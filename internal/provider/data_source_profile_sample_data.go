@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "math/big"
     "github.com/hashicorp/terraform-plugin-framework/attr"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -29,19 +28,26 @@ type ProfileSampleDataDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceId types.String `tfsdk:"service_id"`
-    ServiceType types.String `tfsdk:"service_type"`
+    PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
+    PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
     ProfileId types.String `tfsdk:"profile_id"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     Time types.String `tfsdk:"time"`
-    TimeUnixNano types.Number `tfsdk:"time_unix_nano"`
+    TimeUnixNano types.String `tfsdk:"time_unix_nano"`
     Stacktrace types.Set `tfsdk:"stacktrace"`
     StacktraceHash types.String `tfsdk:"stacktrace_hash"`
     FrameTypes types.Set `tfsdk:"frame_types"`
-    Value types.Number `tfsdk:"value"`
+    Value types.String `tfsdk:"value"`
     ProfileType types.String `tfsdk:"profile_type"`
     Labels types.String `tfsdk:"labels"`
+    EntityKeys types.Set `tfsdk:"entity_keys"`
+    ServiceEntityKey types.String `tfsdk:"service_entity_key"`
+    HostEntityKey types.String `tfsdk:"host_entity_key"`
+    K8sPodEntityKey types.String `tfsdk:"k8s_pod_entity_key"`
+    K8sNodeEntityKey types.String `tfsdk:"k8s_node_entity_key"`
+    K8sClusterEntityKey types.String `tfsdk:"k8s_cluster_entity_key"`
+    ContainerEntityKey types.String `tfsdk:"container_entity_key"`
 }
 
 func (d *ProfileSampleDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -65,11 +71,11 @@ func (d *ProfileSampleDataDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "Project ID",
                 Computed: true,
             },
-            "service_id": schema.StringAttribute{
+            "primary_entity_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
                 Computed: true,
             },
-            "service_type": schema.StringAttribute{
+            "primary_entity_type": schema.StringAttribute{
                 MarkdownDescription: "Service Type",
                 Computed: true,
             },
@@ -89,7 +95,7 @@ func (d *ProfileSampleDataDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "Time",
                 Computed: true,
             },
-            "time_unix_nano": schema.NumberAttribute{
+            "time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "Time (in Unix Nano)",
                 Computed: true,
             },
@@ -107,7 +113,7 @@ func (d *ProfileSampleDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
                 ElementType: types.StringType,
             },
-            "value": schema.NumberAttribute{
+            "value": schema.StringAttribute{
                 MarkdownDescription: "Value",
                 Computed: true,
             },
@@ -117,6 +123,35 @@ func (d *ProfileSampleDataDataSource) Schema(ctx context.Context, req datasource
             },
             "labels": schema.StringAttribute{
                 MarkdownDescription: "Labels",
+                Computed: true,
+            },
+            "entity_keys": schema.SetAttribute{
+                MarkdownDescription: "Entity Keys",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Service Entity Key",
+                Computed: true,
+            },
+            "host_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Host Entity Key",
+                Computed: true,
+            },
+            "k8s_pod_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Pod Entity Key",
+                Computed: true,
+            },
+            "k8s_node_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Node Entity Key",
+                Computed: true,
+            },
+            "k8s_cluster_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                Computed: true,
+            },
+            "container_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Container Entity Key",
                 Computed: true,
             },
         },
@@ -191,11 +226,11 @@ func (d *ProfileSampleDataDataSource) Read(ctx context.Context, req datasource.R
     if val, ok := profileSampleDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := profileSampleDataResponse["service_id"].(string); ok {
-        data.ServiceId = types.StringValue(val)
+    if val, ok := profileSampleDataResponse["primary_entity_id"].(string); ok {
+        data.PrimaryEntityId = types.StringValue(val)
     }
-    if val, ok := profileSampleDataResponse["service_type"].(string); ok {
-        data.ServiceType = types.StringValue(val)
+    if val, ok := profileSampleDataResponse["primary_entity_type"].(string); ok {
+        data.PrimaryEntityType = types.StringValue(val)
     }
     if val, ok := profileSampleDataResponse["profile_id"].(string); ok {
         data.ProfileId = types.StringValue(val)
@@ -209,8 +244,8 @@ func (d *ProfileSampleDataDataSource) Read(ctx context.Context, req datasource.R
     if val, ok := profileSampleDataResponse["time"].(string); ok {
         data.Time = types.StringValue(val)
     }
-    if val, ok := profileSampleDataResponse["time_unix_nano"].(float64); ok {
-        data.TimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := profileSampleDataResponse["time_unix_nano"].(string); ok {
+        data.TimeUnixNano = types.StringValue(val)
     }
     if val, ok := profileSampleDataResponse["stacktrace"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -239,14 +274,44 @@ func (d *ProfileSampleDataDataSource) Read(ctx context.Context, req datasource.R
         setValue, _ := types.SetValue(types.StringType, elements)
         data.FrameTypes = setValue
     }
-    if val, ok := profileSampleDataResponse["value"].(float64); ok {
-        data.Value = types.NumberValue(big.NewFloat(val))
+    if val, ok := profileSampleDataResponse["value"].(string); ok {
+        data.Value = types.StringValue(val)
     }
     if val, ok := profileSampleDataResponse["profile_type"].(string); ok {
         data.ProfileType = types.StringValue(val)
     }
     if val, ok := profileSampleDataResponse["labels"].(string); ok {
         data.Labels = types.StringValue(val)
+    }
+    if val, ok := profileSampleDataResponse["entity_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EntityKeys = setValue
+    }
+    if val, ok := profileSampleDataResponse["service_entity_key"].(string); ok {
+        data.ServiceEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileSampleDataResponse["host_entity_key"].(string); ok {
+        data.HostEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileSampleDataResponse["k8s_pod_entity_key"].(string); ok {
+        data.K8sPodEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileSampleDataResponse["k8s_node_entity_key"].(string); ok {
+        data.K8sNodeEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileSampleDataResponse["k8s_cluster_entity_key"].(string); ok {
+        data.K8sClusterEntityKey = types.StringValue(val)
+    }
+    if val, ok := profileSampleDataResponse["container_entity_key"].(string); ok {
+        data.ContainerEntityKey = types.StringValue(val)
     }
 
     // Write logs using the tflog package

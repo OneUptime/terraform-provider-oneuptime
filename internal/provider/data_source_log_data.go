@@ -29,18 +29,25 @@ type LogDataDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceId types.String `tfsdk:"service_id"`
-    ServiceType types.String `tfsdk:"service_type"`
+    PrimaryEntityId types.String `tfsdk:"primary_entity_id"`
+    PrimaryEntityType types.String `tfsdk:"primary_entity_type"`
     Time types.String `tfsdk:"time"`
-    TimeUnixNano types.Number `tfsdk:"time_unix_nano"`
+    TimeUnixNano types.String `tfsdk:"time_unix_nano"`
     SeverityText types.String `tfsdk:"severity_text"`
     SeverityNumber types.Number `tfsdk:"severity_number"`
     Attributes types.String `tfsdk:"attributes"`
     AttributeKeys types.Set `tfsdk:"attribute_keys"`
+    EntityKeys types.Set `tfsdk:"entity_keys"`
+    ServiceEntityKey types.String `tfsdk:"service_entity_key"`
+    HostEntityKey types.String `tfsdk:"host_entity_key"`
+    K8sPodEntityKey types.String `tfsdk:"k8s_pod_entity_key"`
+    K8sNodeEntityKey types.String `tfsdk:"k8s_node_entity_key"`
+    K8sClusterEntityKey types.String `tfsdk:"k8s_cluster_entity_key"`
+    ContainerEntityKey types.String `tfsdk:"container_entity_key"`
     TraceId types.String `tfsdk:"trace_id"`
     SpanId types.String `tfsdk:"span_id"`
     Body types.String `tfsdk:"body"`
-    ObservedTimeUnixNano types.Number `tfsdk:"observed_time_unix_nano"`
+    ObservedTimeUnixNano types.String `tfsdk:"observed_time_unix_nano"`
     DroppedAttributesCount types.Number `tfsdk:"dropped_attributes_count"`
     Flags types.Number `tfsdk:"flags"`
 }
@@ -66,11 +73,11 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "Project ID",
                 Computed: true,
             },
-            "service_id": schema.StringAttribute{
+            "primary_entity_id": schema.StringAttribute{
                 MarkdownDescription: "Service ID",
                 Computed: true,
             },
-            "service_type": schema.StringAttribute{
+            "primary_entity_type": schema.StringAttribute{
                 MarkdownDescription: "Service Type",
                 Computed: true,
             },
@@ -78,7 +85,7 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "Time",
                 Computed: true,
             },
-            "time_unix_nano": schema.NumberAttribute{
+            "time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "Time (in Unix Nano)",
                 Computed: true,
             },
@@ -99,6 +106,35 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "entity_keys": schema.SetAttribute{
+                MarkdownDescription: "Entity Keys",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Service Entity Key",
+                Computed: true,
+            },
+            "host_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Host Entity Key",
+                Computed: true,
+            },
+            "k8s_pod_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Pod Entity Key",
+                Computed: true,
+            },
+            "k8s_node_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Node Entity Key",
+                Computed: true,
+            },
+            "k8s_cluster_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Kubernetes Cluster Entity Key",
+                Computed: true,
+            },
+            "container_entity_key": schema.StringAttribute{
+                MarkdownDescription: "Container Entity Key",
+                Computed: true,
+            },
             "trace_id": schema.StringAttribute{
                 MarkdownDescription: "Trace ID",
                 Computed: true,
@@ -111,7 +147,7 @@ func (d *LogDataDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "Log Body",
                 Computed: true,
             },
-            "observed_time_unix_nano": schema.NumberAttribute{
+            "observed_time_unix_nano": schema.StringAttribute{
                 MarkdownDescription: "Observed Time (in Unix Nano)",
                 Computed: true,
             },
@@ -195,17 +231,17 @@ func (d *LogDataDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if val, ok := logDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := logDataResponse["service_id"].(string); ok {
-        data.ServiceId = types.StringValue(val)
+    if val, ok := logDataResponse["primary_entity_id"].(string); ok {
+        data.PrimaryEntityId = types.StringValue(val)
     }
-    if val, ok := logDataResponse["service_type"].(string); ok {
-        data.ServiceType = types.StringValue(val)
+    if val, ok := logDataResponse["primary_entity_type"].(string); ok {
+        data.PrimaryEntityType = types.StringValue(val)
     }
     if val, ok := logDataResponse["time"].(string); ok {
         data.Time = types.StringValue(val)
     }
-    if val, ok := logDataResponse["time_unix_nano"].(float64); ok {
-        data.TimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := logDataResponse["time_unix_nano"].(string); ok {
+        data.TimeUnixNano = types.StringValue(val)
     }
     if val, ok := logDataResponse["severity_text"].(string); ok {
         data.SeverityText = types.StringValue(val)
@@ -228,6 +264,36 @@ func (d *LogDataDataSource) Read(ctx context.Context, req datasource.ReadRequest
         setValue, _ := types.SetValue(types.StringType, elements)
         data.AttributeKeys = setValue
     }
+    if val, ok := logDataResponse["entity_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.EntityKeys = setValue
+    }
+    if val, ok := logDataResponse["service_entity_key"].(string); ok {
+        data.ServiceEntityKey = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["host_entity_key"].(string); ok {
+        data.HostEntityKey = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["k8s_pod_entity_key"].(string); ok {
+        data.K8sPodEntityKey = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["k8s_node_entity_key"].(string); ok {
+        data.K8sNodeEntityKey = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["k8s_cluster_entity_key"].(string); ok {
+        data.K8sClusterEntityKey = types.StringValue(val)
+    }
+    if val, ok := logDataResponse["container_entity_key"].(string); ok {
+        data.ContainerEntityKey = types.StringValue(val)
+    }
     if val, ok := logDataResponse["trace_id"].(string); ok {
         data.TraceId = types.StringValue(val)
     }
@@ -237,8 +303,8 @@ func (d *LogDataDataSource) Read(ctx context.Context, req datasource.ReadRequest
     if val, ok := logDataResponse["body"].(string); ok {
         data.Body = types.StringValue(val)
     }
-    if val, ok := logDataResponse["observed_time_unix_nano"].(float64); ok {
-        data.ObservedTimeUnixNano = types.NumberValue(big.NewFloat(val))
+    if val, ok := logDataResponse["observed_time_unix_nano"].(string); ok {
+        data.ObservedTimeUnixNano = types.StringValue(val)
     }
     if val, ok := logDataResponse["dropped_attributes_count"].(float64); ok {
         data.DroppedAttributesCount = types.NumberValue(big.NewFloat(val))

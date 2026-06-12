@@ -23,10 +23,10 @@ data "oneuptime_exception_instance_data" "example" {
 - `id` (String) Identifier to filter by. Optional.
 - `name` (String) Name to filter by. Optional.
 - `project_id` (String) Project ID. Computed.
-- `service_id` (String) Service ID. Computed.
-- `service_type` (String) Service Type. Computed.
+- `primary_entity_id` (String) Service ID. Computed.
+- `primary_entity_type` (String) Service Type. Computed.
 - `time` (String) Time. Computed.
-- `time_unix_nano` (Number) Time (in Unix Nano). Computed.
+- `time_unix_nano` (String) Time (in Unix Nano). Computed.
 - `exception_type` (String) Exception Type. Computed.
 - `stack_trace` (String) Stack Trace. Computed.
 - `message` (String) Exception Message. Computed.
@@ -40,3 +40,10 @@ data "oneuptime_exception_instance_data" "example" {
 - `environment` (String) Environment. Computed.
 - `parsed_frames` (String) Parsed Stack Frames. Computed.
 - `attributes` (String) Attributes. Computed.
+- `entity_keys` (Set) Entity Keys. Computed.
+- `service_entity_key` (String) Service Entity Key. Computed.
+- `host_entity_key` (String) Host Entity Key. Computed.
+- `k8s_pod_entity_key` (String) Kubernetes Pod Entity Key. Computed.
+- `k8s_node_entity_key` (String) Kubernetes Node Entity Key. Computed.
+- `k8s_cluster_entity_key` (String) Kubernetes Cluster Entity Key. Computed.
+- `container_entity_key` (String) Container Entity Key. Computed.
