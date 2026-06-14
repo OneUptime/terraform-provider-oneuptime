@@ -65,6 +65,7 @@ type HostResourceModel struct {
     Slug types.String `tfsdk:"slug"`
     DockerHostId types.String `tfsdk:"docker_host_id"`
     KubernetesClusterId types.String `tfsdk:"kubernetes_cluster_id"`
+    ProxmoxClusterId types.String `tfsdk:"proxmox_cluster_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     DeploymentEnvironment types.String `tfsdk:"deployment_environment"`
@@ -275,6 +276,10 @@ func (r *HostResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 Computed: true,
             },
             "kubernetes_cluster_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "proxmox_cluster_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -1266,6 +1271,43 @@ func (r *HostResource) Create(ctx context.Context, req resource.CreateRequest, r
     } else {
         data.KubernetesClusterId = types.StringNull()
     }
+    if obj, ok := dataMap["proxmoxClusterId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProxmoxClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProxmoxClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProxmoxClusterId = types.StringNull()
+        }
+    } else if val, ok := dataMap["proxmoxClusterId"].(string); ok && val != "" {
+        data.ProxmoxClusterId = types.StringValue(val)
+    } else {
+        data.ProxmoxClusterId = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1651,6 +1693,7 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "slug": true,
         "dockerHostId": true,
         "kubernetesClusterId": true,
+        "proxmoxClusterId": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "deploymentEnvironment": true,
@@ -2558,6 +2601,43 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     } else {
         data.KubernetesClusterId = types.StringNull()
     }
+    if obj, ok := dataMap["proxmoxClusterId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProxmoxClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProxmoxClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProxmoxClusterId = types.StringNull()
+        }
+    } else if val, ok := dataMap["proxmoxClusterId"].(string); ok && val != "" {
+        data.ProxmoxClusterId = types.StringValue(val)
+    } else {
+        data.ProxmoxClusterId = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -3038,6 +3118,7 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "slug": true,
         "dockerHostId": true,
         "kubernetesClusterId": true,
+        "proxmoxClusterId": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "deploymentEnvironment": true,
@@ -3938,6 +4019,43 @@ func (r *HostResource) Update(ctx context.Context, req resource.UpdateRequest, r
         data.KubernetesClusterId = types.StringValue(val)
     } else {
         data.KubernetesClusterId = types.StringNull()
+    }
+    if obj, ok := dataMap["proxmoxClusterId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProxmoxClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ProxmoxClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ProxmoxClusterId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ProxmoxClusterId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProxmoxClusterId = types.StringNull()
+        }
+    } else if val, ok := dataMap["proxmoxClusterId"].(string); ok && val != "" {
+        data.ProxmoxClusterId = types.StringValue(val)
+    } else {
+        data.ProxmoxClusterId = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -51,6 +51,7 @@ type HostDataDataSourceModel struct {
     ContainerRuntime types.String `tfsdk:"container_runtime"`
     DockerHostId types.String `tfsdk:"docker_host_id"`
     KubernetesClusterId types.String `tfsdk:"kubernetes_cluster_id"`
+    ProxmoxClusterId types.String `tfsdk:"proxmox_cluster_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
@@ -171,6 +172,10 @@ func (d *HostDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "kubernetes_cluster_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "proxmox_cluster_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -360,6 +365,9 @@ func (d *HostDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := hostDataResponse["kubernetes_cluster_id"].(string); ok {
         data.KubernetesClusterId = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["proxmox_cluster_id"].(string); ok {
+        data.ProxmoxClusterId = types.StringValue(val)
     }
     if val, ok := hostDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

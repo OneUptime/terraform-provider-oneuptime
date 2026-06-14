@@ -41,6 +41,8 @@ type ScheduledMaintenanceEventDataDataSourceModel struct {
     Hosts types.Set `tfsdk:"hosts"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    CephClusters types.Set `tfsdk:"ceph_clusters"`
     Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
     Labels types.Set `tfsdk:"labels"`
@@ -132,6 +134,16 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "proxmox_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Proxmox clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "ceph_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Ceph clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -357,6 +369,30 @@ func (d *ScheduledMaintenanceEventDataDataSource) Read(ctx context.Context, req 
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerHosts = setValue
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["proxmox_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.ProxmoxClusters = setValue
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["ceph_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.CephClusters = setValue
     }
     if val, ok := scheduledMaintenanceEventDataResponse["services"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

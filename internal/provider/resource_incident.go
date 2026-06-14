@@ -49,6 +49,8 @@ type IncidentResourceModel struct {
     KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
     KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    CephClusters types.Set `tfsdk:"ceph_clusters"`
     DockerResources types.Set `tfsdk:"docker_resources"`
     Services types.Set `tfsdk:"services"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
@@ -183,6 +185,24 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "proxmox_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Proxmox clusters affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ceph_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Ceph clusters affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -501,6 +521,8 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "kubernetesResources": r.convertTerraformSetToInterface(data.KubernetesResources),
         "kubernetesContainers": r.convertTerraformSetToInterface(data.KubernetesContainers),
         "dockerHosts": r.convertTerraformSetToInterface(data.DockerHosts),
+        "proxmoxClusters": r.convertTerraformSetToInterface(data.ProxmoxClusters),
+        "cephClusters": r.convertTerraformSetToInterface(data.CephClusters),
         "dockerResources": r.convertTerraformSetToInterface(data.DockerResources),
         "services": r.convertTerraformSetToInterface(data.Services),
         "onCallDutyPolicies": r.convertTerraformSetToInterface(data.OnCallDutyPolicies),
@@ -901,6 +923,70 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DockerHosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["proxmoxClusters"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ProxmoxClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["cephClusters"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CephClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerResources"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2098,6 +2184,8 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "kubernetesResources": true,
         "kubernetesContainers": true,
         "dockerHosts": true,
+        "proxmoxClusters": true,
+        "cephClusters": true,
         "dockerResources": true,
         "services": true,
         "onCallDutyPolicies": true,
@@ -2521,6 +2609,70 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DockerHosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["proxmoxClusters"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ProxmoxClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["cephClusters"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CephClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerResources"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -3750,6 +3902,12 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.DockerHosts.IsUnknown() && !state.DockerHosts.IsUnknown() && !data.DockerHosts.Equal(state.DockerHosts) {
         requestDataMap["dockerHosts"] = r.convertTerraformSetToInterface(data.DockerHosts)
     }
+    if !data.ProxmoxClusters.IsUnknown() && !state.ProxmoxClusters.IsUnknown() && !data.ProxmoxClusters.Equal(state.ProxmoxClusters) {
+        requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
+    }
+    if !data.CephClusters.IsUnknown() && !state.CephClusters.IsUnknown() && !data.CephClusters.Equal(state.CephClusters) {
+        requestDataMap["cephClusters"] = r.convertTerraformSetToInterface(data.CephClusters)
+    }
     if !data.DockerResources.IsUnknown() && !state.DockerResources.IsUnknown() && !data.DockerResources.Equal(state.DockerResources) {
         requestDataMap["dockerResources"] = r.convertTerraformSetToInterface(data.DockerResources)
     }
@@ -3856,6 +4014,8 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "kubernetesResources": true,
         "kubernetesContainers": true,
         "dockerHosts": true,
+        "proxmoxClusters": true,
+        "cephClusters": true,
         "dockerResources": true,
         "services": true,
         "onCallDutyPolicies": true,
@@ -4273,6 +4433,70 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DockerHosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["proxmoxClusters"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ProxmoxClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["cephClusters"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.CephClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerResources"].([]interface{}); ok {
         // Convert API response list to Terraform set

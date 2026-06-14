@@ -43,6 +43,8 @@ type AlertDataDataSourceModel struct {
     KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
     KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    CephClusters types.Set `tfsdk:"ceph_clusters"`
     DockerResources types.Set `tfsdk:"docker_resources"`
     Services types.Set `tfsdk:"services"`
     Labels types.Set `tfsdk:"labels"`
@@ -146,6 +148,16 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "proxmox_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Proxmox clusters affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "ceph_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Ceph clusters affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -403,6 +415,30 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerHosts = setValue
+    }
+    if val, ok := alertDataResponse["proxmox_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.ProxmoxClusters = setValue
+    }
+    if val, ok := alertDataResponse["ceph_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.CephClusters = setValue
     }
     if val, ok := alertDataResponse["docker_resources"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

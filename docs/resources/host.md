@@ -49,6 +49,7 @@ resource "oneuptime_host" "example" {
 - `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]. Computed.
 - `docker_host_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `kubernetes_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `proxmox_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deployment_environment` (String) Last-seen value of the deployment.environment.name (or deployment.environment) OpenTelemetry resource attribute, e.g. production, staging.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [No access - you don't have permission for this operation]. Computed.

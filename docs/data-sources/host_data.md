@@ -45,6 +45,7 @@ data "oneuptime_host_data" "example" {
 - `container_runtime` (String) Container runtime detected on this host, if any (e.g. docker, containerd). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [Project Owner, Project Admin, Edit Host]. Computed.
 - `docker_host_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `kubernetes_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `proxmox_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Host]. Computed.
