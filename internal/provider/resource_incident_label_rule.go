@@ -56,6 +56,7 @@ type IncidentLabelRuleResourceModel struct {
     InheritLabelsFromHosts types.Bool `tfsdk:"inherit_labels_from_hosts"`
     InheritLabelsFromKubernetesClusters types.Bool `tfsdk:"inherit_labels_from_kubernetes_clusters"`
     InheritLabelsFromDockerHosts types.Bool `tfsdk:"inherit_labels_from_docker_hosts"`
+    InheritLabelsFromPodmanHosts types.Bool `tfsdk:"inherit_labels_from_podman_hosts"`
     InheritLabelsFromServices types.Bool `tfsdk:"inherit_labels_from_services"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
@@ -222,6 +223,15 @@ func (r *IncidentLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "inherit_labels_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Podman hosts onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "inherit_labels_from_services": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also copy every label of the incident's affected services onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Optional: true,
@@ -310,6 +320,7 @@ func (r *IncidentLabelRuleResource) Create(ctx context.Context, req resource.Cre
         "inheritLabelsFromHosts": data.InheritLabelsFromHosts.ValueBool(),
         "inheritLabelsFromKubernetesClusters": data.InheritLabelsFromKubernetesClusters.ValueBool(),
         "inheritLabelsFromDockerHosts": data.InheritLabelsFromDockerHosts.ValueBool(),
+        "inheritLabelsFromPodmanHosts": data.InheritLabelsFromPodmanHosts.ValueBool(),
         "inheritLabelsFromServices": data.InheritLabelsFromServices.ValueBool(),
         },
     }
@@ -784,6 +795,9 @@ func (r *IncidentLabelRuleResource) Create(ctx context.Context, req resource.Cre
     if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritLabelsFromPodmanHosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)
     }
@@ -986,6 +1000,7 @@ func (r *IncidentLabelRuleResource) Read(ctx context.Context, req resource.ReadR
         "inheritLabelsFromHosts": true,
         "inheritLabelsFromKubernetesClusters": true,
         "inheritLabelsFromDockerHosts": true,
+        "inheritLabelsFromPodmanHosts": true,
         "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1470,6 +1485,9 @@ func (r *IncidentLabelRuleResource) Read(ctx context.Context, req resource.ReadR
     if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritLabelsFromPodmanHosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)
     }
@@ -1713,6 +1731,9 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.InheritLabelsFromDockerHosts.IsUnknown() && !state.InheritLabelsFromDockerHosts.IsUnknown() && !data.InheritLabelsFromDockerHosts.Equal(state.InheritLabelsFromDockerHosts) {
         requestDataMap["inheritLabelsFromDockerHosts"] = data.InheritLabelsFromDockerHosts.ValueBool()
     }
+    if !data.InheritLabelsFromPodmanHosts.IsUnknown() && !state.InheritLabelsFromPodmanHosts.IsUnknown() && !data.InheritLabelsFromPodmanHosts.Equal(state.InheritLabelsFromPodmanHosts) {
+        requestDataMap["inheritLabelsFromPodmanHosts"] = data.InheritLabelsFromPodmanHosts.ValueBool()
+    }
     if !data.InheritLabelsFromServices.IsUnknown() && !state.InheritLabelsFromServices.IsUnknown() && !data.InheritLabelsFromServices.Equal(state.InheritLabelsFromServices) {
         requestDataMap["inheritLabelsFromServices"] = data.InheritLabelsFromServices.ValueBool()
     }
@@ -1751,6 +1772,7 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
         "inheritLabelsFromHosts": true,
         "inheritLabelsFromKubernetesClusters": true,
         "inheritLabelsFromDockerHosts": true,
+        "inheritLabelsFromPodmanHosts": true,
         "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2228,6 +2250,9 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
     }
     if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromPodmanHosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)

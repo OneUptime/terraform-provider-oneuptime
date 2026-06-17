@@ -49,6 +49,7 @@ type ScheduledMaintenanceOwnerRuleDataDataSourceModel struct {
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
     InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
     InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromPodmanHosts types.Bool `tfsdk:"inherit_owners_from_podman_hosts"`
     InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -157,6 +158,10 @@ func (d *ScheduledMaintenanceOwnerRuleDataDataSource) Schema(ctx context.Context
             },
             "inherit_owners_from_docker_hosts": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also assign every owner of the event's affected Docker hosts to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected Podman hosts to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Computed: true,
             },
             "inherit_owners_from_services": schema.BoolAttribute{
@@ -343,6 +348,9 @@ func (d *ScheduledMaintenanceOwnerRuleDataDataSource) Read(ctx context.Context, 
     }
     if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_docker_hosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_podman_hosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := scheduledMaintenanceOwnerRuleDataResponse["inherit_owners_from_services"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)

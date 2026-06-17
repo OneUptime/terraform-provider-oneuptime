@@ -58,6 +58,7 @@ type IncidentOwnerRuleResourceModel struct {
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
     InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
     InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromPodmanHosts types.Bool `tfsdk:"inherit_owners_from_podman_hosts"`
     InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
@@ -242,6 +243,15 @@ func (r *IncidentOwnerRuleResource) Schema(ctx context.Context, req resource.Sch
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "inherit_owners_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected Podman hosts to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "inherit_owners_from_services": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also assign every owner of the incident's affected services to the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Owner Rule], Update: [Project Owner, Project Admin, Edit Incident Owner Rule]",
                 Optional: true,
@@ -332,6 +342,7 @@ func (r *IncidentOwnerRuleResource) Create(ctx context.Context, req resource.Cre
         "inheritOwnersFromHosts": data.InheritOwnersFromHosts.ValueBool(),
         "inheritOwnersFromKubernetesClusters": data.InheritOwnersFromKubernetesClusters.ValueBool(),
         "inheritOwnersFromDockerHosts": data.InheritOwnersFromDockerHosts.ValueBool(),
+        "inheritOwnersFromPodmanHosts": data.InheritOwnersFromPodmanHosts.ValueBool(),
         "inheritOwnersFromServices": data.InheritOwnersFromServices.ValueBool(),
         },
     }
@@ -841,6 +852,9 @@ func (r *IncidentOwnerRuleResource) Create(ctx context.Context, req resource.Cre
     if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritOwnersFromPodmanHosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)
     }
@@ -1045,6 +1059,7 @@ func (r *IncidentOwnerRuleResource) Read(ctx context.Context, req resource.ReadR
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
         "inheritOwnersFromDockerHosts": true,
+        "inheritOwnersFromPodmanHosts": true,
         "inheritOwnersFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1564,6 +1579,9 @@ func (r *IncidentOwnerRuleResource) Read(ctx context.Context, req resource.ReadR
     if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritOwnersFromPodmanHosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)
     }
@@ -1813,6 +1831,9 @@ func (r *IncidentOwnerRuleResource) Update(ctx context.Context, req resource.Upd
     if !data.InheritOwnersFromDockerHosts.IsUnknown() && !state.InheritOwnersFromDockerHosts.IsUnknown() && !data.InheritOwnersFromDockerHosts.Equal(state.InheritOwnersFromDockerHosts) {
         requestDataMap["inheritOwnersFromDockerHosts"] = data.InheritOwnersFromDockerHosts.ValueBool()
     }
+    if !data.InheritOwnersFromPodmanHosts.IsUnknown() && !state.InheritOwnersFromPodmanHosts.IsUnknown() && !data.InheritOwnersFromPodmanHosts.Equal(state.InheritOwnersFromPodmanHosts) {
+        requestDataMap["inheritOwnersFromPodmanHosts"] = data.InheritOwnersFromPodmanHosts.ValueBool()
+    }
     if !data.InheritOwnersFromServices.IsUnknown() && !state.InheritOwnersFromServices.IsUnknown() && !data.InheritOwnersFromServices.Equal(state.InheritOwnersFromServices) {
         requestDataMap["inheritOwnersFromServices"] = data.InheritOwnersFromServices.ValueBool()
     }
@@ -1853,6 +1874,7 @@ func (r *IncidentOwnerRuleResource) Update(ctx context.Context, req resource.Upd
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
         "inheritOwnersFromDockerHosts": true,
+        "inheritOwnersFromPodmanHosts": true,
         "inheritOwnersFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2365,6 +2387,9 @@ func (r *IncidentOwnerRuleResource) Update(ctx context.Context, req resource.Upd
     }
     if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromPodmanHosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)

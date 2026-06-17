@@ -43,6 +43,7 @@ type IncidentTemplateDataDataSourceModel struct {
     Hosts types.Set `tfsdk:"hosts"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    PodmanHosts types.Set `tfsdk:"podman_hosts"`
     Services types.Set `tfsdk:"services"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Labels types.Set `tfsdk:"labels"`
@@ -130,6 +131,11 @@ func (d *IncidentTemplateDataDataSource) Schema(ctx context.Context, req datasou
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts to pre-populate on incidents created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Template]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "podman_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Podman hosts to pre-populate on incidents created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -313,6 +319,18 @@ func (d *IncidentTemplateDataDataSource) Read(ctx context.Context, req datasourc
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerHosts = setValue
+    }
+    if val, ok := incidentTemplateDataResponse["podman_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PodmanHosts = setValue
     }
     if val, ok := incidentTemplateDataResponse["services"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

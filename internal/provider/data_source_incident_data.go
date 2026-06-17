@@ -44,9 +44,12 @@ type IncidentDataDataSourceModel struct {
     KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
     KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     DockerResources types.Set `tfsdk:"docker_resources"`
+    PodmanResources types.Set `tfsdk:"podman_resources"`
     Services types.Set `tfsdk:"services"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Labels types.Set `tfsdk:"labels"`
@@ -169,8 +172,18 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "podman_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Podman hosts affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_swarm_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Docker Swarm clusters affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -181,6 +194,11 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "docker_resources": schema.SetAttribute{
                 MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "podman_resources": schema.SetAttribute{
+                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -491,6 +509,18 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerHosts = setValue
     }
+    if val, ok := incidentDataResponse["podman_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PodmanHosts = setValue
+    }
     if val, ok := incidentDataResponse["proxmox_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
         for i, item := range val {
@@ -502,6 +532,18 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.ProxmoxClusters = setValue
+    }
+    if val, ok := incidentDataResponse["docker_swarm_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerSwarmClusters = setValue
     }
     if val, ok := incidentDataResponse["ceph_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -526,6 +568,18 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerResources = setValue
+    }
+    if val, ok := incidentDataResponse["podman_resources"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PodmanResources = setValue
     }
     if val, ok := incidentDataResponse["services"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

@@ -55,6 +55,7 @@ type ScheduledMaintenanceLabelRuleResourceModel struct {
     InheritLabelsFromHosts types.Bool `tfsdk:"inherit_labels_from_hosts"`
     InheritLabelsFromKubernetesClusters types.Bool `tfsdk:"inherit_labels_from_kubernetes_clusters"`
     InheritLabelsFromDockerHosts types.Bool `tfsdk:"inherit_labels_from_docker_hosts"`
+    InheritLabelsFromPodmanHosts types.Bool `tfsdk:"inherit_labels_from_podman_hosts"`
     InheritLabelsFromServices types.Bool `tfsdk:"inherit_labels_from_services"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
@@ -212,6 +213,15 @@ func (r *ScheduledMaintenanceLabelRuleResource) Schema(ctx context.Context, req 
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "inherit_labels_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the event's affected Podman hosts onto the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "inherit_labels_from_services": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also copy every label of the event's affected services onto the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Label Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Label Rule]",
                 Optional: true,
@@ -299,6 +309,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Create(ctx context.Context, req 
         "inheritLabelsFromHosts": data.InheritLabelsFromHosts.ValueBool(),
         "inheritLabelsFromKubernetesClusters": data.InheritLabelsFromKubernetesClusters.ValueBool(),
         "inheritLabelsFromDockerHosts": data.InheritLabelsFromDockerHosts.ValueBool(),
+        "inheritLabelsFromPodmanHosts": data.InheritLabelsFromPodmanHosts.ValueBool(),
         "inheritLabelsFromServices": data.InheritLabelsFromServices.ValueBool(),
         },
     }
@@ -741,6 +752,9 @@ func (r *ScheduledMaintenanceLabelRuleResource) Create(ctx context.Context, req 
     if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritLabelsFromPodmanHosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)
     }
@@ -942,6 +956,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Read(ctx context.Context, req re
         "inheritLabelsFromHosts": true,
         "inheritLabelsFromKubernetesClusters": true,
         "inheritLabelsFromDockerHosts": true,
+        "inheritLabelsFromPodmanHosts": true,
         "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1394,6 +1409,9 @@ func (r *ScheduledMaintenanceLabelRuleResource) Read(ctx context.Context, req re
     if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritLabelsFromPodmanHosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)
     }
@@ -1634,6 +1652,9 @@ func (r *ScheduledMaintenanceLabelRuleResource) Update(ctx context.Context, req 
     if !data.InheritLabelsFromDockerHosts.IsUnknown() && !state.InheritLabelsFromDockerHosts.IsUnknown() && !data.InheritLabelsFromDockerHosts.Equal(state.InheritLabelsFromDockerHosts) {
         requestDataMap["inheritLabelsFromDockerHosts"] = data.InheritLabelsFromDockerHosts.ValueBool()
     }
+    if !data.InheritLabelsFromPodmanHosts.IsUnknown() && !state.InheritLabelsFromPodmanHosts.IsUnknown() && !data.InheritLabelsFromPodmanHosts.Equal(state.InheritLabelsFromPodmanHosts) {
+        requestDataMap["inheritLabelsFromPodmanHosts"] = data.InheritLabelsFromPodmanHosts.ValueBool()
+    }
     if !data.InheritLabelsFromServices.IsUnknown() && !state.InheritLabelsFromServices.IsUnknown() && !data.InheritLabelsFromServices.Equal(state.InheritLabelsFromServices) {
         requestDataMap["inheritLabelsFromServices"] = data.InheritLabelsFromServices.ValueBool()
     }
@@ -1671,6 +1692,7 @@ func (r *ScheduledMaintenanceLabelRuleResource) Update(ctx context.Context, req 
         "inheritLabelsFromHosts": true,
         "inheritLabelsFromKubernetesClusters": true,
         "inheritLabelsFromDockerHosts": true,
+        "inheritLabelsFromPodmanHosts": true,
         "inheritLabelsFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2116,6 +2138,9 @@ func (r *ScheduledMaintenanceLabelRuleResource) Update(ctx context.Context, req 
     }
     if val, ok := dataMap["inheritLabelsFromDockerHosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritLabelsFromPodmanHosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := dataMap["inheritLabelsFromServices"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)

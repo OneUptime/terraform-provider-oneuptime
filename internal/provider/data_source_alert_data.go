@@ -43,9 +43,12 @@ type AlertDataDataSourceModel struct {
     KubernetesResources types.Set `tfsdk:"kubernetes_resources"`
     KubernetesContainers types.Set `tfsdk:"kubernetes_containers"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     DockerResources types.Set `tfsdk:"docker_resources"`
+    PodmanResources types.Set `tfsdk:"podman_resources"`
     Services types.Set `tfsdk:"services"`
     Labels types.Set `tfsdk:"labels"`
     CurrentAlertStateId types.String `tfsdk:"current_alert_state_id"`
@@ -151,8 +154,18 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "podman_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Podman hosts affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_swarm_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Docker Swarm clusters affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -163,6 +176,11 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "docker_resources": schema.SetAttribute{
                 MarkdownDescription: "List of Docker resources (containers, images, networks, volumes) affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "podman_resources": schema.SetAttribute{
+                MarkdownDescription: "List of Podman resources (containers, images, networks, volumes) affected by this alert.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -416,6 +434,18 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerHosts = setValue
     }
+    if val, ok := alertDataResponse["podman_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PodmanHosts = setValue
+    }
     if val, ok := alertDataResponse["proxmox_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
         for i, item := range val {
@@ -427,6 +457,18 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.ProxmoxClusters = setValue
+    }
+    if val, ok := alertDataResponse["docker_swarm_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerSwarmClusters = setValue
     }
     if val, ok := alertDataResponse["ceph_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
@@ -451,6 +493,18 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerResources = setValue
+    }
+    if val, ok := alertDataResponse["podman_resources"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PodmanResources = setValue
     }
     if val, ok := alertDataResponse["services"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

@@ -48,6 +48,7 @@ type IncidentLabelRuleDataDataSourceModel struct {
     InheritLabelsFromHosts types.Bool `tfsdk:"inherit_labels_from_hosts"`
     InheritLabelsFromKubernetesClusters types.Bool `tfsdk:"inherit_labels_from_kubernetes_clusters"`
     InheritLabelsFromDockerHosts types.Bool `tfsdk:"inherit_labels_from_docker_hosts"`
+    InheritLabelsFromPodmanHosts types.Bool `tfsdk:"inherit_labels_from_podman_hosts"`
     InheritLabelsFromServices types.Bool `tfsdk:"inherit_labels_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -152,6 +153,10 @@ func (d *IncidentLabelRuleDataDataSource) Schema(ctx context.Context, req dataso
             },
             "inherit_labels_from_docker_hosts": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Docker hosts onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
+                Computed: true,
+            },
+            "inherit_labels_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the incident's affected Podman hosts onto the incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Label Rule], Update: [Project Owner, Project Admin, Edit Incident Label Rule]",
                 Computed: true,
             },
             "inherit_labels_from_services": schema.BoolAttribute{
@@ -335,6 +340,9 @@ func (d *IncidentLabelRuleDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := incidentLabelRuleDataResponse["inherit_labels_from_docker_hosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := incidentLabelRuleDataResponse["inherit_labels_from_podman_hosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := incidentLabelRuleDataResponse["inherit_labels_from_services"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)

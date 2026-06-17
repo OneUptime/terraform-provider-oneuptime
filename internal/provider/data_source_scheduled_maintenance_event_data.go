@@ -41,7 +41,9 @@ type ScheduledMaintenanceEventDataDataSourceModel struct {
     Hosts types.Set `tfsdk:"hosts"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
@@ -137,8 +139,18 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "podman_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Podman hosts affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_swarm_clusters": schema.SetAttribute{
+                MarkdownDescription: "List of Docker Swarm clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -370,6 +382,18 @@ func (d *ScheduledMaintenanceEventDataDataSource) Read(ctx context.Context, req 
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerHosts = setValue
     }
+    if val, ok := scheduledMaintenanceEventDataResponse["podman_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PodmanHosts = setValue
+    }
     if val, ok := scheduledMaintenanceEventDataResponse["proxmox_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
         for i, item := range val {
@@ -381,6 +405,18 @@ func (d *ScheduledMaintenanceEventDataDataSource) Read(ctx context.Context, req 
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.ProxmoxClusters = setValue
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["docker_swarm_clusters"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.DockerSwarmClusters = setValue
     }
     if val, ok := scheduledMaintenanceEventDataResponse["ceph_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

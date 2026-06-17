@@ -43,6 +43,7 @@ type ScheduledMaintenanceTemplateDataDataSourceModel struct {
     Hosts types.Set `tfsdk:"hosts"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    PodmanHosts types.Set `tfsdk:"podman_hosts"`
     Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
     Labels types.Set `tfsdk:"labels"`
@@ -138,6 +139,11 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Schema(ctx context.Context,
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts to pre-populate on scheduled maintenance events created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance Template]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "podman_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Podman hosts to pre-populate on scheduled maintenance events created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Template], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance Template]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -353,6 +359,18 @@ func (d *ScheduledMaintenanceTemplateDataDataSource) Read(ctx context.Context, r
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.DockerHosts = setValue
+    }
+    if val, ok := scheduledMaintenanceTemplateDataResponse["podman_hosts"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.PodmanHosts = setValue
     }
     if val, ok := scheduledMaintenanceTemplateDataResponse["services"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

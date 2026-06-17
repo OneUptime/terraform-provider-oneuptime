@@ -46,6 +46,7 @@ type IncidentTemplateResourceModel struct {
     Hosts types.Set `tfsdk:"hosts"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
     DockerHosts types.Set `tfsdk:"docker_hosts"`
+    PodmanHosts types.Set `tfsdk:"podman_hosts"`
     Services types.Set `tfsdk:"services"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Labels types.Set `tfsdk:"labels"`
@@ -134,6 +135,15 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
             },
             "docker_hosts": schema.SetAttribute{
                 MarkdownDescription: "List of Docker hosts to pre-populate on incidents created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Template]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "podman_hosts": schema.SetAttribute{
+                MarkdownDescription: "List of Podman hosts to pre-populate on incidents created from this template.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident Template], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Template], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident Template]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -276,6 +286,7 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
         "hosts": r.convertTerraformSetToInterface(data.Hosts),
         "kubernetesClusters": r.convertTerraformSetToInterface(data.KubernetesClusters),
         "dockerHosts": r.convertTerraformSetToInterface(data.DockerHosts),
+        "podmanHosts": r.convertTerraformSetToInterface(data.PodmanHosts),
         "services": r.convertTerraformSetToInterface(data.Services),
         "onCallDutyPolicies": r.convertTerraformSetToInterface(data.OnCallDutyPolicies),
         "labels": r.convertTerraformSetToInterface(data.Labels),
@@ -634,6 +645,38 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DockerHosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["podmanHosts"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.PodmanHosts = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.PodmanHosts = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1107,6 +1150,7 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
         "hosts": true,
         "kubernetesClusters": true,
         "dockerHosts": true,
+        "podmanHosts": true,
         "services": true,
         "onCallDutyPolicies": true,
         "labels": true,
@@ -1476,6 +1520,38 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DockerHosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["podmanHosts"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.PodmanHosts = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.PodmanHosts = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1974,6 +2050,9 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
     if !data.DockerHosts.IsUnknown() && !state.DockerHosts.IsUnknown() && !data.DockerHosts.Equal(state.DockerHosts) {
         requestDataMap["dockerHosts"] = r.convertTerraformSetToInterface(data.DockerHosts)
     }
+    if !data.PodmanHosts.IsUnknown() && !state.PodmanHosts.IsUnknown() && !data.PodmanHosts.Equal(state.PodmanHosts) {
+        requestDataMap["podmanHosts"] = r.convertTerraformSetToInterface(data.PodmanHosts)
+    }
     if !data.Services.IsUnknown() && !state.Services.IsUnknown() && !data.Services.Equal(state.Services) {
         requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
     }
@@ -2027,6 +2106,7 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         "hosts": true,
         "kubernetesClusters": true,
         "dockerHosts": true,
+        "podmanHosts": true,
         "services": true,
         "onCallDutyPolicies": true,
         "labels": true,
@@ -2390,6 +2470,38 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
     } else {
         // For sets, always use empty set instead of null to match default values
         data.DockerHosts = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["podmanHosts"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.PodmanHosts = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.PodmanHosts = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set

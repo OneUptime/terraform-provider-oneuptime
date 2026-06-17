@@ -50,6 +50,7 @@ type AlertOwnerRuleDataDataSourceModel struct {
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
     InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
     InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromPodmanHosts types.Bool `tfsdk:"inherit_owners_from_podman_hosts"`
     InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -163,6 +164,10 @@ func (d *AlertOwnerRuleDataDataSource) Schema(ctx context.Context, req datasourc
             },
             "inherit_owners_from_docker_hosts": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also assign every owner of the alert's affected Docker hosts to the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Owner Rule], Update: [Project Owner, Project Admin, Edit Alert Owner Rule]",
+                Computed: true,
+            },
+            "inherit_owners_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the alert's affected Podman hosts to the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Owner Rule], Update: [Project Owner, Project Admin, Edit Alert Owner Rule]",
                 Computed: true,
             },
             "inherit_owners_from_services": schema.BoolAttribute{
@@ -361,6 +366,9 @@ func (d *AlertOwnerRuleDataDataSource) Read(ctx context.Context, req datasource.
     }
     if val, ok := alertOwnerRuleDataResponse["inherit_owners_from_docker_hosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := alertOwnerRuleDataResponse["inherit_owners_from_podman_hosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := alertOwnerRuleDataResponse["inherit_owners_from_services"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)

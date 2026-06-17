@@ -57,6 +57,7 @@ type ScheduledMaintenanceOwnerRuleResourceModel struct {
     InheritOwnersFromHosts types.Bool `tfsdk:"inherit_owners_from_hosts"`
     InheritOwnersFromKubernetesClusters types.Bool `tfsdk:"inherit_owners_from_kubernetes_clusters"`
     InheritOwnersFromDockerHosts types.Bool `tfsdk:"inherit_owners_from_docker_hosts"`
+    InheritOwnersFromPodmanHosts types.Bool `tfsdk:"inherit_owners_from_podman_hosts"`
     InheritOwnersFromServices types.Bool `tfsdk:"inherit_owners_from_services"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
@@ -232,6 +233,15 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Schema(ctx context.Context, req 
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "inherit_owners_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also assign every owner of the event's affected Podman hosts to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "inherit_owners_from_services": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also assign every owner of the event's affected services to the event.. Permissions - Create: [Project Owner, Project Admin, Create Scheduled Maintenance Owner Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance Owner Rule], Update: [Project Owner, Project Admin, Edit Scheduled Maintenance Owner Rule]",
                 Optional: true,
@@ -321,6 +331,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Create(ctx context.Context, req 
         "inheritOwnersFromHosts": data.InheritOwnersFromHosts.ValueBool(),
         "inheritOwnersFromKubernetesClusters": data.InheritOwnersFromKubernetesClusters.ValueBool(),
         "inheritOwnersFromDockerHosts": data.InheritOwnersFromDockerHosts.ValueBool(),
+        "inheritOwnersFromPodmanHosts": data.InheritOwnersFromPodmanHosts.ValueBool(),
         "inheritOwnersFromServices": data.InheritOwnersFromServices.ValueBool(),
         },
     }
@@ -798,6 +809,9 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Create(ctx context.Context, req 
     if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritOwnersFromPodmanHosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)
     }
@@ -1001,6 +1015,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Read(ctx context.Context, req re
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
         "inheritOwnersFromDockerHosts": true,
+        "inheritOwnersFromPodmanHosts": true,
         "inheritOwnersFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1488,6 +1503,9 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Read(ctx context.Context, req re
     if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
     }
+    if val, ok := dataMap["inheritOwnersFromPodmanHosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
+    }
     if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)
     }
@@ -1734,6 +1752,9 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Update(ctx context.Context, req 
     if !data.InheritOwnersFromDockerHosts.IsUnknown() && !state.InheritOwnersFromDockerHosts.IsUnknown() && !data.InheritOwnersFromDockerHosts.Equal(state.InheritOwnersFromDockerHosts) {
         requestDataMap["inheritOwnersFromDockerHosts"] = data.InheritOwnersFromDockerHosts.ValueBool()
     }
+    if !data.InheritOwnersFromPodmanHosts.IsUnknown() && !state.InheritOwnersFromPodmanHosts.IsUnknown() && !data.InheritOwnersFromPodmanHosts.Equal(state.InheritOwnersFromPodmanHosts) {
+        requestDataMap["inheritOwnersFromPodmanHosts"] = data.InheritOwnersFromPodmanHosts.ValueBool()
+    }
     if !data.InheritOwnersFromServices.IsUnknown() && !state.InheritOwnersFromServices.IsUnknown() && !data.InheritOwnersFromServices.Equal(state.InheritOwnersFromServices) {
         requestDataMap["inheritOwnersFromServices"] = data.InheritOwnersFromServices.ValueBool()
     }
@@ -1773,6 +1794,7 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Update(ctx context.Context, req 
         "inheritOwnersFromHosts": true,
         "inheritOwnersFromKubernetesClusters": true,
         "inheritOwnersFromDockerHosts": true,
+        "inheritOwnersFromPodmanHosts": true,
         "inheritOwnersFromServices": true,
         "createdAt": true,
         "updatedAt": true,
@@ -2253,6 +2275,9 @@ func (r *ScheduledMaintenanceOwnerRuleResource) Update(ctx context.Context, req 
     }
     if val, ok := dataMap["inheritOwnersFromDockerHosts"].(bool); ok {
         data.InheritOwnersFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := dataMap["inheritOwnersFromPodmanHosts"].(bool); ok {
+        data.InheritOwnersFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := dataMap["inheritOwnersFromServices"].(bool); ok {
         data.InheritOwnersFromServices = types.BoolValue(val)

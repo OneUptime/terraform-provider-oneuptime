@@ -48,6 +48,7 @@ type AlertLabelRuleDataDataSourceModel struct {
     InheritLabelsFromHosts types.Bool `tfsdk:"inherit_labels_from_hosts"`
     InheritLabelsFromKubernetesClusters types.Bool `tfsdk:"inherit_labels_from_kubernetes_clusters"`
     InheritLabelsFromDockerHosts types.Bool `tfsdk:"inherit_labels_from_docker_hosts"`
+    InheritLabelsFromPodmanHosts types.Bool `tfsdk:"inherit_labels_from_podman_hosts"`
     InheritLabelsFromServices types.Bool `tfsdk:"inherit_labels_from_services"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -152,6 +153,10 @@ func (d *AlertLabelRuleDataDataSource) Schema(ctx context.Context, req datasourc
             },
             "inherit_labels_from_docker_hosts": schema.BoolAttribute{
                 MarkdownDescription: "When this rule matches, also copy every label of the alert's affected Docker hosts onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
+                Computed: true,
+            },
+            "inherit_labels_from_podman_hosts": schema.BoolAttribute{
+                MarkdownDescription: "When this rule matches, also copy every label of the alert's affected Podman hosts onto the alert.. Permissions - Create: [Project Owner, Project Admin, Create Alert Label Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert Label Rule], Update: [Project Owner, Project Admin, Edit Alert Label Rule]",
                 Computed: true,
             },
             "inherit_labels_from_services": schema.BoolAttribute{
@@ -335,6 +340,9 @@ func (d *AlertLabelRuleDataDataSource) Read(ctx context.Context, req datasource.
     }
     if val, ok := alertLabelRuleDataResponse["inherit_labels_from_docker_hosts"].(bool); ok {
         data.InheritLabelsFromDockerHosts = types.BoolValue(val)
+    }
+    if val, ok := alertLabelRuleDataResponse["inherit_labels_from_podman_hosts"].(bool); ok {
+        data.InheritLabelsFromPodmanHosts = types.BoolValue(val)
     }
     if val, ok := alertLabelRuleDataResponse["inherit_labels_from_services"].(bool); ok {
         data.InheritLabelsFromServices = types.BoolValue(val)
