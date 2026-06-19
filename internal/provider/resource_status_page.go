@@ -69,6 +69,8 @@ type StatusPageResourceModel struct {
     EnableMicrosoftTeamsSubscribers types.Bool `tfsdk:"enable_microsoft_teams_subscribers"`
     EnableWebhookSubscribers types.Bool `tfsdk:"enable_webhook_subscribers"`
     CopyrightText types.String `tfsdk:"copyright_text"`
+    LogoAltText types.String `tfsdk:"logo_alt_text"`
+    CoverImageAltText types.String `tfsdk:"cover_image_alt_text"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     SmtpConfigId types.String `tfsdk:"smtp_config_id"`
@@ -347,6 +349,22 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
             },
             "copyright_text": schema.StringAttribute{
                 MarkdownDescription: "Copyright Text. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "logo_alt_text": schema.StringAttribute{
+                MarkdownDescription: "Alternative text for the logo image, read by screen readers for accessibility.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "cover_image_alt_text": schema.StringAttribute{
+                MarkdownDescription: "Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -746,6 +764,8 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "enableMicrosoftTeamsSubscribers": data.EnableMicrosoftTeamsSubscribers.ValueBool(),
         "enableWebhookSubscribers": data.EnableWebhookSubscribers.ValueBool(),
         "copyrightText": data.CopyrightText.ValueString(),
+        "logoAltText": data.LogoAltText.ValueString(),
+        "coverImageAltText": data.CoverImageAltText.ValueString(),
         "customFields": r.parseJSONField(data.CustomFields),
         "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
         "smtpConfigId": data.SmtpConfigId.ValueString(),
@@ -1403,6 +1423,80 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         data.CopyrightText = types.StringValue(val)
     } else {
         data.CopyrightText = types.StringNull()
+    }
+    if obj, ok := dataMap["logoAltText"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LogoAltText = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LogoAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoAltText = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LogoAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoAltText = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LogoAltText = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoAltText = types.StringNull()
+        }
+    } else if val, ok := dataMap["logoAltText"].(string); ok && val != "" {
+        data.LogoAltText = types.StringValue(val)
+    } else {
+        data.LogoAltText = types.StringNull()
+    }
+    if obj, ok := dataMap["coverImageAltText"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CoverImageAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CoverImageAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CoverImageAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CoverImageAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CoverImageAltText = types.StringValue(string(jsonBytes))
+        } else {
+            data.CoverImageAltText = types.StringNull()
+        }
+    } else if val, ok := dataMap["coverImageAltText"].(string); ok && val != "" {
+        data.CoverImageAltText = types.StringValue(val)
+    } else {
+        data.CoverImageAltText = types.StringNull()
     }
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2330,6 +2424,8 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "enableMicrosoftTeamsSubscribers": true,
         "enableWebhookSubscribers": true,
         "copyrightText": true,
+        "logoAltText": true,
+        "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
         "smtpConfigId": true,
@@ -3000,6 +3096,80 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         data.CopyrightText = types.StringValue(val)
     } else {
         data.CopyrightText = types.StringNull()
+    }
+    if obj, ok := dataMap["logoAltText"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LogoAltText = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LogoAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoAltText = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LogoAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoAltText = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LogoAltText = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoAltText = types.StringNull()
+        }
+    } else if val, ok := dataMap["logoAltText"].(string); ok && val != "" {
+        data.LogoAltText = types.StringValue(val)
+    } else {
+        data.LogoAltText = types.StringNull()
+    }
+    if obj, ok := dataMap["coverImageAltText"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CoverImageAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CoverImageAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CoverImageAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CoverImageAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CoverImageAltText = types.StringValue(string(jsonBytes))
+        } else {
+            data.CoverImageAltText = types.StringNull()
+        }
+    } else if val, ok := dataMap["coverImageAltText"].(string); ok && val != "" {
+        data.CoverImageAltText = types.StringValue(val)
+    } else {
+        data.CoverImageAltText = types.StringNull()
     }
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3988,6 +4158,12 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.CopyrightText.IsUnknown() && !state.CopyrightText.IsUnknown() && !data.CopyrightText.Equal(state.CopyrightText) {
         requestDataMap["copyrightText"] = data.CopyrightText.ValueString()
     }
+    if !data.LogoAltText.IsUnknown() && !state.LogoAltText.IsUnknown() && !data.LogoAltText.Equal(state.LogoAltText) {
+        requestDataMap["logoAltText"] = data.LogoAltText.ValueString()
+    }
+    if !data.CoverImageAltText.IsUnknown() && !state.CoverImageAltText.IsUnknown() && !data.CoverImageAltText.Equal(state.CoverImageAltText) {
+        requestDataMap["coverImageAltText"] = data.CoverImageAltText.ValueString()
+    }
     if !data.CustomFields.IsUnknown() && !state.CustomFields.IsUnknown() && !data.CustomFields.Equal(state.CustomFields) {
         var customfieldsData interface{}
         if err := json.Unmarshal([]byte(data.CustomFields.ValueString()), &customfieldsData); err == nil {
@@ -4167,6 +4343,8 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "enableMicrosoftTeamsSubscribers": true,
         "enableWebhookSubscribers": true,
         "copyrightText": true,
+        "logoAltText": true,
+        "coverImageAltText": true,
         "customFields": true,
         "requireSsoForLogin": true,
         "smtpConfigId": true,
@@ -4831,6 +5009,80 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         data.CopyrightText = types.StringValue(val)
     } else {
         data.CopyrightText = types.StringNull()
+    }
+    if obj, ok := dataMap["logoAltText"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LogoAltText = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LogoAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoAltText = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LogoAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.LogoAltText = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LogoAltText = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoAltText = types.StringNull()
+        }
+    } else if val, ok := dataMap["logoAltText"].(string); ok && val != "" {
+        data.LogoAltText = types.StringValue(val)
+    } else {
+        data.LogoAltText = types.StringNull()
+    }
+    if obj, ok := dataMap["coverImageAltText"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CoverImageAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CoverImageAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CoverImageAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CoverImageAltText = types.StringValue(string(jsonBytes))
+            } else {
+                data.CoverImageAltText = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CoverImageAltText = types.StringValue(string(jsonBytes))
+        } else {
+            data.CoverImageAltText = types.StringNull()
+        }
+    } else if val, ok := dataMap["coverImageAltText"].(string); ok && val != "" {
+        data.CoverImageAltText = types.StringValue(val)
+    } else {
+        data.CoverImageAltText = types.StringNull()
     }
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

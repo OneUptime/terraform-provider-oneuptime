@@ -58,6 +58,7 @@ type ProjectResourceModel struct {
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
     StoreSystemEventsInAuditLogs types.Bool `tfsdk:"store_system_events_in_audit_logs"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
+    RequireSsoWithSsoProviderId types.String `tfsdk:"require_sso_with_sso_provider_id"`
     AutoRechargeSmsOrCallByBalanceInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_by_balance_in_usd"`
     AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_sms_or_call_when_current_balance_falls_in_usd"`
     EnableSmsNotifications types.Bool `tfsdk:"enable_sms_notifications"`
@@ -263,6 +264,14 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "require_sso_with_sso_provider_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "auto_recharge_sms_or_call_by_balance_in_usd": schema.NumberAttribute{
@@ -563,6 +572,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "auditLogsRetentionInDays": r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat()),
         "storeSystemEventsInAuditLogs": data.StoreSystemEventsInAuditLogs.ValueBool(),
         "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
+        "requireSsoWithSsoProviderId": data.RequireSsoWithSsoProviderId.ValueString(),
         "autoRechargeSmsOrCallByBalanceInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat()),
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.ValueBigFloat()),
         "enableSmsNotifications": data.EnableSmsNotifications.ValueBool(),
@@ -1130,6 +1140,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["requireSsoWithSsoProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequireSsoWithSsoProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RequireSsoWithSsoProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequireSsoWithSsoProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok && val != "" {
+        data.RequireSsoWithSsoProviderId = types.StringValue(val)
+    } else {
+        data.RequireSsoWithSsoProviderId = types.StringNull()
     }
     if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(float64); ok {
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
@@ -1968,6 +2015,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
         "requireSsoForLogin": true,
+        "requireSsoWithSsoProviderId": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
         "enableSmsNotifications": true,
@@ -2561,6 +2609,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["requireSsoWithSsoProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequireSsoWithSsoProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RequireSsoWithSsoProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequireSsoWithSsoProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok && val != "" {
+        data.RequireSsoWithSsoProviderId = types.StringValue(val)
+    } else {
+        data.RequireSsoWithSsoProviderId = types.StringNull()
     }
     if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(float64); ok {
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
@@ -3410,6 +3495,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.RequireSsoForLogin.IsUnknown() && !state.RequireSsoForLogin.IsUnknown() && !data.RequireSsoForLogin.Equal(state.RequireSsoForLogin) {
         requestDataMap["requireSsoForLogin"] = data.RequireSsoForLogin.ValueBool()
     }
+    if !data.RequireSsoWithSsoProviderId.IsUnknown() && !state.RequireSsoWithSsoProviderId.IsUnknown() && !data.RequireSsoWithSsoProviderId.Equal(state.RequireSsoWithSsoProviderId) {
+        requestDataMap["requireSsoWithSsoProviderId"] = data.RequireSsoWithSsoProviderId.ValueString()
+    }
     if !data.IncidentNumberPrefix.IsUnknown() && !state.IncidentNumberPrefix.IsUnknown() && !data.IncidentNumberPrefix.Equal(state.IncidentNumberPrefix) {
         requestDataMap["incidentNumberPrefix"] = data.IncidentNumberPrefix.ValueString()
     }
@@ -3536,6 +3624,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
         "requireSsoForLogin": true,
+        "requireSsoWithSsoProviderId": true,
         "autoRechargeSmsOrCallByBalanceInUSD": true,
         "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
         "enableSmsNotifications": true,
@@ -4123,6 +4212,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["requireSsoForLogin"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["requireSsoWithSsoProviderId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RequireSsoWithSsoProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RequireSsoWithSsoProviderId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+            } else {
+                data.RequireSsoWithSsoProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RequireSsoWithSsoProviderId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RequireSsoWithSsoProviderId = types.StringNull()
+        }
+    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok && val != "" {
+        data.RequireSsoWithSsoProviderId = types.StringValue(val)
+    } else {
+        data.RequireSsoWithSsoProviderId = types.StringNull()
     }
     if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(float64); ok {
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))

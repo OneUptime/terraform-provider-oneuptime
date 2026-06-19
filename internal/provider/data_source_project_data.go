@@ -49,6 +49,7 @@ type ProjectDataDataSourceModel struct {
     IsFeatureFlagMonitorGroupsEnabled types.Bool `tfsdk:"is_feature_flag_monitor_groups_enabled"`
     WorkflowRunsInLast30Days types.Number `tfsdk:"workflow_runs_in_last30_days"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
+    RequireSsoWithSsoProviderId types.String `tfsdk:"require_sso_with_sso_provider_id"`
     IncidentNumberPrefix types.String `tfsdk:"incident_number_prefix"`
     AlertNumberPrefix types.String `tfsdk:"alert_number_prefix"`
     ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
@@ -186,6 +187,10 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "require_sso_for_login": schema.BoolAttribute{
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                Computed: true,
+            },
+            "require_sso_with_sso_provider_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "incident_number_prefix": schema.StringAttribute{
@@ -450,6 +455,9 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["require_sso_for_login"].(bool); ok {
         data.RequireSsoForLogin = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["require_sso_with_sso_provider_id"].(string); ok {
+        data.RequireSsoWithSsoProviderId = types.StringValue(val)
     }
     if val, ok := projectDataResponse["incident_number_prefix"].(string); ok {
         data.IncidentNumberPrefix = types.StringValue(val)

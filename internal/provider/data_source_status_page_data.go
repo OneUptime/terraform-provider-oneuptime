@@ -60,6 +60,8 @@ type StatusPageDataDataSourceModel struct {
     EnableMicrosoftTeamsSubscribers types.Bool `tfsdk:"enable_microsoft_teams_subscribers"`
     EnableWebhookSubscribers types.Bool `tfsdk:"enable_webhook_subscribers"`
     CopyrightText types.String `tfsdk:"copyright_text"`
+    LogoAltText types.String `tfsdk:"logo_alt_text"`
+    CoverImageAltText types.String `tfsdk:"cover_image_alt_text"`
     CustomFields types.String `tfsdk:"custom_fields"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
     SmtpConfigId types.String `tfsdk:"smtp_config_id"`
@@ -241,6 +243,14 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "copyright_text": schema.StringAttribute{
                 MarkdownDescription: "Copyright Text. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                Computed: true,
+            },
+            "logo_alt_text": schema.StringAttribute{
+                MarkdownDescription: "Alternative text for the logo image, read by screen readers for accessibility.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                Computed: true,
+            },
+            "cover_image_alt_text": schema.StringAttribute{
+                MarkdownDescription: "Alternative text for the cover image, read by screen readers for accessibility. Leave blank if the cover image is purely decorative.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
@@ -557,6 +567,12 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := statusPageDataResponse["copyright_text"].(string); ok {
         data.CopyrightText = types.StringValue(val)
+    }
+    if val, ok := statusPageDataResponse["logo_alt_text"].(string); ok {
+        data.LogoAltText = types.StringValue(val)
+    }
+    if val, ok := statusPageDataResponse["cover_image_alt_text"].(string); ok {
+        data.CoverImageAltText = types.StringValue(val)
     }
     if val, ok := statusPageDataResponse["custom_fields"].(string); ok {
         data.CustomFields = types.StringValue(val)
