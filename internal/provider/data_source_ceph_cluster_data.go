@@ -48,6 +48,9 @@ type CephClusterDataDataSourceModel struct {
     HealthStatus types.Number `tfsdk:"health_status"`
     CapacityUsedPercent types.Number `tfsdk:"capacity_used_percent"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
@@ -148,6 +151,18 @@ func (d *CephClusterDataDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this Ceph cluster archived? Archived Ceph clusters are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Ceph Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Ceph Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Ceph Cluster]",
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -296,6 +311,15 @@ func (d *CephClusterDataDataSource) Read(ctx context.Context, req datasource.Rea
     }
     if val, ok := cephClusterDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
+    }
+    if val, ok := cephClusterDataResponse["is_archived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
+    if val, ok := cephClusterDataResponse["archived_at"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    }
+    if val, ok := cephClusterDataResponse["archived_by_user_id"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
     }
     if val, ok := cephClusterDataResponse["deleted_by_user_id"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)

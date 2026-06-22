@@ -49,6 +49,9 @@ type DockerSwarmClusterDataDataSourceModel struct {
     NetworkCount types.Number `tfsdk:"network_count"`
     SwarmId types.String `tfsdk:"swarm_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
@@ -153,6 +156,18 @@ func (d *DockerSwarmClusterDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this Docker Swarm cluster archived? Archived Docker Swarm clusters are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Docker Swarm Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Swarm Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Docker Swarm Cluster]",
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -304,6 +319,15 @@ func (d *DockerSwarmClusterDataDataSource) Read(ctx context.Context, req datasou
     }
     if val, ok := dockerSwarmClusterDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
+    }
+    if val, ok := dockerSwarmClusterDataResponse["is_archived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
+    if val, ok := dockerSwarmClusterDataResponse["archived_at"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    }
+    if val, ok := dockerSwarmClusterDataResponse["archived_by_user_id"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
     }
     if val, ok := dockerSwarmClusterDataResponse["deleted_by_user_id"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)

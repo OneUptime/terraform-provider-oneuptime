@@ -27,6 +27,7 @@ resource "oneuptime_cloud_resource" "example" {
 - `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Cloud Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Cloud Resource], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Cloud Resource]. Computed.
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this resource. Leave blank to use the project-wide default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Cloud Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Cloud Resource], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Cloud Resource]. Computed.
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this resource. Unset fields fall back to the resource default, then the project's retention settings.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Cloud Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Cloud Resource], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Cloud Resource]. Computed.
+- `is_archived` (Bool) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Cloud Resource], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Cloud Resource], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Cloud Resource]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
@@ -43,6 +44,8 @@ resource "oneuptime_cloud_resource" "example" {
 - `agent_version` (String) Version of the OneUptime agent reporting this resource.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Cloud Resource], Update: [No access - you don't have permission for this operation]. Computed.
 - `last_seen_at` (String) A date time object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

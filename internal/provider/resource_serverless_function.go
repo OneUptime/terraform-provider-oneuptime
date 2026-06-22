@@ -14,10 +14,12 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
@@ -45,6 +47,7 @@ type ServerlessFunctionResourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -61,6 +64,8 @@ type ServerlessFunctionResourceModel struct {
     AgentVersion types.String `tfsdk:"agent_version"`
     LastSeenAt JSONSubsetValue `tfsdk:"last_seen_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ArchivedAt JSONSubsetValue `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -128,6 +133,15 @@ func (r *ServerlessFunctionResource) Schema(ctx context.Context, req resource.Sc
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this serverless function archived? Archived serverless functions are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Serverless Function], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Serverless Function], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Serverless Function]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -198,6 +212,15 @@ func (r *ServerlessFunctionResource) Schema(ctx context.Context, req resource.Sc
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -248,6 +271,7 @@ func (r *ServerlessFunctionResource) Create(ctx context.Context, req resource.Cr
         "labels": r.convertTerraformSetToInterface(data.Labels),
         "retainTelemetryDataForDays": r.bigFloatToFloat64(data.RetainTelemetryDataForDays.ValueBigFloat()),
         "telemetryRetentionConfig": r.parseJSONField(data.TelemetryRetentionConfig),
+        "isArchived": data.IsArchived.ValueBool(),
         },
     }
 
@@ -512,6 +536,9 @@ func (r *ServerlessFunctionResource) Create(ctx context.Context, req resource.Cr
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1077,6 +1104,80 @@ func (r *ServerlessFunctionResource) Create(ctx context.Context, req resource.Cr
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewJSONSubsetValue(val)
+    } else {
+        data.ArchivedAt = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1146,6 +1247,7 @@ func (r *ServerlessFunctionResource) Read(ctx context.Context, req resource.Read
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
+        "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1162,6 +1264,8 @@ func (r *ServerlessFunctionResource) Read(ctx context.Context, req resource.Read
         "agentVersion": true,
         "lastSeenAt": true,
         "createdByUserId": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1433,6 +1537,9 @@ func (r *ServerlessFunctionResource) Read(ctx context.Context, req resource.Read
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1997,6 +2104,80 @@ func (r *ServerlessFunctionResource) Read(ctx context.Context, req resource.Read
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewJSONSubsetValue(val)
+    } else {
+        data.ArchivedAt = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2089,6 +2270,9 @@ func (r *ServerlessFunctionResource) Update(ctx context.Context, req resource.Up
             requestDataMap["telemetryRetentionConfig"] = data.TelemetryRetentionConfig.ValueString()
         }
     }
+    if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/serverless-function/" + data.Id.ValueString() + "", serverlessFunctionRequest)
@@ -2114,6 +2298,7 @@ func (r *ServerlessFunctionResource) Update(ctx context.Context, req resource.Up
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
+        "isArchived": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2130,6 +2315,8 @@ func (r *ServerlessFunctionResource) Update(ctx context.Context, req resource.Up
         "agentVersion": true,
         "lastSeenAt": true,
         "createdByUserId": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -2395,6 +2582,9 @@ func (r *ServerlessFunctionResource) Update(ctx context.Context, req resource.Up
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2958,6 +3148,80 @@ func (r *ServerlessFunctionResource) Update(ctx context.Context, req resource.Up
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewJSONSubsetValue(val)
+    } else {
+        data.ArchivedAt = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

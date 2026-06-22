@@ -50,6 +50,9 @@ type ServerlessFunctionDataDataSourceModel struct {
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -156,6 +159,18 @@ func (d *ServerlessFunctionDataDataSource) Schema(ctx context.Context, req datas
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this serverless function archived? Archived serverless functions are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Serverless Function], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Serverless Function], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Serverless Function]",
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -306,6 +321,15 @@ func (d *ServerlessFunctionDataDataSource) Read(ctx context.Context, req datasou
     }
     if val, ok := serverlessFunctionDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
+    }
+    if val, ok := serverlessFunctionDataResponse["is_archived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
+    if val, ok := serverlessFunctionDataResponse["archived_at"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    }
+    if val, ok := serverlessFunctionDataResponse["archived_by_user_id"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
     }
     if val, ok := serverlessFunctionDataResponse["deleted_by_user_id"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)

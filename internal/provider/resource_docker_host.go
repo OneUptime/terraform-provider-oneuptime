@@ -14,10 +14,12 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
@@ -42,6 +44,7 @@ type DockerHostResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     HostIdentifier types.String `tfsdk:"host_identifier"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
@@ -59,6 +62,8 @@ type DockerHostResourceModel struct {
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ArchivedAt JSONSubsetValue `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -101,6 +106,15 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
             "host_identifier": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for this Docker host, sourced from the host.name OTel resource attribute. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Docker Host]",
                 Required: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this Docker host archived? Archived Docker hosts are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Docker Host]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
             },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Docker Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Docker Host], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Docker Host]",
@@ -220,6 +234,15 @@ func (r *DockerHostResource) Schema(ctx context.Context, req resource.SchemaRequ
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -267,6 +290,7 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
         "name": data.Name.ValueString(),
         "description": data.Description.ValueString(),
         "hostIdentifier": data.HostIdentifier.ValueString(),
+        "isArchived": data.IsArchived.ValueBool(),
         "labels": r.convertTerraformSetToInterface(data.Labels),
         "retainTelemetryDataForDays": r.bigFloatToFloat64(data.RetainTelemetryDataForDays.ValueBigFloat()),
         "telemetryRetentionConfig": r.parseJSONField(data.TelemetryRetentionConfig),
@@ -465,6 +489,9 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.HostIdentifier = types.StringNull()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -949,6 +976,80 @@ func (r *DockerHostResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewJSONSubsetValue(val)
+    } else {
+        data.ArchivedAt = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1015,6 +1116,7 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         "name": true,
         "description": true,
         "hostIdentifier": true,
+        "isArchived": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -1032,6 +1134,8 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
         "version": true,
         "slug": true,
         "createdByUserId": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1225,6 +1329,9 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.HostIdentifier = types.StringNull()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1709,6 +1816,80 @@ func (r *DockerHostResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewJSONSubsetValue(val)
+    } else {
+        data.ArchivedAt = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1819,6 +2000,9 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.OsVersion.IsUnknown() && !state.OsVersion.IsUnknown() && !data.OsVersion.Equal(state.OsVersion) {
         requestDataMap["osVersion"] = data.OsVersion.ValueString()
     }
+    if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -1855,6 +2039,7 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         "name": true,
         "description": true,
         "hostIdentifier": true,
+        "isArchived": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -1872,6 +2057,8 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         "version": true,
         "slug": true,
         "createdByUserId": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -2059,6 +2246,9 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.HostIdentifier = types.StringNull()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2542,6 +2732,80 @@ func (r *DockerHostResource) Update(ctx context.Context, req resource.UpdateRequ
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewJSONSubsetValue(val)
+    } else {
+        data.ArchivedAt = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

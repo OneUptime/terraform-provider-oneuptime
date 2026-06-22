@@ -53,6 +53,9 @@ type HostDataDataSourceModel struct {
     KubernetesClusterId types.String `tfsdk:"kubernetes_cluster_id"`
     ProxmoxClusterId types.String `tfsdk:"proxmox_cluster_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
@@ -180,6 +183,18 @@ func (d *HostDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this host archived? Archived hosts are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Host], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Host], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Host]",
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -371,6 +386,15 @@ func (d *HostDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := hostDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["is_archived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
+    if val, ok := hostDataResponse["archived_at"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    }
+    if val, ok := hostDataResponse["archived_by_user_id"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
     }
     if val, ok := hostDataResponse["deleted_by_user_id"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
