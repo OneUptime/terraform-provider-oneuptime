@@ -39,12 +39,21 @@ builds:
       - -s -w
 
 archives:
-  - format: zip
+  - formats:
+      - zip
     name_template: "terraform-provider-oneuptime_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
   name_template: "terraform-provider-oneuptime_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
+  # Include the Terraform Registry manifest's checksum in SHA256SUMS. The Registry
+  # verifies every file it ingests against the (GPG-signed) SHA256SUMS, so the
+  # manifest must be listed here. GoReleaser does NOT copy this file into dist/;
+  # the publish script copies terraform-registry-manifest.json into dist/ under
+  # this same name before uploading, so the uploaded asset's hash matches.
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: "terraform-provider-oneuptime_{{ .Version }}_manifest.json"
 
 signs:
   - artifacts: checksum

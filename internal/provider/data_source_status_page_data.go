@@ -51,7 +51,6 @@ type StatusPageDataDataSourceModel struct {
     MasterPassword types.String `tfsdk:"master_password"`
     ShowIncidentLabelsOnStatusPage types.Bool `tfsdk:"show_incident_labels_on_status_page"`
     ShowScheduledEventLabelsOnStatusPage types.Bool `tfsdk:"show_scheduled_event_labels_on_status_page"`
-    EnableSubscribers types.Bool `tfsdk:"enable_subscribers"`
     EnableEmailSubscribers types.Bool `tfsdk:"enable_email_subscribers"`
     AllowSubscribersToChooseResources types.Bool `tfsdk:"allow_subscribers_to_choose_resources"`
     AllowSubscribersToChooseEventTypes types.Bool `tfsdk:"allow_subscribers_to_choose_event_types"`
@@ -207,10 +206,6 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "show_scheduled_event_labels_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Show Scheduled Event Labels on Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
-                Computed: true,
-            },
-            "enable_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Computed: true,
             },
             "enable_email_subscribers": schema.BoolAttribute{
@@ -540,9 +535,6 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := statusPageDataResponse["show_scheduled_event_labels_on_status_page"].(bool); ok {
         data.ShowScheduledEventLabelsOnStatusPage = types.BoolValue(val)
-    }
-    if val, ok := statusPageDataResponse["enable_subscribers"].(bool); ok {
-        data.EnableSubscribers = types.BoolValue(val)
     }
     if val, ok := statusPageDataResponse["enable_email_subscribers"].(bool); ok {
         data.EnableEmailSubscribers = types.BoolValue(val)

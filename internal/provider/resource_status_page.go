@@ -60,7 +60,6 @@ type StatusPageResourceModel struct {
     MasterPassword types.String `tfsdk:"master_password"`
     ShowIncidentLabelsOnStatusPage types.Bool `tfsdk:"show_incident_labels_on_status_page"`
     ShowScheduledEventLabelsOnStatusPage types.Bool `tfsdk:"show_scheduled_event_labels_on_status_page"`
-    EnableSubscribers types.Bool `tfsdk:"enable_subscribers"`
     EnableEmailSubscribers types.Bool `tfsdk:"enable_email_subscribers"`
     AllowSubscribersToChooseResources types.Bool `tfsdk:"allow_subscribers_to_choose_resources"`
     AllowSubscribersToChooseEventTypes types.Bool `tfsdk:"allow_subscribers_to_choose_event_types"`
@@ -271,15 +270,6 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "enable_subscribers": schema.BoolAttribute{
-                MarkdownDescription: "Can subscribers subscribe to this Status Page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                 },
@@ -755,7 +745,6 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "masterPassword": data.MasterPassword.ValueString(),
         "showIncidentLabelsOnStatusPage": data.ShowIncidentLabelsOnStatusPage.ValueBool(),
         "showScheduledEventLabelsOnStatusPage": data.ShowScheduledEventLabelsOnStatusPage.ValueBool(),
-        "enableSubscribers": data.EnableSubscribers.ValueBool(),
         "enableEmailSubscribers": data.EnableEmailSubscribers.ValueBool(),
         "allowSubscribersToChooseResources": data.AllowSubscribersToChooseResources.ValueBool(),
         "allowSubscribersToChooseEventTypes": data.AllowSubscribersToChooseEventTypes.ValueBool(),
@@ -1362,9 +1351,6 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     }
     if val, ok := dataMap["showScheduledEventLabelsOnStatusPage"].(bool); ok {
         data.ShowScheduledEventLabelsOnStatusPage = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableSubscribers"].(bool); ok {
-        data.EnableSubscribers = types.BoolValue(val)
     }
     if val, ok := dataMap["enableEmailSubscribers"].(bool); ok {
         data.EnableEmailSubscribers = types.BoolValue(val)
@@ -2415,7 +2401,6 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "masterPassword": true,
         "showIncidentLabelsOnStatusPage": true,
         "showScheduledEventLabelsOnStatusPage": true,
-        "enableSubscribers": true,
         "enableEmailSubscribers": true,
         "allowSubscribersToChooseResources": true,
         "allowSubscribersToChooseEventTypes": true,
@@ -3035,9 +3020,6 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     }
     if val, ok := dataMap["showScheduledEventLabelsOnStatusPage"].(bool); ok {
         data.ShowScheduledEventLabelsOnStatusPage = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableSubscribers"].(bool); ok {
-        data.EnableSubscribers = types.BoolValue(val)
     }
     if val, ok := dataMap["enableEmailSubscribers"].(bool); ok {
         data.EnableEmailSubscribers = types.BoolValue(val)
@@ -4131,9 +4113,6 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.ShowScheduledEventLabelsOnStatusPage.IsUnknown() && !state.ShowScheduledEventLabelsOnStatusPage.IsUnknown() && !data.ShowScheduledEventLabelsOnStatusPage.Equal(state.ShowScheduledEventLabelsOnStatusPage) {
         requestDataMap["showScheduledEventLabelsOnStatusPage"] = data.ShowScheduledEventLabelsOnStatusPage.ValueBool()
     }
-    if !data.EnableSubscribers.IsUnknown() && !state.EnableSubscribers.IsUnknown() && !data.EnableSubscribers.Equal(state.EnableSubscribers) {
-        requestDataMap["enableSubscribers"] = data.EnableSubscribers.ValueBool()
-    }
     if !data.EnableEmailSubscribers.IsUnknown() && !state.EnableEmailSubscribers.IsUnknown() && !data.EnableEmailSubscribers.Equal(state.EnableEmailSubscribers) {
         requestDataMap["enableEmailSubscribers"] = data.EnableEmailSubscribers.ValueBool()
     }
@@ -4334,7 +4313,6 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "masterPassword": true,
         "showIncidentLabelsOnStatusPage": true,
         "showScheduledEventLabelsOnStatusPage": true,
-        "enableSubscribers": true,
         "enableEmailSubscribers": true,
         "allowSubscribersToChooseResources": true,
         "allowSubscribersToChooseEventTypes": true,
@@ -4948,9 +4926,6 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if val, ok := dataMap["showScheduledEventLabelsOnStatusPage"].(bool); ok {
         data.ShowScheduledEventLabelsOnStatusPage = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableSubscribers"].(bool); ok {
-        data.EnableSubscribers = types.BoolValue(val)
     }
     if val, ok := dataMap["enableEmailSubscribers"].(bool); ok {
         data.EnableEmailSubscribers = types.BoolValue(val)
