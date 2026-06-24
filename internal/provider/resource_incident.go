@@ -51,6 +51,7 @@ type IncidentResourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     DockerResources types.Set `tfsdk:"docker_resources"`
@@ -206,6 +207,15 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "iot_fleets": schema.SetAttribute{
+                MarkdownDescription: "List of IoT fleets affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -553,6 +563,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "dockerHosts": r.convertTerraformSetToInterface(data.DockerHosts),
         "podmanHosts": r.convertTerraformSetToInterface(data.PodmanHosts),
         "proxmoxClusters": r.convertTerraformSetToInterface(data.ProxmoxClusters),
+        "iotFleets": r.convertTerraformSetToInterface(data.IotFleets),
         "dockerSwarmClusters": r.convertTerraformSetToInterface(data.DockerSwarmClusters),
         "cephClusters": r.convertTerraformSetToInterface(data.CephClusters),
         "dockerResources": r.convertTerraformSetToInterface(data.DockerResources),
@@ -1020,6 +1031,38 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["iotFleets"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IotFleets = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IotFleets = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerSwarmClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2315,6 +2358,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "iotFleets": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
         "dockerResources": true,
@@ -2805,6 +2849,38 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["iotFleets"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IotFleets = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IotFleets = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerSwarmClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -4136,6 +4212,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.ProxmoxClusters.IsUnknown() && !state.ProxmoxClusters.IsUnknown() && !data.ProxmoxClusters.Equal(state.ProxmoxClusters) {
         requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
     }
+    if !data.IotFleets.IsUnknown() && !state.IotFleets.IsUnknown() && !data.IotFleets.Equal(state.IotFleets) {
+        requestDataMap["iotFleets"] = r.convertTerraformSetToInterface(data.IotFleets)
+    }
     if !data.DockerSwarmClusters.IsUnknown() && !state.DockerSwarmClusters.IsUnknown() && !data.DockerSwarmClusters.Equal(state.DockerSwarmClusters) {
         requestDataMap["dockerSwarmClusters"] = r.convertTerraformSetToInterface(data.DockerSwarmClusters)
     }
@@ -4253,6 +4332,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "iotFleets": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
         "dockerResources": true,
@@ -4737,6 +4817,38 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ProxmoxClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["iotFleets"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IotFleets = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IotFleets = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["dockerSwarmClusters"].([]interface{}); ok {
         // Convert API response list to Terraform set

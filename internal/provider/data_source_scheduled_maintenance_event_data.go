@@ -43,6 +43,7 @@ type ScheduledMaintenanceEventDataDataSourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     Services types.Set `tfsdk:"services"`
@@ -146,6 +147,11 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "iot_fleets": schema.SetAttribute{
+                MarkdownDescription: "List of IoT fleets affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -405,6 +411,18 @@ func (d *ScheduledMaintenanceEventDataDataSource) Read(ctx context.Context, req 
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.ProxmoxClusters = setValue
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["iot_fleets"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.IotFleets = setValue
     }
     if val, ok := scheduledMaintenanceEventDataResponse["docker_swarm_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

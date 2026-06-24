@@ -46,6 +46,7 @@ type IncidentDataDataSourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     DockerResources types.Set `tfsdk:"docker_resources"`
@@ -179,6 +180,11 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "iot_fleets": schema.SetAttribute{
+                MarkdownDescription: "List of IoT fleets affected by this incident.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -532,6 +538,18 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
         }
         setValue, _ := types.SetValue(types.StringType, elements)
         data.ProxmoxClusters = setValue
+    }
+    if val, ok := incidentDataResponse["iot_fleets"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.IotFleets = setValue
     }
     if val, ok := incidentDataResponse["docker_swarm_clusters"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))
