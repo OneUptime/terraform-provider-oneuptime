@@ -56,6 +56,17 @@ type SpanDataDataSourceModel struct {
     Kind types.String `tfsdk:"kind"`
     HasException types.Bool `tfsdk:"has_exception"`
     IsRootSpan types.Bool `tfsdk:"is_root_span"`
+    IsLlmSpan types.Bool `tfsdk:"is_llm_span"`
+    LlmSystem types.String `tfsdk:"llm_system"`
+    LlmOperation types.String `tfsdk:"llm_operation"`
+    LlmRequestModel types.String `tfsdk:"llm_request_model"`
+    LlmResponseModel types.String `tfsdk:"llm_response_model"`
+    LlmAgentName types.String `tfsdk:"llm_agent_name"`
+    LlmToolName types.String `tfsdk:"llm_tool_name"`
+    LlmInputTokens types.Number `tfsdk:"llm_input_tokens"`
+    LlmOutputTokens types.Number `tfsdk:"llm_output_tokens"`
+    LlmTotalTokens types.Number `tfsdk:"llm_total_tokens"`
+    LlmCost types.Number `tfsdk:"llm_cost"`
 }
 
 func (d *SpanDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -188,6 +199,50 @@ func (d *SpanDataDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "is_root_span": schema.BoolAttribute{
                 MarkdownDescription: "Is Root Span",
+                Computed: true,
+            },
+            "is_llm_span": schema.BoolAttribute{
+                MarkdownDescription: "Is LLM Span",
+                Computed: true,
+            },
+            "llm_system": schema.StringAttribute{
+                MarkdownDescription: "LLM System",
+                Computed: true,
+            },
+            "llm_operation": schema.StringAttribute{
+                MarkdownDescription: "LLM Operation",
+                Computed: true,
+            },
+            "llm_request_model": schema.StringAttribute{
+                MarkdownDescription: "LLM Request Model",
+                Computed: true,
+            },
+            "llm_response_model": schema.StringAttribute{
+                MarkdownDescription: "LLM Response Model",
+                Computed: true,
+            },
+            "llm_agent_name": schema.StringAttribute{
+                MarkdownDescription: "LLM Agent Name",
+                Computed: true,
+            },
+            "llm_tool_name": schema.StringAttribute{
+                MarkdownDescription: "LLM Tool Name",
+                Computed: true,
+            },
+            "llm_input_tokens": schema.NumberAttribute{
+                MarkdownDescription: "LLM Input Tokens",
+                Computed: true,
+            },
+            "llm_output_tokens": schema.NumberAttribute{
+                MarkdownDescription: "LLM Output Tokens",
+                Computed: true,
+            },
+            "llm_total_tokens": schema.NumberAttribute{
+                MarkdownDescription: "LLM Total Tokens",
+                Computed: true,
+            },
+            "llm_cost": schema.NumberAttribute{
+                MarkdownDescription: "LLM Cost (USD)",
                 Computed: true,
             },
         },
@@ -369,6 +424,39 @@ func (d *SpanDataDataSource) Read(ctx context.Context, req datasource.ReadReques
     }
     if val, ok := spanDataResponse["is_root_span"].(bool); ok {
         data.IsRootSpan = types.BoolValue(val)
+    }
+    if val, ok := spanDataResponse["is_llm_span"].(bool); ok {
+        data.IsLlmSpan = types.BoolValue(val)
+    }
+    if val, ok := spanDataResponse["llm_system"].(string); ok {
+        data.LlmSystem = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["llm_operation"].(string); ok {
+        data.LlmOperation = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["llm_request_model"].(string); ok {
+        data.LlmRequestModel = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["llm_response_model"].(string); ok {
+        data.LlmResponseModel = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["llm_agent_name"].(string); ok {
+        data.LlmAgentName = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["llm_tool_name"].(string); ok {
+        data.LlmToolName = types.StringValue(val)
+    }
+    if val, ok := spanDataResponse["llm_input_tokens"].(float64); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := spanDataResponse["llm_output_tokens"].(float64); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := spanDataResponse["llm_total_tokens"].(float64); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := spanDataResponse["llm_cost"].(float64); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

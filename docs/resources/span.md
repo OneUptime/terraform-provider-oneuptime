@@ -50,6 +50,17 @@ resource "oneuptime_span" "example" {
 - `kind` (String) Kind. Computed.
 - `has_exception` (Bool) Has Exception. Computed.
 - `is_root_span` (Bool) Is Root Span. Computed.
+- `is_llm_span` (Bool) Is LLM Span. Computed.
+- `llm_system` (String) LLM System. Computed.
+- `llm_operation` (String) LLM Operation. Computed.
+- `llm_request_model` (String) LLM Request Model. Computed.
+- `llm_response_model` (String) LLM Response Model. Computed.
+- `llm_agent_name` (String) LLM Agent Name. Computed.
+- `llm_tool_name` (String) LLM Tool Name. Computed.
+- `llm_input_tokens` (Number) LLM Input Tokens. Computed.
+- `llm_output_tokens` (Number) LLM Output Tokens. Computed.
+- `llm_total_tokens` (Number) LLM Total Tokens. Computed.
+- `llm_cost` (Number) LLM Cost (USD). Computed.
 
 ## Import
 

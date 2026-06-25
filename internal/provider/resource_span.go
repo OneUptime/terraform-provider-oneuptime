@@ -65,6 +65,17 @@ type SpanResourceModel struct {
     Kind types.String `tfsdk:"kind"`
     HasException types.Bool `tfsdk:"has_exception"`
     IsRootSpan types.Bool `tfsdk:"is_root_span"`
+    IsLlmSpan types.Bool `tfsdk:"is_llm_span"`
+    LlmSystem types.String `tfsdk:"llm_system"`
+    LlmOperation types.String `tfsdk:"llm_operation"`
+    LlmRequestModel types.String `tfsdk:"llm_request_model"`
+    LlmResponseModel types.String `tfsdk:"llm_response_model"`
+    LlmAgentName types.String `tfsdk:"llm_agent_name"`
+    LlmToolName types.String `tfsdk:"llm_tool_name"`
+    LlmInputTokens types.Number `tfsdk:"llm_input_tokens"`
+    LlmOutputTokens types.Number `tfsdk:"llm_output_tokens"`
+    LlmTotalTokens types.Number `tfsdk:"llm_total_tokens"`
+    LlmCost types.Number `tfsdk:"llm_cost"`
 }
 
 func (r *SpanResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -202,6 +213,50 @@ func (r *SpanResource) Schema(ctx context.Context, req resource.SchemaRequest, r
             },
             "is_root_span": schema.BoolAttribute{
                 MarkdownDescription: "Is Root Span",
+                Computed: true,
+            },
+            "is_llm_span": schema.BoolAttribute{
+                MarkdownDescription: "Is LLM Span",
+                Computed: true,
+            },
+            "llm_system": schema.StringAttribute{
+                MarkdownDescription: "LLM System",
+                Computed: true,
+            },
+            "llm_operation": schema.StringAttribute{
+                MarkdownDescription: "LLM Operation",
+                Computed: true,
+            },
+            "llm_request_model": schema.StringAttribute{
+                MarkdownDescription: "LLM Request Model",
+                Computed: true,
+            },
+            "llm_response_model": schema.StringAttribute{
+                MarkdownDescription: "LLM Response Model",
+                Computed: true,
+            },
+            "llm_agent_name": schema.StringAttribute{
+                MarkdownDescription: "LLM Agent Name",
+                Computed: true,
+            },
+            "llm_tool_name": schema.StringAttribute{
+                MarkdownDescription: "LLM Tool Name",
+                Computed: true,
+            },
+            "llm_input_tokens": schema.NumberAttribute{
+                MarkdownDescription: "LLM Input Tokens",
+                Computed: true,
+            },
+            "llm_output_tokens": schema.NumberAttribute{
+                MarkdownDescription: "LLM Output Tokens",
+                Computed: true,
+            },
+            "llm_total_tokens": schema.NumberAttribute{
+                MarkdownDescription: "LLM Total Tokens",
+                Computed: true,
+            },
+            "llm_cost": schema.NumberAttribute{
+                MarkdownDescription: "LLM Cost (USD)",
                 Computed: true,
             },
         },
@@ -1218,6 +1273,267 @@ func (r *SpanResource) Create(ctx context.Context, req resource.CreateRequest, r
     if val, ok := dataMap["isRootSpan"].(bool); ok {
         data.IsRootSpan = types.BoolValue(val)
     }
+    if val, ok := dataMap["isLlmSpan"].(bool); ok {
+        data.IsLlmSpan = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["llmSystem"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmSystem = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmSystem = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmSystem = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmSystem = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmSystem = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmSystem = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmSystem = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmSystem = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmSystem = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmSystem"].(string); ok && val != "" {
+        data.LlmSystem = types.StringValue(val)
+    } else {
+        data.LlmSystem = types.StringNull()
+    }
+    if obj, ok := dataMap["llmOperation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmOperation = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmOperation = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmOperation = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmOperation = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmOperation = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmOperation = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmOperation = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmOperation = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmOperation = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmOperation"].(string); ok && val != "" {
+        data.LlmOperation = types.StringValue(val)
+    } else {
+        data.LlmOperation = types.StringNull()
+    }
+    if obj, ok := dataMap["llmRequestModel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmRequestModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmRequestModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmRequestModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmRequestModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmRequestModel = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmRequestModel = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmRequestModel"].(string); ok && val != "" {
+        data.LlmRequestModel = types.StringValue(val)
+    } else {
+        data.LlmRequestModel = types.StringNull()
+    }
+    if obj, ok := dataMap["llmResponseModel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmResponseModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmResponseModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmResponseModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmResponseModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmResponseModel = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmResponseModel = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmResponseModel"].(string); ok && val != "" {
+        data.LlmResponseModel = types.StringValue(val)
+    } else {
+        data.LlmResponseModel = types.StringNull()
+    }
+    if obj, ok := dataMap["llmAgentName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmAgentName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmAgentName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmAgentName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmAgentName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmAgentName = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmAgentName = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmAgentName"].(string); ok && val != "" {
+        data.LlmAgentName = types.StringValue(val)
+    } else {
+        data.LlmAgentName = types.StringNull()
+    }
+    if obj, ok := dataMap["llmToolName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmToolName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmToolName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmToolName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmToolName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmToolName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmToolName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmToolName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmToolName = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmToolName = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmToolName"].(string); ok && val != "" {
+        data.LlmToolName = types.StringValue(val)
+    } else {
+        data.LlmToolName = types.StringNull()
+    }
+    if val, ok := dataMap["llmInputTokens"].(float64); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmInputTokens"].(int); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmInputTokens"].(int64); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmInputTokens"] == nil {
+        data.LlmInputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmOutputTokens"].(float64); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmOutputTokens"].(int); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmOutputTokens"].(int64); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmOutputTokens"] == nil {
+        data.LlmOutputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmTotalTokens"].(float64); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmTotalTokens"].(int); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmTotalTokens"].(int64); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmTotalTokens"] == nil {
+        data.LlmTotalTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmCost"].(float64); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmCost"].(int); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmCost"].(int64); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmCost"] == nil {
+        data.LlmCost = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1272,6 +1588,17 @@ func (r *SpanResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "kind": true,
         "hasException": true,
         "isRootSpan": true,
+        "isLlmSpan": true,
+        "llmSystem": true,
+        "llmOperation": true,
+        "llmRequestModel": true,
+        "llmResponseModel": true,
+        "llmAgentName": true,
+        "llmToolName": true,
+        "llmInputTokens": true,
+        "llmOutputTokens": true,
+        "llmTotalTokens": true,
+        "llmCost": true,
         "_id": true,
     }
 
@@ -2250,6 +2577,267 @@ func (r *SpanResource) Read(ctx context.Context, req resource.ReadRequest, resp 
     if val, ok := dataMap["isRootSpan"].(bool); ok {
         data.IsRootSpan = types.BoolValue(val)
     }
+    if val, ok := dataMap["isLlmSpan"].(bool); ok {
+        data.IsLlmSpan = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["llmSystem"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmSystem = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmSystem = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmSystem = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmSystem = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmSystem = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmSystem = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmSystem = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmSystem = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmSystem = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmSystem"].(string); ok && val != "" {
+        data.LlmSystem = types.StringValue(val)
+    } else {
+        data.LlmSystem = types.StringNull()
+    }
+    if obj, ok := dataMap["llmOperation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmOperation = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmOperation = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmOperation = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmOperation = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmOperation = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmOperation = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmOperation = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmOperation = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmOperation = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmOperation"].(string); ok && val != "" {
+        data.LlmOperation = types.StringValue(val)
+    } else {
+        data.LlmOperation = types.StringNull()
+    }
+    if obj, ok := dataMap["llmRequestModel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmRequestModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmRequestModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmRequestModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmRequestModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmRequestModel = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmRequestModel = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmRequestModel"].(string); ok && val != "" {
+        data.LlmRequestModel = types.StringValue(val)
+    } else {
+        data.LlmRequestModel = types.StringNull()
+    }
+    if obj, ok := dataMap["llmResponseModel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmResponseModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmResponseModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmResponseModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmResponseModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmResponseModel = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmResponseModel = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmResponseModel"].(string); ok && val != "" {
+        data.LlmResponseModel = types.StringValue(val)
+    } else {
+        data.LlmResponseModel = types.StringNull()
+    }
+    if obj, ok := dataMap["llmAgentName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmAgentName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmAgentName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmAgentName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmAgentName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmAgentName = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmAgentName = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmAgentName"].(string); ok && val != "" {
+        data.LlmAgentName = types.StringValue(val)
+    } else {
+        data.LlmAgentName = types.StringNull()
+    }
+    if obj, ok := dataMap["llmToolName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmToolName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmToolName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmToolName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmToolName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmToolName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmToolName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmToolName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmToolName = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmToolName = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmToolName"].(string); ok && val != "" {
+        data.LlmToolName = types.StringValue(val)
+    } else {
+        data.LlmToolName = types.StringNull()
+    }
+    if val, ok := dataMap["llmInputTokens"].(float64); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmInputTokens"].(int); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmInputTokens"].(int64); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmInputTokens"] == nil {
+        data.LlmInputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmOutputTokens"].(float64); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmOutputTokens"].(int); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmOutputTokens"].(int64); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmOutputTokens"] == nil {
+        data.LlmOutputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmTotalTokens"].(float64); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmTotalTokens"].(int); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmTotalTokens"].(int64); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmTotalTokens"] == nil {
+        data.LlmTotalTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmCost"].(float64); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmCost"].(int); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmCost"].(int64); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmCost"] == nil {
+        data.LlmCost = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2331,6 +2919,17 @@ func (r *SpanResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "kind": true,
         "hasException": true,
         "isRootSpan": true,
+        "isLlmSpan": true,
+        "llmSystem": true,
+        "llmOperation": true,
+        "llmRequestModel": true,
+        "llmResponseModel": true,
+        "llmAgentName": true,
+        "llmToolName": true,
+        "llmInputTokens": true,
+        "llmOutputTokens": true,
+        "llmTotalTokens": true,
+        "llmCost": true,
         "_id": true,
     }
 
@@ -3302,6 +3901,267 @@ func (r *SpanResource) Update(ctx context.Context, req resource.UpdateRequest, r
     }
     if val, ok := dataMap["isRootSpan"].(bool); ok {
         data.IsRootSpan = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isLlmSpan"].(bool); ok {
+        data.IsLlmSpan = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["llmSystem"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmSystem = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmSystem = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmSystem = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmSystem = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmSystem = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmSystem = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmSystem = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmSystem = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmSystem = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmSystem"].(string); ok && val != "" {
+        data.LlmSystem = types.StringValue(val)
+    } else {
+        data.LlmSystem = types.StringNull()
+    }
+    if obj, ok := dataMap["llmOperation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmOperation = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmOperation = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmOperation = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmOperation = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmOperation = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmOperation = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmOperation = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmOperation = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmOperation = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmOperation"].(string); ok && val != "" {
+        data.LlmOperation = types.StringValue(val)
+    } else {
+        data.LlmOperation = types.StringNull()
+    }
+    if obj, ok := dataMap["llmRequestModel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmRequestModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmRequestModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmRequestModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmRequestModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmRequestModel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmRequestModel = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmRequestModel = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmRequestModel"].(string); ok && val != "" {
+        data.LlmRequestModel = types.StringValue(val)
+    } else {
+        data.LlmRequestModel = types.StringNull()
+    }
+    if obj, ok := dataMap["llmResponseModel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmResponseModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmResponseModel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmResponseModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmResponseModel = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmResponseModel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmResponseModel = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmResponseModel = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmResponseModel"].(string); ok && val != "" {
+        data.LlmResponseModel = types.StringValue(val)
+    } else {
+        data.LlmResponseModel = types.StringNull()
+    }
+    if obj, ok := dataMap["llmAgentName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmAgentName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmAgentName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmAgentName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmAgentName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmAgentName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmAgentName = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmAgentName = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmAgentName"].(string); ok && val != "" {
+        data.LlmAgentName = types.StringValue(val)
+    } else {
+        data.LlmAgentName = types.StringNull()
+    }
+    if obj, ok := dataMap["llmToolName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmToolName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LlmToolName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LlmToolName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LlmToolName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmToolName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LlmToolName = types.StringValue(string(jsonBytes))
+            } else {
+                data.LlmToolName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LlmToolName = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmToolName = types.StringNull()
+        }
+    } else if val, ok := dataMap["llmToolName"].(string); ok && val != "" {
+        data.LlmToolName = types.StringValue(val)
+    } else {
+        data.LlmToolName = types.StringNull()
+    }
+    if val, ok := dataMap["llmInputTokens"].(float64); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmInputTokens"].(int); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmInputTokens"].(int64); ok {
+        data.LlmInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmInputTokens"] == nil {
+        data.LlmInputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmOutputTokens"].(float64); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmOutputTokens"].(int); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmOutputTokens"].(int64); ok {
+        data.LlmOutputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmOutputTokens"] == nil {
+        data.LlmOutputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmTotalTokens"].(float64); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmTotalTokens"].(int); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmTotalTokens"].(int64); ok {
+        data.LlmTotalTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmTotalTokens"] == nil {
+        data.LlmTotalTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["llmCost"].(float64); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["llmCost"].(int); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["llmCost"].(int64); ok {
+        data.LlmCost = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["llmCost"] == nil {
+        data.LlmCost = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
