@@ -46,6 +46,7 @@ type ExceptionInstanceDataDataSourceModel struct {
     Environment types.String `tfsdk:"environment"`
     ParsedFrames types.String `tfsdk:"parsed_frames"`
     Attributes types.String `tfsdk:"attributes"`
+    AttributeKeys types.Set `tfsdk:"attribute_keys"`
     EntityKeys types.Set `tfsdk:"entity_keys"`
     ServiceEntityKey types.String `tfsdk:"service_entity_key"`
     HostEntityKey types.String `tfsdk:"host_entity_key"`
@@ -143,6 +144,11 @@ func (d *ExceptionInstanceDataDataSource) Schema(ctx context.Context, req dataso
             "attributes": schema.StringAttribute{
                 MarkdownDescription: "Attributes",
                 Computed: true,
+            },
+            "attribute_keys": schema.SetAttribute{
+                MarkdownDescription: "Attribute Keys",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "entity_keys": schema.SetAttribute{
                 MarkdownDescription: "Entity Keys",
@@ -295,6 +301,18 @@ func (d *ExceptionInstanceDataDataSource) Read(ctx context.Context, req datasour
     }
     if val, ok := exceptionInstanceDataResponse["attributes"].(string); ok {
         data.Attributes = types.StringValue(val)
+    }
+    if val, ok := exceptionInstanceDataResponse["attribute_keys"].([]interface{}); ok {
+        elements := make([]attr.Value, len(val))
+        for i, item := range val {
+            if strItem, ok := item.(string); ok {
+                elements[i] = types.StringValue(strItem)
+            } else {
+                elements[i] = types.StringValue("")
+            }
+        }
+        setValue, _ := types.SetValue(types.StringType, elements)
+        data.AttributeKeys = setValue
     }
     if val, ok := exceptionInstanceDataResponse["entity_keys"].([]interface{}); ok {
         elements := make([]attr.Value, len(val))

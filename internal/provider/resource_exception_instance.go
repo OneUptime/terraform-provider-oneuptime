@@ -54,6 +54,7 @@ type ExceptionInstanceResourceModel struct {
     Environment types.String `tfsdk:"environment"`
     ParsedFrames types.String `tfsdk:"parsed_frames"`
     Attributes types.String `tfsdk:"attributes"`
+    AttributeKeys types.Set `tfsdk:"attribute_keys"`
     EntityKeys types.Set `tfsdk:"entity_keys"`
     ServiceEntityKey types.String `tfsdk:"service_entity_key"`
     HostEntityKey types.String `tfsdk:"host_entity_key"`
@@ -151,6 +152,11 @@ func (r *ExceptionInstanceResource) Schema(ctx context.Context, req resource.Sch
             "attributes": schema.StringAttribute{
                 MarkdownDescription: "Attributes",
                 Computed: true,
+            },
+            "attribute_keys": schema.SetAttribute{
+                MarkdownDescription: "Attribute Keys",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "entity_keys": schema.SetAttribute{
                 MarkdownDescription: "Entity Keys",
@@ -867,6 +873,38 @@ func (r *ExceptionInstanceResource) Create(ctx context.Context, req resource.Cre
     } else {
         data.Attributes = types.StringNull()
     }
+    if val, ok := dataMap["attributeKeys"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AttributeKeys = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AttributeKeys = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["entityKeys"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1164,6 +1202,7 @@ func (r *ExceptionInstanceResource) Read(ctx context.Context, req resource.ReadR
         "environment": true,
         "parsedFrames": true,
         "attributes": true,
+        "attributeKeys": true,
         "entityKeys": true,
         "serviceEntityKey": true,
         "hostEntityKey": true,
@@ -1821,6 +1860,38 @@ func (r *ExceptionInstanceResource) Read(ctx context.Context, req resource.ReadR
     } else {
         data.Attributes = types.StringNull()
     }
+    if val, ok := dataMap["attributeKeys"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AttributeKeys = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AttributeKeys = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["entityKeys"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2145,6 +2216,7 @@ func (r *ExceptionInstanceResource) Update(ctx context.Context, req resource.Upd
         "environment": true,
         "parsedFrames": true,
         "attributes": true,
+        "attributeKeys": true,
         "entityKeys": true,
         "serviceEntityKey": true,
         "hostEntityKey": true,
@@ -2795,6 +2867,38 @@ func (r *ExceptionInstanceResource) Update(ctx context.Context, req resource.Upd
         data.Attributes = types.StringValue(val)
     } else {
         data.Attributes = types.StringNull()
+    }
+    if val, ok := dataMap["attributeKeys"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AttributeKeys = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AttributeKeys = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["entityKeys"].([]interface{}); ok {
         // Convert API response list to Terraform set

@@ -40,6 +40,7 @@ data "oneuptime_exception_instance_data" "example" {
 - `environment` (String) Environment. Computed.
 - `parsed_frames` (String) Parsed Stack Frames. Computed.
 - `attributes` (String) Attributes. Computed.
+- `attribute_keys` (Set) Attribute Keys. Computed.
 - `entity_keys` (Set) Entity Keys. Computed.
 - `service_entity_key` (String) Service Entity Key. Computed.
 - `host_entity_key` (String) Host Entity Key. Computed.
