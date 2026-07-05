@@ -70,6 +70,9 @@ type AlertDataDataSourceModel struct {
     AlertNumberWithPrefix types.String `tfsdk:"alert_number_with_prefix"`
     AlertEpisodeId types.String `tfsdk:"alert_episode_id"`
     IsPrivate types.Bool `tfsdk:"is_private"`
+    EnableReminders types.Bool `tfsdk:"enable_reminders"`
+    NextReminderNotificationAt types.String `tfsdk:"next_reminder_notification_at"`
+    ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
 }
 
 func (d *AlertDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -270,6 +273,18 @@ func (d *AlertDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "is_private": schema.BoolAttribute{
                 MarkdownDescription: "If true, this alert is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+            },
+            "enable_reminders": schema.BoolAttribute{
+                MarkdownDescription: "Should reminder notifications be sent to owners while this alert is still open? Reminders are sent based on the reminder rules configured for this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Create Alert], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [Project Owner, Project Admin, Project Member, Alert Admin, Alert Member, Edit Alert]",
+                Computed: true,
+            },
+            "next_reminder_notification_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "reminder_notification_sent_count": schema.NumberAttribute{
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this alert so far.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -601,6 +616,15 @@ func (d *AlertDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := alertDataResponse["is_private"].(bool); ok {
         data.IsPrivate = types.BoolValue(val)
+    }
+    if val, ok := alertDataResponse["enable_reminders"].(bool); ok {
+        data.EnableReminders = types.BoolValue(val)
+    }
+    if val, ok := alertDataResponse["next_reminder_notification_at"].(string); ok {
+        data.NextReminderNotificationAt = types.StringValue(val)
+    }
+    if val, ok := alertDataResponse["reminder_notification_sent_count"].(float64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

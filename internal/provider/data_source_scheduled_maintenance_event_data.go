@@ -65,6 +65,9 @@ type ScheduledMaintenanceEventDataDataSourceModel struct {
     ScheduledMaintenanceNumber types.Number `tfsdk:"scheduled_maintenance_number"`
     ScheduledMaintenanceNumberWithPrefix types.String `tfsdk:"scheduled_maintenance_number_with_prefix"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    EnableReminders types.Bool `tfsdk:"enable_reminders"`
+    NextReminderNotificationAt types.String `tfsdk:"next_reminder_notification_at"`
+    ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
 }
 
 func (d *ScheduledMaintenanceEventDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -242,6 +245,18 @@ func (d *ScheduledMaintenanceEventDataDataSource) Schema(ctx context.Context, re
             },
             "is_visible_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Computed: true,
+            },
+            "enable_reminders": schema.BoolAttribute{
+                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Computed: true,
+            },
+            "next_reminder_notification_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "reminder_notification_sent_count": schema.NumberAttribute{
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -531,6 +546,15 @@ func (d *ScheduledMaintenanceEventDataDataSource) Read(ctx context.Context, req 
     }
     if val, ok := scheduledMaintenanceEventDataResponse["is_visible_on_status_page"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["enable_reminders"].(bool); ok {
+        data.EnableReminders = types.BoolValue(val)
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["next_reminder_notification_at"].(string); ok {
+        data.NextReminderNotificationAt = types.StringValue(val)
+    }
+    if val, ok := scheduledMaintenanceEventDataResponse["reminder_notification_sent_count"].(float64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package

@@ -66,6 +66,7 @@ type ScheduledMaintenanceEventResourceModel struct {
     SendSubscriberNotificationsOnBeforeTheEvent JSONSubsetValue `tfsdk:"send_subscriber_notifications_on_before_the_event"`
     NextSubscriberNotificationBeforeTheEventAt JSONSubsetValue `tfsdk:"next_subscriber_notification_before_the_event_at"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    EnableReminders types.Bool `tfsdk:"enable_reminders"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -76,6 +77,8 @@ type ScheduledMaintenanceEventResourceModel struct {
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
     ScheduledMaintenanceNumber types.Number `tfsdk:"scheduled_maintenance_number"`
     ScheduledMaintenanceNumberWithPrefix types.String `tfsdk:"scheduled_maintenance_number_with_prefix"`
+    NextReminderNotificationAt JSONSubsetValue `tfsdk:"next_reminder_notification_at"`
+    ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
 }
 
 func (r *ScheduledMaintenanceEventResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -319,6 +322,15 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "enable_reminders": schema.BoolAttribute{
+                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -360,6 +372,15 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
             },
             "scheduled_maintenance_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "next_reminder_notification_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "reminder_notification_sent_count": schema.NumberAttribute{
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -428,6 +449,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         "sendSubscriberNotificationsOnBeforeTheEvent": r.parseJSONField(data.SendSubscriberNotificationsOnBeforeTheEvent),
         "nextSubscriberNotificationBeforeTheEventAt": r.parseJSONField(data.NextSubscriberNotificationBeforeTheEventAt),
         "isVisibleOnStatusPage": data.IsVisibleOnStatusPage.ValueBool(),
+        "enableReminders": data.EnableReminders.ValueBool(),
         },
     }
 
@@ -1270,6 +1292,9 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableReminders"].(bool); ok {
+        data.EnableReminders = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1550,6 +1575,52 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     } else {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
     }
+    if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.NextReminderNotificationAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["nextReminderNotificationAt"].(string); ok && val != "" {
+        data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+    } else {
+        data.NextReminderNotificationAt = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["reminderNotificationSentCount"] == nil {
+        data.ReminderNotificationSentCount = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1602,6 +1673,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "sendSubscriberNotificationsOnBeforeTheEvent": true,
         "nextSubscriberNotificationBeforeTheEventAt": true,
         "isVisibleOnStatusPage": true,
+        "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1612,6 +1684,8 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "isOwnerNotifiedOfResourceCreation": true,
         "scheduledMaintenanceNumber": true,
         "scheduledMaintenanceNumberWithPrefix": true,
+        "nextReminderNotificationAt": true,
+        "reminderNotificationSentCount": true,
         "_id": true,
     }
 
@@ -2459,6 +2533,9 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableReminders"].(bool); ok {
+        data.EnableReminders = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2739,6 +2816,52 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     } else {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
     }
+    if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.NextReminderNotificationAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["nextReminderNotificationAt"].(string); ok && val != "" {
+        data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+    } else {
+        data.NextReminderNotificationAt = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["reminderNotificationSentCount"] == nil {
+        data.ReminderNotificationSentCount = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2868,6 +2991,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if !data.IsVisibleOnStatusPage.IsUnknown() && !state.IsVisibleOnStatusPage.IsUnknown() && !data.IsVisibleOnStatusPage.Equal(state.IsVisibleOnStatusPage) {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
     }
+    if !data.EnableReminders.IsUnknown() && !state.EnableReminders.IsUnknown() && !data.EnableReminders.Equal(state.EnableReminders) {
+        requestDataMap["enableReminders"] = data.EnableReminders.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/scheduled-maintenance/" + data.Id.ValueString() + "", scheduledMaintenanceEventRequest)
@@ -2913,6 +3039,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "sendSubscriberNotificationsOnBeforeTheEvent": true,
         "nextSubscriberNotificationBeforeTheEventAt": true,
         "isVisibleOnStatusPage": true,
+        "enableReminders": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2923,6 +3050,8 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "isOwnerNotifiedOfResourceCreation": true,
         "scheduledMaintenanceNumber": true,
         "scheduledMaintenanceNumberWithPrefix": true,
+        "nextReminderNotificationAt": true,
+        "reminderNotificationSentCount": true,
         "_id": true,
     }
 
@@ -3764,6 +3893,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableReminders"].(bool); ok {
+        data.EnableReminders = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4043,6 +4175,52 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
     } else {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
+    }
+    if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.NextReminderNotificationAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["nextReminderNotificationAt"].(string); ok && val != "" {
+        data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+    } else {
+        data.NextReminderNotificationAt = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["reminderNotificationSentCount"].(int); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["reminderNotificationSentCount"] == nil {
+        data.ReminderNotificationSentCount = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

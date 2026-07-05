@@ -83,6 +83,9 @@ type IncidentDataDataSourceModel struct {
     IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
     IsPrivate types.Bool `tfsdk:"is_private"`
+    EnableReminders types.Bool `tfsdk:"enable_reminders"`
+    NextReminderNotificationAt types.String `tfsdk:"next_reminder_notification_at"`
+    ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
     IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
 }
 
@@ -338,6 +341,18 @@ func (d *IncidentDataDataSource) Schema(ctx context.Context, req datasource.Sche
             },
             "is_private": schema.BoolAttribute{
                 MarkdownDescription: "If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+            },
+            "enable_reminders": schema.BoolAttribute{
+                MarkdownDescription: "Should reminder notifications be sent to owners while this incident is still open? Reminders are sent based on the reminder rules configured for this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Create Incident], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [Project Owner, Project Admin, Project Member, Incident Admin, Incident Member, Edit Incident]",
+                Computed: true,
+            },
+            "next_reminder_notification_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "reminder_notification_sent_count": schema.NumberAttribute{
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this incident so far.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "incident_episode_id": schema.StringAttribute{
@@ -730,6 +745,15 @@ func (d *IncidentDataDataSource) Read(ctx context.Context, req datasource.ReadRe
     }
     if val, ok := incidentDataResponse["is_private"].(bool); ok {
         data.IsPrivate = types.BoolValue(val)
+    }
+    if val, ok := incidentDataResponse["enable_reminders"].(bool); ok {
+        data.EnableReminders = types.BoolValue(val)
+    }
+    if val, ok := incidentDataResponse["next_reminder_notification_at"].(string); ok {
+        data.NextReminderNotificationAt = types.StringValue(val)
+    }
+    if val, ok := incidentDataResponse["reminder_notification_sent_count"].(float64); ok {
+        data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := incidentDataResponse["incident_episode_id"].(string); ok {
         data.IncidentEpisodeId = types.StringValue(val)
