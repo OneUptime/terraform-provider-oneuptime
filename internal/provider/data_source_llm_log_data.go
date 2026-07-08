@@ -47,6 +47,7 @@ type LlmLogDataDataSourceModel struct {
     ResponsePreview types.String `tfsdk:"response_preview"`
     IncidentId types.String `tfsdk:"incident_id"`
     AlertId types.String `tfsdk:"alert_id"`
+    AiRunId types.String `tfsdk:"ai_run_id"`
     ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
     UserId types.String `tfsdk:"user_id"`
     RequestStartedAt types.String `tfsdk:"request_started_at"`
@@ -148,6 +149,10 @@ func (d *LlmLogDataDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "alert_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "ai_run_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -299,6 +304,9 @@ func (d *LlmLogDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     }
     if val, ok := llmLogDataResponse["alert_id"].(string); ok {
         data.AlertId = types.StringValue(val)
+    }
+    if val, ok := llmLogDataResponse["ai_run_id"].(string); ok {
+        data.AiRunId = types.StringValue(val)
     }
     if val, ok := llmLogDataResponse["scheduled_maintenance_id"].(string); ok {
         data.ScheduledMaintenanceId = types.StringValue(val)

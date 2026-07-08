@@ -19,56 +19,45 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &LlmLogResource{}
-var _ resource.ResourceWithImportState = &LlmLogResource{}
+var _ resource.Resource = &AiConversationMessageResource{}
+var _ resource.ResourceWithImportState = &AiConversationMessageResource{}
 
-func NewLlmLogResource() resource.Resource {
-    return &LlmLogResource{}
+func NewAiConversationMessageResource() resource.Resource {
+    return &AiConversationMessageResource{}
 }
 
-// LlmLogResource defines the resource implementation.
-type LlmLogResource struct {
+// AiConversationMessageResource defines the resource implementation.
+type AiConversationMessageResource struct {
     client *Client
 }
 
-// LlmLogResourceModel describes the resource data model.
-type LlmLogResourceModel struct {
+// AiConversationMessageResourceModel describes the resource data model.
+type AiConversationMessageResourceModel struct {
     Id types.String `tfsdk:"id"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    LlmProviderId types.String `tfsdk:"llm_provider_id"`
-    LlmProviderName types.String `tfsdk:"llm_provider_name"`
-    LlmType types.String `tfsdk:"llm_type"`
-    ModelName types.String `tfsdk:"model_name"`
-    IsGlobalProvider types.Bool `tfsdk:"is_global_provider"`
-    TotalTokens types.Number `tfsdk:"total_tokens"`
-    CostInUsdCents types.Number `tfsdk:"cost_in_usd_cents"`
-    WasBilled types.Bool `tfsdk:"was_billed"`
-    Status types.String `tfsdk:"status"`
-    StatusMessage types.String `tfsdk:"status_message"`
-    Feature types.String `tfsdk:"feature"`
-    RequestPrompt types.String `tfsdk:"request_prompt"`
-    ResponsePreview types.String `tfsdk:"response_preview"`
-    IncidentId types.String `tfsdk:"incident_id"`
-    AlertId types.String `tfsdk:"alert_id"`
-    AiRunId types.String `tfsdk:"ai_run_id"`
-    ScheduledMaintenanceId types.String `tfsdk:"scheduled_maintenance_id"`
+    ConversationId types.String `tfsdk:"conversation_id"`
     UserId types.String `tfsdk:"user_id"`
-    RequestStartedAt JSONSubsetValue `tfsdk:"request_started_at"`
-    RequestCompletedAt JSONSubsetValue `tfsdk:"request_completed_at"`
-    DurationMs types.Number `tfsdk:"duration_ms"`
+    Role types.String `tfsdk:"role"`
+    ContentInMarkdown types.String `tfsdk:"content_in_markdown"`
+    Status types.String `tfsdk:"status"`
+    AiRunId types.String `tfsdk:"ai_run_id"`
+    Citations JSONSubsetValue `tfsdk:"citations"`
+    Widgets JSONSubsetValue `tfsdk:"widgets"`
+    ToolActions JSONSubsetValue `tfsdk:"tool_actions"`
+    ErrorMessage types.String `tfsdk:"error_message"`
 }
 
-func (r *LlmLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_llm_log"
+func (r *AiConversationMessageResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_ai_conversation_message"
 }
 
-func (r *LlmLogResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *AiConversationMessageResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "llm_log resource",
+        MarkdownDescription: "ai_conversation_message resource",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -102,71 +91,7 @@ func (r *LlmLogResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "llm_provider_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "llm_provider_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the LLM Provider at time of call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "llm_type": schema.StringAttribute{
-                MarkdownDescription: "Type of LLM (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "model_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the model used (e.g., gpt-4, claude-3-opus). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "is_global_provider": schema.BoolAttribute{
-                MarkdownDescription: "Was a global LLM provider used for this call?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "total_tokens": schema.NumberAttribute{
-                MarkdownDescription: "Total tokens used (input + output). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Total cost in USD cents. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "was_billed": schema.BoolAttribute{
-                MarkdownDescription: "Was the project charged for this API call?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "status": schema.StringAttribute{
-                MarkdownDescription: "Status of the LLM API call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "status_message": schema.StringAttribute{
-                MarkdownDescription: "Status Message (error details if failed). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "feature": schema.StringAttribute{
-                MarkdownDescription: "The feature that triggered this API call (e.g., IncidentPostmortem). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "request_prompt": schema.StringAttribute{
-                MarkdownDescription: "The prompt sent to the LLM (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "response_preview": schema.StringAttribute{
-                MarkdownDescription: "Preview of the LLM response (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "ai_run_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "scheduled_maintenance_id": schema.StringAttribute{
+            "conversation_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -174,25 +99,46 @@ func (r *LlmLogResource) Schema(ctx context.Context, req resource.SchemaRequest,
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "request_started_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+            "role": schema.StringAttribute{
+                MarkdownDescription: "Who authored this message: User or Assistant.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "content_in_markdown": schema.StringAttribute{
+                MarkdownDescription: "Message content in markdown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "status": schema.StringAttribute{
+                MarkdownDescription: "Current status of this message.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "ai_run_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "citations": schema.StringAttribute{
+                MarkdownDescription: "Server-minted citations for this assistant message. Each citation records the tool, the exact validated query arguments and the row count.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
-            "request_completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+            "widgets": schema.StringAttribute{
+                MarkdownDescription: "Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
-            "duration_ms": schema.NumberAttribute{
-                MarkdownDescription: "Request duration in milliseconds. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+            "tool_actions": schema.StringAttribute{
+                MarkdownDescription: "Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "error_message": schema.StringAttribute{
+                MarkdownDescription: "Error message if this message failed to generate.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
     }
 }
 
-func (r *LlmLogResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *AiConversationMessageResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -213,8 +159,8 @@ func (r *LlmLogResource) Configure(ctx context.Context, req resource.ConfigureRe
 }
 
 
-func (r *LlmLogResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data LlmLogResourceModel
+func (r *AiConversationMessageResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data AiConversationMessageResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -226,35 +172,35 @@ func (r *LlmLogResource) Create(ctx context.Context, req resource.CreateRequest,
 
 
     // Create API request body
-    llmLogRequest := map[string]interface{}{
+    aiConversationMessageRequest := map[string]interface{}{
         "data": map[string]interface{}{
 
         },
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/llm-log/count", llmLogRequest)
+    httpResp, err := r.client.Post("/ai-conversation-message/count", aiConversationMessageRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create llm_log, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create ai_conversation_message, got error: %s", err))
         return
     }
 
-    var llmLogResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &llmLogResponse)
+    var aiConversationMessageResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &aiConversationMessageResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse llm_log response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse ai_conversation_message response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := llmLogResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := aiConversationMessageResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = llmLogResponse
+        dataMap = aiConversationMessageResponse
     }
 
     if obj, ok := dataMap["id"].(map[string]interface{}); ok {
@@ -425,510 +371,42 @@ func (r *LlmLogResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["conversationId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderId = types.StringValue(val)
+            data.ConversationId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LlmProviderId = types.StringValue(val)
+            data.ConversationId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ConversationId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LlmProviderId = types.StringValue(string(jsonBytes))
+                data.ConversationId = types.StringValue(string(jsonBytes))
             } else {
-                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ConversationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LlmProviderId = types.StringValue(string(jsonBytes))
+                data.ConversationId = types.StringValue(string(jsonBytes))
             } else {
-                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ConversationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.LlmProviderId = types.StringValue(string(jsonBytes))
+            data.ConversationId = types.StringValue(string(jsonBytes))
         } else {
-            data.LlmProviderId = types.StringNull()
+            data.ConversationId = types.StringNull()
         }
-    } else if val, ok := dataMap["llmProviderId"].(string); ok && val != "" {
-        data.LlmProviderId = types.StringValue(val)
+    } else if val, ok := dataMap["conversationId"].(string); ok && val != "" {
+        data.ConversationId = types.StringValue(val)
     } else {
-        data.LlmProviderId = types.StringNull()
-    }
-    if obj, ok := dataMap["llmProviderName"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderName = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LlmProviderName = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LlmProviderName = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LlmProviderName = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmProviderName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LlmProviderName = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmProviderName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LlmProviderName = types.StringValue(string(jsonBytes))
-        } else {
-            data.LlmProviderName = types.StringNull()
-        }
-    } else if val, ok := dataMap["llmProviderName"].(string); ok && val != "" {
-        data.LlmProviderName = types.StringValue(val)
-    } else {
-        data.LlmProviderName = types.StringNull()
-    }
-    if obj, ok := dataMap["llmType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LlmType = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LlmType = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LlmType = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LlmType = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LlmType = types.StringValue(string(jsonBytes))
-        } else {
-            data.LlmType = types.StringNull()
-        }
-    } else if val, ok := dataMap["llmType"].(string); ok && val != "" {
-        data.LlmType = types.StringValue(val)
-    } else {
-        data.LlmType = types.StringNull()
-    }
-    if obj, ok := dataMap["modelName"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ModelName = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ModelName = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ModelName = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ModelName = types.StringValue(string(jsonBytes))
-            } else {
-                data.ModelName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ModelName = types.StringValue(string(jsonBytes))
-            } else {
-                data.ModelName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ModelName = types.StringValue(string(jsonBytes))
-        } else {
-            data.ModelName = types.StringNull()
-        }
-    } else if val, ok := dataMap["modelName"].(string); ok && val != "" {
-        data.ModelName = types.StringValue(val)
-    } else {
-        data.ModelName = types.StringNull()
-    }
-    if val, ok := dataMap["isGlobalProvider"].(bool); ok {
-        data.IsGlobalProvider = types.BoolValue(val)
-    }
-    if val, ok := dataMap["totalTokens"].(float64); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["totalTokens"].(int); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["totalTokens"].(int64); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["totalTokens"] == nil {
-        data.TotalTokens = types.NumberNull()
-    }
-    if val, ok := dataMap["costInUSDCents"].(float64); ok {
-        data.CostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["costInUSDCents"].(int); ok {
-        data.CostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["costInUSDCents"].(int64); ok {
-        data.CostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["costInUSDCents"] == nil {
-        data.CostInUsdCents = types.NumberNull()
-    }
-    if val, ok := dataMap["wasBilled"].(bool); ok {
-        data.WasBilled = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["status"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Status = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Status = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Status = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Status = types.StringValue(string(jsonBytes))
-            } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Status = types.StringValue(string(jsonBytes))
-            } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Status = types.StringValue(string(jsonBytes))
-        } else {
-            data.Status = types.StringNull()
-        }
-    } else if val, ok := dataMap["status"].(string); ok && val != "" {
-        data.Status = types.StringValue(val)
-    } else {
-        data.Status = types.StringNull()
-    }
-    if obj, ok := dataMap["statusMessage"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.StatusMessage = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.StatusMessage = types.StringValue(string(jsonBytes))
-        } else {
-            data.StatusMessage = types.StringNull()
-        }
-    } else if val, ok := dataMap["statusMessage"].(string); ok && val != "" {
-        data.StatusMessage = types.StringValue(val)
-    } else {
-        data.StatusMessage = types.StringNull()
-    }
-    if obj, ok := dataMap["feature"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Feature = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Feature = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Feature = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Feature = types.StringValue(string(jsonBytes))
-            } else {
-                data.Feature = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Feature = types.StringValue(string(jsonBytes))
-            } else {
-                data.Feature = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Feature = types.StringValue(string(jsonBytes))
-        } else {
-            data.Feature = types.StringNull()
-        }
-    } else if val, ok := dataMap["feature"].(string); ok && val != "" {
-        data.Feature = types.StringValue(val)
-    } else {
-        data.Feature = types.StringNull()
-    }
-    if obj, ok := dataMap["requestPrompt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RequestPrompt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RequestPrompt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RequestPrompt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RequestPrompt = types.StringValue(string(jsonBytes))
-            } else {
-                data.RequestPrompt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RequestPrompt = types.StringValue(string(jsonBytes))
-            } else {
-                data.RequestPrompt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RequestPrompt = types.StringValue(string(jsonBytes))
-        } else {
-            data.RequestPrompt = types.StringNull()
-        }
-    } else if val, ok := dataMap["requestPrompt"].(string); ok && val != "" {
-        data.RequestPrompt = types.StringValue(val)
-    } else {
-        data.RequestPrompt = types.StringNull()
-    }
-    if obj, ok := dataMap["responsePreview"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResponsePreview = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResponsePreview = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResponsePreview = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResponsePreview = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResponsePreview = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResponsePreview = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResponsePreview = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResponsePreview = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResponsePreview = types.StringNull()
-        }
-    } else if val, ok := dataMap["responsePreview"].(string); ok && val != "" {
-        data.ResponsePreview = types.StringValue(val)
-    } else {
-        data.ResponsePreview = types.StringNull()
-    }
-    if obj, ok := dataMap["incidentId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentId"].(string); ok && val != "" {
-        data.IncidentId = types.StringValue(val)
-    } else {
-        data.IncidentId = types.StringNull()
-    }
-    if obj, ok := dataMap["alertId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AlertId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AlertId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AlertId = types.StringNull()
-        }
-    } else if val, ok := dataMap["alertId"].(string); ok && val != "" {
-        data.AlertId = types.StringValue(val)
-    } else {
-        data.AlertId = types.StringNull()
-    }
-    if obj, ok := dataMap["aiRunId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiRunId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiRunId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AiRunId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiRunId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiRunId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AiRunId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AiRunId = types.StringNull()
-        }
-    } else if val, ok := dataMap["aiRunId"].(string); ok && val != "" {
-        data.AiRunId = types.StringValue(val)
-    } else {
-        data.AiRunId = types.StringNull()
-    }
-    if obj, ok := dataMap["scheduledMaintenanceId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ScheduledMaintenanceId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ScheduledMaintenanceId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ScheduledMaintenanceId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduledMaintenanceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduledMaintenanceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ScheduledMaintenanceId = types.StringNull()
-        }
-    } else if val, ok := dataMap["scheduledMaintenanceId"].(string); ok && val != "" {
-        data.ScheduledMaintenanceId = types.StringValue(val)
-    } else {
-        data.ScheduledMaintenanceId = types.StringNull()
+        data.ConversationId = types.StringNull()
     }
     if obj, ok := dataMap["userId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -967,88 +445,301 @@ func (r *LlmLogResource) Create(ctx context.Context, req resource.CreateRequest,
     } else {
         data.UserId = types.StringNull()
     }
-    if obj, ok := dataMap["requestStartedAt"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["role"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RequestStartedAt = NewJSONSubsetValue(val)
+            data.Role = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RequestStartedAt = NewJSONSubsetValue(val)
+            data.Role = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.RequestStartedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Role = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RequestStartedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.Role = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestStartedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Role = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RequestStartedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.Role = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestStartedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Role = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.RequestStartedAt = NewJSONSubsetValue(string(jsonBytes))
+            data.Role = types.StringValue(string(jsonBytes))
         } else {
-            data.RequestStartedAt = NewJSONSubsetNull()
+            data.Role = types.StringNull()
         }
-    } else if val, ok := dataMap["requestStartedAt"].(string); ok && val != "" {
-        data.RequestStartedAt = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["role"].(string); ok && val != "" {
+        data.Role = types.StringValue(val)
     } else {
-        data.RequestStartedAt = NewJSONSubsetNull()
+        data.Role = types.StringNull()
     }
-    if obj, ok := dataMap["requestCompletedAt"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["contentInMarkdown"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RequestCompletedAt = NewJSONSubsetValue(val)
+            data.ContentInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RequestCompletedAt = NewJSONSubsetValue(val)
+            data.ContentInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.RequestCompletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.ContentInMarkdown = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RequestCompletedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.ContentInMarkdown = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestCompletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.ContentInMarkdown = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RequestCompletedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.ContentInMarkdown = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestCompletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.ContentInMarkdown = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.RequestCompletedAt = NewJSONSubsetValue(string(jsonBytes))
+            data.ContentInMarkdown = types.StringValue(string(jsonBytes))
         } else {
-            data.RequestCompletedAt = NewJSONSubsetNull()
+            data.ContentInMarkdown = types.StringNull()
         }
-    } else if val, ok := dataMap["requestCompletedAt"].(string); ok && val != "" {
-        data.RequestCompletedAt = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["contentInMarkdown"].(string); ok && val != "" {
+        data.ContentInMarkdown = types.StringValue(val)
     } else {
-        data.RequestCompletedAt = NewJSONSubsetNull()
+        data.ContentInMarkdown = types.StringNull()
     }
-    if val, ok := dataMap["durationMs"].(float64); ok {
-        data.DurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["durationMs"].(int); ok {
-        data.DurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["durationMs"].(int64); ok {
-        data.DurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["durationMs"] == nil {
-        data.DurationMs = types.NumberNull()
+    if obj, ok := dataMap["status"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Status = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Status = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Status = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Status = types.StringValue(string(jsonBytes))
+            } else {
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Status = types.StringValue(string(jsonBytes))
+            } else {
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
+    } else if val, ok := dataMap["status"].(string); ok && val != "" {
+        data.Status = types.StringValue(val)
+    } else {
+        data.Status = types.StringNull()
+    }
+    if obj, ok := dataMap["aiRunId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRunId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiRunId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiRunId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiRunId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiRunId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiRunId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRunId = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiRunId"].(string); ok && val != "" {
+        data.AiRunId = types.StringValue(val)
+    } else {
+        data.AiRunId = types.StringNull()
+    }
+    if obj, ok := dataMap["citations"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Citations = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Citations = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Citations = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Citations = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Citations = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Citations = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Citations = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Citations = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Citations = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["citations"].(string); ok && val != "" {
+        data.Citations = NewJSONSubsetValue(val)
+    } else {
+        data.Citations = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["widgets"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Widgets = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Widgets = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Widgets = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Widgets = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Widgets = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Widgets = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Widgets = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Widgets = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Widgets = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["widgets"].(string); ok && val != "" {
+        data.Widgets = NewJSONSubsetValue(val)
+    } else {
+        data.Widgets = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["toolActions"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ToolActions = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ToolActions = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ToolActions = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ToolActions = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ToolActions = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ToolActions = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ToolActions = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ToolActions = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ToolActions = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["toolActions"].(string); ok && val != "" {
+        data.ToolActions = NewJSONSubsetValue(val)
+    } else {
+        data.ToolActions = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["errorMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ErrorMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ErrorMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ErrorMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ErrorMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ErrorMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ErrorMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.ErrorMessage = types.StringNull()
+        }
+    } else if val, ok := dataMap["errorMessage"].(string); ok && val != "" {
+        data.ErrorMessage = types.StringValue(val)
+    } else {
+        data.ErrorMessage = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1063,8 +754,8 @@ func (r *LlmLogResource) Create(ctx context.Context, req resource.CreateRequest,
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data LlmLogResourceModel
+func (r *AiConversationMessageResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data AiConversationMessageResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1080,34 +771,23 @@ func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "llmProviderId": true,
-        "llmProviderName": true,
-        "llmType": true,
-        "modelName": true,
-        "isGlobalProvider": true,
-        "totalTokens": true,
-        "costInUSDCents": true,
-        "wasBilled": true,
-        "status": true,
-        "statusMessage": true,
-        "feature": true,
-        "requestPrompt": true,
-        "responsePreview": true,
-        "incidentId": true,
-        "alertId": true,
-        "aiRunId": true,
-        "scheduledMaintenanceId": true,
+        "conversationId": true,
         "userId": true,
-        "requestStartedAt": true,
-        "requestCompletedAt": true,
-        "durationMs": true,
+        "role": true,
+        "contentInMarkdown": true,
+        "status": true,
+        "aiRunId": true,
+        "citations": true,
+        "widgets": true,
+        "toolActions": true,
+        "errorMessage": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/llm-log/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect("/ai-conversation-message/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read llm_log, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_conversation_message, got error: %s", err))
         return
     }
 
@@ -1116,22 +796,22 @@ func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         return
     }
 
-    var llmLogResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &llmLogResponse)
+    var aiConversationMessageResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &aiConversationMessageResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse llm_log response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse ai_conversation_message response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := llmLogResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := aiConversationMessageResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = llmLogResponse
+        dataMap = aiConversationMessageResponse
     }
 
     if obj, ok := dataMap["id"].(map[string]interface{}); ok {
@@ -1302,510 +982,42 @@ func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["llmProviderId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["conversationId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderId = types.StringValue(val)
+            data.ConversationId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LlmProviderId = types.StringValue(val)
+            data.ConversationId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ConversationId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LlmProviderId = types.StringValue(string(jsonBytes))
+                data.ConversationId = types.StringValue(string(jsonBytes))
             } else {
-                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ConversationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LlmProviderId = types.StringValue(string(jsonBytes))
+                data.ConversationId = types.StringValue(string(jsonBytes))
             } else {
-                data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ConversationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.LlmProviderId = types.StringValue(string(jsonBytes))
+            data.ConversationId = types.StringValue(string(jsonBytes))
         } else {
-            data.LlmProviderId = types.StringNull()
+            data.ConversationId = types.StringNull()
         }
-    } else if val, ok := dataMap["llmProviderId"].(string); ok && val != "" {
-        data.LlmProviderId = types.StringValue(val)
+    } else if val, ok := dataMap["conversationId"].(string); ok && val != "" {
+        data.ConversationId = types.StringValue(val)
     } else {
-        data.LlmProviderId = types.StringNull()
-    }
-    if obj, ok := dataMap["llmProviderName"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderName = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LlmProviderName = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LlmProviderName = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LlmProviderName = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmProviderName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LlmProviderName = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmProviderName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LlmProviderName = types.StringValue(string(jsonBytes))
-        } else {
-            data.LlmProviderName = types.StringNull()
-        }
-    } else if val, ok := dataMap["llmProviderName"].(string); ok && val != "" {
-        data.LlmProviderName = types.StringValue(val)
-    } else {
-        data.LlmProviderName = types.StringNull()
-    }
-    if obj, ok := dataMap["llmType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LlmType = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LlmType = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LlmType = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LlmType = types.StringValue(string(jsonBytes))
-            } else {
-                data.LlmType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LlmType = types.StringValue(string(jsonBytes))
-        } else {
-            data.LlmType = types.StringNull()
-        }
-    } else if val, ok := dataMap["llmType"].(string); ok && val != "" {
-        data.LlmType = types.StringValue(val)
-    } else {
-        data.LlmType = types.StringNull()
-    }
-    if obj, ok := dataMap["modelName"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ModelName = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ModelName = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ModelName = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ModelName = types.StringValue(string(jsonBytes))
-            } else {
-                data.ModelName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ModelName = types.StringValue(string(jsonBytes))
-            } else {
-                data.ModelName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ModelName = types.StringValue(string(jsonBytes))
-        } else {
-            data.ModelName = types.StringNull()
-        }
-    } else if val, ok := dataMap["modelName"].(string); ok && val != "" {
-        data.ModelName = types.StringValue(val)
-    } else {
-        data.ModelName = types.StringNull()
-    }
-    if val, ok := dataMap["isGlobalProvider"].(bool); ok {
-        data.IsGlobalProvider = types.BoolValue(val)
-    }
-    if val, ok := dataMap["totalTokens"].(float64); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["totalTokens"].(int); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["totalTokens"].(int64); ok {
-        data.TotalTokens = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["totalTokens"] == nil {
-        data.TotalTokens = types.NumberNull()
-    }
-    if val, ok := dataMap["costInUSDCents"].(float64); ok {
-        data.CostInUsdCents = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["costInUSDCents"].(int); ok {
-        data.CostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["costInUSDCents"].(int64); ok {
-        data.CostInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["costInUSDCents"] == nil {
-        data.CostInUsdCents = types.NumberNull()
-    }
-    if val, ok := dataMap["wasBilled"].(bool); ok {
-        data.WasBilled = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["status"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Status = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Status = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Status = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Status = types.StringValue(string(jsonBytes))
-            } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Status = types.StringValue(string(jsonBytes))
-            } else {
-                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Status = types.StringValue(string(jsonBytes))
-        } else {
-            data.Status = types.StringNull()
-        }
-    } else if val, ok := dataMap["status"].(string); ok && val != "" {
-        data.Status = types.StringValue(val)
-    } else {
-        data.Status = types.StringNull()
-    }
-    if obj, ok := dataMap["statusMessage"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.StatusMessage = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.StatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.StatusMessage = types.StringValue(string(jsonBytes))
-        } else {
-            data.StatusMessage = types.StringNull()
-        }
-    } else if val, ok := dataMap["statusMessage"].(string); ok && val != "" {
-        data.StatusMessage = types.StringValue(val)
-    } else {
-        data.StatusMessage = types.StringNull()
-    }
-    if obj, ok := dataMap["feature"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Feature = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Feature = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Feature = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Feature = types.StringValue(string(jsonBytes))
-            } else {
-                data.Feature = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Feature = types.StringValue(string(jsonBytes))
-            } else {
-                data.Feature = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Feature = types.StringValue(string(jsonBytes))
-        } else {
-            data.Feature = types.StringNull()
-        }
-    } else if val, ok := dataMap["feature"].(string); ok && val != "" {
-        data.Feature = types.StringValue(val)
-    } else {
-        data.Feature = types.StringNull()
-    }
-    if obj, ok := dataMap["requestPrompt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RequestPrompt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RequestPrompt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RequestPrompt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RequestPrompt = types.StringValue(string(jsonBytes))
-            } else {
-                data.RequestPrompt = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RequestPrompt = types.StringValue(string(jsonBytes))
-            } else {
-                data.RequestPrompt = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RequestPrompt = types.StringValue(string(jsonBytes))
-        } else {
-            data.RequestPrompt = types.StringNull()
-        }
-    } else if val, ok := dataMap["requestPrompt"].(string); ok && val != "" {
-        data.RequestPrompt = types.StringValue(val)
-    } else {
-        data.RequestPrompt = types.StringNull()
-    }
-    if obj, ok := dataMap["responsePreview"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResponsePreview = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResponsePreview = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResponsePreview = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResponsePreview = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResponsePreview = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResponsePreview = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResponsePreview = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResponsePreview = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResponsePreview = types.StringNull()
-        }
-    } else if val, ok := dataMap["responsePreview"].(string); ok && val != "" {
-        data.ResponsePreview = types.StringValue(val)
-    } else {
-        data.ResponsePreview = types.StringNull()
-    }
-    if obj, ok := dataMap["incidentId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentId"].(string); ok && val != "" {
-        data.IncidentId = types.StringValue(val)
-    } else {
-        data.IncidentId = types.StringNull()
-    }
-    if obj, ok := dataMap["alertId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AlertId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AlertId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AlertId = types.StringNull()
-        }
-    } else if val, ok := dataMap["alertId"].(string); ok && val != "" {
-        data.AlertId = types.StringValue(val)
-    } else {
-        data.AlertId = types.StringNull()
-    }
-    if obj, ok := dataMap["aiRunId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AiRunId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AiRunId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AiRunId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AiRunId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AiRunId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AiRunId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AiRunId = types.StringNull()
-        }
-    } else if val, ok := dataMap["aiRunId"].(string); ok && val != "" {
-        data.AiRunId = types.StringValue(val)
-    } else {
-        data.AiRunId = types.StringNull()
-    }
-    if obj, ok := dataMap["scheduledMaintenanceId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ScheduledMaintenanceId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ScheduledMaintenanceId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ScheduledMaintenanceId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduledMaintenanceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ScheduledMaintenanceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ScheduledMaintenanceId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ScheduledMaintenanceId = types.StringNull()
-        }
-    } else if val, ok := dataMap["scheduledMaintenanceId"].(string); ok && val != "" {
-        data.ScheduledMaintenanceId = types.StringValue(val)
-    } else {
-        data.ScheduledMaintenanceId = types.StringNull()
+        data.ConversationId = types.StringNull()
     }
     if obj, ok := dataMap["userId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1844,88 +1056,301 @@ func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, res
     } else {
         data.UserId = types.StringNull()
     }
-    if obj, ok := dataMap["requestStartedAt"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["role"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RequestStartedAt = NewJSONSubsetValue(val)
+            data.Role = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RequestStartedAt = NewJSONSubsetValue(val)
+            data.Role = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.RequestStartedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Role = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RequestStartedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.Role = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestStartedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Role = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RequestStartedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.Role = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestStartedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Role = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.RequestStartedAt = NewJSONSubsetValue(string(jsonBytes))
+            data.Role = types.StringValue(string(jsonBytes))
         } else {
-            data.RequestStartedAt = NewJSONSubsetNull()
+            data.Role = types.StringNull()
         }
-    } else if val, ok := dataMap["requestStartedAt"].(string); ok && val != "" {
-        data.RequestStartedAt = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["role"].(string); ok && val != "" {
+        data.Role = types.StringValue(val)
     } else {
-        data.RequestStartedAt = NewJSONSubsetNull()
+        data.Role = types.StringNull()
     }
-    if obj, ok := dataMap["requestCompletedAt"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["contentInMarkdown"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RequestCompletedAt = NewJSONSubsetValue(val)
+            data.ContentInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RequestCompletedAt = NewJSONSubsetValue(val)
+            data.ContentInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.RequestCompletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.ContentInMarkdown = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RequestCompletedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.ContentInMarkdown = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestCompletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.ContentInMarkdown = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RequestCompletedAt = NewJSONSubsetValue(string(jsonBytes))
+                data.ContentInMarkdown = types.StringValue(string(jsonBytes))
             } else {
-                data.RequestCompletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.ContentInMarkdown = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.RequestCompletedAt = NewJSONSubsetValue(string(jsonBytes))
+            data.ContentInMarkdown = types.StringValue(string(jsonBytes))
         } else {
-            data.RequestCompletedAt = NewJSONSubsetNull()
+            data.ContentInMarkdown = types.StringNull()
         }
-    } else if val, ok := dataMap["requestCompletedAt"].(string); ok && val != "" {
-        data.RequestCompletedAt = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["contentInMarkdown"].(string); ok && val != "" {
+        data.ContentInMarkdown = types.StringValue(val)
     } else {
-        data.RequestCompletedAt = NewJSONSubsetNull()
+        data.ContentInMarkdown = types.StringNull()
     }
-    if val, ok := dataMap["durationMs"].(float64); ok {
-        data.DurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["durationMs"].(int); ok {
-        data.DurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["durationMs"].(int64); ok {
-        data.DurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["durationMs"] == nil {
-        data.DurationMs = types.NumberNull()
+    if obj, ok := dataMap["status"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Status = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Status = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Status = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Status = types.StringValue(string(jsonBytes))
+            } else {
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Status = types.StringValue(string(jsonBytes))
+            } else {
+                data.Status = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Status = types.StringValue(string(jsonBytes))
+        } else {
+            data.Status = types.StringNull()
+        }
+    } else if val, ok := dataMap["status"].(string); ok && val != "" {
+        data.Status = types.StringValue(val)
+    } else {
+        data.Status = types.StringNull()
+    }
+    if obj, ok := dataMap["aiRunId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRunId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AiRunId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AiRunId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AiRunId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AiRunId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AiRunId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AiRunId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRunId = types.StringNull()
+        }
+    } else if val, ok := dataMap["aiRunId"].(string); ok && val != "" {
+        data.AiRunId = types.StringValue(val)
+    } else {
+        data.AiRunId = types.StringNull()
+    }
+    if obj, ok := dataMap["citations"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Citations = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Citations = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Citations = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Citations = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Citations = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Citations = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Citations = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Citations = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Citations = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["citations"].(string); ok && val != "" {
+        data.Citations = NewJSONSubsetValue(val)
+    } else {
+        data.Citations = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["widgets"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Widgets = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Widgets = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Widgets = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Widgets = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Widgets = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Widgets = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Widgets = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Widgets = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Widgets = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["widgets"].(string); ok && val != "" {
+        data.Widgets = NewJSONSubsetValue(val)
+    } else {
+        data.Widgets = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["toolActions"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ToolActions = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ToolActions = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ToolActions = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ToolActions = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ToolActions = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ToolActions = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.ToolActions = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ToolActions = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.ToolActions = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["toolActions"].(string); ok && val != "" {
+        data.ToolActions = NewJSONSubsetValue(val)
+    } else {
+        data.ToolActions = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["errorMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ErrorMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ErrorMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ErrorMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ErrorMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ErrorMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.ErrorMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ErrorMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.ErrorMessage = types.StringNull()
+        }
+    } else if val, ok := dataMap["errorMessage"].(string); ok && val != "" {
+        data.ErrorMessage = types.StringValue(val)
+    } else {
+        data.ErrorMessage = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1937,8 +1362,8 @@ func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, res
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *LlmLogResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data LlmLogResourceModel
+func (r *AiConversationMessageResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data AiConversationMessageResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -1955,19 +1380,19 @@ func (r *LlmLogResource) Update(ctx context.Context, req resource.UpdateRequest,
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *LlmLogResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *AiConversationMessageResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
     // This resource does not have a delete API endpoint.
     // Simply remove the resource from Terraform state.
     tflog.Trace(ctx, "deleted a resource (no-op: removed from state only)")
 }
 
 
-func (r *LlmLogResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *AiConversationMessageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *LlmLogResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *AiConversationMessageResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1985,7 +1410,7 @@ func (r *LlmLogResource) convertTerraformMapToInterface(terraformMap types.Map) 
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *LlmLogResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *AiConversationMessageResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -2006,7 +1431,7 @@ func (r *LlmLogResource) convertTerraformListToInterface(terraformList types.Lis
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *LlmLogResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *AiConversationMessageResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -2027,7 +1452,7 @@ func (r *LlmLogResource) convertTerraformSetToInterface(terraformSet types.Set) 
 }
 
 // Helper method to parse JSON field for complex objects
-func (r *LlmLogResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *AiConversationMessageResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -2043,7 +1468,7 @@ func (r *LlmLogResource) parseJSONField(terraformString basetypes.StringValuable
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *LlmLogResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *AiConversationMessageResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -2065,7 +1490,7 @@ func (r *LlmLogResource) normalizeURLWrappers(value interface{}) interface{} {
     }
 }
 
-func (r *LlmLogResource) normalizeURLString(value string) string {
+func (r *AiConversationMessageResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -2077,7 +1502,7 @@ func (r *LlmLogResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *LlmLogResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *AiConversationMessageResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -2088,7 +1513,7 @@ func (r *LlmLogResource) bigFloatToFloat64(bf *big.Float) interface{} {
 // Helper method to check if a type string is a valid OneUptime ObjectType
 // Only these types should be marshalled/unmarshalled as typed wrapper objects
 // This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
-func (r *LlmLogResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *AiConversationMessageResource) isValidOneUptimeObjectType(typeStr string) bool {
     validTypes := map[string]bool{
         "ObjectID": true,
         "Decimal": true,

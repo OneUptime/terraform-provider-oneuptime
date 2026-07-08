@@ -84,7 +84,7 @@ func (r *LlmProviderResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "llm_type": schema.StringAttribute{
-                MarkdownDescription: "The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit LLM]",
+                MarkdownDescription: "The type of LLM provider (OpenAI, Azure OpenAI, Anthropic, Groq, Mistral, Ollama, OpenAICompatible, etc.). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit LLM]",
                 Required: true,
             },
             "api_key": schema.StringAttribute{

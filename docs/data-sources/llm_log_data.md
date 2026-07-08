@@ -42,6 +42,7 @@ data "oneuptime_llm_log_data" "example" {
 - `response_preview` (String) Preview of the LLM response (truncated). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `ai_run_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `request_started_at` (String) A date time object.. Computed.
