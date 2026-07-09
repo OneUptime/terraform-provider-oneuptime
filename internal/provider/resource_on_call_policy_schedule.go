@@ -41,6 +41,7 @@ type OnCallPolicyScheduleResourceModel struct {
     Name types.String `tfsdk:"name"`
     Labels types.Set `tfsdk:"labels"`
     Description types.String `tfsdk:"description"`
+    Timezone types.String `tfsdk:"timezone"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -94,6 +95,14 @@ func (r *OnCallPolicyScheduleResource) Schema(ctx context.Context, req resource.
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Schedule]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "timezone": schema.StringAttribute{
+                MarkdownDescription: "IANA timezone this schedule's restriction and hand-off wall-clock times are interpreted in. When empty, times are interpreted in the server's local timezone (legacy behavior).. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Schedule]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -198,6 +207,7 @@ func (r *OnCallPolicyScheduleResource) Create(ctx context.Context, req resource.
         "name": data.Name.ValueString(),
         "labels": r.convertTerraformSetToInterface(data.Labels),
         "description": data.Description.ValueString(),
+        "timezone": data.Timezone.ValueString(),
         },
     }
 
@@ -379,6 +389,43 @@ func (r *OnCallPolicyScheduleResource) Create(ctx context.Context, req resource.
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["timezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Timezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Timezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.Timezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Timezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.Timezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Timezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.Timezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["timezone"].(string); ok && val != "" {
+        data.Timezone = types.StringValue(val)
+    } else {
+        data.Timezone = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -825,6 +872,7 @@ func (r *OnCallPolicyScheduleResource) Read(ctx context.Context, req resource.Re
         "name": true,
         "labels": true,
         "description": true,
+        "timezone": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1023,6 +1071,43 @@ func (r *OnCallPolicyScheduleResource) Read(ctx context.Context, req resource.Re
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["timezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Timezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Timezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.Timezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Timezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.Timezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Timezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.Timezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["timezone"].(string); ok && val != "" {
+        data.Timezone = types.StringValue(val)
+    } else {
+        data.Timezone = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1484,6 +1569,9 @@ func (r *OnCallPolicyScheduleResource) Update(ctx context.Context, req resource.
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.Timezone.IsUnknown() && !state.Timezone.IsUnknown() && !data.Timezone.Equal(state.Timezone) {
+        requestDataMap["timezone"] = data.Timezone.ValueString()
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-schedule/" + data.Id.ValueString() + "", onCallPolicyScheduleRequest)
@@ -1506,6 +1594,7 @@ func (r *OnCallPolicyScheduleResource) Update(ctx context.Context, req resource.
         "name": true,
         "labels": true,
         "description": true,
+        "timezone": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1698,6 +1787,43 @@ func (r *OnCallPolicyScheduleResource) Update(ctx context.Context, req resource.
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["timezone"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Timezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Timezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.Timezone = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Timezone = types.StringValue(string(jsonBytes))
+            } else {
+                data.Timezone = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Timezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.Timezone = types.StringNull()
+        }
+    } else if val, ok := dataMap["timezone"].(string); ok && val != "" {
+        data.Timezone = types.StringValue(val)
+    } else {
+        data.Timezone = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

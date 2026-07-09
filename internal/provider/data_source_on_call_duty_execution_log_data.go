@@ -45,7 +45,10 @@ type OnCallDutyExecutionLogDataDataSourceModel struct {
     AcknowledgedByUserId types.String `tfsdk:"acknowledged_by_user_id"`
     AcknowledgedAt types.String `tfsdk:"acknowledged_at"`
     AcknowledgedByTeamId types.String `tfsdk:"acknowledged_by_team_id"`
+    LastExecutedEscalationRuleOrder types.Number `tfsdk:"last_executed_escalation_rule_order"`
     LastExecutedEscalationRuleId types.String `tfsdk:"last_executed_escalation_rule_id"`
+    OnCallPolicyExecutionRepeatCount types.Number `tfsdk:"on_call_policy_execution_repeat_count"`
+    ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
     TriggeredByUserId types.String `tfsdk:"triggered_by_user_id"`
 }
 
@@ -138,8 +141,20 @@ func (d *OnCallDutyExecutionLogDataDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "last_executed_escalation_rule_order": schema.NumberAttribute{
+                MarkdownDescription: "Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
             "last_executed_escalation_rule_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "on_call_policy_execution_repeat_count": schema.NumberAttribute{
+                MarkdownDescription: "How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "schedule_gap_retry_count": schema.NumberAttribute{
+                MarkdownDescription: "How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "triggered_by_user_id": schema.StringAttribute{
@@ -269,8 +284,17 @@ func (d *OnCallDutyExecutionLogDataDataSource) Read(ctx context.Context, req dat
     if val, ok := onCallDutyExecutionLogDataResponse["acknowledged_by_team_id"].(string); ok {
         data.AcknowledgedByTeamId = types.StringValue(val)
     }
+    if val, ok := onCallDutyExecutionLogDataResponse["last_executed_escalation_rule_order"].(float64); ok {
+        data.LastExecutedEscalationRuleOrder = types.NumberValue(big.NewFloat(val))
+    }
     if val, ok := onCallDutyExecutionLogDataResponse["last_executed_escalation_rule_id"].(string); ok {
         data.LastExecutedEscalationRuleId = types.StringValue(val)
+    }
+    if val, ok := onCallDutyExecutionLogDataResponse["on_call_policy_execution_repeat_count"].(float64); ok {
+        data.OnCallPolicyExecutionRepeatCount = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := onCallDutyExecutionLogDataResponse["schedule_gap_retry_count"].(float64); ok {
+        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := onCallDutyExecutionLogDataResponse["triggered_by_user_id"].(string); ok {
         data.TriggeredByUserId = types.StringValue(val)

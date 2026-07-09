@@ -17,6 +17,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -59,6 +60,7 @@ type OnCallDutyExecutionLogResourceModel struct {
     Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
+    ScheduleGapRetryCount types.Number `tfsdk:"schedule_gap_retry_count"`
 }
 
 func (r *OnCallDutyExecutionLogResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -159,8 +161,12 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 },
             },
             "last_executed_escalation_rule_order": schema.NumberAttribute{
-                MarkdownDescription: "Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
             },
             "last_escalation_rule_executed_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
@@ -180,10 +186,13 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
                 Optional: true,
             },
             "on_call_policy_execution_repeat_count": schema.NumberAttribute{
-                MarkdownDescription: "How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
             },
             "triggered_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
@@ -218,6 +227,10 @@ func (r *OnCallDutyExecutionLogResource) Schema(ctx context.Context, req resourc
             },
             "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "schedule_gap_retry_count": schema.NumberAttribute{
+                MarkdownDescription: "How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
         },
@@ -1092,6 +1105,15 @@ func (r *OnCallDutyExecutionLogResource) Create(ctx context.Context, req resourc
     } else {
         data.DeletedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["scheduleGapRetryCount"].(float64); ok {
+        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["scheduleGapRetryCount"].(int); ok {
+        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["scheduleGapRetryCount"].(int64); ok {
+        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["scheduleGapRetryCount"] == nil {
+        data.ScheduleGapRetryCount = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1141,6 +1163,7 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         "version": true,
         "createdByUserId": true,
         "deletedByUserId": true,
+        "scheduleGapRetryCount": true,
         "_id": true,
     }
 
@@ -1960,6 +1983,15 @@ func (r *OnCallDutyExecutionLogResource) Read(ctx context.Context, req resource.
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["scheduleGapRetryCount"].(float64); ok {
+        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["scheduleGapRetryCount"].(int); ok {
+        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["scheduleGapRetryCount"].(int64); ok {
+        data.ScheduleGapRetryCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["scheduleGapRetryCount"] == nil {
+        data.ScheduleGapRetryCount = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

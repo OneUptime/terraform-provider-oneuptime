@@ -36,11 +36,11 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `acknowledged_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `acknowledged_at` (String) A date time object.. Computed.
 - `acknowledged_by_team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `last_escalation_rule_executed_at` (String) A date time object.. Optional.
 - `last_executed_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `execute_next_escalation_rule_in_minutes` (Number) How many minutes should we wait before executing the next escalation rule?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
-- `on_call_policy_execution_repeat_count` (Number) How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]. Optional.
+- `on_call_policy_execution_repeat_count` (Number) How many times did we execute this on-call policy?. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Execution Log], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
 - `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
@@ -48,6 +48,7 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Execution Log], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 

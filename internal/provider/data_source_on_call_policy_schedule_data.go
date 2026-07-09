@@ -35,6 +35,7 @@ type OnCallPolicyScheduleDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Labels types.Set `tfsdk:"labels"`
     Description types.String `tfsdk:"description"`
+    Timezone types.String `tfsdk:"timezone"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CurrentUserIdOnRoster types.String `tfsdk:"current_user_id_on_roster"`
@@ -89,6 +90,10 @@ func (d *OnCallPolicyScheduleDataDataSource) Schema(ctx context.Context, req dat
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Schedule]",
+                Computed: true,
+            },
+            "timezone": schema.StringAttribute{
+                MarkdownDescription: "IANA timezone this schedule's restriction and hand-off wall-clock times are interpreted in. When empty, times are interpreted in the server's local timezone (legacy behavior).. Permissions - Create: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Create On-Call Duty Policy Schedule], Read: [Project Owner, Project Admin, Project Member, Viewer, On-Call Admin, On-Call Member, On-Call Viewer, Read On-Call Duty Policy Schedule], Update: [Project Owner, Project Admin, Project Member, On-Call Admin, On-Call Member, Edit On-Call Duty Policy Schedule]",
                 Computed: true,
             },
             "slug": schema.StringAttribute{
@@ -221,6 +226,9 @@ func (d *OnCallPolicyScheduleDataDataSource) Read(ctx context.Context, req datas
     }
     if val, ok := onCallPolicyScheduleDataResponse["description"].(string); ok {
         data.Description = types.StringValue(val)
+    }
+    if val, ok := onCallPolicyScheduleDataResponse["timezone"].(string); ok {
+        data.Timezone = types.StringValue(val)
     }
     if val, ok := onCallPolicyScheduleDataResponse["slug"].(string); ok {
         data.Slug = types.StringValue(val)
