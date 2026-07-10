@@ -69,6 +69,8 @@ type ProjectResourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
+    EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
+    EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
@@ -364,6 +366,24 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "enable_automatic_incident_investigation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_automatic_alert_investigation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
@@ -583,6 +603,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "autoAiRechargeByBalanceInUSD": r.bigFloatToFloat64(data.AutoAiRechargeByBalanceInUsd.ValueBigFloat()),
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": r.bigFloatToFloat64(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd.ValueBigFloat()),
         "enableAi": data.EnableAi.ValueBool(),
+        "enableAutomaticIncidentInvestigation": data.EnableAutomaticIncidentInvestigation.ValueBool(),
+        "enableAutomaticAlertInvestigation": data.EnableAutomaticAlertInvestigation.ValueBool(),
         "enableAutoRechargeAiBalance": data.EnableAutoRechargeAiBalance.ValueBool(),
         "doNotAddGlobalProbesByDefaultOnNewMonitors": data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool(),
         "gitHubAppInstallationId": data.GitHubAppInstallationId.ValueString(),
@@ -1231,6 +1253,12 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
+        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
+        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
@@ -2026,6 +2054,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "enableAutomaticIncidentInvestigation": true,
+        "enableAutomaticAlertInvestigation": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
@@ -2700,6 +2730,12 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
+        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
+        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
@@ -3543,6 +3579,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAi.IsUnknown() && !state.EnableAi.IsUnknown() && !data.EnableAi.Equal(state.EnableAi) {
         requestDataMap["enableAi"] = data.EnableAi.ValueBool()
     }
+    if !data.EnableAutomaticIncidentInvestigation.IsUnknown() && !state.EnableAutomaticIncidentInvestigation.IsUnknown() && !data.EnableAutomaticIncidentInvestigation.Equal(state.EnableAutomaticIncidentInvestigation) {
+        requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
+    }
+    if !data.EnableAutomaticAlertInvestigation.IsUnknown() && !state.EnableAutomaticAlertInvestigation.IsUnknown() && !data.EnableAutomaticAlertInvestigation.Equal(state.EnableAutomaticAlertInvestigation) {
+        requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
+    }
     if !data.EnableAutoRechargeAiBalance.IsUnknown() && !state.EnableAutoRechargeAiBalance.IsUnknown() && !data.EnableAutoRechargeAiBalance.Equal(state.EnableAutoRechargeAiBalance) {
         requestDataMap["enableAutoRechargeAiBalance"] = data.EnableAutoRechargeAiBalance.ValueBool()
     }
@@ -3635,6 +3677,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "enableAutomaticIncidentInvestigation": true,
+        "enableAutomaticAlertInvestigation": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
@@ -4303,6 +4347,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
+        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
+        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)

@@ -67,6 +67,8 @@ type ProjectDataDataSourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
+    EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
+    EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     PlanName types.String `tfsdk:"plan_name"`
@@ -259,6 +261,14 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "enable_ai": schema.BoolAttribute{
                 MarkdownDescription: "Enable AI services for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                Computed: true,
+            },
+            "enable_automatic_incident_investigation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "enable_automatic_alert_investigation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
@@ -509,6 +519,12 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["enable_ai"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["enable_automatic_incident_investigation"].(bool); ok {
+        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["enable_automatic_alert_investigation"].(bool); ok {
+        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
     if val, ok := projectDataResponse["enable_auto_recharge_ai_balance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)

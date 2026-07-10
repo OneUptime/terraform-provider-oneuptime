@@ -36,6 +36,8 @@ type AiRunDataDataSourceModel struct {
     Status types.String `tfsdk:"status"`
     UserId types.String `tfsdk:"user_id"`
     ConversationId types.String `tfsdk:"conversation_id"`
+    TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
+    TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
     LastHeartbeatAt types.String `tfsdk:"last_heartbeat_at"`
@@ -97,6 +99,14 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "conversation_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "triggered_by_incident_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "triggered_by_alert_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -231,6 +241,12 @@ func (d *AiRunDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := aiRunDataResponse["conversation_id"].(string); ok {
         data.ConversationId = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["triggered_by_incident_id"].(string); ok {
+        data.TriggeredByIncidentId = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["triggered_by_alert_id"].(string); ok {
+        data.TriggeredByAlertId = types.StringValue(val)
     }
     if val, ok := aiRunDataResponse["started_at"].(string); ok {
         data.StartedAt = types.StringValue(val)

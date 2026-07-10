@@ -31,6 +31,8 @@ data "oneuptime_ai_run_data" "example" {
 - `status` (String) Current status of this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `conversation_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `started_at` (String) A date time object.. Computed.
 - `completed_at` (String) A date time object.. Computed.
 - `last_heartbeat_at` (String) A date time object.. Computed.
