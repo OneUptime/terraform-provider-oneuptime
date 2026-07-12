@@ -71,6 +71,10 @@ type ProjectResourceModel struct {
     EnableAi types.Bool `tfsdk:"enable_ai"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
+    AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
+    AlertInvestigationDedupeWindowMinutes types.Number `tfsdk:"alert_investigation_dedupe_window_minutes"`
+    AiMaxConcurrentInvestigations types.Number `tfsdk:"ai_max_concurrent_investigations"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
@@ -384,6 +388,38 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "alert_investigation_minimum_severity_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_daily_autonomous_token_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous Sentinel investigations may consume for this project. When the limit is reached, new autonomous investigations are skipped until the next day — interactive AI chat is never blocked. Unset means no limit.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by Sentinel — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_max_concurrent_investigations": schema.NumberAttribute{
+                MarkdownDescription: "How many Sentinel investigations may run at the same time for this project, shared across incidents and alerts. Unset means the default of 3. Minimum 1 — pause investigations with the opt-in toggles or a daily token limit of 0 instead.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
@@ -605,6 +641,10 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableAi": data.EnableAi.ValueBool(),
         "enableAutomaticIncidentInvestigation": data.EnableAutomaticIncidentInvestigation.ValueBool(),
         "enableAutomaticAlertInvestigation": data.EnableAutomaticAlertInvestigation.ValueBool(),
+        "alertInvestigationMinimumSeverityId": data.AlertInvestigationMinimumSeverityId.ValueString(),
+        "aiDailyAutonomousTokenLimit": r.bigFloatToFloat64(data.AiDailyAutonomousTokenLimit.ValueBigFloat()),
+        "alertInvestigationDedupeWindowMinutes": r.bigFloatToFloat64(data.AlertInvestigationDedupeWindowMinutes.ValueBigFloat()),
+        "aiMaxConcurrentInvestigations": r.bigFloatToFloat64(data.AiMaxConcurrentInvestigations.ValueBigFloat()),
         "enableAutoRechargeAiBalance": data.EnableAutoRechargeAiBalance.ValueBool(),
         "doNotAddGlobalProbesByDefaultOnNewMonitors": data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool(),
         "gitHubAppInstallationId": data.GitHubAppInstallationId.ValueString(),
@@ -1259,6 +1299,70 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok && val != "" {
+        data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+    } else {
+        data.AlertInvestigationMinimumSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(float64); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
+        data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["alertInvestigationDedupeWindowMinutes"] == nil {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+    }
+    if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiMaxConcurrentInvestigations"] == nil {
+        data.AiMaxConcurrentInvestigations = types.NumberNull()
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
@@ -2056,6 +2160,10 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableAi": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "alertInvestigationMinimumSeverityId": true,
+        "aiDailyAutonomousTokenLimit": true,
+        "alertInvestigationDedupeWindowMinutes": true,
+        "aiMaxConcurrentInvestigations": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
@@ -2736,6 +2844,70 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok && val != "" {
+        data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+    } else {
+        data.AlertInvestigationMinimumSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(float64); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
+        data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["alertInvestigationDedupeWindowMinutes"] == nil {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+    }
+    if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiMaxConcurrentInvestigations"] == nil {
+        data.AiMaxConcurrentInvestigations = types.NumberNull()
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
@@ -3585,6 +3757,18 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAutomaticAlertInvestigation.IsUnknown() && !state.EnableAutomaticAlertInvestigation.IsUnknown() && !data.EnableAutomaticAlertInvestigation.Equal(state.EnableAutomaticAlertInvestigation) {
         requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
     }
+    if !data.AlertInvestigationMinimumSeverityId.IsUnknown() && !state.AlertInvestigationMinimumSeverityId.IsUnknown() && !data.AlertInvestigationMinimumSeverityId.Equal(state.AlertInvestigationMinimumSeverityId) {
+        requestDataMap["alertInvestigationMinimumSeverityId"] = data.AlertInvestigationMinimumSeverityId.ValueString()
+    }
+    if !data.AiDailyAutonomousTokenLimit.IsUnknown() && !state.AiDailyAutonomousTokenLimit.IsUnknown() && !data.AiDailyAutonomousTokenLimit.Equal(state.AiDailyAutonomousTokenLimit) {
+        requestDataMap["aiDailyAutonomousTokenLimit"] = r.bigFloatToFloat64(data.AiDailyAutonomousTokenLimit.ValueBigFloat())
+    }
+    if !data.AlertInvestigationDedupeWindowMinutes.IsUnknown() && !state.AlertInvestigationDedupeWindowMinutes.IsUnknown() && !data.AlertInvestigationDedupeWindowMinutes.Equal(state.AlertInvestigationDedupeWindowMinutes) {
+        requestDataMap["alertInvestigationDedupeWindowMinutes"] = r.bigFloatToFloat64(data.AlertInvestigationDedupeWindowMinutes.ValueBigFloat())
+    }
+    if !data.AiMaxConcurrentInvestigations.IsUnknown() && !state.AiMaxConcurrentInvestigations.IsUnknown() && !data.AiMaxConcurrentInvestigations.Equal(state.AiMaxConcurrentInvestigations) {
+        requestDataMap["aiMaxConcurrentInvestigations"] = r.bigFloatToFloat64(data.AiMaxConcurrentInvestigations.ValueBigFloat())
+    }
     if !data.EnableAutoRechargeAiBalance.IsUnknown() && !state.EnableAutoRechargeAiBalance.IsUnknown() && !data.EnableAutoRechargeAiBalance.Equal(state.EnableAutoRechargeAiBalance) {
         requestDataMap["enableAutoRechargeAiBalance"] = data.EnableAutoRechargeAiBalance.ValueBool()
     }
@@ -3679,6 +3863,10 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableAi": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "alertInvestigationMinimumSeverityId": true,
+        "aiDailyAutonomousTokenLimit": true,
+        "alertInvestigationDedupeWindowMinutes": true,
+        "aiMaxConcurrentInvestigations": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "gitHubAppInstallationId": true,
@@ -4353,6 +4541,70 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok && val != "" {
+        data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+    } else {
+        data.AlertInvestigationMinimumSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(float64); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
+        data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["alertInvestigationDedupeWindowMinutes"] == nil {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+    }
+    if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiMaxConcurrentInvestigations"] == nil {
+        data.AiMaxConcurrentInvestigations = types.NumberNull()
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)

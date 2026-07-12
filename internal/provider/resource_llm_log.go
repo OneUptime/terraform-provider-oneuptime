@@ -45,6 +45,8 @@ type LlmLogResourceModel struct {
     ModelName types.String `tfsdk:"model_name"`
     IsGlobalProvider types.Bool `tfsdk:"is_global_provider"`
     TotalTokens types.Number `tfsdk:"total_tokens"`
+    CachedInputTokens types.Number `tfsdk:"cached_input_tokens"`
+    CacheCreationTokens types.Number `tfsdk:"cache_creation_tokens"`
     CostInUsdCents types.Number `tfsdk:"cost_in_usd_cents"`
     WasBilled types.Bool `tfsdk:"was_billed"`
     Status types.String `tfsdk:"status"`
@@ -124,6 +126,14 @@ func (r *LlmLogResource) Schema(ctx context.Context, req resource.SchemaRequest,
             },
             "total_tokens": schema.NumberAttribute{
                 MarkdownDescription: "Total tokens used (input + output). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cached_input_tokens": schema.NumberAttribute{
+                MarkdownDescription: "Input tokens served from the provider's prompt cache (billed at a discount). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cache_creation_tokens": schema.NumberAttribute{
+                MarkdownDescription: "Input tokens written to the provider's prompt cache on this call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "cost_in_usd_cents": schema.NumberAttribute{
@@ -584,6 +594,24 @@ func (r *LlmLogResource) Create(ctx context.Context, req resource.CreateRequest,
         data.TotalTokens = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["totalTokens"] == nil {
         data.TotalTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["cachedInputTokens"].(float64); ok {
+        data.CachedInputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["cachedInputTokens"].(int); ok {
+        data.CachedInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["cachedInputTokens"].(int64); ok {
+        data.CachedInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["cachedInputTokens"] == nil {
+        data.CachedInputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["cacheCreationTokens"].(float64); ok {
+        data.CacheCreationTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["cacheCreationTokens"].(int); ok {
+        data.CacheCreationTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["cacheCreationTokens"].(int64); ok {
+        data.CacheCreationTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["cacheCreationTokens"] == nil {
+        data.CacheCreationTokens = types.NumberNull()
     }
     if val, ok := dataMap["costInUSDCents"].(float64); ok {
         data.CostInUsdCents = types.NumberValue(big.NewFloat(val))
@@ -1086,6 +1114,8 @@ func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         "modelName": true,
         "isGlobalProvider": true,
         "totalTokens": true,
+        "cachedInputTokens": true,
+        "cacheCreationTokens": true,
         "costInUSDCents": true,
         "wasBilled": true,
         "status": true,
@@ -1461,6 +1491,24 @@ func (r *LlmLogResource) Read(ctx context.Context, req resource.ReadRequest, res
         data.TotalTokens = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["totalTokens"] == nil {
         data.TotalTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["cachedInputTokens"].(float64); ok {
+        data.CachedInputTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["cachedInputTokens"].(int); ok {
+        data.CachedInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["cachedInputTokens"].(int64); ok {
+        data.CachedInputTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["cachedInputTokens"] == nil {
+        data.CachedInputTokens = types.NumberNull()
+    }
+    if val, ok := dataMap["cacheCreationTokens"].(float64); ok {
+        data.CacheCreationTokens = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["cacheCreationTokens"].(int); ok {
+        data.CacheCreationTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["cacheCreationTokens"].(int64); ok {
+        data.CacheCreationTokens = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["cacheCreationTokens"] == nil {
+        data.CacheCreationTokens = types.NumberNull()
     }
     if val, ok := dataMap["costInUSDCents"].(float64); ok {
         data.CostInUsdCents = types.NumberValue(big.NewFloat(val))

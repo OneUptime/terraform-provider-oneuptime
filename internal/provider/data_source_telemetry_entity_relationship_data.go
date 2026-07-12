@@ -37,6 +37,9 @@ type TelemetryEntityRelationshipDataDataSourceModel struct {
     RelationshipType types.String `tfsdk:"relationship_type"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
+    CallCount types.Number `tfsdk:"call_count"`
+    ErrorCount types.Number `tfsdk:"error_count"`
+    AvgDurationMs types.Number `tfsdk:"avg_duration_ms"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -96,6 +99,18 @@ func (d *TelemetryEntityRelationshipDataDataSource) Schema(ctx context.Context, 
             },
             "last_seen_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "call_count": schema.NumberAttribute{
+                MarkdownDescription: "Calls observed over this edge in the most recent computation window (depends-on edges only).. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [Project Owner, Project Admin, Telemetry Admin, Edit Telemetry Service]",
+                Computed: true,
+            },
+            "error_count": schema.NumberAttribute{
+                MarkdownDescription: "Errored calls observed over this edge in the most recent computation window (depends-on edges only).. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [Project Owner, Project Admin, Telemetry Admin, Edit Telemetry Service]",
+                Computed: true,
+            },
+            "avg_duration_ms": schema.NumberAttribute{
+                MarkdownDescription: "Average call duration in milliseconds over this edge in the most recent computation window (depends-on edges only).. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [Project Owner, Project Admin, Telemetry Admin, Edit Telemetry Service]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -204,6 +219,15 @@ func (d *TelemetryEntityRelationshipDataDataSource) Read(ctx context.Context, re
     }
     if val, ok := telemetryEntityRelationshipDataResponse["last_seen_at"].(string); ok {
         data.LastSeenAt = types.StringValue(val)
+    }
+    if val, ok := telemetryEntityRelationshipDataResponse["call_count"].(float64); ok {
+        data.CallCount = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := telemetryEntityRelationshipDataResponse["error_count"].(float64); ok {
+        data.ErrorCount = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := telemetryEntityRelationshipDataResponse["avg_duration_ms"].(float64); ok {
+        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := telemetryEntityRelationshipDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

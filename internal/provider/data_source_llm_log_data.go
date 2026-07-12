@@ -38,6 +38,8 @@ type LlmLogDataDataSourceModel struct {
     ModelName types.String `tfsdk:"model_name"`
     IsGlobalProvider types.Bool `tfsdk:"is_global_provider"`
     TotalTokens types.Number `tfsdk:"total_tokens"`
+    CachedInputTokens types.Number `tfsdk:"cached_input_tokens"`
+    CacheCreationTokens types.Number `tfsdk:"cache_creation_tokens"`
     CostInUsdCents types.Number `tfsdk:"cost_in_usd_cents"`
     WasBilled types.Bool `tfsdk:"was_billed"`
     Status types.String `tfsdk:"status"`
@@ -114,6 +116,14 @@ func (d *LlmLogDataDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "total_tokens": schema.NumberAttribute{
                 MarkdownDescription: "Total tokens used (input + output). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cached_input_tokens": schema.NumberAttribute{
+                MarkdownDescription: "Input tokens served from the provider's prompt cache (billed at a discount). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "cache_creation_tokens": schema.NumberAttribute{
+                MarkdownDescription: "Input tokens written to the provider's prompt cache on this call. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read LLM Log], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "cost_in_usd_cents": schema.NumberAttribute{
@@ -277,6 +287,12 @@ func (d *LlmLogDataDataSource) Read(ctx context.Context, req datasource.ReadRequ
     }
     if val, ok := llmLogDataResponse["total_tokens"].(float64); ok {
         data.TotalTokens = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := llmLogDataResponse["cached_input_tokens"].(float64); ok {
+        data.CachedInputTokens = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := llmLogDataResponse["cache_creation_tokens"].(float64); ok {
+        data.CacheCreationTokens = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := llmLogDataResponse["cost_in_usd_cents"].(float64); ok {
         data.CostInUsdCents = types.NumberValue(big.NewFloat(val))

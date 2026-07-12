@@ -16,49 +16,43 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &TelemetryEntityRelationshipResource{}
-var _ resource.ResourceWithImportState = &TelemetryEntityRelationshipResource{}
+var _ resource.Resource = &NetworkDeviceTeamOwnerResource{}
+var _ resource.ResourceWithImportState = &NetworkDeviceTeamOwnerResource{}
 
-func NewTelemetryEntityRelationshipResource() resource.Resource {
-    return &TelemetryEntityRelationshipResource{}
+func NewNetworkDeviceTeamOwnerResource() resource.Resource {
+    return &NetworkDeviceTeamOwnerResource{}
 }
 
-// TelemetryEntityRelationshipResource defines the resource implementation.
-type TelemetryEntityRelationshipResource struct {
+// NetworkDeviceTeamOwnerResource defines the resource implementation.
+type NetworkDeviceTeamOwnerResource struct {
     client *Client
 }
 
-// TelemetryEntityRelationshipResourceModel describes the resource data model.
-type TelemetryEntityRelationshipResourceModel struct {
+// NetworkDeviceTeamOwnerResourceModel describes the resource data model.
+type NetworkDeviceTeamOwnerResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
-    FromEntityKey types.String `tfsdk:"from_entity_key"`
-    ToEntityKey types.String `tfsdk:"to_entity_key"`
-    RelationshipType types.String `tfsdk:"relationship_type"`
-    FirstSeenAt JSONSubsetValue `tfsdk:"first_seen_at"`
-    LastSeenAt JSONSubsetValue `tfsdk:"last_seen_at"`
-    CallCount types.Number `tfsdk:"call_count"`
-    ErrorCount types.Number `tfsdk:"error_count"`
-    AvgDurationMs types.Number `tfsdk:"avg_duration_ms"`
+    TeamId types.String `tfsdk:"team_id"`
+    NetworkDeviceId types.String `tfsdk:"network_device_id"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
+    IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
 
-func (r *TelemetryEntityRelationshipResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_telemetry_entity_relationship"
+func (r *NetworkDeviceTeamOwnerResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_network_device_team_owner"
 }
 
-func (r *TelemetryEntityRelationshipResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *NetworkDeviceTeamOwnerResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "telemetry_entity_relationship resource",
+        MarkdownDescription: "network_device_team_owner resource",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -76,59 +70,13 @@ func (r *TelemetryEntityRelationshipResource) Schema(ctx context.Context, req re
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "from_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Stable identity key of the source entity of this edge.. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [No access - you don't have permission for this operation]",
+            "team_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Required: true,
             },
-            "to_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Stable identity key of the target entity of this edge.. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [No access - you don't have permission for this operation]",
+            "network_device_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Required: true,
-            },
-            "relationship_type": schema.StringAttribute{
-                MarkdownDescription: "The inferred relationship (runs-on, member-of, hosted-on, part-of, instance-of).. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [No access - you don't have permission for this operation]",
-                Required: true,
-            },
-            "first_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "last_seen_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "call_count": schema.NumberAttribute{
-                MarkdownDescription: "Calls observed over this edge in the most recent computation window (depends-on edges only).. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [Project Owner, Project Admin, Telemetry Admin, Edit Telemetry Service]",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "error_count": schema.NumberAttribute{
-                MarkdownDescription: "Errored calls observed over this edge in the most recent computation window (depends-on edges only).. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [Project Owner, Project Admin, Telemetry Admin, Edit Telemetry Service]",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "avg_duration_ms": schema.NumberAttribute{
-                MarkdownDescription: "Average call duration in milliseconds over this edge in the most recent computation window (depends-on edges only).. Permissions - Create: [Project Owner, Project Admin, Telemetry Admin, Create Telemetry Service], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service], Update: [Project Owner, Project Admin, Telemetry Admin, Edit Telemetry Service]",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
@@ -157,11 +105,15 @@ func (r *TelemetryEntityRelationshipResource) Schema(ctx context.Context, req re
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "is_owner_notified": schema.BoolAttribute{
+                MarkdownDescription: "Are owners notified of this resource ownership?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Team Owner], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
         },
     }
 }
 
-func (r *TelemetryEntityRelationshipResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *NetworkDeviceTeamOwnerResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -182,8 +134,8 @@ func (r *TelemetryEntityRelationshipResource) Configure(ctx context.Context, req
 }
 
 
-func (r *TelemetryEntityRelationshipResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data TelemetryEntityRelationshipResourceModel
+func (r *NetworkDeviceTeamOwnerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data NetworkDeviceTeamOwnerResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -195,42 +147,36 @@ func (r *TelemetryEntityRelationshipResource) Create(ctx context.Context, req re
 
 
     // Create API request body
-    telemetryEntityRelationshipRequest := map[string]interface{}{
+    networkDeviceTeamOwnerRequest := map[string]interface{}{
         "data": map[string]interface{}{
-        "fromEntityKey": data.FromEntityKey.ValueString(),
-        "toEntityKey": data.ToEntityKey.ValueString(),
-        "relationshipType": data.RelationshipType.ValueString(),
-        "firstSeenAt": r.parseJSONField(data.FirstSeenAt),
-        "lastSeenAt": r.parseJSONField(data.LastSeenAt),
-        "callCount": r.bigFloatToFloat64(data.CallCount.ValueBigFloat()),
-        "errorCount": r.bigFloatToFloat64(data.ErrorCount.ValueBigFloat()),
-        "avgDurationMs": r.bigFloatToFloat64(data.AvgDurationMs.ValueBigFloat()),
+        "teamId": data.TeamId.ValueString(),
+        "networkDeviceId": data.NetworkDeviceId.ValueString(),
         },
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/telemetry-entity-relationship", telemetryEntityRelationshipRequest)
+    httpResp, err := r.client.Post("/network-device-owner-team", networkDeviceTeamOwnerRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create telemetry_entity_relationship, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create network_device_team_owner, got error: %s", err))
         return
     }
 
-    var telemetryEntityRelationshipResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &telemetryEntityRelationshipResponse)
+    var networkDeviceTeamOwnerResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &networkDeviceTeamOwnerResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_entity_relationship response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse network_device_team_owner response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := telemetryEntityRelationshipResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := networkDeviceTeamOwnerResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = telemetryEntityRelationshipResponse
+        dataMap = networkDeviceTeamOwnerResponse
     }
 
     if obj, ok := dataMap["id"].(map[string]interface{}); ok {
@@ -281,217 +227,79 @@ func (r *TelemetryEntityRelationshipResource) Create(ctx context.Context, req re
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["fromEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FromEntityKey = types.StringValue(val)
+            data.TeamId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.FromEntityKey = types.StringValue(val)
+            data.TeamId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.TeamId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.FromEntityKey = types.StringValue(string(jsonBytes))
+                data.TeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TeamId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.FromEntityKey = types.StringValue(string(jsonBytes))
+                data.TeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TeamId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.FromEntityKey = types.StringValue(string(jsonBytes))
+            data.TeamId = types.StringValue(string(jsonBytes))
         } else {
-            data.FromEntityKey = types.StringNull()
+            data.TeamId = types.StringNull()
         }
-    } else if val, ok := dataMap["fromEntityKey"].(string); ok && val != "" {
-        data.FromEntityKey = types.StringValue(val)
+    } else if val, ok := dataMap["teamId"].(string); ok && val != "" {
+        data.TeamId = types.StringValue(val)
     } else {
-        data.FromEntityKey = types.StringNull()
+        data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["toEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["networkDeviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ToEntityKey = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ToEntityKey = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ToEntityKey = types.StringValue(string(jsonBytes))
+                data.NetworkDeviceId = types.StringValue(string(jsonBytes))
             } else {
-                data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ToEntityKey = types.StringValue(string(jsonBytes))
+                data.NetworkDeviceId = types.StringValue(string(jsonBytes))
             } else {
-                data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ToEntityKey = types.StringValue(string(jsonBytes))
+            data.NetworkDeviceId = types.StringValue(string(jsonBytes))
         } else {
-            data.ToEntityKey = types.StringNull()
+            data.NetworkDeviceId = types.StringNull()
         }
-    } else if val, ok := dataMap["toEntityKey"].(string); ok && val != "" {
-        data.ToEntityKey = types.StringValue(val)
+    } else if val, ok := dataMap["networkDeviceId"].(string); ok && val != "" {
+        data.NetworkDeviceId = types.StringValue(val)
     } else {
-        data.ToEntityKey = types.StringNull()
-    }
-    if obj, ok := dataMap["relationshipType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RelationshipType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RelationshipType = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RelationshipType = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RelationshipType = types.StringValue(string(jsonBytes))
-            } else {
-                data.RelationshipType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RelationshipType = types.StringValue(string(jsonBytes))
-            } else {
-                data.RelationshipType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RelationshipType = types.StringValue(string(jsonBytes))
-        } else {
-            data.RelationshipType = types.StringNull()
-        }
-    } else if val, ok := dataMap["relationshipType"].(string); ok && val != "" {
-        data.RelationshipType = types.StringValue(val)
-    } else {
-        data.RelationshipType = types.StringNull()
-    }
-    if obj, ok := dataMap["firstSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FirstSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.FirstSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.FirstSeenAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["firstSeenAt"].(string); ok && val != "" {
-        data.FirstSeenAt = NewJSONSubsetValue(val)
-    } else {
-        data.FirstSeenAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.LastSeenAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["lastSeenAt"].(string); ok && val != "" {
-        data.LastSeenAt = NewJSONSubsetValue(val)
-    } else {
-        data.LastSeenAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCount"].(int); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCount"].(int64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["callCount"] == nil {
-        data.CallCount = types.NumberNull()
-    }
-    if val, ok := dataMap["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorCount"].(int); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorCount"].(int64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["errorCount"] == nil {
-        data.ErrorCount = types.NumberNull()
-    }
-    if val, ok := dataMap["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["avgDurationMs"].(int); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["avgDurationMs"].(int64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["avgDurationMs"] == nil {
-        data.AvgDurationMs = types.NumberNull()
+        data.NetworkDeviceId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -686,6 +494,9 @@ func (r *TelemetryEntityRelationshipResource) Create(ctx context.Context, req re
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -700,8 +511,8 @@ func (r *TelemetryEntityRelationshipResource) Create(ctx context.Context, req re
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *TelemetryEntityRelationshipResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data TelemetryEntityRelationshipResourceModel
+func (r *NetworkDeviceTeamOwnerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data NetworkDeviceTeamOwnerResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -713,27 +524,22 @@ func (r *TelemetryEntityRelationshipResource) Read(ctx context.Context, req reso
     // Create select parameter to get full object
     selectParam := map[string]interface{}{
         "projectId": true,
-        "fromEntityKey": true,
-        "toEntityKey": true,
-        "relationshipType": true,
-        "firstSeenAt": true,
-        "lastSeenAt": true,
-        "callCount": true,
-        "errorCount": true,
-        "avgDurationMs": true,
+        "teamId": true,
+        "networkDeviceId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "createdByUserId": true,
         "deletedByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/telemetry-entity-relationship/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect("/network-device-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_entity_relationship, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_device_team_owner, got error: %s", err))
         return
     }
 
@@ -742,22 +548,22 @@ func (r *TelemetryEntityRelationshipResource) Read(ctx context.Context, req reso
         return
     }
 
-    var telemetryEntityRelationshipResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &telemetryEntityRelationshipResponse)
+    var networkDeviceTeamOwnerResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &networkDeviceTeamOwnerResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_entity_relationship response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse network_device_team_owner response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := telemetryEntityRelationshipResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := networkDeviceTeamOwnerResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = telemetryEntityRelationshipResponse
+        dataMap = networkDeviceTeamOwnerResponse
     }
 
     if obj, ok := dataMap["id"].(map[string]interface{}); ok {
@@ -808,217 +614,79 @@ func (r *TelemetryEntityRelationshipResource) Read(ctx context.Context, req reso
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["fromEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FromEntityKey = types.StringValue(val)
+            data.TeamId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.FromEntityKey = types.StringValue(val)
+            data.TeamId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.TeamId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.FromEntityKey = types.StringValue(string(jsonBytes))
+                data.TeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TeamId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.FromEntityKey = types.StringValue(string(jsonBytes))
+                data.TeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TeamId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.FromEntityKey = types.StringValue(string(jsonBytes))
+            data.TeamId = types.StringValue(string(jsonBytes))
         } else {
-            data.FromEntityKey = types.StringNull()
+            data.TeamId = types.StringNull()
         }
-    } else if val, ok := dataMap["fromEntityKey"].(string); ok && val != "" {
-        data.FromEntityKey = types.StringValue(val)
+    } else if val, ok := dataMap["teamId"].(string); ok && val != "" {
+        data.TeamId = types.StringValue(val)
     } else {
-        data.FromEntityKey = types.StringNull()
+        data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["toEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["networkDeviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ToEntityKey = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ToEntityKey = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ToEntityKey = types.StringValue(string(jsonBytes))
+                data.NetworkDeviceId = types.StringValue(string(jsonBytes))
             } else {
-                data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ToEntityKey = types.StringValue(string(jsonBytes))
+                data.NetworkDeviceId = types.StringValue(string(jsonBytes))
             } else {
-                data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ToEntityKey = types.StringValue(string(jsonBytes))
+            data.NetworkDeviceId = types.StringValue(string(jsonBytes))
         } else {
-            data.ToEntityKey = types.StringNull()
+            data.NetworkDeviceId = types.StringNull()
         }
-    } else if val, ok := dataMap["toEntityKey"].(string); ok && val != "" {
-        data.ToEntityKey = types.StringValue(val)
+    } else if val, ok := dataMap["networkDeviceId"].(string); ok && val != "" {
+        data.NetworkDeviceId = types.StringValue(val)
     } else {
-        data.ToEntityKey = types.StringNull()
-    }
-    if obj, ok := dataMap["relationshipType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RelationshipType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RelationshipType = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RelationshipType = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RelationshipType = types.StringValue(string(jsonBytes))
-            } else {
-                data.RelationshipType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RelationshipType = types.StringValue(string(jsonBytes))
-            } else {
-                data.RelationshipType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RelationshipType = types.StringValue(string(jsonBytes))
-        } else {
-            data.RelationshipType = types.StringNull()
-        }
-    } else if val, ok := dataMap["relationshipType"].(string); ok && val != "" {
-        data.RelationshipType = types.StringValue(val)
-    } else {
-        data.RelationshipType = types.StringNull()
-    }
-    if obj, ok := dataMap["firstSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FirstSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.FirstSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.FirstSeenAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["firstSeenAt"].(string); ok && val != "" {
-        data.FirstSeenAt = NewJSONSubsetValue(val)
-    } else {
-        data.FirstSeenAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.LastSeenAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["lastSeenAt"].(string); ok && val != "" {
-        data.LastSeenAt = NewJSONSubsetValue(val)
-    } else {
-        data.LastSeenAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCount"].(int); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCount"].(int64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["callCount"] == nil {
-        data.CallCount = types.NumberNull()
-    }
-    if val, ok := dataMap["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorCount"].(int); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorCount"].(int64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["errorCount"] == nil {
-        data.ErrorCount = types.NumberNull()
-    }
-    if val, ok := dataMap["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["avgDurationMs"].(int); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["avgDurationMs"].(int64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["avgDurationMs"] == nil {
-        data.AvgDurationMs = types.NumberNull()
+        data.NetworkDeviceId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1214,6 +882,9 @@ func (r *TelemetryEntityRelationshipResource) Read(ctx context.Context, req reso
     } else {
         data.DeletedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1224,9 +895,9 @@ func (r *TelemetryEntityRelationshipResource) Read(ctx context.Context, req reso
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *TelemetryEntityRelationshipResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data TelemetryEntityRelationshipResourceModel
-    var state TelemetryEntityRelationshipResourceModel
+func (r *NetworkDeviceTeamOwnerResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data NetworkDeviceTeamOwnerResourceModel
+    var state NetworkDeviceTeamOwnerResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -1244,82 +915,51 @@ func (r *TelemetryEntityRelationshipResource) Update(ctx context.Context, req re
     data.Id = state.Id
 
     // Create API request body
-    telemetryEntityRelationshipRequest := map[string]interface{}{
+    networkDeviceTeamOwnerRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := telemetryEntityRelationshipRequest["data"].(map[string]interface{})
 
-    if !data.FirstSeenAt.IsUnknown() && !state.FirstSeenAt.IsUnknown() && !data.FirstSeenAt.Equal(state.FirstSeenAt) {
-        var firstseenatData interface{}
-        if err := json.Unmarshal([]byte(data.FirstSeenAt.ValueString()), &firstseenatData); err == nil {
-            requestDataMap["firstSeenAt"] = firstseenatData
-        } else {
-            requestDataMap["firstSeenAt"] = data.FirstSeenAt.ValueString()
-        }
-    }
-    if !data.LastSeenAt.IsUnknown() && !state.LastSeenAt.IsUnknown() && !data.LastSeenAt.Equal(state.LastSeenAt) {
-        var lastseenatData interface{}
-        if err := json.Unmarshal([]byte(data.LastSeenAt.ValueString()), &lastseenatData); err == nil {
-            requestDataMap["lastSeenAt"] = lastseenatData
-        } else {
-            requestDataMap["lastSeenAt"] = data.LastSeenAt.ValueString()
-        }
-    }
-    if !data.CallCount.IsUnknown() && !state.CallCount.IsUnknown() && !data.CallCount.Equal(state.CallCount) {
-        requestDataMap["callCount"] = r.bigFloatToFloat64(data.CallCount.ValueBigFloat())
-    }
-    if !data.ErrorCount.IsUnknown() && !state.ErrorCount.IsUnknown() && !data.ErrorCount.Equal(state.ErrorCount) {
-        requestDataMap["errorCount"] = r.bigFloatToFloat64(data.ErrorCount.ValueBigFloat())
-    }
-    if !data.AvgDurationMs.IsUnknown() && !state.AvgDurationMs.IsUnknown() && !data.AvgDurationMs.Equal(state.AvgDurationMs) {
-        requestDataMap["avgDurationMs"] = r.bigFloatToFloat64(data.AvgDurationMs.ValueBigFloat())
-    }
 
     // Make API call
-    httpResp, err := r.client.Put("/telemetry-entity-relationship/" + data.Id.ValueString() + "", telemetryEntityRelationshipRequest)
+    httpResp, err := r.client.Put("/network-device-owner-team/" + data.Id.ValueString() + "", networkDeviceTeamOwnerRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update telemetry_entity_relationship, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update network_device_team_owner, got error: %s", err))
         return
     }
 
     // Parse the update response
-    var telemetryEntityRelationshipResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &telemetryEntityRelationshipResponse)
+    var networkDeviceTeamOwnerResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &networkDeviceTeamOwnerResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_entity_relationship response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse network_device_team_owner response, got error: %s", err))
         return
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "projectId": true,
-        "fromEntityKey": true,
-        "toEntityKey": true,
-        "relationshipType": true,
-        "firstSeenAt": true,
-        "lastSeenAt": true,
-        "callCount": true,
-        "errorCount": true,
-        "avgDurationMs": true,
+        "teamId": true,
+        "networkDeviceId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "createdByUserId": true,
         "deletedByUserId": true,
+        "isOwnerNotified": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/telemetry-entity-relationship/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect("/network-device-owner-team/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_entity_relationship after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_device_team_owner after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_entity_relationship read response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse network_device_team_owner read response, got error: %s", err))
         return
     }
 
@@ -1382,217 +1022,79 @@ func (r *TelemetryEntityRelationshipResource) Update(ctx context.Context, req re
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["fromEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["teamId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FromEntityKey = types.StringValue(val)
+            data.TeamId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.FromEntityKey = types.StringValue(val)
+            data.TeamId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.TeamId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.FromEntityKey = types.StringValue(string(jsonBytes))
+                data.TeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TeamId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.FromEntityKey = types.StringValue(string(jsonBytes))
+                data.TeamId = types.StringValue(string(jsonBytes))
             } else {
-                data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TeamId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.FromEntityKey = types.StringValue(string(jsonBytes))
+            data.TeamId = types.StringValue(string(jsonBytes))
         } else {
-            data.FromEntityKey = types.StringNull()
+            data.TeamId = types.StringNull()
         }
-    } else if val, ok := dataMap["fromEntityKey"].(string); ok && val != "" {
-        data.FromEntityKey = types.StringValue(val)
+    } else if val, ok := dataMap["teamId"].(string); ok && val != "" {
+        data.TeamId = types.StringValue(val)
     } else {
-        data.FromEntityKey = types.StringNull()
+        data.TeamId = types.StringNull()
     }
-    if obj, ok := dataMap["toEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["networkDeviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ToEntityKey = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ToEntityKey = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ToEntityKey = types.StringValue(string(jsonBytes))
+                data.NetworkDeviceId = types.StringValue(string(jsonBytes))
             } else {
-                data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ToEntityKey = types.StringValue(string(jsonBytes))
+                data.NetworkDeviceId = types.StringValue(string(jsonBytes))
             } else {
-                data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ToEntityKey = types.StringValue(string(jsonBytes))
+            data.NetworkDeviceId = types.StringValue(string(jsonBytes))
         } else {
-            data.ToEntityKey = types.StringNull()
+            data.NetworkDeviceId = types.StringNull()
         }
-    } else if val, ok := dataMap["toEntityKey"].(string); ok && val != "" {
-        data.ToEntityKey = types.StringValue(val)
+    } else if val, ok := dataMap["networkDeviceId"].(string); ok && val != "" {
+        data.NetworkDeviceId = types.StringValue(val)
     } else {
-        data.ToEntityKey = types.StringNull()
-    }
-    if obj, ok := dataMap["relationshipType"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RelationshipType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RelationshipType = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RelationshipType = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RelationshipType = types.StringValue(string(jsonBytes))
-            } else {
-                data.RelationshipType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RelationshipType = types.StringValue(string(jsonBytes))
-            } else {
-                data.RelationshipType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RelationshipType = types.StringValue(string(jsonBytes))
-        } else {
-            data.RelationshipType = types.StringNull()
-        }
-    } else if val, ok := dataMap["relationshipType"].(string); ok && val != "" {
-        data.RelationshipType = types.StringValue(val)
-    } else {
-        data.RelationshipType = types.StringNull()
-    }
-    if obj, ok := dataMap["firstSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FirstSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.FirstSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.FirstSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.FirstSeenAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.FirstSeenAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["firstSeenAt"].(string); ok && val != "" {
-        data.FirstSeenAt = NewJSONSubsetValue(val)
-    } else {
-        data.FirstSeenAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.LastSeenAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["lastSeenAt"].(string); ok && val != "" {
-        data.LastSeenAt = NewJSONSubsetValue(val)
-    } else {
-        data.LastSeenAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["callCount"].(int); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["callCount"].(int64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["callCount"] == nil {
-        data.CallCount = types.NumberNull()
-    }
-    if val, ok := dataMap["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["errorCount"].(int); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["errorCount"].(int64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["errorCount"] == nil {
-        data.ErrorCount = types.NumberNull()
-    }
-    if val, ok := dataMap["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["avgDurationMs"].(int); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["avgDurationMs"].(int64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["avgDurationMs"] == nil {
-        data.AvgDurationMs = types.NumberNull()
+        data.NetworkDeviceId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1788,6 +1290,9 @@ func (r *TelemetryEntityRelationshipResource) Update(ctx context.Context, req re
     } else {
         data.DeletedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotified"].(bool); ok {
+        data.IsOwnerNotified = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1798,8 +1303,8 @@ func (r *TelemetryEntityRelationshipResource) Update(ctx context.Context, req re
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *TelemetryEntityRelationshipResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data TelemetryEntityRelationshipResourceModel
+func (r *NetworkDeviceTeamOwnerResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data NetworkDeviceTeamOwnerResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1809,20 +1314,20 @@ func (r *TelemetryEntityRelationshipResource) Delete(ctx context.Context, req re
     }
 
     // Make API call
-    _, err := r.client.Delete("/telemetry-entity-relationship/" + data.Id.ValueString() + "")
+    _, err := r.client.Delete("/network-device-owner-team/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete telemetry_entity_relationship, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete network_device_team_owner, got error: %s", err))
         return
     }
 }
 
 
-func (r *TelemetryEntityRelationshipResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *NetworkDeviceTeamOwnerResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *TelemetryEntityRelationshipResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *NetworkDeviceTeamOwnerResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1840,7 +1345,7 @@ func (r *TelemetryEntityRelationshipResource) convertTerraformMapToInterface(ter
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *TelemetryEntityRelationshipResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *NetworkDeviceTeamOwnerResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -1861,7 +1366,7 @@ func (r *TelemetryEntityRelationshipResource) convertTerraformListToInterface(te
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *TelemetryEntityRelationshipResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *NetworkDeviceTeamOwnerResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -1882,7 +1387,7 @@ func (r *TelemetryEntityRelationshipResource) convertTerraformSetToInterface(ter
 }
 
 // Helper method to parse JSON field for complex objects
-func (r *TelemetryEntityRelationshipResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *NetworkDeviceTeamOwnerResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -1898,7 +1403,7 @@ func (r *TelemetryEntityRelationshipResource) parseJSONField(terraformString bas
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *TelemetryEntityRelationshipResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *NetworkDeviceTeamOwnerResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -1920,7 +1425,7 @@ func (r *TelemetryEntityRelationshipResource) normalizeURLWrappers(value interfa
     }
 }
 
-func (r *TelemetryEntityRelationshipResource) normalizeURLString(value string) string {
+func (r *NetworkDeviceTeamOwnerResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1932,7 +1437,7 @@ func (r *TelemetryEntityRelationshipResource) normalizeURLString(value string) s
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *TelemetryEntityRelationshipResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *NetworkDeviceTeamOwnerResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1943,7 +1448,7 @@ func (r *TelemetryEntityRelationshipResource) bigFloatToFloat64(bf *big.Float) i
 // Helper method to check if a type string is a valid OneUptime ObjectType
 // Only these types should be marshalled/unmarshalled as typed wrapper objects
 // This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
-func (r *TelemetryEntityRelationshipResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *NetworkDeviceTeamOwnerResource) isValidOneUptimeObjectType(typeStr string) bool {
     validTypes := map[string]bool{
         "ObjectID": true,
         "Decimal": true,

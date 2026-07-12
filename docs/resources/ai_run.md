@@ -32,6 +32,8 @@ resource "oneuptime_ai_run" "example" {
 - `conversation_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `attempt_count` (Number) How many times a worker has claimed this run for execution. Incremented on each claim; the queue stops retrying after the maximum.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `started_at` (String) A date time object.. Computed.
 - `completed_at` (String) A date time object.. Computed.
 - `last_heartbeat_at` (String) A date time object.. Computed.

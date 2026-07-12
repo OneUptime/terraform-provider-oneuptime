@@ -38,6 +38,8 @@ type AiRunDataDataSourceModel struct {
     ConversationId types.String `tfsdk:"conversation_id"`
     TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
     TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
+    MonitorId types.String `tfsdk:"monitor_id"`
+    AttemptCount types.Number `tfsdk:"attempt_count"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
     LastHeartbeatAt types.String `tfsdk:"last_heartbeat_at"`
@@ -108,6 +110,14 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "triggered_by_alert_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "monitor_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "attempt_count": schema.NumberAttribute{
+                MarkdownDescription: "How many times a worker has claimed this run for execution. Incremented on each claim; the queue stops retrying after the maximum.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -247,6 +257,12 @@ func (d *AiRunDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := aiRunDataResponse["triggered_by_alert_id"].(string); ok {
         data.TriggeredByAlertId = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["monitor_id"].(string); ok {
+        data.MonitorId = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["attempt_count"].(float64); ok {
+        data.AttemptCount = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := aiRunDataResponse["started_at"].(string); ok {
         data.StartedAt = types.StringValue(val)

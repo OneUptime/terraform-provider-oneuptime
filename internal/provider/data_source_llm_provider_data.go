@@ -37,6 +37,7 @@ type LlmProviderDataDataSourceModel struct {
     ApiKey types.String `tfsdk:"api_key"`
     ModelName types.String `tfsdk:"model_name"`
     BaseUrl types.String `tfsdk:"base_url"`
+    AdditionalParams types.String `tfsdk:"additional_params"`
     ProjectId types.String `tfsdk:"project_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsDefault types.Bool `tfsdk:"is_default"`
@@ -98,6 +99,10 @@ func (d *LlmProviderDataDataSource) Schema(ctx context.Context, req datasource.S
             },
             "base_url": schema.StringAttribute{
                 MarkdownDescription: "The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit LLM]",
+                Computed: true,
+            },
+            "additional_params": schema.StringAttribute{
+                MarkdownDescription: "Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create LLM], Read: [Public], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit LLM]",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -214,6 +219,9 @@ func (d *LlmProviderDataDataSource) Read(ctx context.Context, req datasource.Rea
     }
     if val, ok := llmProviderDataResponse["base_url"].(string); ok {
         data.BaseUrl = types.StringValue(val)
+    }
+    if val, ok := llmProviderDataResponse["additional_params"].(string); ok {
+        data.AdditionalParams = types.StringValue(val)
     }
     if val, ok := llmProviderDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)

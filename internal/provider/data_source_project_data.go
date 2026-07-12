@@ -69,6 +69,10 @@ type ProjectDataDataSourceModel struct {
     EnableAi types.Bool `tfsdk:"enable_ai"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
+    AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
+    AlertInvestigationDedupeWindowMinutes types.Number `tfsdk:"alert_investigation_dedupe_window_minutes"`
+    AiMaxConcurrentInvestigations types.Number `tfsdk:"ai_max_concurrent_investigations"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     PlanName types.String `tfsdk:"plan_name"`
@@ -269,6 +273,22 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "alert_investigation_minimum_severity_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "ai_daily_autonomous_token_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous Sentinel investigations may consume for this project. When the limit is reached, new autonomous investigations are skipped until the next day — interactive AI chat is never blocked. Unset means no limit.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by Sentinel — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "ai_max_concurrent_investigations": schema.NumberAttribute{
+                MarkdownDescription: "How many Sentinel investigations may run at the same time for this project, shared across incidents and alerts. Unset means the default of 3. Minimum 1 — pause investigations with the opt-in toggles or a daily token limit of 0 instead.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
@@ -525,6 +545,18 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["enable_automatic_alert_investigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["alert_investigation_minimum_severity_id"].(string); ok {
+        data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
+    }
+    if val, ok := projectDataResponse["ai_daily_autonomous_token_limit"].(float64); ok {
+        data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["alert_investigation_dedupe_window_minutes"].(float64); ok {
+        data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["ai_max_concurrent_investigations"].(float64); ok {
+        data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := projectDataResponse["enable_auto_recharge_ai_balance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
