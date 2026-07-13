@@ -132,15 +132,15 @@ func (d *DashboardDataDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "enable_master_password": schema.BoolAttribute{
-                MarkdownDescription: "Require visitors to enter a master password before viewing a private dashboard.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Require visitors to enter a master password before viewing a public dashboard.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Computed: true,
             },
             "master_password": schema.StringAttribute{
-                MarkdownDescription: "Password required to unlock a private dashboard. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "Password required to unlock a public dashboard. This value is stored as a secure hash.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Computed: true,
             },
             "ip_whitelist": schema.StringAttribute{
-                MarkdownDescription: "IP Whitelist for this Dashboard. One IP per line. Only used if the dashboard is private.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
+                MarkdownDescription: "IP Whitelist for this dashboard. One IP per line. Only used when the dashboard is public.. Permissions - Create: [Project Owner, Project Admin, Create Dashboard], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Dashboard], Update: [Project Owner, Project Admin, Edit Dashboard]",
                 Computed: true,
             },
         },
