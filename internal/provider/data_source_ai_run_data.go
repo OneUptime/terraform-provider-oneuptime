@@ -33,12 +33,16 @@ type AiRunDataDataSourceModel struct {
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     RunType types.String `tfsdk:"run_type"`
+    CodeFixTaskType types.String `tfsdk:"code_fix_task_type"`
     Status types.String `tfsdk:"status"`
     UserId types.String `tfsdk:"user_id"`
     ConversationId types.String `tfsdk:"conversation_id"`
     TriggeredByIncidentId types.String `tfsdk:"triggered_by_incident_id"`
     TriggeredByAlertId types.String `tfsdk:"triggered_by_alert_id"`
+    TriggeredByTelemetryExceptionId types.String `tfsdk:"triggered_by_telemetry_exception_id"`
+    TriggeredByAiInsightId types.String `tfsdk:"triggered_by_ai_insight_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
+    AiAgentId types.String `tfsdk:"ai_agent_id"`
     AttemptCount types.Number `tfsdk:"attempt_count"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
@@ -49,6 +53,11 @@ type AiRunDataDataSourceModel struct {
     TotalCostInUsdCents types.Number `tfsdk:"total_cost_in_usd_cents"`
     EgressManifest types.String `tfsdk:"egress_manifest"`
     ErrorMessage types.String `tfsdk:"error_message"`
+    HumanVerdict types.String `tfsdk:"human_verdict"`
+    HumanVerdictAt types.String `tfsdk:"human_verdict_at"`
+    HumanVerdictByUserId types.String `tfsdk:"human_verdict_by_user_id"`
+    AutoGrade types.String `tfsdk:"auto_grade"`
+    AutoGradeAt types.String `tfsdk:"auto_grade_at"`
 }
 
 func (d *AiRunDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -92,6 +101,10 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "Type of AI run: Chat or Investigation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
+            "code_fix_task_type": schema.StringAttribute{
+                MarkdownDescription: "For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
             "status": schema.StringAttribute{
                 MarkdownDescription: "Current status of this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
@@ -112,7 +125,19 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "triggered_by_telemetry_exception_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "triggered_by_ai_insight_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "monitor_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "ai_agent_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -154,6 +179,26 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "error_message": schema.StringAttribute{
                 MarkdownDescription: "Error message if the run failed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "human_verdict": schema.StringAttribute{
+                MarkdownDescription: "For investigation runs: the one-click human verdict on the posted analysis (Confirmed or Rejected). Null until a user weighs in.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "human_verdict_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "human_verdict_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "auto_grade": schema.StringAttribute{
+                MarkdownDescription: "For investigation runs: how the posted analysis compared to the incident's final recorded root cause (Match, Partial or Mismatch).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "auto_grade_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
         },
@@ -243,6 +288,9 @@ func (d *AiRunDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     if val, ok := aiRunDataResponse["run_type"].(string); ok {
         data.RunType = types.StringValue(val)
     }
+    if val, ok := aiRunDataResponse["code_fix_task_type"].(string); ok {
+        data.CodeFixTaskType = types.StringValue(val)
+    }
     if val, ok := aiRunDataResponse["status"].(string); ok {
         data.Status = types.StringValue(val)
     }
@@ -258,8 +306,17 @@ func (d *AiRunDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     if val, ok := aiRunDataResponse["triggered_by_alert_id"].(string); ok {
         data.TriggeredByAlertId = types.StringValue(val)
     }
+    if val, ok := aiRunDataResponse["triggered_by_telemetry_exception_id"].(string); ok {
+        data.TriggeredByTelemetryExceptionId = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["triggered_by_ai_insight_id"].(string); ok {
+        data.TriggeredByAiInsightId = types.StringValue(val)
+    }
     if val, ok := aiRunDataResponse["monitor_id"].(string); ok {
         data.MonitorId = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["ai_agent_id"].(string); ok {
+        data.AiAgentId = types.StringValue(val)
     }
     if val, ok := aiRunDataResponse["attempt_count"].(float64); ok {
         data.AttemptCount = types.NumberValue(big.NewFloat(val))
@@ -290,6 +347,21 @@ func (d *AiRunDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := aiRunDataResponse["error_message"].(string); ok {
         data.ErrorMessage = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["human_verdict"].(string); ok {
+        data.HumanVerdict = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["human_verdict_at"].(string); ok {
+        data.HumanVerdictAt = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["human_verdict_by_user_id"].(string); ok {
+        data.HumanVerdictByUserId = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["auto_grade"].(string); ok {
+        data.AutoGrade = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["auto_grade_at"].(string); ok {
+        data.AutoGradeAt = types.StringValue(val)
     }
 
     // Write logs using the tflog package

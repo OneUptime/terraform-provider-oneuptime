@@ -69,8 +69,12 @@ type ProjectDataDataSourceModel struct {
     EnableAi types.Bool `tfsdk:"enable_ai"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    EnableInstrumentationFixTasks types.Bool `tfsdk:"enable_instrumentation_fix_tasks"`
+    EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
+    EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
+    AiDailyFixTaskLimit types.Number `tfsdk:"ai_daily_fix_task_limit"`
     AlertInvestigationDedupeWindowMinutes types.Number `tfsdk:"alert_investigation_dedupe_window_minutes"`
     AiMaxConcurrentInvestigations types.Number `tfsdk:"ai_max_concurrent_investigations"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
@@ -268,11 +272,23 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "enable_instrumentation_fix_tasks": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "enable_ai_insights": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "enable_insight_fix_tasks": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a draft pull request with a proposed fix. Honors the daily fix task budget and per-repository open-PR caps. Pull requests are always human-reviewed — nothing merges automatically.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
@@ -280,15 +296,19 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum tokens per UTC day that autonomous Sentinel investigations may consume for this project. When the limit is reached, new autonomous investigations are skipped until the next day — interactive AI chat is never blocked. Unset means no limit.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous AI investigations may consume for this project. When the limit is reached, new autonomous investigations are skipped until the next day — interactive AI chat is never blocked. Unset means no limit.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "ai_daily_fix_task_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum AI fix tasks (agent runs that open pull requests) that may be created per UTC day for this project, across every fix recipe and trigger. Unset means the default of 25 per day; 0 pauses AI fix tasks entirely.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by Sentinel — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many Sentinel investigations may run at the same time for this project, shared across incidents and alerts. Unset means the default of 3. Minimum 1 — pause investigations with the opt-in toggles or a daily token limit of 0 instead.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "How many AI investigations may run at the same time for this project, shared across incidents and alerts. Unset means the default of 3. Minimum 1 — pause investigations with the opt-in toggles or a daily token limit of 0 instead.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
@@ -546,11 +566,23 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     if val, ok := projectDataResponse["enable_automatic_alert_investigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
+    if val, ok := projectDataResponse["enable_instrumentation_fix_tasks"].(bool); ok {
+        data.EnableInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["enable_ai_insights"].(bool); ok {
+        data.EnableAiInsights = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["enable_insight_fix_tasks"].(bool); ok {
+        data.EnableInsightFixTasks = types.BoolValue(val)
+    }
     if val, ok := projectDataResponse["alert_investigation_minimum_severity_id"].(string); ok {
         data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
     }
     if val, ok := projectDataResponse["ai_daily_autonomous_token_limit"].(float64); ok {
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := projectDataResponse["ai_daily_fix_task_limit"].(float64); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := projectDataResponse["alert_investigation_dedupe_window_minutes"].(float64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))

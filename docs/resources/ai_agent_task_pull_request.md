@@ -14,7 +14,6 @@ Ai agent task pull request resource
 
 ```terraform
 resource "oneuptime_ai_agent_task_pull_request" "example" {
-  ai_agent_task_id = "123e4567-e89b-12d3-a456-426614174000"
   ai_agent_id = "123e4567-e89b-12d3-a456-426614174000"
   title = "Example short text"
   pull_request_state = "Example short text"
@@ -25,7 +24,7 @@ resource "oneuptime_ai_agent_task_pull_request" "example" {
 
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `ai_agent_task_id` (String) A unique identifier for an object, represented as a UUID.. Required.
+- `ai_run_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Required.
 - `code_repository_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `title` (String) Title of the pull request.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
@@ -42,6 +41,8 @@ resource "oneuptime_ai_agent_task_pull_request" "example" {
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
+- `ci_status` (String) Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]. Computed.
+- `ci_status_at` (String) A date time object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 
 ## Import

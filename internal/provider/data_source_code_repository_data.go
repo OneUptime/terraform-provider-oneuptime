@@ -39,6 +39,7 @@ type CodeRepositoryDataDataSourceModel struct {
     OrganizationName types.String `tfsdk:"organization_name"`
     RepositoryName types.String `tfsdk:"repository_name"`
     MainBranchName types.String `tfsdk:"main_branch_name"`
+    MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
@@ -106,6 +107,10 @@ func (d *CodeRepositoryDataDataSource) Schema(ctx context.Context, req datasourc
             },
             "main_branch_name": schema.StringAttribute{
                 MarkdownDescription: "The name of the main/default branch. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Code Repository]",
+                Computed: true,
+            },
+            "max_open_fix_pull_requests": schema.NumberAttribute{
+                MarkdownDescription: "Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means the default of 5; 0 blocks AI fix pull requests for this repository entirely.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Code Repository]",
                 Computed: true,
             },
             "repository_url": schema.StringAttribute{
@@ -234,6 +239,9 @@ func (d *CodeRepositoryDataDataSource) Read(ctx context.Context, req datasource.
     }
     if val, ok := codeRepositoryDataResponse["main_branch_name"].(string); ok {
         data.MainBranchName = types.StringValue(val)
+    }
+    if val, ok := codeRepositoryDataResponse["max_open_fix_pull_requests"].(float64); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := codeRepositoryDataResponse["repository_url"].(string); ok {
         data.RepositoryUrl = types.StringValue(val)

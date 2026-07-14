@@ -100,7 +100,7 @@ func (r *RunbookResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "steps": schema.StringAttribute{
-                MarkdownDescription: "Ordered list of steps to run for this runbook. Each step is one of Manual, JavaScript, HTTP request or Bash.. Permissions - Create: [Project Owner, Project Admin, Create Runbook, Project Member, Runbook Admin, Runbook Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook], Update: [Project Owner, Project Admin, Edit Runbook, Runbook Admin]",
+                MarkdownDescription: "Ordered list of steps to run for this runbook. Each step is one of Manual, JavaScript, HTTP request, Bash or AI.. Permissions - Create: [Project Owner, Project Admin, Create Runbook, Project Member, Runbook Admin, Runbook Member], Read: [Project Owner, Project Admin, Project Member, Viewer, Runbook Admin, Runbook Member, Runbook Viewer, Read Runbook], Update: [Project Owner, Project Admin, Edit Runbook, Runbook Admin]",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,

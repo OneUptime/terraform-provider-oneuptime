@@ -28,12 +28,16 @@ data "oneuptime_ai_run_data" "example" {
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `run_type` (String) Type of AI run: Chat or Investigation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
+- `code_fix_task_type` (String) For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `status` (String) Current status of this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `conversation_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `triggered_by_telemetry_exception_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `triggered_by_ai_insight_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `attempt_count` (Number) How many times a worker has claimed this run for execution. Incremented on each claim; the queue stops retrying after the maximum.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `started_at` (String) A date time object.. Computed.
 - `completed_at` (String) A date time object.. Computed.
@@ -44,3 +48,8 @@ data "oneuptime_ai_run_data" "example" {
 - `total_cost_in_usd_cents` (Number) Total billed cost of this run in USD cents.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `egress_manifest` (String) What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
 - `error_message` (String) Error message if the run failed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
+- `human_verdict` (String) For investigation runs: the one-click human verdict on the posted analysis (Confirmed or Rejected). Null until a user weighs in.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
+- `human_verdict_at` (String) A date time object.. Computed.
+- `human_verdict_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `auto_grade` (String) For investigation runs: how the posted analysis compared to the incident's final recorded root cause (Match, Partial or Mismatch).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]. Computed.
+- `auto_grade_at` (String) A date time object.. Computed.

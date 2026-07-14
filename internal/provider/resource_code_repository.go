@@ -18,6 +18,7 @@ import (
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
 
@@ -44,6 +45,7 @@ type CodeRepositoryResourceModel struct {
     OrganizationName types.String `tfsdk:"organization_name"`
     RepositoryName types.String `tfsdk:"repository_name"`
     MainBranchName types.String `tfsdk:"main_branch_name"`
+    MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
@@ -112,6 +114,14 @@ func (r *CodeRepositoryResource) Schema(ctx context.Context, req resource.Schema
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "max_open_fix_pull_requests": schema.NumberAttribute{
+                MarkdownDescription: "Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means the default of 5; 0 blocks AI fix pull requests for this repository entirely.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Code Repository], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Code Repository], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Code Repository]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "repository_url": schema.StringAttribute{
@@ -228,6 +238,7 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "organizationName": data.OrganizationName.ValueString(),
         "repositoryName": data.RepositoryName.ValueString(),
         "mainBranchName": data.MainBranchName.ValueString(),
+        "maxOpenFixPullRequests": r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat()),
         "repositoryUrl": data.RepositoryUrl.ValueString(),
         "gitHubAppInstallationId": data.GitHubAppInstallationId.ValueString(),
         "gitLabProjectId": data.GitLabProjectId.ValueString(),
@@ -530,6 +541,15 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         data.MainBranchName = types.StringValue(val)
     } else {
         data.MainBranchName = types.StringNull()
+    }
+    if val, ok := dataMap["maxOpenFixPullRequests"].(float64); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int64); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["maxOpenFixPullRequests"] == nil {
+        data.MaxOpenFixPullRequests = types.NumberNull()
     }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -974,6 +994,7 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "organizationName": true,
         "repositoryName": true,
         "mainBranchName": true,
+        "maxOpenFixPullRequests": true,
         "repositoryUrl": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
@@ -1288,6 +1309,15 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         data.MainBranchName = types.StringValue(val)
     } else {
         data.MainBranchName = types.StringNull()
+    }
+    if val, ok := dataMap["maxOpenFixPullRequests"].(float64); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int64); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["maxOpenFixPullRequests"] == nil {
+        data.MaxOpenFixPullRequests = types.NumberNull()
     }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1744,6 +1774,9 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     if !data.MainBranchName.IsUnknown() && !state.MainBranchName.IsUnknown() && !data.MainBranchName.Equal(state.MainBranchName) {
         requestDataMap["mainBranchName"] = data.MainBranchName.ValueString()
     }
+    if !data.MaxOpenFixPullRequests.IsUnknown() && !state.MaxOpenFixPullRequests.IsUnknown() && !data.MaxOpenFixPullRequests.Equal(state.MaxOpenFixPullRequests) {
+        requestDataMap["maxOpenFixPullRequests"] = r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat())
+    }
     if !data.SecretToken.IsUnknown() && !state.SecretToken.IsUnknown() && !data.SecretToken.Equal(state.SecretToken) {
         requestDataMap["secretToken"] = data.SecretToken.ValueString()
     }
@@ -1775,6 +1808,7 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "organizationName": true,
         "repositoryName": true,
         "mainBranchName": true,
+        "maxOpenFixPullRequests": true,
         "repositoryUrl": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
@@ -2083,6 +2117,15 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         data.MainBranchName = types.StringValue(val)
     } else {
         data.MainBranchName = types.StringNull()
+    }
+    if val, ok := dataMap["maxOpenFixPullRequests"].(float64); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["maxOpenFixPullRequests"].(int64); ok {
+        data.MaxOpenFixPullRequests = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["maxOpenFixPullRequests"] == nil {
+        data.MaxOpenFixPullRequests = types.NumberNull()
     }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -32,7 +32,7 @@ type AiAgentTaskPullRequestDataDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    AiAgentTaskId types.String `tfsdk:"ai_agent_task_id"`
+    AiRunId types.String `tfsdk:"ai_run_id"`
     AiAgentId types.String `tfsdk:"ai_agent_id"`
     CodeRepositoryId types.String `tfsdk:"code_repository_id"`
     Title types.String `tfsdk:"title"`
@@ -41,6 +41,8 @@ type AiAgentTaskPullRequestDataDataSourceModel struct {
     PullRequestId types.Number `tfsdk:"pull_request_id"`
     PullRequestNumber types.Number `tfsdk:"pull_request_number"`
     PullRequestState types.String `tfsdk:"pull_request_state"`
+    CiStatus types.String `tfsdk:"ci_status"`
+    CiStatusAt types.String `tfsdk:"ci_status_at"`
     HeadRefName types.String `tfsdk:"head_ref_name"`
     BaseRefName types.String `tfsdk:"base_ref_name"`
     RepoOrganizationName types.String `tfsdk:"repo_organization_name"`
@@ -85,7 +87,7 @@ func (d *AiAgentTaskPullRequestDataDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "ai_agent_task_id": schema.StringAttribute{
+            "ai_run_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -119,6 +121,14 @@ func (d *AiAgentTaskPullRequestDataDataSource) Schema(ctx context.Context, req d
             },
             "pull_request_state": schema.StringAttribute{
                 MarkdownDescription: "Current state of the pull request (open, closed, merged).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                Computed: true,
+            },
+            "ci_status": schema.StringAttribute{
+                MarkdownDescription: "Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "ci_status_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "head_ref_name": schema.StringAttribute{
@@ -225,8 +235,8 @@ func (d *AiAgentTaskPullRequestDataDataSource) Read(ctx context.Context, req dat
     if val, ok := aiAgentTaskPullRequestDataResponse["project_id"].(string); ok {
         data.ProjectId = types.StringValue(val)
     }
-    if val, ok := aiAgentTaskPullRequestDataResponse["ai_agent_task_id"].(string); ok {
-        data.AiAgentTaskId = types.StringValue(val)
+    if val, ok := aiAgentTaskPullRequestDataResponse["ai_run_id"].(string); ok {
+        data.AiRunId = types.StringValue(val)
     }
     if val, ok := aiAgentTaskPullRequestDataResponse["ai_agent_id"].(string); ok {
         data.AiAgentId = types.StringValue(val)
@@ -251,6 +261,12 @@ func (d *AiAgentTaskPullRequestDataDataSource) Read(ctx context.Context, req dat
     }
     if val, ok := aiAgentTaskPullRequestDataResponse["pull_request_state"].(string); ok {
         data.PullRequestState = types.StringValue(val)
+    }
+    if val, ok := aiAgentTaskPullRequestDataResponse["ci_status"].(string); ok {
+        data.CiStatus = types.StringValue(val)
+    }
+    if val, ok := aiAgentTaskPullRequestDataResponse["ci_status_at"].(string); ok {
+        data.CiStatusAt = types.StringValue(val)
     }
     if val, ok := aiAgentTaskPullRequestDataResponse["head_ref_name"].(string); ok {
         data.HeadRefName = types.StringValue(val)

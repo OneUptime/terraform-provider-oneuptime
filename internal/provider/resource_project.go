@@ -71,8 +71,12 @@ type ProjectResourceModel struct {
     EnableAi types.Bool `tfsdk:"enable_ai"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    EnableInstrumentationFixTasks types.Bool `tfsdk:"enable_instrumentation_fix_tasks"`
+    EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
+    EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
+    AiDailyFixTaskLimit types.Number `tfsdk:"ai_daily_fix_task_limit"`
     AlertInvestigationDedupeWindowMinutes types.Number `tfsdk:"alert_investigation_dedupe_window_minutes"`
     AiMaxConcurrentInvestigations types.Number `tfsdk:"ai_max_concurrent_investigations"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
@@ -371,7 +375,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -380,7 +384,34 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE (Sentinel) automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_instrumentation_fix_tasks": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_ai_insights": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_insight_fix_tasks": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a draft pull request with a proposed fix. Honors the daily fix task budget and per-repository open-PR caps. Pull requests are always human-reviewed — nothing merges automatically.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -397,7 +428,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum tokens per UTC day that autonomous Sentinel investigations may consume for this project. When the limit is reached, new autonomous investigations are skipped until the next day — interactive AI chat is never blocked. Unset means no limit.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous AI investigations may consume for this project. When the limit is reached, new autonomous investigations are skipped until the next day — interactive AI chat is never blocked. Unset means no limit.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_daily_fix_task_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum AI fix tasks (agent runs that open pull requests) that may be created per UTC day for this project, across every fix recipe and trigger. Unset means the default of 25 per day; 0 pauses AI fix tasks entirely.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -405,7 +444,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by Sentinel — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -413,7 +452,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many Sentinel investigations may run at the same time for this project, shared across incidents and alerts. Unset means the default of 3. Minimum 1 — pause investigations with the opt-in toggles or a daily token limit of 0 instead.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "How many AI investigations may run at the same time for this project, shared across incidents and alerts. Unset means the default of 3. Minimum 1 — pause investigations with the opt-in toggles or a daily token limit of 0 instead.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -641,8 +680,12 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableAi": data.EnableAi.ValueBool(),
         "enableAutomaticIncidentInvestigation": data.EnableAutomaticIncidentInvestigation.ValueBool(),
         "enableAutomaticAlertInvestigation": data.EnableAutomaticAlertInvestigation.ValueBool(),
+        "enableInstrumentationFixTasks": data.EnableInstrumentationFixTasks.ValueBool(),
+        "enableAiInsights": data.EnableAiInsights.ValueBool(),
+        "enableInsightFixTasks": data.EnableInsightFixTasks.ValueBool(),
         "alertInvestigationMinimumSeverityId": data.AlertInvestigationMinimumSeverityId.ValueString(),
         "aiDailyAutonomousTokenLimit": r.bigFloatToFloat64(data.AiDailyAutonomousTokenLimit.ValueBigFloat()),
+        "aiDailyFixTaskLimit": r.bigFloatToFloat64(data.AiDailyFixTaskLimit.ValueBigFloat()),
         "alertInvestigationDedupeWindowMinutes": r.bigFloatToFloat64(data.AlertInvestigationDedupeWindowMinutes.ValueBigFloat()),
         "aiMaxConcurrentInvestigations": r.bigFloatToFloat64(data.AiMaxConcurrentInvestigations.ValueBigFloat()),
         "enableAutoRechargeAiBalance": data.EnableAutoRechargeAiBalance.ValueBool(),
@@ -1300,6 +1343,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableInstrumentationFixTasks"].(bool); ok {
+        data.EnableInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAiInsights"].(bool); ok {
+        data.EnableAiInsights = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
+        data.EnableInsightFixTasks = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1345,6 +1397,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
         data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiDailyFixTaskLimit"] == nil {
+        data.AiDailyFixTaskLimit = types.NumberNull()
     }
     if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
@@ -2160,8 +2221,12 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableAi": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableInstrumentationFixTasks": true,
+        "enableAiInsights": true,
+        "enableInsightFixTasks": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
+        "aiDailyFixTaskLimit": true,
         "alertInvestigationDedupeWindowMinutes": true,
         "aiMaxConcurrentInvestigations": true,
         "enableAutoRechargeAiBalance": true,
@@ -2845,6 +2910,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableInstrumentationFixTasks"].(bool); ok {
+        data.EnableInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAiInsights"].(bool); ok {
+        data.EnableAiInsights = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
+        data.EnableInsightFixTasks = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2890,6 +2964,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
         data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiDailyFixTaskLimit"] == nil {
+        data.AiDailyFixTaskLimit = types.NumberNull()
     }
     if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
@@ -3757,11 +3840,23 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAutomaticAlertInvestigation.IsUnknown() && !state.EnableAutomaticAlertInvestigation.IsUnknown() && !data.EnableAutomaticAlertInvestigation.Equal(state.EnableAutomaticAlertInvestigation) {
         requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
     }
+    if !data.EnableInstrumentationFixTasks.IsUnknown() && !state.EnableInstrumentationFixTasks.IsUnknown() && !data.EnableInstrumentationFixTasks.Equal(state.EnableInstrumentationFixTasks) {
+        requestDataMap["enableInstrumentationFixTasks"] = data.EnableInstrumentationFixTasks.ValueBool()
+    }
+    if !data.EnableAiInsights.IsUnknown() && !state.EnableAiInsights.IsUnknown() && !data.EnableAiInsights.Equal(state.EnableAiInsights) {
+        requestDataMap["enableAiInsights"] = data.EnableAiInsights.ValueBool()
+    }
+    if !data.EnableInsightFixTasks.IsUnknown() && !state.EnableInsightFixTasks.IsUnknown() && !data.EnableInsightFixTasks.Equal(state.EnableInsightFixTasks) {
+        requestDataMap["enableInsightFixTasks"] = data.EnableInsightFixTasks.ValueBool()
+    }
     if !data.AlertInvestigationMinimumSeverityId.IsUnknown() && !state.AlertInvestigationMinimumSeverityId.IsUnknown() && !data.AlertInvestigationMinimumSeverityId.Equal(state.AlertInvestigationMinimumSeverityId) {
         requestDataMap["alertInvestigationMinimumSeverityId"] = data.AlertInvestigationMinimumSeverityId.ValueString()
     }
     if !data.AiDailyAutonomousTokenLimit.IsUnknown() && !state.AiDailyAutonomousTokenLimit.IsUnknown() && !data.AiDailyAutonomousTokenLimit.Equal(state.AiDailyAutonomousTokenLimit) {
         requestDataMap["aiDailyAutonomousTokenLimit"] = r.bigFloatToFloat64(data.AiDailyAutonomousTokenLimit.ValueBigFloat())
+    }
+    if !data.AiDailyFixTaskLimit.IsUnknown() && !state.AiDailyFixTaskLimit.IsUnknown() && !data.AiDailyFixTaskLimit.Equal(state.AiDailyFixTaskLimit) {
+        requestDataMap["aiDailyFixTaskLimit"] = r.bigFloatToFloat64(data.AiDailyFixTaskLimit.ValueBigFloat())
     }
     if !data.AlertInvestigationDedupeWindowMinutes.IsUnknown() && !state.AlertInvestigationDedupeWindowMinutes.IsUnknown() && !data.AlertInvestigationDedupeWindowMinutes.Equal(state.AlertInvestigationDedupeWindowMinutes) {
         requestDataMap["alertInvestigationDedupeWindowMinutes"] = r.bigFloatToFloat64(data.AlertInvestigationDedupeWindowMinutes.ValueBigFloat())
@@ -3863,8 +3958,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableAi": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableInstrumentationFixTasks": true,
+        "enableAiInsights": true,
+        "enableInsightFixTasks": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
+        "aiDailyFixTaskLimit": true,
         "alertInvestigationDedupeWindowMinutes": true,
         "aiMaxConcurrentInvestigations": true,
         "enableAutoRechargeAiBalance": true,
@@ -4542,6 +4641,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
+    if val, ok := dataMap["enableInstrumentationFixTasks"].(bool); ok {
+        data.EnableInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAiInsights"].(bool); ok {
+        data.EnableAiInsights = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
+        data.EnableInsightFixTasks = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4587,6 +4695,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
         data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
+        data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["aiDailyFixTaskLimit"] == nil {
+        data.AiDailyFixTaskLimit = types.NumberNull()
     }
     if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
