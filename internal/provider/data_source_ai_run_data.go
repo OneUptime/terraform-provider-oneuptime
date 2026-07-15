@@ -98,15 +98,15 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "run_type": schema.StringAttribute{
-                MarkdownDescription: "Type of AI run: Chat or Investigation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Type of AI run: Chat or Investigation.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "code_fix_task_type": schema.StringAttribute{
-                MarkdownDescription: "For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
-                MarkdownDescription: "Current status of this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Current status of this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "user_id": schema.StringAttribute{
@@ -142,7 +142,7 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "attempt_count": schema.NumberAttribute{
-                MarkdownDescription: "How many times a worker has claimed this run for execution. Incremented on each claim; the queue stops retrying after the maximum.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How many times a worker has claimed this run for execution. Incremented on each claim; the queue stops retrying after the maximum.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -158,31 +158,31 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "llm_call_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of LLM calls made during this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Number of LLM calls made during this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "tool_call_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of tool calls executed during this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Number of tool calls executed during this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "total_tokens": schema.NumberAttribute{
-                MarkdownDescription: "Total LLM tokens used during this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Total LLM tokens used during this run.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "total_cost_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Total billed cost of this run in USD cents.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Total billed cost of this run in USD cents.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "egress_manifest": schema.StringAttribute{
-                MarkdownDescription: "What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "What data was sent to which LLM during this run: provider, model, and per-tool row/byte/redaction counts.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "error_message": schema.StringAttribute{
-                MarkdownDescription: "Error message if the run failed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Error message if the run failed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "human_verdict": schema.StringAttribute{
-                MarkdownDescription: "For investigation runs: the one-click human verdict on the posted analysis (Confirmed or Rejected). Null until a user weighs in.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "For investigation runs: the one-click human verdict on the posted analysis (Confirmed or Rejected). Null until a user weighs in.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "human_verdict_at": schema.StringAttribute{
@@ -194,7 +194,7 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "auto_grade": schema.StringAttribute{
-                MarkdownDescription: "For investigation runs: how the posted analysis compared to the incident's final recorded root cause (Match, Partial or Mismatch).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "For investigation runs: how the posted analysis compared to the incident's final recorded root cause (Match, Partial or Mismatch).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "auto_grade_at": schema.StringAttribute{
