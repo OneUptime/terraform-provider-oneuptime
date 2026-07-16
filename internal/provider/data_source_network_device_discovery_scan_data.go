@@ -37,6 +37,12 @@ type NetworkDeviceDiscoveryScanDataDataSourceModel struct {
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
+    SnmpV3SecurityLevel types.String `tfsdk:"snmp_v3_security_level"`
+    SnmpV3Username types.String `tfsdk:"snmp_v3_username"`
+    SnmpV3AuthProtocol types.String `tfsdk:"snmp_v3_auth_protocol"`
+    SnmpV3AuthKey types.String `tfsdk:"snmp_v3_auth_key"`
+    SnmpV3PrivProtocol types.String `tfsdk:"snmp_v3_priv_protocol"`
+    SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
     Status types.String `tfsdk:"status"`
     StatusMessage types.String `tfsdk:"status_message"`
     DiscoveredDevices types.String `tfsdk:"discovered_devices"`
@@ -103,6 +109,30 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Schema(ctx context.Context, r
             },
             "snmp_port": schema.NumberAttribute{
                 MarkdownDescription: "UDP port tried against every host in the subnet. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "snmp_v3_security_level": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "snmp_v3_username": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 security name (username) tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "snmp_v3_auth_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "snmp_v3_auth_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "snmp_v3_priv_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "snmp_v3_priv_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
@@ -239,6 +269,24 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Read(ctx context.Context, req
     }
     if val, ok := networkDeviceDiscoveryScanDataResponse["snmp_port"].(float64); ok {
         data.SnmpPort = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["snmp_v3_security_level"].(string); ok {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["snmp_v3_username"].(string); ok {
+        data.SnmpV3Username = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["snmp_v3_auth_protocol"].(string); ok {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["snmp_v3_auth_key"].(string); ok {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["snmp_v3_priv_protocol"].(string); ok {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["snmp_v3_priv_key"].(string); ok {
+        data.SnmpV3PrivKey = types.StringValue(val)
     }
     if val, ok := networkDeviceDiscoveryScanDataResponse["status"].(string); ok {
         data.Status = types.StringValue(val)

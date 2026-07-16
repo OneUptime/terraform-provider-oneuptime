@@ -34,6 +34,7 @@ type AiRunDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     RunType types.String `tfsdk:"run_type"`
     CodeFixTaskType types.String `tfsdk:"code_fix_task_type"`
+    TaskNumber types.Number `tfsdk:"task_number"`
     Status types.String `tfsdk:"status"`
     UserId types.String `tfsdk:"user_id"`
     ConversationId types.String `tfsdk:"conversation_id"`
@@ -103,6 +104,10 @@ func (d *AiRunDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
             },
             "code_fix_task_type": schema.StringAttribute{
                 MarkdownDescription: "For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "task_number": schema.NumberAttribute{
+                MarkdownDescription: "Per-project sequential number for this AI task (code-fix runs only).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
@@ -290,6 +295,9 @@ func (d *AiRunDataDataSource) Read(ctx context.Context, req datasource.ReadReque
     }
     if val, ok := aiRunDataResponse["code_fix_task_type"].(string); ok {
         data.CodeFixTaskType = types.StringValue(val)
+    }
+    if val, ok := aiRunDataResponse["task_number"].(float64); ok {
+        data.TaskNumber = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := aiRunDataResponse["status"].(string); ok {
         data.Status = types.StringValue(val)

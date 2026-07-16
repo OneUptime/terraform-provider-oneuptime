@@ -56,6 +56,7 @@ type StatusPageResourceModel struct {
     CustomCss types.String `tfsdk:"custom_css"`
     CustomJavaScript types.String `tfsdk:"custom_java_script"`
     IsPublicStatusPage types.Bool `tfsdk:"is_public_status_page"`
+    EnableMcpServer types.Bool `tfsdk:"enable_mcp_server"`
     EnableMasterPassword types.Bool `tfsdk:"enable_master_password"`
     MasterPassword types.String `tfsdk:"master_password"`
     ShowIncidentLabelsOnStatusPage types.Bool `tfsdk:"show_incident_labels_on_status_page"`
@@ -232,6 +233,15 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
             },
             "is_public_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Is this status page public?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_mcp_server": schema.BoolAttribute{
+                MarkdownDescription: "Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -741,6 +751,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "customCSS": data.CustomCss.ValueString(),
         "customJavaScript": data.CustomJavaScript.ValueString(),
         "isPublicStatusPage": data.IsPublicStatusPage.ValueBool(),
+        "enableMcpServer": data.EnableMcpServer.ValueBool(),
         "enableMasterPassword": data.EnableMasterPassword.ValueBool(),
         "masterPassword": data.MasterPassword.ValueString(),
         "showIncidentLabelsOnStatusPage": data.ShowIncidentLabelsOnStatusPage.ValueBool(),
@@ -1305,6 +1316,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     }
     if val, ok := dataMap["isPublicStatusPage"].(bool); ok {
         data.IsPublicStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMcpServer"].(bool); ok {
+        data.EnableMcpServer = types.BoolValue(val)
     }
     if val, ok := dataMap["enableMasterPassword"].(bool); ok {
         data.EnableMasterPassword = types.BoolValue(val)
@@ -2397,6 +2411,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "customCSS": true,
         "customJavaScript": true,
         "isPublicStatusPage": true,
+        "enableMcpServer": true,
         "enableMasterPassword": true,
         "masterPassword": true,
         "showIncidentLabelsOnStatusPage": true,
@@ -2974,6 +2989,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     }
     if val, ok := dataMap["isPublicStatusPage"].(bool); ok {
         data.IsPublicStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMcpServer"].(bool); ok {
+        data.EnableMcpServer = types.BoolValue(val)
     }
     if val, ok := dataMap["enableMasterPassword"].(bool); ok {
         data.EnableMasterPassword = types.BoolValue(val)
@@ -4101,6 +4119,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.IsPublicStatusPage.IsUnknown() && !state.IsPublicStatusPage.IsUnknown() && !data.IsPublicStatusPage.Equal(state.IsPublicStatusPage) {
         requestDataMap["isPublicStatusPage"] = data.IsPublicStatusPage.ValueBool()
     }
+    if !data.EnableMcpServer.IsUnknown() && !state.EnableMcpServer.IsUnknown() && !data.EnableMcpServer.Equal(state.EnableMcpServer) {
+        requestDataMap["enableMcpServer"] = data.EnableMcpServer.ValueBool()
+    }
     if !data.EnableMasterPassword.IsUnknown() && !state.EnableMasterPassword.IsUnknown() && !data.EnableMasterPassword.Equal(state.EnableMasterPassword) {
         requestDataMap["enableMasterPassword"] = data.EnableMasterPassword.ValueBool()
     }
@@ -4309,6 +4330,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "customCSS": true,
         "customJavaScript": true,
         "isPublicStatusPage": true,
+        "enableMcpServer": true,
         "enableMasterPassword": true,
         "masterPassword": true,
         "showIncidentLabelsOnStatusPage": true,
@@ -4880,6 +4902,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if val, ok := dataMap["isPublicStatusPage"].(bool); ok {
         data.IsPublicStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableMcpServer"].(bool); ok {
+        data.EnableMcpServer = types.BoolValue(val)
     }
     if val, ok := dataMap["enableMasterPassword"].(bool); ok {
         data.EnableMasterPassword = types.BoolValue(val)

@@ -92,7 +92,11 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
             },
             "ai_agent_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Required: true,
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "code_repository_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",

@@ -47,6 +47,7 @@ type StatusPageDataDataSourceModel struct {
     CustomCss types.String `tfsdk:"custom_css"`
     CustomJavaScript types.String `tfsdk:"custom_java_script"`
     IsPublicStatusPage types.Bool `tfsdk:"is_public_status_page"`
+    EnableMcpServer types.Bool `tfsdk:"enable_mcp_server"`
     EnableMasterPassword types.Bool `tfsdk:"enable_master_password"`
     MasterPassword types.String `tfsdk:"master_password"`
     ShowIncidentLabelsOnStatusPage types.Bool `tfsdk:"show_incident_labels_on_status_page"`
@@ -190,6 +191,10 @@ func (d *StatusPageDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "is_public_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Is this status page public?. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
+                Computed: true,
+            },
+            "enable_mcp_server": schema.BoolAttribute{
+                MarkdownDescription: "Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page]",
                 Computed: true,
             },
             "enable_master_password": schema.BoolAttribute{
@@ -523,6 +528,9 @@ func (d *StatusPageDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := statusPageDataResponse["is_public_status_page"].(bool); ok {
         data.IsPublicStatusPage = types.BoolValue(val)
+    }
+    if val, ok := statusPageDataResponse["enable_mcp_server"].(bool); ok {
+        data.EnableMcpServer = types.BoolValue(val)
     }
     if val, ok := statusPageDataResponse["enable_master_password"].(bool); ok {
         data.EnableMasterPassword = types.BoolValue(val)

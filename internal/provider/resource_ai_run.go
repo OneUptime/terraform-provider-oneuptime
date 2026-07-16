@@ -41,6 +41,7 @@ type AiRunResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     RunType types.String `tfsdk:"run_type"`
     CodeFixTaskType types.String `tfsdk:"code_fix_task_type"`
+    TaskNumber types.Number `tfsdk:"task_number"`
     Status types.String `tfsdk:"status"`
     UserId types.String `tfsdk:"user_id"`
     ConversationId types.String `tfsdk:"conversation_id"`
@@ -113,6 +114,10 @@ func (r *AiRunResource) Schema(ctx context.Context, req resource.SchemaRequest, 
             },
             "code_fix_task_type": schema.StringAttribute{
                 MarkdownDescription: "For CodeFix runs: which task recipe this run executes (fix the exception, write a regression test, ...). Null means FixException — rows created before task recipes existed.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "task_number": schema.NumberAttribute{
+                MarkdownDescription: "Per-project sequential number for this AI task (code-fix runs only).. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{
@@ -527,6 +532,15 @@ func (r *AiRunResource) Create(ctx context.Context, req resource.CreateRequest, 
         data.CodeFixTaskType = types.StringValue(val)
     } else {
         data.CodeFixTaskType = types.StringNull()
+    }
+    if val, ok := dataMap["taskNumber"].(float64); ok {
+        data.TaskNumber = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["taskNumber"].(int); ok {
+        data.TaskNumber = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["taskNumber"].(int64); ok {
+        data.TaskNumber = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["taskNumber"] == nil {
+        data.TaskNumber = types.NumberNull()
     }
     if obj, ok := dataMap["status"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1308,6 +1322,7 @@ func (r *AiRunResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "projectId": true,
         "runType": true,
         "codeFixTaskType": true,
+        "taskNumber": true,
         "status": true,
         "userId": true,
         "conversationId": true,
@@ -1606,6 +1621,15 @@ func (r *AiRunResource) Read(ctx context.Context, req resource.ReadRequest, resp
         data.CodeFixTaskType = types.StringValue(val)
     } else {
         data.CodeFixTaskType = types.StringNull()
+    }
+    if val, ok := dataMap["taskNumber"].(float64); ok {
+        data.TaskNumber = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["taskNumber"].(int); ok {
+        data.TaskNumber = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["taskNumber"].(int64); ok {
+        data.TaskNumber = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["taskNumber"] == nil {
+        data.TaskNumber = types.NumberNull()
     }
     if obj, ok := dataMap["status"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

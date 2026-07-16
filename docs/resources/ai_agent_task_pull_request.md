@@ -14,7 +14,6 @@ Ai agent task pull request resource
 
 ```terraform
 resource "oneuptime_ai_agent_task_pull_request" "example" {
-  ai_agent_id = "123e4567-e89b-12d3-a456-426614174000"
   title = "Example short text"
   pull_request_state = "Example short text"
 }
@@ -25,7 +24,7 @@ resource "oneuptime_ai_agent_task_pull_request" "example" {
 - `id` (String) Unique identifier for the resource. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `ai_run_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Required.
+- `ai_agent_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `code_repository_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `title` (String) Title of the pull request.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Required.
 - `description` (String) Description/body of the pull request.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]. Computed.

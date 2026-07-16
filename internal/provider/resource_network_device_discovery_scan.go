@@ -41,6 +41,12 @@ type NetworkDeviceDiscoveryScanResourceModel struct {
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
+    SnmpV3SecurityLevel types.String `tfsdk:"snmp_v3_security_level"`
+    SnmpV3Username types.String `tfsdk:"snmp_v3_username"`
+    SnmpV3AuthProtocol types.String `tfsdk:"snmp_v3_auth_protocol"`
+    SnmpV3AuthKey types.String `tfsdk:"snmp_v3_auth_key"`
+    SnmpV3PrivProtocol types.String `tfsdk:"snmp_v3_priv_protocol"`
+    SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -110,6 +116,54 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_security_level": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_username": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 security name (username) tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_auth_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_auth_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_priv_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_priv_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -215,6 +269,12 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         "snmpVersion": data.SnmpVersion.ValueString(),
         "snmpCommunityString": data.SnmpCommunityString.ValueString(),
         "snmpPort": r.bigFloatToFloat64(data.SnmpPort.ValueBigFloat()),
+        "snmpV3SecurityLevel": data.SnmpV3SecurityLevel.ValueString(),
+        "snmpV3Username": data.SnmpV3Username.ValueString(),
+        "snmpV3AuthProtocol": data.SnmpV3AuthProtocol.ValueString(),
+        "snmpV3AuthKey": data.SnmpV3AuthKey.ValueString(),
+        "snmpV3PrivProtocol": data.SnmpV3PrivProtocol.ValueString(),
+        "snmpV3PrivKey": data.SnmpV3PrivKey.ValueString(),
         },
     }
 
@@ -447,6 +507,228 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["snmpPort"] == nil {
         data.SnmpPort = types.NumberNull()
+    }
+    if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok && val != "" {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
+    } else {
+        data.SnmpV3SecurityLevel = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3Username"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3Username"].(string); ok && val != "" {
+        data.SnmpV3Username = types.StringValue(val)
+    } else {
+        data.SnmpV3Username = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok && val != "" {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthKey"].(string); ok && val != "" {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthKey = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok && val != "" {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivKey"].(string); ok && val != "" {
+        data.SnmpV3PrivKey = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -876,6 +1158,12 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
+        "snmpV3SecurityLevel": true,
+        "snmpV3Username": true,
+        "snmpV3AuthProtocol": true,
+        "snmpV3AuthKey": true,
+        "snmpV3PrivProtocol": true,
+        "snmpV3PrivKey": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1126,6 +1414,228 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["snmpPort"] == nil {
         data.SnmpPort = types.NumberNull()
+    }
+    if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok && val != "" {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
+    } else {
+        data.SnmpV3SecurityLevel = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3Username"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3Username"].(string); ok && val != "" {
+        data.SnmpV3Username = types.StringValue(val)
+    } else {
+        data.SnmpV3Username = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok && val != "" {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthKey"].(string); ok && val != "" {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthKey = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok && val != "" {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivKey"].(string); ok && val != "" {
+        data.SnmpV3PrivKey = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1582,6 +2092,12 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
+        "snmpV3SecurityLevel": true,
+        "snmpV3Username": true,
+        "snmpV3AuthProtocol": true,
+        "snmpV3AuthKey": true,
+        "snmpV3PrivProtocol": true,
+        "snmpV3PrivKey": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1826,6 +2342,228 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["snmpPort"] == nil {
         data.SnmpPort = types.NumberNull()
+    }
+    if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok && val != "" {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
+    } else {
+        data.SnmpV3SecurityLevel = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3Username"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3Username"].(string); ok && val != "" {
+        data.SnmpV3Username = types.StringValue(val)
+    } else {
+        data.SnmpV3Username = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok && val != "" {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthKey"].(string); ok && val != "" {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthKey = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok && val != "" {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivKey"].(string); ok && val != "" {
+        data.SnmpV3PrivKey = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivKey = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
