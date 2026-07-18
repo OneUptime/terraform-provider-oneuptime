@@ -49,6 +49,16 @@ type NetworkDeviceDataDataSourceModel struct {
     SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
     SysDescr types.String `tfsdk:"sys_descr"`
     SysName types.String `tfsdk:"sys_name"`
+    SysObjectId types.String `tfsdk:"sys_object_id"`
+    SysLocation types.String `tfsdk:"sys_location"`
+    SysContact types.String `tfsdk:"sys_contact"`
+    Vendor types.String `tfsdk:"vendor"`
+    DeviceModel types.String `tfsdk:"device_model"`
+    SerialNumber types.String `tfsdk:"serial_number"`
+    FirmwareVersion types.String `tfsdk:"firmware_version"`
+    SoftwareVersion types.String `tfsdk:"software_version"`
+    LastRebootedAt types.String `tfsdk:"last_rebooted_at"`
+    CdpNeighbors types.String `tfsdk:"cdp_neighbors"`
     LldpNeighbors types.String `tfsdk:"lldp_neighbors"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     InterfacesTotal types.Number `tfsdk:"interfaces_total"`
@@ -161,6 +171,46 @@ func (d *NetworkDeviceDataDataSource) Schema(ctx context.Context, req datasource
             },
             "sys_name": schema.StringAttribute{
                 MarkdownDescription: "System name (sysName) enriched from SNMP walks of this device. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "sys_object_id": schema.StringAttribute{
+                MarkdownDescription: "sysObjectID — the vendor's registered OID for this device model, enriched from SNMP walks. Used to fingerprint the vendor and suggest an OID template.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "sys_location": schema.StringAttribute{
+                MarkdownDescription: "System location (sysLocation) enriched from SNMP walks of this device. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "sys_contact": schema.StringAttribute{
+                MarkdownDescription: "System contact (sysContact) enriched from SNMP walks of this device. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "vendor": schema.StringAttribute{
+                MarkdownDescription: "Hardware vendor, from ENTITY-MIB or derived from sysObjectID. Managed by the probe.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "device_model": schema.StringAttribute{
+                MarkdownDescription: "Hardware model from ENTITY-MIB (entPhysicalModelName). Managed by the probe.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "serial_number": schema.StringAttribute{
+                MarkdownDescription: "Chassis serial number from ENTITY-MIB (entPhysicalSerialNum). Managed by the probe.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "firmware_version": schema.StringAttribute{
+                MarkdownDescription: "Firmware revision from ENTITY-MIB (entPhysicalFirmwareRev). Managed by the probe.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "software_version": schema.StringAttribute{
+                MarkdownDescription: "Operating system / software revision from ENTITY-MIB (entPhysicalSoftwareRev). Managed by the probe.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
+                Computed: true,
+            },
+            "last_rebooted_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "cdp_neighbors": schema.StringAttribute{
+                MarkdownDescription: "CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Edit Network Device]",
                 Computed: true,
             },
             "lldp_neighbors": schema.StringAttribute{
@@ -339,6 +389,36 @@ func (d *NetworkDeviceDataDataSource) Read(ctx context.Context, req datasource.R
     }
     if val, ok := networkDeviceDataResponse["sys_name"].(string); ok {
         data.SysName = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["sys_object_id"].(string); ok {
+        data.SysObjectId = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["sys_location"].(string); ok {
+        data.SysLocation = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["sys_contact"].(string); ok {
+        data.SysContact = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["vendor"].(string); ok {
+        data.Vendor = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["device_model"].(string); ok {
+        data.DeviceModel = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["serial_number"].(string); ok {
+        data.SerialNumber = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["firmware_version"].(string); ok {
+        data.FirmwareVersion = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["software_version"].(string); ok {
+        data.SoftwareVersion = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["last_rebooted_at"].(string); ok {
+        data.LastRebootedAt = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["cdp_neighbors"].(string); ok {
+        data.CdpNeighbors = types.StringValue(val)
     }
     if val, ok := networkDeviceDataResponse["lldp_neighbors"].(string); ok {
         data.LldpNeighbors = types.StringValue(val)

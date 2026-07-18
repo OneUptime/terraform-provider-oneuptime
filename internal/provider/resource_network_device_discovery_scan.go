@@ -14,8 +14,10 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
 )
 
@@ -47,6 +49,8 @@ type NetworkDeviceDiscoveryScanResourceModel struct {
     SnmpV3AuthKey types.String `tfsdk:"snmp_v3_auth_key"`
     SnmpV3PrivProtocol types.String `tfsdk:"snmp_v3_priv_protocol"`
     SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
+    IsRecurring types.Bool `tfsdk:"is_recurring"`
+    RescanIntervalInMinutes types.Number `tfsdk:"rescan_interval_in_minutes"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -58,6 +62,7 @@ type NetworkDeviceDiscoveryScanResourceModel struct {
     RespondedHostCount types.Number `tfsdk:"responded_host_count"`
     StartedAt JSONSubsetValue `tfsdk:"started_at"`
     CompletedAt JSONSubsetValue `tfsdk:"completed_at"`
+    NextScanAt JSONSubsetValue `tfsdk:"next_scan_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -166,6 +171,23 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_recurring": schema.BoolAttribute{
+                MarkdownDescription: "Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device Discovery Scan]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "rescan_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often a recurring scan re-runs, in minutes. Ignored unless Is Recurring is on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device Discovery Scan]",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -212,6 +234,11 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                 Computed: true,
             },
             "completed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
+            "next_scan_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
                 Computed: true,
@@ -275,6 +302,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         "snmpV3AuthKey": data.SnmpV3AuthKey.ValueString(),
         "snmpV3PrivProtocol": data.SnmpV3PrivProtocol.ValueString(),
         "snmpV3PrivKey": data.SnmpV3PrivKey.ValueString(),
+        "isRecurring": data.IsRecurring.ValueBool(),
+        "rescanIntervalInMinutes": r.bigFloatToFloat64(data.RescanIntervalInMinutes.ValueBigFloat()),
         },
     }
 
@@ -730,6 +759,18 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     } else {
         data.SnmpV3PrivKey = types.StringNull()
     }
+    if val, ok := dataMap["isRecurring"].(bool); ok {
+        data.IsRecurring = types.BoolValue(val)
+    }
+    if val, ok := dataMap["rescanIntervalInMinutes"].(float64); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int64); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["rescanIntervalInMinutes"] == nil {
+        data.RescanIntervalInMinutes = types.NumberNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1053,6 +1094,43 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     } else {
         data.CompletedAt = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["nextScanAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextScanAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NextScanAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.NextScanAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["nextScanAt"].(string); ok && val != "" {
+        data.NextScanAt = NewJSONSubsetValue(val)
+    } else {
+        data.NextScanAt = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1164,6 +1242,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         "snmpV3AuthKey": true,
         "snmpV3PrivProtocol": true,
         "snmpV3PrivKey": true,
+        "isRecurring": true,
+        "rescanIntervalInMinutes": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1175,6 +1255,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         "respondedHostCount": true,
         "startedAt": true,
         "completedAt": true,
+        "nextScanAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -1637,6 +1718,18 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
     } else {
         data.SnmpV3PrivKey = types.StringNull()
     }
+    if val, ok := dataMap["isRecurring"].(bool); ok {
+        data.IsRecurring = types.BoolValue(val)
+    }
+    if val, ok := dataMap["rescanIntervalInMinutes"].(float64); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int64); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["rescanIntervalInMinutes"] == nil {
+        data.RescanIntervalInMinutes = types.NumberNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1960,6 +2053,43 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
     } else {
         data.CompletedAt = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["nextScanAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextScanAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NextScanAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.NextScanAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["nextScanAt"].(string); ok && val != "" {
+        data.NextScanAt = NewJSONSubsetValue(val)
+    } else {
+        data.NextScanAt = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2067,7 +2197,14 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     networkDeviceDiscoveryScanRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
+    requestDataMap := networkDeviceDiscoveryScanRequest["data"].(map[string]interface{})
 
+    if !data.IsRecurring.IsUnknown() && !state.IsRecurring.IsUnknown() && !data.IsRecurring.Equal(state.IsRecurring) {
+        requestDataMap["isRecurring"] = data.IsRecurring.ValueBool()
+    }
+    if !data.RescanIntervalInMinutes.IsUnknown() && !state.RescanIntervalInMinutes.IsUnknown() && !data.RescanIntervalInMinutes.Equal(state.RescanIntervalInMinutes) {
+        requestDataMap["rescanIntervalInMinutes"] = r.bigFloatToFloat64(data.RescanIntervalInMinutes.ValueBigFloat())
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/network-device-discovery-scan/" + data.Id.ValueString() + "", networkDeviceDiscoveryScanRequest)
@@ -2098,6 +2235,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         "snmpV3AuthKey": true,
         "snmpV3PrivProtocol": true,
         "snmpV3PrivKey": true,
+        "isRecurring": true,
+        "rescanIntervalInMinutes": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2109,6 +2248,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         "respondedHostCount": true,
         "startedAt": true,
         "completedAt": true,
+        "nextScanAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -2565,6 +2705,18 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     } else {
         data.SnmpV3PrivKey = types.StringNull()
     }
+    if val, ok := dataMap["isRecurring"].(bool); ok {
+        data.IsRecurring = types.BoolValue(val)
+    }
+    if val, ok := dataMap["rescanIntervalInMinutes"].(float64); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["rescanIntervalInMinutes"].(int64); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["rescanIntervalInMinutes"] == nil {
+        data.RescanIntervalInMinutes = types.NumberNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2887,6 +3039,43 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         data.CompletedAt = NewJSONSubsetValue(val)
     } else {
         data.CompletedAt = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["nextScanAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NextScanAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NextScanAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.NextScanAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NextScanAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.NextScanAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["nextScanAt"].(string); ok && val != "" {
+        data.NextScanAt = NewJSONSubsetValue(val)
+    } else {
+        data.NextScanAt = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

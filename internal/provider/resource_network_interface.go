@@ -46,6 +46,8 @@ type NetworkInterfaceResourceModel struct {
     InterfaceIndex types.Number `tfsdk:"interface_index"`
     Name types.String `tfsdk:"name"`
     Alias types.String `tfsdk:"alias"`
+    MacAddress types.String `tfsdk:"mac_address"`
+    InterfaceType types.Number `tfsdk:"interface_type"`
     IsOperationallyUp types.Bool `tfsdk:"is_operationally_up"`
     IsAdministrativelyUp types.Bool `tfsdk:"is_administratively_up"`
     SpeedInMbps types.Number `tfsdk:"speed_in_mbps"`
@@ -119,6 +121,14 @@ func (r *NetworkInterfaceResource) Schema(ctx context.Context, req resource.Sche
             },
             "alias": schema.StringAttribute{
                 MarkdownDescription: "Interface alias (ifAlias) from SNMP. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "mac_address": schema.StringAttribute{
+                MarkdownDescription: "Physical address (ifPhysAddress) from SNMP, colon-separated hex. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "interface_type": schema.NumberAttribute{
+                MarkdownDescription: "IANAifType number (ifType) from SNMP — 6 = ethernetCsmacd, 24 = softwareLoopback. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_operationally_up": schema.BoolAttribute{
@@ -514,6 +524,52 @@ func (r *NetworkInterfaceResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.Alias = types.StringNull()
     }
+    if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MacAddress = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MacAddress = types.StringValue(string(jsonBytes))
+            } else {
+                data.MacAddress = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MacAddress = types.StringValue(string(jsonBytes))
+            } else {
+                data.MacAddress = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MacAddress = types.StringValue(string(jsonBytes))
+        } else {
+            data.MacAddress = types.StringNull()
+        }
+    } else if val, ok := dataMap["macAddress"].(string); ok && val != "" {
+        data.MacAddress = types.StringValue(val)
+    } else {
+        data.MacAddress = types.StringNull()
+    }
+    if val, ok := dataMap["interfaceType"].(float64); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["interfaceType"].(int); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["interfaceType"].(int64); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["interfaceType"] == nil {
+        data.InterfaceType = types.NumberNull()
+    }
     if val, ok := dataMap["isOperationallyUp"].(bool); ok {
         data.IsOperationallyUp = types.BoolValue(val)
     } else if dataMap["isOperationallyUp"] == nil {
@@ -641,6 +697,8 @@ func (r *NetworkInterfaceResource) Read(ctx context.Context, req resource.ReadRe
         "interfaceIndex": true,
         "name": true,
         "alias": true,
+        "macAddress": true,
+        "interfaceType": true,
         "isOperationallyUp": true,
         "isAdministrativelyUp": true,
         "speedInMbps": true,
@@ -973,6 +1031,52 @@ func (r *NetworkInterfaceResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.Alias = types.StringNull()
     }
+    if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MacAddress = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MacAddress = types.StringValue(string(jsonBytes))
+            } else {
+                data.MacAddress = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MacAddress = types.StringValue(string(jsonBytes))
+            } else {
+                data.MacAddress = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MacAddress = types.StringValue(string(jsonBytes))
+        } else {
+            data.MacAddress = types.StringNull()
+        }
+    } else if val, ok := dataMap["macAddress"].(string); ok && val != "" {
+        data.MacAddress = types.StringValue(val)
+    } else {
+        data.MacAddress = types.StringNull()
+    }
+    if val, ok := dataMap["interfaceType"].(float64); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["interfaceType"].(int); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["interfaceType"].(int64); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["interfaceType"] == nil {
+        data.InterfaceType = types.NumberNull()
+    }
     if val, ok := dataMap["isOperationallyUp"].(bool); ok {
         data.IsOperationallyUp = types.BoolValue(val)
     } else if dataMap["isOperationallyUp"] == nil {
@@ -1131,6 +1235,8 @@ func (r *NetworkInterfaceResource) Update(ctx context.Context, req resource.Upda
         "interfaceIndex": true,
         "name": true,
         "alias": true,
+        "macAddress": true,
+        "interfaceType": true,
         "isOperationallyUp": true,
         "isAdministrativelyUp": true,
         "speedInMbps": true,
@@ -1456,6 +1562,52 @@ func (r *NetworkInterfaceResource) Update(ctx context.Context, req resource.Upda
         data.Alias = types.StringValue(val)
     } else {
         data.Alias = types.StringNull()
+    }
+    if obj, ok := dataMap["macAddress"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MacAddress = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MacAddress = types.StringValue(string(jsonBytes))
+            } else {
+                data.MacAddress = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MacAddress = types.StringValue(string(jsonBytes))
+            } else {
+                data.MacAddress = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MacAddress = types.StringValue(string(jsonBytes))
+        } else {
+            data.MacAddress = types.StringNull()
+        }
+    } else if val, ok := dataMap["macAddress"].(string); ok && val != "" {
+        data.MacAddress = types.StringValue(val)
+    } else {
+        data.MacAddress = types.StringNull()
+    }
+    if val, ok := dataMap["interfaceType"].(float64); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["interfaceType"].(int); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["interfaceType"].(int64); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["interfaceType"] == nil {
+        data.InterfaceType = types.NumberNull()
     }
     if val, ok := dataMap["isOperationallyUp"].(bool); ok {
         data.IsOperationallyUp = types.BoolValue(val)

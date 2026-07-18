@@ -36,6 +36,8 @@ type MetricTypeDataDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
     Unit types.String `tfsdk:"unit"`
+    IsMonotonic types.Bool `tfsdk:"is_monotonic"`
+    AggregationTemporality types.String `tfsdk:"aggregation_temporality"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -88,6 +90,14 @@ func (d *MetricTypeDataDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "unit": schema.StringAttribute{
                 MarkdownDescription: "Metric description. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                Computed: true,
+            },
+            "is_monotonic": schema.BoolAttribute{
+                MarkdownDescription: "Whether this metric is a monotonic counter (only ever increases), as reported by OpenTelemetry at ingest. Null when the instrument type does not carry monotonicity (e.g. gauges).. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
+                Computed: true,
+            },
+            "aggregation_temporality": schema.StringAttribute{
+                MarkdownDescription: "OpenTelemetry aggregation temporality of this metric (Delta or Cumulative), as reported at ingest. Null when unknown.. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Metrics], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Metrics], Update: [Project Owner, Project Admin, Edit Telemetry Service Metrics]",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -199,6 +209,12 @@ func (d *MetricTypeDataDataSource) Read(ctx context.Context, req datasource.Read
     }
     if val, ok := metricTypeDataResponse["unit"].(string); ok {
         data.Unit = types.StringValue(val)
+    }
+    if val, ok := metricTypeDataResponse["is_monotonic"].(bool); ok {
+        data.IsMonotonic = types.BoolValue(val)
+    }
+    if val, ok := metricTypeDataResponse["aggregation_temporality"].(string); ok {
+        data.AggregationTemporality = types.StringValue(val)
     }
     if val, ok := metricTypeDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

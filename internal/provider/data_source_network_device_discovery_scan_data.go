@@ -50,6 +50,9 @@ type NetworkDeviceDiscoveryScanDataDataSourceModel struct {
     RespondedHostCount types.Number `tfsdk:"responded_host_count"`
     StartedAt types.String `tfsdk:"started_at"`
     CompletedAt types.String `tfsdk:"completed_at"`
+    IsRecurring types.Bool `tfsdk:"is_recurring"`
+    RescanIntervalInMinutes types.Number `tfsdk:"rescan_interval_in_minutes"`
+    NextScanAt types.String `tfsdk:"next_scan_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -160,6 +163,18 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "completed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "is_recurring": schema.BoolAttribute{
+                MarkdownDescription: "Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device Discovery Scan]",
+                Computed: true,
+            },
+            "rescan_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often a recurring scan re-runs, in minutes. Ignored unless Is Recurring is on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device Discovery Scan]",
+                Computed: true,
+            },
+            "next_scan_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
@@ -308,6 +323,15 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Read(ctx context.Context, req
     }
     if val, ok := networkDeviceDiscoveryScanDataResponse["completed_at"].(string); ok {
         data.CompletedAt = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["is_recurring"].(bool); ok {
+        data.IsRecurring = types.BoolValue(val)
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["rescan_interval_in_minutes"].(float64); ok {
+        data.RescanIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := networkDeviceDiscoveryScanDataResponse["next_scan_at"].(string); ok {
+        data.NextScanAt = types.StringValue(val)
     }
     if val, ok := networkDeviceDiscoveryScanDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

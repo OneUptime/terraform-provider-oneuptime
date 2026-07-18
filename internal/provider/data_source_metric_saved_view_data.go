@@ -36,6 +36,7 @@ type MetricSavedViewDataDataSourceModel struct {
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     Query types.String `tfsdk:"query"`
     IsDefault types.Bool `tfsdk:"is_default"`
+    ViewType types.String `tfsdk:"view_type"`
 }
 
 func (d *MetricSavedViewDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -89,6 +90,10 @@ func (d *MetricSavedViewDataDataSource) Schema(ctx context.Context, req datasour
             },
             "is_default": schema.BoolAttribute{
                 MarkdownDescription: "Whether this saved metric view should be applied by default.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
+                Computed: true,
+            },
+            "view_type": schema.StringAttribute{
+                MarkdownDescription: "Which surface this saved view belongs to ('list' or 'explorer'). Null means 'list' — rows created before this column existed all came from the metric list page.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
                 Computed: true,
             },
         },
@@ -186,6 +191,9 @@ func (d *MetricSavedViewDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := metricSavedViewDataResponse["is_default"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
+    }
+    if val, ok := metricSavedViewDataResponse["view_type"].(string); ok {
+        data.ViewType = types.StringValue(val)
     }
 
     // Write logs using the tflog package

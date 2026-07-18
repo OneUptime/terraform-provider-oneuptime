@@ -315,6 +315,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewMetricDataDataSource,
         NewExceptionInstanceDataDataSource,
         NewMonitorLogDataDataSource,
+        NewNetworkFlowDataDataSource,
         NewProfileDataDataSource,
         NewProfileSampleDataDataSource,
         NewAuditLogDataDataSource,

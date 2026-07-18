@@ -35,6 +35,8 @@ type NetworkInterfaceDataDataSourceModel struct {
     NetworkDeviceId types.String `tfsdk:"network_device_id"`
     InterfaceIndex types.Number `tfsdk:"interface_index"`
     Alias types.String `tfsdk:"alias"`
+    MacAddress types.String `tfsdk:"mac_address"`
+    InterfaceType types.Number `tfsdk:"interface_type"`
     IsMonitored types.Bool `tfsdk:"is_monitored"`
     IsOperationallyUp types.Bool `tfsdk:"is_operationally_up"`
     IsAdministrativelyUp types.Bool `tfsdk:"is_administratively_up"`
@@ -93,6 +95,14 @@ func (d *NetworkInterfaceDataDataSource) Schema(ctx context.Context, req datasou
             },
             "alias": schema.StringAttribute{
                 MarkdownDescription: "Interface alias (ifAlias) from SNMP. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "mac_address": schema.StringAttribute{
+                MarkdownDescription: "Physical address (ifPhysAddress) from SNMP, colon-separated hex. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "interface_type": schema.NumberAttribute{
+                MarkdownDescription: "IANAifType number (ifType) from SNMP — 6 = ethernetCsmacd, 24 = softwareLoopback. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "is_monitored": schema.BoolAttribute{
@@ -223,6 +233,12 @@ func (d *NetworkInterfaceDataDataSource) Read(ctx context.Context, req datasourc
     }
     if val, ok := networkInterfaceDataResponse["alias"].(string); ok {
         data.Alias = types.StringValue(val)
+    }
+    if val, ok := networkInterfaceDataResponse["mac_address"].(string); ok {
+        data.MacAddress = types.StringValue(val)
+    }
+    if val, ok := networkInterfaceDataResponse["interface_type"].(float64); ok {
+        data.InterfaceType = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := networkInterfaceDataResponse["is_monitored"].(bool); ok {
         data.IsMonitored = types.BoolValue(val)

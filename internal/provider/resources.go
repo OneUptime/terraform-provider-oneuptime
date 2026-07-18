@@ -315,6 +315,7 @@ func GetResources() []func() resource.Resource {
         NewMetricResource,
         NewExceptionInstanceResource,
         NewMonitorLogResource,
+        NewNetworkFlowResource,
         NewProfileResource,
         NewProfileSampleResource,
         NewAuditLogResource,
