@@ -74,6 +74,7 @@ type ProjectResourceModel struct {
     EnableInstrumentationFixTasks types.Bool `tfsdk:"enable_instrumentation_fix_tasks"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
+    AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
     AiDailyFixTaskLimit types.Number `tfsdk:"ai_daily_fix_task_limit"`
@@ -419,6 +420,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "auto_archive_non_actionable_exceptions": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
@@ -683,6 +693,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableInstrumentationFixTasks": data.EnableInstrumentationFixTasks.ValueBool(),
         "enableAiInsights": data.EnableAiInsights.ValueBool(),
         "enableInsightFixTasks": data.EnableInsightFixTasks.ValueBool(),
+        "autoArchiveNonActionableExceptions": data.AutoArchiveNonActionableExceptions.ValueBool(),
         "alertInvestigationMinimumSeverityId": data.AlertInvestigationMinimumSeverityId.ValueString(),
         "aiDailyAutonomousTokenLimit": r.bigFloatToFloat64(data.AiDailyAutonomousTokenLimit.ValueBigFloat()),
         "aiDailyFixTaskLimit": r.bigFloatToFloat64(data.AiDailyFixTaskLimit.ValueBigFloat()),
@@ -1351,6 +1362,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
         data.EnableInsightFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoArchiveNonActionableExceptions"].(bool); ok {
+        data.AutoArchiveNonActionableExceptions = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2224,6 +2238,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableInstrumentationFixTasks": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
+        "autoArchiveNonActionableExceptions": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "aiDailyFixTaskLimit": true,
@@ -2918,6 +2933,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
         data.EnableInsightFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoArchiveNonActionableExceptions"].(bool); ok {
+        data.AutoArchiveNonActionableExceptions = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3849,6 +3867,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableInsightFixTasks.IsUnknown() && !state.EnableInsightFixTasks.IsUnknown() && !data.EnableInsightFixTasks.Equal(state.EnableInsightFixTasks) {
         requestDataMap["enableInsightFixTasks"] = data.EnableInsightFixTasks.ValueBool()
     }
+    if !data.AutoArchiveNonActionableExceptions.IsUnknown() && !state.AutoArchiveNonActionableExceptions.IsUnknown() && !data.AutoArchiveNonActionableExceptions.Equal(state.AutoArchiveNonActionableExceptions) {
+        requestDataMap["autoArchiveNonActionableExceptions"] = data.AutoArchiveNonActionableExceptions.ValueBool()
+    }
     if !data.AlertInvestigationMinimumSeverityId.IsUnknown() && !state.AlertInvestigationMinimumSeverityId.IsUnknown() && !data.AlertInvestigationMinimumSeverityId.Equal(state.AlertInvestigationMinimumSeverityId) {
         requestDataMap["alertInvestigationMinimumSeverityId"] = data.AlertInvestigationMinimumSeverityId.ValueString()
     }
@@ -3961,6 +3982,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableInstrumentationFixTasks": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
+        "autoArchiveNonActionableExceptions": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
         "aiDailyFixTaskLimit": true,
@@ -4649,6 +4671,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableInsightFixTasks"].(bool); ok {
         data.EnableInsightFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoArchiveNonActionableExceptions"].(bool); ok {
+        data.AutoArchiveNonActionableExceptions = types.BoolValue(val)
     }
     if obj, ok := dataMap["alertInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

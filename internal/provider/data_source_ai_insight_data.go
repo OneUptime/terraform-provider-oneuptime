@@ -35,6 +35,7 @@ type AiInsightDataDataSourceModel struct {
     InsightType types.String `tfsdk:"insight_type"`
     Status types.String `tfsdk:"status"`
     Severity types.String `tfsdk:"severity"`
+    Classification types.String `tfsdk:"classification"`
     Fingerprint types.String `tfsdk:"fingerprint"`
     Title types.String `tfsdk:"title"`
     DetailMarkdown types.String `tfsdk:"detail_markdown"`
@@ -103,6 +104,10 @@ func (d *AiInsightDataDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "severity": schema.StringAttribute{
                 MarkdownDescription: "How urgent this insight is (High, Medium or Low), assigned deterministically by the detector.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "classification": schema.StringAttribute{
+                MarkdownDescription: "AI triage verdict: code-fault, user-error, expected-denial, infrastructure or unknown. Automatic fix pull requests are only opened for code-fault.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "fingerprint": schema.StringAttribute{
@@ -273,6 +278,9 @@ func (d *AiInsightDataDataSource) Read(ctx context.Context, req datasource.ReadR
     }
     if val, ok := aiInsightDataResponse["severity"].(string); ok {
         data.Severity = types.StringValue(val)
+    }
+    if val, ok := aiInsightDataResponse["classification"].(string); ok {
+        data.Classification = types.StringValue(val)
     }
     if val, ok := aiInsightDataResponse["fingerprint"].(string); ok {
         data.Fingerprint = types.StringValue(val)

@@ -72,6 +72,7 @@ type ProjectDataDataSourceModel struct {
     EnableInstrumentationFixTasks types.Bool `tfsdk:"enable_instrumentation_fix_tasks"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
+    AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
     AiDailyFixTaskLimit types.Number `tfsdk:"ai_daily_fix_task_limit"`
@@ -289,6 +290,10 @@ func (d *ProjectDataDataSource) Schema(ctx context.Context, req datasource.Schem
             },
             "enable_insight_fix_tasks": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a draft pull request with a proposed fix. Honors the daily fix task budget and per-repository open-PR caps. Pull requests are always human-reviewed — nothing merges automatically.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                Computed: true,
+            },
+            "auto_archive_non_actionable_exceptions": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
                 Computed: true,
             },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
@@ -574,6 +579,9 @@ func (d *ProjectDataDataSource) Read(ctx context.Context, req datasource.ReadReq
     }
     if val, ok := projectDataResponse["enable_insight_fix_tasks"].(bool); ok {
         data.EnableInsightFixTasks = types.BoolValue(val)
+    }
+    if val, ok := projectDataResponse["auto_archive_non_actionable_exceptions"].(bool); ok {
+        data.AutoArchiveNonActionableExceptions = types.BoolValue(val)
     }
     if val, ok := projectDataResponse["alert_investigation_minimum_severity_id"].(string); ok {
         data.AlertInvestigationMinimumSeverityId = types.StringValue(val)

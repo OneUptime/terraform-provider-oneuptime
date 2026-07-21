@@ -54,6 +54,9 @@ type ExceptionDataDataSourceModel struct {
     FirstSeenInRelease types.String `tfsdk:"first_seen_in_release"`
     LastSeenInRelease types.String `tfsdk:"last_seen_in_release"`
     Environment types.String `tfsdk:"environment"`
+    Unhandled types.Bool `tfsdk:"unhandled"`
+    AiClassification types.String `tfsdk:"ai_classification"`
+    AiFixDeclinedAt types.String `tfsdk:"ai_fix_declined_at"`
 }
 
 func (d *ExceptionDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -179,6 +182,18 @@ func (d *ExceptionDataDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "environment": schema.StringAttribute{
                 MarkdownDescription: "Deployment environment from deployment.environment resource attribute. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Service Exception], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [Project Owner, Project Admin, Edit Telemetry Service Exception]",
+                Computed: true,
+            },
+            "unhandled": schema.BoolAttribute{
+                MarkdownDescription: "True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "ai_classification": schema.StringAttribute{
+                MarkdownDescription: "AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "ai_fix_declined_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
         },
@@ -330,6 +345,15 @@ func (d *ExceptionDataDataSource) Read(ctx context.Context, req datasource.ReadR
     }
     if val, ok := exceptionDataResponse["environment"].(string); ok {
         data.Environment = types.StringValue(val)
+    }
+    if val, ok := exceptionDataResponse["unhandled"].(bool); ok {
+        data.Unhandled = types.BoolValue(val)
+    }
+    if val, ok := exceptionDataResponse["ai_classification"].(string); ok {
+        data.AiClassification = types.StringValue(val)
+    }
+    if val, ok := exceptionDataResponse["ai_fix_declined_at"].(string); ok {
+        data.AiFixDeclinedAt = types.StringValue(val)
     }
 
     // Write logs using the tflog package

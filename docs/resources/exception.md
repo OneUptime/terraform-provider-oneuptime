@@ -48,6 +48,9 @@ resource "oneuptime_exception" "example" {
 - `version` (Number) Object version. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `unhandled` (Bool) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]. Computed.
+- `ai_classification` (String) AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Telemetry Service Exception], Update: [No access - you don't have permission for this operation]. Computed.
+- `ai_fix_declined_at` (String) A date time object.. Computed.
 
 ## Import
 

@@ -42,6 +42,7 @@ type AiInsightResourceModel struct {
     InsightType types.String `tfsdk:"insight_type"`
     Status types.String `tfsdk:"status"`
     Severity types.String `tfsdk:"severity"`
+    Classification types.String `tfsdk:"classification"`
     Fingerprint types.String `tfsdk:"fingerprint"`
     Title types.String `tfsdk:"title"`
     DetailMarkdown types.String `tfsdk:"detail_markdown"`
@@ -113,6 +114,10 @@ func (r *AiInsightResource) Schema(ctx context.Context, req resource.SchemaReque
             },
             "severity": schema.StringAttribute{
                 MarkdownDescription: "How urgent this insight is (High, Medium or Low), assigned deterministically by the detector.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "classification": schema.StringAttribute{
+                MarkdownDescription: "AI triage verdict: code-fault, user-error, expected-denial, infrastructure or unknown. Automatic fix pull requests are only opened for code-fault.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "fingerprint": schema.StringAttribute{
@@ -543,6 +548,43 @@ func (r *AiInsightResource) Create(ctx context.Context, req resource.CreateReque
         data.Severity = types.StringValue(val)
     } else {
         data.Severity = types.StringNull()
+    }
+    if obj, ok := dataMap["classification"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Classification = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Classification = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Classification = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Classification = types.StringValue(string(jsonBytes))
+            } else {
+                data.Classification = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Classification = types.StringValue(string(jsonBytes))
+            } else {
+                data.Classification = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Classification = types.StringValue(string(jsonBytes))
+        } else {
+            data.Classification = types.StringNull()
+        }
+    } else if val, ok := dataMap["classification"].(string); ok && val != "" {
+        data.Classification = types.StringValue(val)
+    } else {
+        data.Classification = types.StringNull()
     }
     if obj, ok := dataMap["fingerprint"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1252,6 +1294,7 @@ func (r *AiInsightResource) Read(ctx context.Context, req resource.ReadRequest, 
         "insightType": true,
         "status": true,
         "severity": true,
+        "classification": true,
         "fingerprint": true,
         "title": true,
         "detailMarkdown": true,
@@ -1582,6 +1625,43 @@ func (r *AiInsightResource) Read(ctx context.Context, req resource.ReadRequest, 
         data.Severity = types.StringValue(val)
     } else {
         data.Severity = types.StringNull()
+    }
+    if obj, ok := dataMap["classification"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Classification = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Classification = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Classification = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Classification = types.StringValue(string(jsonBytes))
+            } else {
+                data.Classification = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Classification = types.StringValue(string(jsonBytes))
+            } else {
+                data.Classification = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Classification = types.StringValue(string(jsonBytes))
+        } else {
+            data.Classification = types.StringNull()
+        }
+    } else if val, ok := dataMap["classification"].(string); ok && val != "" {
+        data.Classification = types.StringValue(val)
+    } else {
+        data.Classification = types.StringNull()
     }
     if obj, ok := dataMap["fingerprint"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
