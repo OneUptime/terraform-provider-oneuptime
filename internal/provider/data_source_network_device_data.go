@@ -37,6 +37,8 @@ type NetworkDeviceDataDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     Hostname types.String `tfsdk:"hostname"`
     ProbeId types.String `tfsdk:"probe_id"`
+    SiteId types.String `tfsdk:"site_id"`
+    CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
@@ -47,6 +49,13 @@ type NetworkDeviceDataDataSourceModel struct {
     SnmpV3AuthKey types.String `tfsdk:"snmp_v3_auth_key"`
     SnmpV3PrivProtocol types.String `tfsdk:"snmp_v3_priv_protocol"`
     SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
+    IsPollingEnabled types.Bool `tfsdk:"is_polling_enabled"`
+    PollingIntervalInMinutes types.Number `tfsdk:"polling_interval_in_minutes"`
+    WalkInterfaces types.Bool `tfsdk:"walk_interfaces"`
+    CollectEndpoints types.Bool `tfsdk:"collect_endpoints"`
+    SnmpOids types.String `tfsdk:"snmp_oids"`
+    NextPollAt types.String `tfsdk:"next_poll_at"`
+    LastWalkLog types.String `tfsdk:"last_walk_log"`
     SysDescr types.String `tfsdk:"sys_descr"`
     SysName types.String `tfsdk:"sys_name"`
     SysObjectId types.String `tfsdk:"sys_object_id"`
@@ -125,12 +134,20 @@ func (d *NetworkDeviceDataDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "site_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "current_monitor_status_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "snmp_version": schema.StringAttribute{
                 MarkdownDescription: "SNMP version to use when polling this device (V1, V2c, V3). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
                 Computed: true,
             },
             "snmp_community_string": schema.StringAttribute{
-                MarkdownDescription: "Community string used for SNMP v1/v2c polling. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                MarkdownDescription: "Community string used for SNMP v1/v2c polling. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
                 Computed: true,
             },
             "snmp_port": schema.NumberAttribute{
@@ -154,7 +171,7 @@ func (d *NetworkDeviceDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "snmp_v3_auth_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication passphrase. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                MarkdownDescription: "SNMP v3 authentication passphrase. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
                 Computed: true,
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
@@ -162,7 +179,35 @@ func (d *NetworkDeviceDataDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "snmp_v3_priv_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                Computed: true,
+            },
+            "is_polling_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether the assigned probe polls this device on a schedule. Disable to pause SNMP polling without deleting the device.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                Computed: true,
+            },
+            "polling_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often, in minutes, the assigned probe polls this device via SNMP. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                Computed: true,
+            },
+            "walk_interfaces": schema.BoolAttribute{
+                MarkdownDescription: "Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                Computed: true,
+            },
+            "collect_endpoints": schema.BoolAttribute{
+                MarkdownDescription: "Also walk the device's ARP cache and bridge forwarding database on each poll to discover endpoints (laptops, printers, POS terminals) attached to it. Strictly opt-in: costs extra SNMP table walks per poll. Only meaningful when Walk Interfaces is on.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                Computed: true,
+            },
+            "snmp_oids": schema.StringAttribute{
+                MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected on each poll. Values are recorded as metrics and can be alerted on through monitor criteria.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Network Device]",
+                Computed: true,
+            },
+            "next_poll_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_walk_log": schema.StringAttribute{
+                MarkdownDescription: "The previous poll's raw walk response. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls. Managed by the server.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Read Network Device], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "sys_descr": schema.StringAttribute{
@@ -354,6 +399,12 @@ func (d *NetworkDeviceDataDataSource) Read(ctx context.Context, req datasource.R
     if val, ok := networkDeviceDataResponse["probe_id"].(string); ok {
         data.ProbeId = types.StringValue(val)
     }
+    if val, ok := networkDeviceDataResponse["site_id"].(string); ok {
+        data.SiteId = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["current_monitor_status_id"].(string); ok {
+        data.CurrentMonitorStatusId = types.StringValue(val)
+    }
     if val, ok := networkDeviceDataResponse["snmp_version"].(string); ok {
         data.SnmpVersion = types.StringValue(val)
     }
@@ -383,6 +434,27 @@ func (d *NetworkDeviceDataDataSource) Read(ctx context.Context, req datasource.R
     }
     if val, ok := networkDeviceDataResponse["snmp_v3_priv_key"].(string); ok {
         data.SnmpV3PrivKey = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["is_polling_enabled"].(bool); ok {
+        data.IsPollingEnabled = types.BoolValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["polling_interval_in_minutes"].(float64); ok {
+        data.PollingIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := networkDeviceDataResponse["walk_interfaces"].(bool); ok {
+        data.WalkInterfaces = types.BoolValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["collect_endpoints"].(bool); ok {
+        data.CollectEndpoints = types.BoolValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["snmp_oids"].(string); ok {
+        data.SnmpOids = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["next_poll_at"].(string); ok {
+        data.NextPollAt = types.StringValue(val)
+    }
+    if val, ok := networkDeviceDataResponse["last_walk_log"].(string); ok {
+        data.LastWalkLog = types.StringValue(val)
     }
     if val, ok := networkDeviceDataResponse["sys_descr"].(string); ok {
         data.SysDescr = types.StringValue(val)

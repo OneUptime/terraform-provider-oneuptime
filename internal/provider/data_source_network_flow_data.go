@@ -35,6 +35,8 @@ type NetworkFlowDataDataSourceModel struct {
     SrcPort types.Number `tfsdk:"src_port"`
     DstPort types.Number `tfsdk:"dst_port"`
     Protocol types.Number `tfsdk:"protocol"`
+    InputInterfaceIndex types.Number `tfsdk:"input_interface_index"`
+    OutputInterfaceIndex types.Number `tfsdk:"output_interface_index"`
     Octets types.String `tfsdk:"octets"`
     Packets types.String `tfsdk:"packets"`
     FlowStartAt types.String `tfsdk:"flow_start_at"`
@@ -89,6 +91,14 @@ func (d *NetworkFlowDataDataSource) Schema(ctx context.Context, req datasource.S
             },
             "protocol": schema.NumberAttribute{
                 MarkdownDescription: "Protocol",
+                Computed: true,
+            },
+            "input_interface_index": schema.NumberAttribute{
+                MarkdownDescription: "Input Interface Index",
+                Computed: true,
+            },
+            "output_interface_index": schema.NumberAttribute{
+                MarkdownDescription: "Output Interface Index",
                 Computed: true,
             },
             "octets": schema.StringAttribute{
@@ -203,6 +213,12 @@ func (d *NetworkFlowDataDataSource) Read(ctx context.Context, req datasource.Rea
     }
     if val, ok := networkFlowDataResponse["protocol"].(float64); ok {
         data.Protocol = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := networkFlowDataResponse["input_interface_index"].(float64); ok {
+        data.InputInterfaceIndex = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := networkFlowDataResponse["output_interface_index"].(float64); ok {
+        data.OutputInterfaceIndex = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := networkFlowDataResponse["octets"].(string); ok {
         data.Octets = types.StringValue(val)

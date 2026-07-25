@@ -107,7 +107,7 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "snmp_community_string": schema.StringAttribute{
-                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "snmp_port": schema.NumberAttribute{
@@ -127,7 +127,7 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "snmp_v3_auth_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
@@ -135,7 +135,7 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "snmp_v3_priv_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "status": schema.StringAttribute{

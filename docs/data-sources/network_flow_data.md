@@ -30,6 +30,8 @@ data "oneuptime_network_flow_data" "example" {
 - `src_port` (Number) Source Port. Computed.
 - `dst_port` (Number) Destination Port. Computed.
 - `protocol` (Number) Protocol. Computed.
+- `input_interface_index` (Number) Input Interface Index. Computed.
+- `output_interface_index` (Number) Output Interface Index. Computed.
 - `octets` (String) Octets. Computed.
 - `packets` (String) Packets. Computed.
 - `flow_start_at` (String) Flow Start. Computed.
