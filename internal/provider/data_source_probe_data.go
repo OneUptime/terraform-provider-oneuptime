@@ -111,15 +111,15 @@ func (d *ProbeDataDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 Computed: true,
             },
             "should_auto_enable_probe_on_new_monitors": schema.BoolAttribute{
-                MarkdownDescription: "Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Status Page]",
+                MarkdownDescription: "Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
                 Computed: true,
             },
             "connection_status": schema.StringAttribute{
-                MarkdownDescription: "Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Status Page], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Status Page]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]",
                 Computed: true,
                 ElementType: types.StringType,
             },

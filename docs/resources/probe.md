@@ -30,15 +30,15 @@ resource "oneuptime_probe" "example" {
 - `last_alive` (String) A date time object.. Computed.
 - `icon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Status Page]. Computed.
-- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Status Page], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Status Page], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Status Page]. Computed.
+- `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe on New Monitors. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]. Computed.
+- `labels` (Set) Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Probe], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Probe]. Computed.
 - `created_at` (String) A date time object.. Computed.
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Public], Update: [No access - you don't have permission for this operation]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `connection_status` (String) Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Status Page], Update: [No access - you don't have permission for this operation]. Computed.
+- `connection_status` (String) Connection Status of the Probe. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Probe], Update: [No access - you don't have permission for this operation]. Computed.
 
 ## Import
 
