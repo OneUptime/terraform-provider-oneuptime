@@ -39,12 +39,15 @@ resource "oneuptime_kubernetes_cost_allocation" "example" {
 - `cpu_core_hours` (Number) CPU Core Hours. Computed.
 - `cpu_core_request_average` (Number) CPU Core Request Average. Computed.
 - `cpu_core_usage_average` (Number) CPU Core Usage Average. Computed.
+- `cpu_core_limit_average` (Number) CPU Core Limit Average. Computed.
 - `cpu_cost` (Number) CPU Cost. Computed.
 - `gpu_hours` (Number) GPU Hours. Computed.
 - `gpu_cost` (Number) GPU Cost. Computed.
 - `ram_byte_hours` (Number) RAM Byte Hours. Computed.
 - `ram_bytes_request_average` (Number) RAM Bytes Request Average. Computed.
 - `ram_bytes_usage_average` (Number) RAM Bytes Usage Average. Computed.
+- `ram_bytes_limit_average` (Number) RAM Bytes Limit Average. Computed.
+- `ram_bytes_usage_max` (Number) RAM Bytes Usage Max. Computed.
 - `ram_cost` (Number) RAM Cost. Computed.
 - `pv_byte_hours` (Number) PV Byte Hours. Computed.
 - `pv_cost` (Number) PV Cost. Computed.
@@ -57,6 +60,8 @@ resource "oneuptime_kubernetes_cost_allocation" "example" {
 - `ram_efficiency` (Number) RAM Efficiency. Computed.
 - `total_efficiency` (Number) Total Efficiency. Computed.
 - `currency` (String) Currency. Computed.
+- `shipment_id` (String) Shipment ID. Computed.
+- `shipment_chunk` (Number) Shipment Chunk. Computed.
 
 ## Import
 

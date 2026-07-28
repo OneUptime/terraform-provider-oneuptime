@@ -44,6 +44,7 @@ type TableViewResourceModel struct {
     Sort JSONSubsetValue `tfsdk:"sort"`
     ItemsOnPage types.Number `tfsdk:"items_on_page"`
     Facets JSONSubsetValue `tfsdk:"facets"`
+    Columns JSONSubsetValue `tfsdk:"columns"`
     CreatedAt JSONSubsetValue `tfsdk:"created_at"`
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
@@ -128,6 +129,15 @@ func (r *TableViewResource) Schema(ctx context.Context, req resource.SchemaReque
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "columns": schema.StringAttribute{
+                MarkdownDescription: "Which columns are shown, and in what order, for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: JSONSubsetType{},
@@ -202,6 +212,7 @@ func (r *TableViewResource) Create(ctx context.Context, req resource.CreateReque
         "sort": r.parseJSONField(data.Sort),
         "itemsOnPage": r.bigFloatToFloat64(data.ItemsOnPage.ValueBigFloat()),
         "facets": r.parseJSONField(data.Facets),
+        "columns": r.parseJSONField(data.Columns),
         },
     }
 
@@ -509,6 +520,43 @@ func (r *TableViewResource) Create(ctx context.Context, req resource.CreateReque
     } else {
         data.Facets = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Columns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Columns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Columns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Columns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Columns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Columns = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["columns"].(string); ok && val != "" {
+        data.Columns = NewJSONSubsetValue(val)
+    } else {
+        data.Columns = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -736,6 +784,7 @@ func (r *TableViewResource) Read(ctx context.Context, req resource.ReadRequest, 
         "sort": true,
         "itemsOnPage": true,
         "facets": true,
+        "columns": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1054,6 +1103,43 @@ func (r *TableViewResource) Read(ctx context.Context, req resource.ReadRequest, 
     } else {
         data.Facets = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Columns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Columns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Columns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Columns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Columns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Columns = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["columns"].(string); ok && val != "" {
+        data.Columns = NewJSONSubsetValue(val)
+    } else {
+        data.Columns = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1319,6 +1405,14 @@ func (r *TableViewResource) Update(ctx context.Context, req resource.UpdateReque
             requestDataMap["facets"] = data.Facets.ValueString()
         }
     }
+    if !data.Columns.IsUnknown() && !state.Columns.IsUnknown() && !data.Columns.Equal(state.Columns) {
+        var columnsData interface{}
+        if err := json.Unmarshal([]byte(data.Columns.ValueString()), &columnsData); err == nil {
+            requestDataMap["columns"] = columnsData
+        } else {
+            requestDataMap["columns"] = data.Columns.ValueString()
+        }
+    }
 
     // Make API call
     httpResp, err := r.client.Put("/table-view/" + data.Id.ValueString() + "", tableViewRequest)
@@ -1345,6 +1439,7 @@ func (r *TableViewResource) Update(ctx context.Context, req resource.UpdateReque
         "sort": true,
         "itemsOnPage": true,
         "facets": true,
+        "columns": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1656,6 +1751,43 @@ func (r *TableViewResource) Update(ctx context.Context, req resource.UpdateReque
         data.Facets = NewJSONSubsetValue(val)
     } else {
         data.Facets = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Columns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Columns = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Columns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Columns = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Columns = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Columns = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Columns = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["columns"].(string); ok && val != "" {
+        data.Columns = NewJSONSubsetValue(val)
+    } else {
+        data.Columns = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

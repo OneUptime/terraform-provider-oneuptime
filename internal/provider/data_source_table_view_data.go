@@ -40,6 +40,7 @@ type TableViewDataDataSourceModel struct {
     Sort types.String `tfsdk:"sort"`
     ItemsOnPage types.Number `tfsdk:"items_on_page"`
     Facets types.String `tfsdk:"facets"`
+    Columns types.String `tfsdk:"columns"`
 }
 
 func (d *TableViewDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -109,6 +110,10 @@ func (d *TableViewDataDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "facets": schema.StringAttribute{
                 MarkdownDescription: "Facet selections (owner, labels, status, etc.) for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
+                Computed: true,
+            },
+            "columns": schema.StringAttribute{
+                MarkdownDescription: "Which columns are shown, and in what order, for this table view. Permissions - Create: [Project Owner, Project Admin, Create Table View], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Table View], Update: [Project Owner, Project Admin, Edit Table View]",
                 Computed: true,
             },
         },
@@ -218,6 +223,9 @@ func (d *TableViewDataDataSource) Read(ctx context.Context, req datasource.ReadR
     }
     if val, ok := tableViewDataResponse["facets"].(string); ok {
         data.Facets = types.StringValue(val)
+    }
+    if val, ok := tableViewDataResponse["columns"].(string); ok {
+        data.Columns = types.StringValue(val)
     }
 
     // Write logs using the tflog package

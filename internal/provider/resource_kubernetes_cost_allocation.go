@@ -54,12 +54,15 @@ type KubernetesCostAllocationResourceModel struct {
     CpuCoreHours types.Number `tfsdk:"cpu_core_hours"`
     CpuCoreRequestAverage types.Number `tfsdk:"cpu_core_request_average"`
     CpuCoreUsageAverage types.Number `tfsdk:"cpu_core_usage_average"`
+    CpuCoreLimitAverage types.Number `tfsdk:"cpu_core_limit_average"`
     CpuCost types.Number `tfsdk:"cpu_cost"`
     GpuHours types.Number `tfsdk:"gpu_hours"`
     GpuCost types.Number `tfsdk:"gpu_cost"`
     RamByteHours types.Number `tfsdk:"ram_byte_hours"`
     RamBytesRequestAverage types.Number `tfsdk:"ram_bytes_request_average"`
     RamBytesUsageAverage types.Number `tfsdk:"ram_bytes_usage_average"`
+    RamBytesLimitAverage types.Number `tfsdk:"ram_bytes_limit_average"`
+    RamBytesUsageMax types.Number `tfsdk:"ram_bytes_usage_max"`
     RamCost types.Number `tfsdk:"ram_cost"`
     PvByteHours types.Number `tfsdk:"pv_byte_hours"`
     PvCost types.Number `tfsdk:"pv_cost"`
@@ -72,6 +75,8 @@ type KubernetesCostAllocationResourceModel struct {
     RamEfficiency types.Number `tfsdk:"ram_efficiency"`
     TotalEfficiency types.Number `tfsdk:"total_efficiency"`
     Currency types.String `tfsdk:"currency"`
+    ShipmentId types.String `tfsdk:"shipment_id"`
+    ShipmentChunk types.Number `tfsdk:"shipment_chunk"`
 }
 
 func (r *KubernetesCostAllocationResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -164,6 +169,10 @@ func (r *KubernetesCostAllocationResource) Schema(ctx context.Context, req resou
                 MarkdownDescription: "CPU Core Usage Average",
                 Computed: true,
             },
+            "cpu_core_limit_average": schema.NumberAttribute{
+                MarkdownDescription: "CPU Core Limit Average",
+                Computed: true,
+            },
             "cpu_cost": schema.NumberAttribute{
                 MarkdownDescription: "CPU Cost",
                 Computed: true,
@@ -186,6 +195,14 @@ func (r *KubernetesCostAllocationResource) Schema(ctx context.Context, req resou
             },
             "ram_bytes_usage_average": schema.NumberAttribute{
                 MarkdownDescription: "RAM Bytes Usage Average",
+                Computed: true,
+            },
+            "ram_bytes_limit_average": schema.NumberAttribute{
+                MarkdownDescription: "RAM Bytes Limit Average",
+                Computed: true,
+            },
+            "ram_bytes_usage_max": schema.NumberAttribute{
+                MarkdownDescription: "RAM Bytes Usage Max",
                 Computed: true,
             },
             "ram_cost": schema.NumberAttribute{
@@ -234,6 +251,14 @@ func (r *KubernetesCostAllocationResource) Schema(ctx context.Context, req resou
             },
             "currency": schema.StringAttribute{
                 MarkdownDescription: "Currency",
+                Computed: true,
+            },
+            "shipment_id": schema.StringAttribute{
+                MarkdownDescription: "Shipment ID",
+                Computed: true,
+            },
+            "shipment_chunk": schema.NumberAttribute{
+                MarkdownDescription: "Shipment Chunk",
                 Computed: true,
             },
         },
@@ -893,6 +918,15 @@ func (r *KubernetesCostAllocationResource) Create(ctx context.Context, req resou
     } else if dataMap["cpuCoreUsageAverage"] == nil {
         data.CpuCoreUsageAverage = types.NumberNull()
     }
+    if val, ok := dataMap["cpuCoreLimitAverage"].(float64); ok {
+        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["cpuCoreLimitAverage"].(int); ok {
+        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["cpuCoreLimitAverage"].(int64); ok {
+        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["cpuCoreLimitAverage"] == nil {
+        data.CpuCoreLimitAverage = types.NumberNull()
+    }
     if val, ok := dataMap["cpuCost"].(float64); ok {
         data.CpuCost = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["cpuCost"].(int); ok {
@@ -946,6 +980,24 @@ func (r *KubernetesCostAllocationResource) Create(ctx context.Context, req resou
         data.RamBytesUsageAverage = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["ramBytesUsageAverage"] == nil {
         data.RamBytesUsageAverage = types.NumberNull()
+    }
+    if val, ok := dataMap["ramBytesLimitAverage"].(float64); ok {
+        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["ramBytesLimitAverage"].(int); ok {
+        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["ramBytesLimitAverage"].(int64); ok {
+        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["ramBytesLimitAverage"] == nil {
+        data.RamBytesLimitAverage = types.NumberNull()
+    }
+    if val, ok := dataMap["ramBytesUsageMax"].(float64); ok {
+        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["ramBytesUsageMax"].(int); ok {
+        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["ramBytesUsageMax"].(int64); ok {
+        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["ramBytesUsageMax"] == nil {
+        data.RamBytesUsageMax = types.NumberNull()
     }
     if val, ok := dataMap["ramCost"].(float64); ok {
         data.RamCost = types.NumberValue(big.NewFloat(val))
@@ -1083,6 +1135,52 @@ func (r *KubernetesCostAllocationResource) Create(ctx context.Context, req resou
     } else {
         data.Currency = types.StringNull()
     }
+    if obj, ok := dataMap["shipmentId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ShipmentId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ShipmentId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ShipmentId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ShipmentId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ShipmentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ShipmentId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ShipmentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ShipmentId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ShipmentId = types.StringNull()
+        }
+    } else if val, ok := dataMap["shipmentId"].(string); ok && val != "" {
+        data.ShipmentId = types.StringValue(val)
+    } else {
+        data.ShipmentId = types.StringNull()
+    }
+    if val, ok := dataMap["shipmentChunk"].(float64); ok {
+        data.ShipmentChunk = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["shipmentChunk"].(int); ok {
+        data.ShipmentChunk = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["shipmentChunk"].(int64); ok {
+        data.ShipmentChunk = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["shipmentChunk"] == nil {
+        data.ShipmentChunk = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1126,12 +1224,15 @@ func (r *KubernetesCostAllocationResource) Read(ctx context.Context, req resourc
         "cpuCoreHours": true,
         "cpuCoreRequestAverage": true,
         "cpuCoreUsageAverage": true,
+        "cpuCoreLimitAverage": true,
         "cpuCost": true,
         "gpuHours": true,
         "gpuCost": true,
         "ramByteHours": true,
         "ramBytesRequestAverage": true,
         "ramBytesUsageAverage": true,
+        "ramBytesLimitAverage": true,
+        "ramBytesUsageMax": true,
         "ramCost": true,
         "pvByteHours": true,
         "pvCost": true,
@@ -1144,6 +1245,8 @@ func (r *KubernetesCostAllocationResource) Read(ctx context.Context, req resourc
         "ramEfficiency": true,
         "totalEfficiency": true,
         "currency": true,
+        "shipmentId": true,
+        "shipmentChunk": true,
         "_id": true,
     }
 
@@ -1765,6 +1868,15 @@ func (r *KubernetesCostAllocationResource) Read(ctx context.Context, req resourc
     } else if dataMap["cpuCoreUsageAverage"] == nil {
         data.CpuCoreUsageAverage = types.NumberNull()
     }
+    if val, ok := dataMap["cpuCoreLimitAverage"].(float64); ok {
+        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["cpuCoreLimitAverage"].(int); ok {
+        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["cpuCoreLimitAverage"].(int64); ok {
+        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["cpuCoreLimitAverage"] == nil {
+        data.CpuCoreLimitAverage = types.NumberNull()
+    }
     if val, ok := dataMap["cpuCost"].(float64); ok {
         data.CpuCost = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["cpuCost"].(int); ok {
@@ -1818,6 +1930,24 @@ func (r *KubernetesCostAllocationResource) Read(ctx context.Context, req resourc
         data.RamBytesUsageAverage = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["ramBytesUsageAverage"] == nil {
         data.RamBytesUsageAverage = types.NumberNull()
+    }
+    if val, ok := dataMap["ramBytesLimitAverage"].(float64); ok {
+        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["ramBytesLimitAverage"].(int); ok {
+        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["ramBytesLimitAverage"].(int64); ok {
+        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["ramBytesLimitAverage"] == nil {
+        data.RamBytesLimitAverage = types.NumberNull()
+    }
+    if val, ok := dataMap["ramBytesUsageMax"].(float64); ok {
+        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["ramBytesUsageMax"].(int); ok {
+        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["ramBytesUsageMax"].(int64); ok {
+        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["ramBytesUsageMax"] == nil {
+        data.RamBytesUsageMax = types.NumberNull()
     }
     if val, ok := dataMap["ramCost"].(float64); ok {
         data.RamCost = types.NumberValue(big.NewFloat(val))
@@ -1954,6 +2084,52 @@ func (r *KubernetesCostAllocationResource) Read(ctx context.Context, req resourc
         data.Currency = types.StringValue(val)
     } else {
         data.Currency = types.StringNull()
+    }
+    if obj, ok := dataMap["shipmentId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ShipmentId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ShipmentId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ShipmentId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ShipmentId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ShipmentId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ShipmentId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ShipmentId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ShipmentId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ShipmentId = types.StringNull()
+        }
+    } else if val, ok := dataMap["shipmentId"].(string); ok && val != "" {
+        data.ShipmentId = types.StringValue(val)
+    } else {
+        data.ShipmentId = types.StringNull()
+    }
+    if val, ok := dataMap["shipmentChunk"].(float64); ok {
+        data.ShipmentChunk = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["shipmentChunk"].(int); ok {
+        data.ShipmentChunk = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["shipmentChunk"].(int64); ok {
+        data.ShipmentChunk = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["shipmentChunk"] == nil {
+        data.ShipmentChunk = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

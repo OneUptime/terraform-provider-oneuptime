@@ -46,12 +46,15 @@ type KubernetesCostAllocationDataDataSourceModel struct {
     CpuCoreHours types.Number `tfsdk:"cpu_core_hours"`
     CpuCoreRequestAverage types.Number `tfsdk:"cpu_core_request_average"`
     CpuCoreUsageAverage types.Number `tfsdk:"cpu_core_usage_average"`
+    CpuCoreLimitAverage types.Number `tfsdk:"cpu_core_limit_average"`
     CpuCost types.Number `tfsdk:"cpu_cost"`
     GpuHours types.Number `tfsdk:"gpu_hours"`
     GpuCost types.Number `tfsdk:"gpu_cost"`
     RamByteHours types.Number `tfsdk:"ram_byte_hours"`
     RamBytesRequestAverage types.Number `tfsdk:"ram_bytes_request_average"`
     RamBytesUsageAverage types.Number `tfsdk:"ram_bytes_usage_average"`
+    RamBytesLimitAverage types.Number `tfsdk:"ram_bytes_limit_average"`
+    RamBytesUsageMax types.Number `tfsdk:"ram_bytes_usage_max"`
     RamCost types.Number `tfsdk:"ram_cost"`
     PvByteHours types.Number `tfsdk:"pv_byte_hours"`
     PvCost types.Number `tfsdk:"pv_cost"`
@@ -64,6 +67,8 @@ type KubernetesCostAllocationDataDataSourceModel struct {
     RamEfficiency types.Number `tfsdk:"ram_efficiency"`
     TotalEfficiency types.Number `tfsdk:"total_efficiency"`
     Currency types.String `tfsdk:"currency"`
+    ShipmentId types.String `tfsdk:"shipment_id"`
+    ShipmentChunk types.Number `tfsdk:"shipment_chunk"`
 }
 
 func (d *KubernetesCostAllocationDataDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -156,6 +161,10 @@ func (d *KubernetesCostAllocationDataDataSource) Schema(ctx context.Context, req
                 MarkdownDescription: "CPU Core Usage Average",
                 Computed: true,
             },
+            "cpu_core_limit_average": schema.NumberAttribute{
+                MarkdownDescription: "CPU Core Limit Average",
+                Computed: true,
+            },
             "cpu_cost": schema.NumberAttribute{
                 MarkdownDescription: "CPU Cost",
                 Computed: true,
@@ -178,6 +187,14 @@ func (d *KubernetesCostAllocationDataDataSource) Schema(ctx context.Context, req
             },
             "ram_bytes_usage_average": schema.NumberAttribute{
                 MarkdownDescription: "RAM Bytes Usage Average",
+                Computed: true,
+            },
+            "ram_bytes_limit_average": schema.NumberAttribute{
+                MarkdownDescription: "RAM Bytes Limit Average",
+                Computed: true,
+            },
+            "ram_bytes_usage_max": schema.NumberAttribute{
+                MarkdownDescription: "RAM Bytes Usage Max",
                 Computed: true,
             },
             "ram_cost": schema.NumberAttribute{
@@ -226,6 +243,14 @@ func (d *KubernetesCostAllocationDataDataSource) Schema(ctx context.Context, req
             },
             "currency": schema.StringAttribute{
                 MarkdownDescription: "Currency",
+                Computed: true,
+            },
+            "shipment_id": schema.StringAttribute{
+                MarkdownDescription: "Shipment ID",
+                Computed: true,
+            },
+            "shipment_chunk": schema.NumberAttribute{
+                MarkdownDescription: "Shipment Chunk",
                 Computed: true,
             },
         },
@@ -360,6 +385,9 @@ func (d *KubernetesCostAllocationDataDataSource) Read(ctx context.Context, req d
     if val, ok := kubernetesCostAllocationDataResponse["cpu_core_usage_average"].(float64); ok {
         data.CpuCoreUsageAverage = types.NumberValue(big.NewFloat(val))
     }
+    if val, ok := kubernetesCostAllocationDataResponse["cpu_core_limit_average"].(float64); ok {
+        data.CpuCoreLimitAverage = types.NumberValue(big.NewFloat(val))
+    }
     if val, ok := kubernetesCostAllocationDataResponse["cpu_cost"].(float64); ok {
         data.CpuCost = types.NumberValue(big.NewFloat(val))
     }
@@ -377,6 +405,12 @@ func (d *KubernetesCostAllocationDataDataSource) Read(ctx context.Context, req d
     }
     if val, ok := kubernetesCostAllocationDataResponse["ram_bytes_usage_average"].(float64); ok {
         data.RamBytesUsageAverage = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := kubernetesCostAllocationDataResponse["ram_bytes_limit_average"].(float64); ok {
+        data.RamBytesLimitAverage = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := kubernetesCostAllocationDataResponse["ram_bytes_usage_max"].(float64); ok {
+        data.RamBytesUsageMax = types.NumberValue(big.NewFloat(val))
     }
     if val, ok := kubernetesCostAllocationDataResponse["ram_cost"].(float64); ok {
         data.RamCost = types.NumberValue(big.NewFloat(val))
@@ -413,6 +447,12 @@ func (d *KubernetesCostAllocationDataDataSource) Read(ctx context.Context, req d
     }
     if val, ok := kubernetesCostAllocationDataResponse["currency"].(string); ok {
         data.Currency = types.StringValue(val)
+    }
+    if val, ok := kubernetesCostAllocationDataResponse["shipment_id"].(string); ok {
+        data.ShipmentId = types.StringValue(val)
+    }
+    if val, ok := kubernetesCostAllocationDataResponse["shipment_chunk"].(float64); ok {
+        data.ShipmentChunk = types.NumberValue(big.NewFloat(val))
     }
 
     // Write logs using the tflog package
