@@ -920,6 +920,12 @@ func (r *ScheduledMaintenanceUserOwnerResource) Update(ctx context.Context, req 
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(scheduledMaintenanceUserOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/scheduled-maintenance-owner-user/" + data.Id.ValueString() + "", scheduledMaintenanceUserOwnerRequest)
     if err != nil {

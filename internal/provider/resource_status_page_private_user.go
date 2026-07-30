@@ -950,6 +950,12 @@ func (r *StatusPagePrivateUserResource) Update(ctx context.Context, req resource
         requestDataMap["password"] = data.Password.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(statusPagePrivateUserRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/status-page-private-user/" + data.Id.ValueString() + "", statusPagePrivateUserRequest)
     if err != nil {

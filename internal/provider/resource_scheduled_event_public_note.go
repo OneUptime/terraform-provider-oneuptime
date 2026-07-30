@@ -1297,6 +1297,12 @@ func (r *ScheduledEventPublicNoteResource) Update(ctx context.Context, req resou
         }
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(scheduledEventPublicNoteRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/scheduled-maintenance-public-note/" + data.Id.ValueString() + "", scheduledEventPublicNoteRequest)
     if err != nil {

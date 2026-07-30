@@ -928,6 +928,12 @@ func (r *IncidentEpisodeUserOwnerResource) Update(ctx context.Context, req resou
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentEpisodeUserOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-episode-owner-user/" + data.Id.ValueString() + "", incidentEpisodeUserOwnerRequest)
     if err != nil {

@@ -1234,6 +1234,12 @@ func (r *DashboardDomainResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["isCustomCertificate"] = data.IsCustomCertificate.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(dashboardDomainRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/dashboard-domain/" + data.Id.ValueString() + "", dashboardDomainRequest)
     if err != nil {

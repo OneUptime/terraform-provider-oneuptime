@@ -1195,6 +1195,12 @@ func (r *IncidentStateResource) Update(ctx context.Context, req resource.UpdateR
         requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentStateRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-state/" + data.Id.ValueString() + "", incidentStateRequest)
     if err != nil {

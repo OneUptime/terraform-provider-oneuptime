@@ -1286,6 +1286,12 @@ func (r *WorkflowResource) Update(ctx context.Context, req resource.UpdateReques
         requestDataMap["webhookSecretKey"] = data.WebhookSecretKey.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(workflowRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/workflow/" + data.Id.ValueString() + "", workflowRequest)
     if err != nil {

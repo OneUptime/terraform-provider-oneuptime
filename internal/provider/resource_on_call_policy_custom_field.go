@@ -1093,6 +1093,12 @@ func (r *OnCallPolicyCustomFieldResource) Update(ctx context.Context, req resour
         requestDataMap["dropdownOptions"] = data.DropdownOptions.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(onCallPolicyCustomFieldRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-custom-field/" + data.Id.ValueString() + "", onCallPolicyCustomFieldRequest)
     if err != nil {

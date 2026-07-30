@@ -1278,6 +1278,12 @@ func (r *IncidentEpisodeOnCallRuleResource) Update(ctx context.Context, req reso
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentEpisodeOnCallRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-episode-on-call-rule/" + data.Id.ValueString() + "", incidentEpisodeOnCallRuleRequest)
     if err != nil {

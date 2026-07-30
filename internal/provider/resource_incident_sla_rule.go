@@ -1729,6 +1729,12 @@ func (r *IncidentSlaRuleResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["incidentDescriptionPattern"] = data.IncidentDescriptionPattern.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentSlaRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-sla-rule/" + data.Id.ValueString() + "", incidentSlaRuleRequest)
     if err != nil {

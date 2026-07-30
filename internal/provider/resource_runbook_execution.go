@@ -1544,6 +1544,12 @@ func (r *RunbookExecutionResource) Update(ctx context.Context, req resource.Upda
         requestDataMap["failureReason"] = data.FailureReason.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(runbookExecutionRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/runbook-execution/" + data.Id.ValueString() + "", runbookExecutionRequest)
     if err != nil {

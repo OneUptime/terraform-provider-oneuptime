@@ -1533,6 +1533,12 @@ func (r *IncidentPrivacyRuleResource) Update(ctx context.Context, req resource.U
         requestDataMap["monitorDescriptionPattern"] = data.MonitorDescriptionPattern.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentPrivacyRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-privacy-rule/" + data.Id.ValueString() + "", incidentPrivacyRuleRequest)
     if err != nil {

@@ -1812,6 +1812,12 @@ func (r *MetricPipelineRuleResource) Update(ctx context.Context, req resource.Up
         requestDataMap["sortOrder"] = r.bigFloatToFloat64(data.SortOrder.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(metricPipelineRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/metric-pipeline-rule/" + data.Id.ValueString() + "", metricPipelineRuleRequest)
     if err != nil {

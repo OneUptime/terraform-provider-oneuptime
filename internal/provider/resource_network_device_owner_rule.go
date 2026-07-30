@@ -1299,6 +1299,12 @@ func (r *NetworkDeviceOwnerRuleResource) Update(ctx context.Context, req resourc
         requestDataMap["ownerTeams"] = r.convertTerraformSetToInterface(data.OwnerTeams)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(networkDeviceOwnerRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/network-device-owner-rule/" + data.Id.ValueString() + "", networkDeviceOwnerRuleRequest)
     if err != nil {

@@ -1093,6 +1093,12 @@ func (r *TeamCustomFieldResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["dropdownOptions"] = data.DropdownOptions.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(teamCustomFieldRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/team-custom-field/" + data.Id.ValueString() + "", teamCustomFieldRequest)
     if err != nil {

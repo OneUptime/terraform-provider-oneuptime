@@ -1071,6 +1071,12 @@ func (r *LogPipelineResource) Update(ctx context.Context, req resource.UpdateReq
         requestDataMap["sortOrder"] = r.bigFloatToFloat64(data.SortOrder.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(logPipelineRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/log-pipeline/" + data.Id.ValueString() + "", logPipelineRequest)
     if err != nil {

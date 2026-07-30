@@ -1077,6 +1077,12 @@ func (r *UserOverrideResource) Update(ctx context.Context, req resource.UpdateRe
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(userOverrideRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-user-override/" + data.Id.ValueString() + "", userOverrideRequest)
     if err != nil {

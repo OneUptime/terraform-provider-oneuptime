@@ -832,6 +832,12 @@ func (r *SubscriberNotificationTemplateResource) Update(ctx context.Context, req
         requestDataMap["statusPageSubscriberNotificationTemplateId"] = data.StatusPageSubscriberNotificationTemplateId.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(subscriberNotificationTemplateRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/status-page-subscriber-notification-template-status-page/" + data.Id.ValueString() + "", subscriberNotificationTemplateRequest)
     if err != nil {

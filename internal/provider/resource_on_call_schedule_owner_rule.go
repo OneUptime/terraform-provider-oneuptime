@@ -1299,6 +1299,12 @@ func (r *OnCallScheduleOwnerRuleResource) Update(ctx context.Context, req resour
         requestDataMap["ownerTeams"] = r.convertTerraformSetToInterface(data.OwnerTeams)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(onCallScheduleOwnerRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-schedule-owner-rule/" + data.Id.ValueString() + "", onCallScheduleOwnerRuleRequest)
     if err != nil {

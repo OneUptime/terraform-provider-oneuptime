@@ -95,7 +95,7 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "content": schema.StringAttribute{
-                MarkdownDescription: "Content of the variable. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [No access - you don't have permission for this operation], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Content of the variable. Permissions - Create: [Project Owner, Project Admin, Create Workflow Variables], Read: [No access - you don't have permission for this operation], Update: [Project Owner, Project Admin, Edit Workflow Variables]",
                 Required: true,
             },
             "is_secret": schema.BoolAttribute{
@@ -1106,6 +1106,12 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
     }
     if !data.Content.IsUnknown() && !state.Content.IsUnknown() && !data.Content.Equal(state.Content) {
         requestDataMap["content"] = data.Content.ValueString()
+    }
+
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(workflowVariableRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
     }
 
     // Make API call

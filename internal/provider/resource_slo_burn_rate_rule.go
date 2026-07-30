@@ -1336,6 +1336,12 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(sloBurnRateRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/service-level-objective-burn-rate-rule/" + data.Id.ValueString() + "", sloBurnRateRuleRequest)
     if err != nil {

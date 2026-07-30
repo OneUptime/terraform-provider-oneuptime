@@ -920,6 +920,12 @@ func (r *OnCallScheduleTeamOwnerResource) Update(ctx context.Context, req resour
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(onCallScheduleTeamOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-schedule-owner-team/" + data.Id.ValueString() + "", onCallScheduleTeamOwnerRequest)
     if err != nil {

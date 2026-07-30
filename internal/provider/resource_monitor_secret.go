@@ -1085,6 +1085,12 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(monitorSecretRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/monitor-secret/" + data.Id.ValueString() + "", monitorSecretRequest)
     if err != nil {

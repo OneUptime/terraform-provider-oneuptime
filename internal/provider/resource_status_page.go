@@ -4299,6 +4299,12 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         }
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(statusPageRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/status-page/" + data.Id.ValueString() + "", statusPageRequest)
     if err != nil {

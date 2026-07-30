@@ -920,6 +920,12 @@ func (r *RumApplicationTeamOwnerResource) Update(ctx context.Context, req resour
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(rumApplicationTeamOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/rum-application-owner-team/" + data.Id.ValueString() + "", rumApplicationTeamOwnerRequest)
     if err != nil {

@@ -919,6 +919,12 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         requestDataMap["description"] = data.Description.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(telemetryIngestionKeyRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/telemetry-ingestion-key/" + data.Id.ValueString() + "", telemetryIngestionKeyRequest)
     if err != nil {

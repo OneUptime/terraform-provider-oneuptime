@@ -35,6 +35,8 @@ resource "oneuptime_log_drop_filter" "example" {
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
+- `dropped_count` (Number) Total number of logs this filter has discarded since it was created.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Drop Filter], Update: [No access - you don't have permission for this operation]. Computed.
+- `last_dropped_at` (String) A date time object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 

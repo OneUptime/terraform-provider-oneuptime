@@ -1362,6 +1362,12 @@ func (r *IncidentEpisodeStateTimelineResource) Update(ctx context.Context, req r
         requestDataMap["incidentStateId"] = data.IncidentStateId.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentEpisodeStateTimelineRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-episode-state-timeline/" + data.Id.ValueString() + "", incidentEpisodeStateTimelineRequest)
     if err != nil {

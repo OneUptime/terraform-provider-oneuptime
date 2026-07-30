@@ -1001,6 +1001,12 @@ func (r *MonitorGroupResource) Update(ctx context.Context, req resource.UpdateRe
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(monitorGroupRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/monitor-group/" + data.Id.ValueString() + "", monitorGroupRequest)
     if err != nil {

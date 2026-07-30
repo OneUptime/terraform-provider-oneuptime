@@ -40,6 +40,7 @@ type StatusPageGroupResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
+    ParentStatusPageGroupId types.String `tfsdk:"parent_status_page_group_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     Order types.Number `tfsdk:"order"`
@@ -87,6 +88,14 @@ func (r *StatusPageGroupResource) Schema(ctx context.Context, req resource.Schem
             "status_page_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Required: true,
+            },
+            "parent_status_page_group_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Name of the Group. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]",
@@ -252,6 +261,7 @@ func (r *StatusPageGroupResource) Create(ctx context.Context, req resource.Creat
     statusPageGroupRequest := map[string]interface{}{
         "data": map[string]interface{}{
         "statusPageId": data.StatusPageId.ValueString(),
+        "parentStatusPageGroupId": data.ParentStatusPageGroupId.ValueString(),
         "name": data.Name.ValueString(),
         "description": data.Description.ValueString(),
         "order": r.bigFloatToFloat64(data.Order.ValueBigFloat()),
@@ -376,6 +386,43 @@ func (r *StatusPageGroupResource) Create(ctx context.Context, req resource.Creat
         data.StatusPageId = types.StringValue(val)
     } else {
         data.StatusPageId = types.StringNull()
+    }
+    if obj, ok := dataMap["parentStatusPageGroupId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentStatusPageGroupId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ParentStatusPageGroupId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentStatusPageGroupId = types.StringNull()
+        }
+    } else if val, ok := dataMap["parentStatusPageGroupId"].(string); ok && val != "" {
+        data.ParentStatusPageGroupId = types.StringValue(val)
+    } else {
+        data.ParentStatusPageGroupId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -912,6 +959,7 @@ func (r *StatusPageGroupResource) Read(ctx context.Context, req resource.ReadReq
     selectParam := map[string]interface{}{
         "projectId": true,
         "statusPageId": true,
+        "parentStatusPageGroupId": true,
         "name": true,
         "description": true,
         "order": true,
@@ -1047,6 +1095,43 @@ func (r *StatusPageGroupResource) Read(ctx context.Context, req resource.ReadReq
         data.StatusPageId = types.StringValue(val)
     } else {
         data.StatusPageId = types.StringNull()
+    }
+    if obj, ok := dataMap["parentStatusPageGroupId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentStatusPageGroupId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ParentStatusPageGroupId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentStatusPageGroupId = types.StringNull()
+        }
+    } else if val, ok := dataMap["parentStatusPageGroupId"].(string); ok && val != "" {
+        data.ParentStatusPageGroupId = types.StringValue(val)
+    } else {
+        data.ParentStatusPageGroupId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1591,6 +1676,9 @@ func (r *StatusPageGroupResource) Update(ctx context.Context, req resource.Updat
     }
     requestDataMap := statusPageGroupRequest["data"].(map[string]interface{})
 
+    if !data.ParentStatusPageGroupId.IsUnknown() && !state.ParentStatusPageGroupId.IsUnknown() && !data.ParentStatusPageGroupId.Equal(state.ParentStatusPageGroupId) {
+        requestDataMap["parentStatusPageGroupId"] = data.ParentStatusPageGroupId.ValueString()
+    }
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
     }
@@ -1628,6 +1716,12 @@ func (r *StatusPageGroupResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["columnAxisValues"] = data.ColumnAxisValues.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(statusPageGroupRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/status-page-group/" + data.Id.ValueString() + "", statusPageGroupRequest)
     if err != nil {
@@ -1647,6 +1741,7 @@ func (r *StatusPageGroupResource) Update(ctx context.Context, req resource.Updat
     selectParam := map[string]interface{}{
         "projectId": true,
         "statusPageId": true,
+        "parentStatusPageGroupId": true,
         "name": true,
         "description": true,
         "order": true,
@@ -1776,6 +1871,43 @@ func (r *StatusPageGroupResource) Update(ctx context.Context, req resource.Updat
         data.StatusPageId = types.StringValue(val)
     } else {
         data.StatusPageId = types.StringNull()
+    }
+    if obj, ok := dataMap["parentStatusPageGroupId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentStatusPageGroupId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ParentStatusPageGroupId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentStatusPageGroupId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ParentStatusPageGroupId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentStatusPageGroupId = types.StringNull()
+        }
+    } else if val, ok := dataMap["parentStatusPageGroupId"].(string); ok && val != "" {
+        data.ParentStatusPageGroupId = types.StringValue(val)
+    } else {
+        data.ParentStatusPageGroupId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -209,6 +209,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewScheduledMaintenanceTemplateTeamOwnerDataDataSource,
         NewScheduledMaintenanceTemplateUserOwnerDataDataSource,
         NewScheduledMaintenanceNoteTemplateDataDataSource,
+        NewRecommendationDismissalDataDataSource,
         NewMonitorGroupDataDataSource,
         NewMonitorGroupTeamOwnerDataDataSource,
         NewMonitorGroupUserOwnerDataDataSource,

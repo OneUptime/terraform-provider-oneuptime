@@ -923,6 +923,12 @@ func (r *ScheduledMaintenanceNoteTemplateResource) Update(ctx context.Context, r
         requestDataMap["templateDescription"] = data.TemplateDescription.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(scheduledMaintenanceNoteTemplateRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/scheduled-maintenance-note-template/" + data.Id.ValueString() + "", scheduledMaintenanceNoteTemplateRequest)
     if err != nil {

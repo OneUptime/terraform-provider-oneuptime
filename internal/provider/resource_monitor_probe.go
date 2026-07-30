@@ -1185,6 +1185,12 @@ func (r *MonitorProbeResource) Update(ctx context.Context, req resource.UpdateRe
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(monitorProbeRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/monitor-probe/" + data.Id.ValueString() + "", monitorProbeRequest)
     if err != nil {

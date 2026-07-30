@@ -1466,6 +1466,12 @@ func (r *ProbeResource) Update(ctx context.Context, req resource.UpdateRequest, 
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(probeRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/probe/" + data.Id.ValueString() + "", probeRequest)
     if err != nil {

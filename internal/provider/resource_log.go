@@ -1813,6 +1813,12 @@ func (r *LogResource) Update(ctx context.Context, req resource.UpdateRequest, re
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(logRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/logs/" + data.Id.ValueString() + "", logRequest)
     if err != nil {

@@ -1612,6 +1612,12 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(alertOnCallRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/alert-on-call-rule/" + data.Id.ValueString() + "", alertOnCallRuleRequest)
     if err != nil {

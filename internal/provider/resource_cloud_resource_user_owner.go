@@ -920,6 +920,12 @@ func (r *CloudResourceUserOwnerResource) Update(ctx context.Context, req resourc
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(cloudResourceUserOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/cloud-resource-owner-user/" + data.Id.ValueString() + "", cloudResourceUserOwnerRequest)
     if err != nil {

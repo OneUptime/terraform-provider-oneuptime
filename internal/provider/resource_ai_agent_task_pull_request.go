@@ -1826,6 +1826,12 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         requestDataMap["pullRequestState"] = data.PullRequestState.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(aiAgentTaskPullRequestRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/ai-agent-task-pull-request/" + data.Id.ValueString() + "", aiAgentTaskPullRequestRequest)
     if err != nil {

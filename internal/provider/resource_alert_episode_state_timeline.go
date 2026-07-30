@@ -1182,6 +1182,12 @@ func (r *AlertEpisodeStateTimelineResource) Update(ctx context.Context, req reso
         requestDataMap["alertStateId"] = data.AlertStateId.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(alertEpisodeStateTimelineRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/alert-episode-state-timeline/" + data.Id.ValueString() + "", alertEpisodeStateTimelineRequest)
     if err != nil {

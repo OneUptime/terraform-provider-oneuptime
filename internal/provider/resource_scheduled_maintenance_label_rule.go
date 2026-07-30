@@ -1659,6 +1659,12 @@ func (r *ScheduledMaintenanceLabelRuleResource) Update(ctx context.Context, req 
         requestDataMap["inheritLabelsFromServices"] = data.InheritLabelsFromServices.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(scheduledMaintenanceLabelRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/scheduled-maintenance-label-rule/" + data.Id.ValueString() + "", scheduledMaintenanceLabelRuleRequest)
     if err != nil {

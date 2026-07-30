@@ -2649,6 +2649,12 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         requestDataMap["minimumProbeAgreement"] = r.bigFloatToFloat64(data.MinimumProbeAgreement.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(monitorRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/monitor/" + data.Id.ValueString() + "", monitorRequest)
     if err != nil {

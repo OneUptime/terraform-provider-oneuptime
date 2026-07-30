@@ -33,6 +33,7 @@ type StatusPageGroupDataDataSourceModel struct {
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     StatusPageId types.String `tfsdk:"status_page_id"`
+    ParentStatusPageGroupId types.String `tfsdk:"parent_status_page_group_id"`
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -86,6 +87,10 @@ func (d *StatusPageGroupDataDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "status_page_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "parent_status_page_group_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -227,6 +232,9 @@ func (d *StatusPageGroupDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := statusPageGroupDataResponse["status_page_id"].(string); ok {
         data.StatusPageId = types.StringValue(val)
+    }
+    if val, ok := statusPageGroupDataResponse["parent_status_page_group_id"].(string); ok {
+        data.ParentStatusPageGroupId = types.StringValue(val)
     }
     if val, ok := statusPageGroupDataResponse["slug"].(string); ok {
         data.Slug = types.StringValue(val)

@@ -1091,6 +1091,12 @@ func (r *NetworkSiteLinkResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["monitorId"] = data.MonitorId.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(networkSiteLinkRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/network-site-link/" + data.Id.ValueString() + "", networkSiteLinkRequest)
     if err != nil {

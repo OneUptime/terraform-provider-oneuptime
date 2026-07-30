@@ -38,6 +38,8 @@ type LogDropFilterDataDataSourceModel struct {
     SamplePercentage types.Number `tfsdk:"sample_percentage"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     SortOrder types.Number `tfsdk:"sort_order"`
+    DroppedCount types.Number `tfsdk:"dropped_count"`
+    LastDroppedAt types.String `tfsdk:"last_dropped_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -101,6 +103,14 @@ func (d *LogDropFilterDataDataSource) Schema(ctx context.Context, req datasource
             },
             "sort_order": schema.NumberAttribute{
                 MarkdownDescription: "Determines the evaluation order of this filter relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Log Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Drop Filter], Update: [Project Owner, Project Admin, Edit Log Drop Filter]",
+                Computed: true,
+            },
+            "dropped_count": schema.NumberAttribute{
+                MarkdownDescription: "Total number of logs this filter has discarded since it was created.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Log Drop Filter], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "last_dropped_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -212,6 +222,12 @@ func (d *LogDropFilterDataDataSource) Read(ctx context.Context, req datasource.R
     }
     if val, ok := logDropFilterDataResponse["sort_order"].(float64); ok {
         data.SortOrder = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := logDropFilterDataResponse["dropped_count"].(float64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := logDropFilterDataResponse["last_dropped_at"].(string); ok {
+        data.LastDroppedAt = types.StringValue(val)
     }
     if val, ok := logDropFilterDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

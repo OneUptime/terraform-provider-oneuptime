@@ -1784,6 +1784,12 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(codeRepositoryRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/code-repository/" + data.Id.ValueString() + "", codeRepositoryRequest)
     if err != nil {

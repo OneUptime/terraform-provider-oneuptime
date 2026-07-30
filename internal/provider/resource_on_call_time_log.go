@@ -1340,6 +1340,12 @@ func (r *OnCallTimeLogResource) Update(ctx context.Context, req resource.UpdateR
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(onCallTimeLogRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-time-log/" + data.Id.ValueString() + "", onCallTimeLogRequest)
     if err != nil {

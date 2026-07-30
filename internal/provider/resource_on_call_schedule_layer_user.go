@@ -1026,6 +1026,12 @@ func (r *OnCallScheduleLayerUserResource) Update(ctx context.Context, req resour
         requestDataMap["userId"] = data.UserId.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(onCallScheduleLayerUserRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-schedule-layer-user/" + data.Id.ValueString() + "", onCallScheduleLayerUserRequest)
     if err != nil {

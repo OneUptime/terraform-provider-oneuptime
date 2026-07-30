@@ -920,6 +920,12 @@ func (r *OnCallDutyPolicyUserOwnerResource) Update(ctx context.Context, req reso
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(onCallDutyPolicyUserOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/onCallDutyPolicy-owner-user/" + data.Id.ValueString() + "", onCallDutyPolicyUserOwnerRequest)
     if err != nil {

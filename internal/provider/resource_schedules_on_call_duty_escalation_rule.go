@@ -913,6 +913,12 @@ func (r *SchedulesOnCallDutyEscalationRuleResource) Update(ctx context.Context, 
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(schedulesOnCallDutyEscalationRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/on-call-duty-policy-escalation-rule-schedule/" + data.Id.ValueString() + "", schedulesOnCallDutyEscalationRuleRequest)
     if err != nil {

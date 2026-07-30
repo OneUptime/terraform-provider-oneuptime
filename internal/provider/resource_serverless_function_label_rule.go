@@ -1199,6 +1199,12 @@ func (r *ServerlessFunctionLabelRuleResource) Update(ctx context.Context, req re
         requestDataMap["labelsToAdd"] = r.convertTerraformSetToInterface(data.LabelsToAdd)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(serverlessFunctionLabelRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/serverless-function-label-rule/" + data.Id.ValueString() + "", serverlessFunctionLabelRuleRequest)
     if err != nil {

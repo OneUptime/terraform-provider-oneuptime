@@ -1015,6 +1015,12 @@ func (r *AlertInternalNoteResource) Update(ctx context.Context, req resource.Upd
         requestDataMap["attachments"] = r.convertTerraformSetToInterface(data.Attachments)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(alertInternalNoteRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/alert-internal-note/" + data.Id.ValueString() + "", alertInternalNoteRequest)
     if err != nil {

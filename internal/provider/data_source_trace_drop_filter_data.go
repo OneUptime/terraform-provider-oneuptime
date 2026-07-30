@@ -38,6 +38,8 @@ type TraceDropFilterDataDataSourceModel struct {
     SamplePercentage types.Number `tfsdk:"sample_percentage"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     SortOrder types.Number `tfsdk:"sort_order"`
+    DroppedCount types.Number `tfsdk:"dropped_count"`
+    LastDroppedAt types.String `tfsdk:"last_dropped_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -101,6 +103,14 @@ func (d *TraceDropFilterDataDataSource) Schema(ctx context.Context, req datasour
             },
             "sort_order": schema.NumberAttribute{
                 MarkdownDescription: "Determines the evaluation order of this filter relative to others.. Permissions - Create: [Project Owner, Project Admin, Create Trace Drop Filter], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [Project Owner, Project Admin, Edit Trace Drop Filter]",
+                Computed: true,
+            },
+            "dropped_count": schema.NumberAttribute{
+                MarkdownDescription: "Total number of spans this filter has discarded since it was created.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "last_dropped_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -212,6 +222,12 @@ func (d *TraceDropFilterDataDataSource) Read(ctx context.Context, req datasource
     }
     if val, ok := traceDropFilterDataResponse["sort_order"].(float64); ok {
         data.SortOrder = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := traceDropFilterDataResponse["dropped_count"].(float64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(val))
+    }
+    if val, ok := traceDropFilterDataResponse["last_dropped_at"].(string); ok {
+        data.LastDroppedAt = types.StringValue(val)
     }
     if val, ok := traceDropFilterDataResponse["created_by_user_id"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)

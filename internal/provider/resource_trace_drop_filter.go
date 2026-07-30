@@ -50,6 +50,8 @@ type TraceDropFilterResourceModel struct {
     UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
     DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    DroppedCount types.Number `tfsdk:"dropped_count"`
+    LastDroppedAt JSONSubsetValue `tfsdk:"last_dropped_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -142,6 +144,15 @@ func (r *TraceDropFilterResource) Schema(ctx context.Context, req resource.Schem
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
+                Computed: true,
+            },
+            "dropped_count": schema.NumberAttribute{
+                MarkdownDescription: "Total number of spans this filter has discarded since it was created.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Telemetry Admin, Telemetry Member, Telemetry Viewer, Read Trace Drop Filter], Update: [No access - you don't have permission for this operation]",
+                Computed: true,
+            },
+            "last_dropped_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -564,6 +575,52 @@ func (r *TraceDropFilterResource) Create(ctx context.Context, req resource.Creat
     } else if dataMap["version"] == nil {
         data.Version = types.NumberNull()
     }
+    if val, ok := dataMap["droppedCount"].(float64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["droppedCount"].(int); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["droppedCount"].(int64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["droppedCount"] == nil {
+        data.DroppedCount = types.NumberNull()
+    }
+    if obj, ok := dataMap["lastDroppedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastDroppedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastDroppedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LastDroppedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lastDroppedAt"].(string); ok && val != "" {
+        data.LastDroppedAt = NewJSONSubsetValue(val)
+    } else {
+        data.LastDroppedAt = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -675,6 +732,8 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "droppedCount": true,
+        "lastDroppedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -1047,6 +1106,52 @@ func (r *TraceDropFilterResource) Read(ctx context.Context, req resource.ReadReq
     } else if dataMap["version"] == nil {
         data.Version = types.NumberNull()
     }
+    if val, ok := dataMap["droppedCount"].(float64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["droppedCount"].(int); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["droppedCount"].(int64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["droppedCount"] == nil {
+        data.DroppedCount = types.NumberNull()
+    }
+    if obj, ok := dataMap["lastDroppedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastDroppedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastDroppedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LastDroppedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lastDroppedAt"].(string); ok && val != "" {
+        data.LastDroppedAt = NewJSONSubsetValue(val)
+    } else {
+        data.LastDroppedAt = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1183,6 +1288,12 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["sortOrder"] = r.bigFloatToFloat64(data.SortOrder.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(traceDropFilterRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/trace-drop-filter/" + data.Id.ValueString() + "", traceDropFilterRequest)
     if err != nil {
@@ -1212,6 +1323,8 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "droppedCount": true,
+        "lastDroppedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -1577,6 +1690,52 @@ func (r *TraceDropFilterResource) Update(ctx context.Context, req resource.Updat
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if dataMap["version"] == nil {
         data.Version = types.NumberNull()
+    }
+    if val, ok := dataMap["droppedCount"].(float64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["droppedCount"].(int); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["droppedCount"].(int64); ok {
+        data.DroppedCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if dataMap["droppedCount"] == nil {
+        data.DroppedCount = types.NumberNull()
+    }
+    if obj, ok := dataMap["lastDroppedAt"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastDroppedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastDroppedAt = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastDroppedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastDroppedAt = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LastDroppedAt = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lastDroppedAt"].(string); ok && val != "" {
+        data.LastDroppedAt = NewJSONSubsetValue(val)
+    } else {
+        data.LastDroppedAt = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

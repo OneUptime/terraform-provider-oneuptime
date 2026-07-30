@@ -1911,6 +1911,12 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(networkSiteRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/network-site/" + data.Id.ValueString() + "", networkSiteRequest)
     if err != nil {

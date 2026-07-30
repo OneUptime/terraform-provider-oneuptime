@@ -920,6 +920,12 @@ func (r *KubernetesClusterUserOwnerResource) Update(ctx context.Context, req res
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(kubernetesClusterUserOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/kubernetes-cluster-owner-user/" + data.Id.ValueString() + "", kubernetesClusterUserOwnerRequest)
     if err != nil {

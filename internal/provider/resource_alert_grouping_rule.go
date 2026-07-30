@@ -2745,6 +2745,12 @@ func (r *AlertGroupingRuleResource) Update(ctx context.Context, req resource.Upd
         requestDataMap["episodeOwnerTeams"] = r.convertTerraformSetToInterface(data.EpisodeOwnerTeams)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(alertGroupingRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/alert-grouping-rule/" + data.Id.ValueString() + "", alertGroupingRuleRequest)
     if err != nil {

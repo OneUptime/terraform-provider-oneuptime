@@ -1634,6 +1634,12 @@ func (r *StatusPageResourceResource) Update(ctx context.Context, req resource.Up
         requestDataMap["columnAxisValue"] = data.ColumnAxisValue.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(statusPageResourceRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/status-page-resource/" + data.Id.ValueString() + "", statusPageResourceRequest)
     if err != nil {

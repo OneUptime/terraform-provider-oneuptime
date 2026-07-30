@@ -1275,6 +1275,12 @@ func (r *TelemetryEntityRelationshipResource) Update(ctx context.Context, req re
         requestDataMap["avgDurationMs"] = r.bigFloatToFloat64(data.AvgDurationMs.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(telemetryEntityRelationshipRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/telemetry-entity-relationship/" + data.Id.ValueString() + "", telemetryEntityRelationshipRequest)
     if err != nil {

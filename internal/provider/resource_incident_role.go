@@ -1234,6 +1234,12 @@ func (r *IncidentRoleResource) Update(ctx context.Context, req resource.UpdateRe
         requestDataMap["canAssignMultipleUsers"] = data.CanAssignMultipleUsers.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentRoleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-role/" + data.Id.ValueString() + "", incidentRoleRequest)
     if err != nil {

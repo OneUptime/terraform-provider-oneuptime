@@ -2244,6 +2244,12 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         requestDataMap["atRiskThresholdPercentage"] = r.bigFloatToFloat64(data.AtRiskThresholdPercentage.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(serviceLevelObjectiveRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/service-level-objective/" + data.Id.ValueString() + "", serviceLevelObjectiveRequest)
     if err != nil {

@@ -947,6 +947,12 @@ func (r *ApiKeyPermissionResource) Update(ctx context.Context, req resource.Upda
         requestDataMap["isBlockPermission"] = data.IsBlockPermission.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(apiKeyPermissionRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/api-key-permission/" + data.Id.ValueString() + "", apiKeyPermissionRequest)
     if err != nil {

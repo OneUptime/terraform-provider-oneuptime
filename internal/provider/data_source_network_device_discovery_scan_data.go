@@ -99,7 +99,7 @@ func (d *NetworkDeviceDiscoveryScanDataDataSource) Schema(ctx context.Context, r
                 Computed: true,
             },
             "cidr": schema.StringAttribute{
-                MarkdownDescription: "Subnet to scan in CIDR notation, e.g. 192.168.1.0/24. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Address space to scan, either in CIDR notation (192.168.1.0/24) or octet-range notation where any octet may be an inclusive low-high range (10.16-22.0-255.51-66). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "snmp_version": schema.StringAttribute{

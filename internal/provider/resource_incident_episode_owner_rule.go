@@ -1378,6 +1378,12 @@ func (r *IncidentEpisodeOwnerRuleResource) Update(ctx context.Context, req resou
         requestDataMap["ownerTeams"] = r.convertTerraformSetToInterface(data.OwnerTeams)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentEpisodeOwnerRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-episode-owner-rule/" + data.Id.ValueString() + "", incidentEpisodeOwnerRuleRequest)
     if err != nil {

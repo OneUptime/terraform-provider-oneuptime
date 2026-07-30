@@ -2193,6 +2193,12 @@ func (r *CloudResourceResource) Update(ctx context.Context, req resource.UpdateR
         requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(cloudResourceRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/cloud-resource/" + data.Id.ValueString() + "", cloudResourceRequest)
     if err != nil {

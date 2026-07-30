@@ -920,6 +920,12 @@ func (r *HostUserOwnerResource) Update(ctx context.Context, req resource.UpdateR
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(hostUserOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/host-owner-user/" + data.Id.ValueString() + "", hostUserOwnerRequest)
     if err != nil {

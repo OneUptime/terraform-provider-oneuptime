@@ -1122,6 +1122,12 @@ func (r *AlertSeverityResource) Update(ctx context.Context, req resource.UpdateR
         requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(alertSeverityRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/alert-severity/" + data.Id.ValueString() + "", alertSeverityRequest)
     if err != nil {

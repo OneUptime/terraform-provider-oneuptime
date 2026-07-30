@@ -2725,6 +2725,12 @@ func (r *MetricResource) Update(ctx context.Context, req resource.UpdateRequest,
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(metricRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/metrics/" + data.Id.ValueString() + "", metricRequest)
     if err != nil {

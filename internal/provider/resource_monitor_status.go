@@ -1166,6 +1166,12 @@ func (r *MonitorStatusResource) Update(ctx context.Context, req resource.UpdateR
         requestDataMap["priority"] = r.bigFloatToFloat64(data.Priority.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(monitorStatusRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/monitor-status/" + data.Id.ValueString() + "", monitorStatusRequest)
     if err != nil {

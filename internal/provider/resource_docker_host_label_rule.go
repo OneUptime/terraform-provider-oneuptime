@@ -1199,6 +1199,12 @@ func (r *DockerHostLabelRuleResource) Update(ctx context.Context, req resource.U
         requestDataMap["labelsToAdd"] = r.convertTerraformSetToInterface(data.LabelsToAdd)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(dockerHostLabelRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/docker-host-label-rule/" + data.Id.ValueString() + "", dockerHostLabelRuleRequest)
     if err != nil {

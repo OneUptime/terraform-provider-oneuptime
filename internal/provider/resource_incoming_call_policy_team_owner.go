@@ -920,6 +920,12 @@ func (r *IncomingCallPolicyTeamOwnerResource) Update(ctx context.Context, req re
     }
 
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incomingCallPolicyTeamOwnerRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incoming-call-policy-owner-team/" + data.Id.ValueString() + "", incomingCallPolicyTeamOwnerRequest)
     if err != nil {

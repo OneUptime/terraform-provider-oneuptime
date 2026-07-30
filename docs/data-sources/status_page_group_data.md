@@ -28,6 +28,7 @@ data "oneuptime_status_page_group_data" "example" {
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `status_page_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `parent_status_page_group_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `slug` (String) Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [No access - you don't have permission for this operation]. Computed.
 - `description` (String) Description for this group. This is visible on Status Page. This can be in markdown format.. Permissions - Create: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Create Status Page Group], Read: [Project Owner, Project Admin, Project Member, Viewer, Status Page Admin, Status Page Member, Status Page Viewer, Read Status Page Group], Update: [Project Owner, Project Admin, Project Member, Status Page Admin, Status Page Member, Edit Status Page Group]. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

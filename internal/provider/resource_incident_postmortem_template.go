@@ -923,6 +923,12 @@ func (r *IncidentPostmortemTemplateResource) Update(ctx context.Context, req res
         requestDataMap["templateDescription"] = data.TemplateDescription.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentPostmortemTemplateRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-postmortem-template/" + data.Id.ValueString() + "", incidentPostmortemTemplateRequest)
     if err != nil {

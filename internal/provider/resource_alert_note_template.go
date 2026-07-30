@@ -923,6 +923,12 @@ func (r *AlertNoteTemplateResource) Update(ctx context.Context, req resource.Upd
         requestDataMap["templateDescription"] = data.TemplateDescription.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(alertNoteTemplateRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/alert-note-template/" + data.Id.ValueString() + "", alertNoteTemplateRequest)
     if err != nil {

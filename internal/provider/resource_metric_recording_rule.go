@@ -1161,6 +1161,12 @@ func (r *MetricRecordingRuleResource) Update(ctx context.Context, req resource.U
         requestDataMap["sortOrder"] = r.bigFloatToFloat64(data.SortOrder.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(metricRecordingRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/metric-recording-rule/" + data.Id.ValueString() + "", metricRecordingRuleRequest)
     if err != nil {

@@ -2939,6 +2939,12 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         requestDataMap["showEpisodeOnStatusPage"] = data.ShowEpisodeOnStatusPage.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentGroupingRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-grouping-rule/" + data.Id.ValueString() + "", incidentGroupingRuleRequest)
     if err != nil {

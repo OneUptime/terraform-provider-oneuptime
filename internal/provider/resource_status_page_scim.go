@@ -1128,6 +1128,12 @@ func (r *StatusPageScimResource) Update(ctx context.Context, req resource.Update
         requestDataMap["autoDeprovisionUsers"] = data.AutoDeprovisionUsers.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(statusPageScimRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/status-page-scim/" + data.Id.ValueString() + "", statusPageScimRequest)
     if err != nil {

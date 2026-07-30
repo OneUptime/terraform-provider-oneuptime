@@ -1093,6 +1093,12 @@ func (r *ScheduledMaintenanceCustomFieldResource) Update(ctx context.Context, re
         requestDataMap["dropdownOptions"] = data.DropdownOptions.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(scheduledMaintenanceCustomFieldRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/scheduled-maintenance-custom-field/" + data.Id.ValueString() + "", scheduledMaintenanceCustomFieldRequest)
     if err != nil {

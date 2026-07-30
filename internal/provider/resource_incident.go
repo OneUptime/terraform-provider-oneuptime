@@ -4429,6 +4429,12 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         requestDataMap["incidentEpisodeId"] = data.IncidentEpisodeId.ValueString()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident/" + data.Id.ValueString() + "", incidentRequest)
     if err != nil {

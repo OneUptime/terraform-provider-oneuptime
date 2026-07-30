@@ -1042,6 +1042,12 @@ func (r *NetworkSiteAssignmentRuleResource) Update(ctx context.Context, req reso
         requestDataMap["priority"] = r.bigFloatToFloat64(data.Priority.ValueBigFloat())
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(networkSiteAssignmentRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/network-site-assignment-rule/" + data.Id.ValueString() + "", networkSiteAssignmentRuleRequest)
     if err != nil {

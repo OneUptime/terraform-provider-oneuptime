@@ -209,6 +209,7 @@ func GetResources() []func() resource.Resource {
         NewScheduledMaintenanceTemplateTeamOwnerResource,
         NewScheduledMaintenanceTemplateUserOwnerResource,
         NewScheduledMaintenanceNoteTemplateResource,
+        NewRecommendationDismissalResource,
         NewMonitorGroupResource,
         NewMonitorGroupTeamOwnerResource,
         NewMonitorGroupUserOwnerResource,

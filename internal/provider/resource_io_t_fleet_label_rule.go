@@ -1199,6 +1199,12 @@ func (r *IoTFleetLabelRuleResource) Update(ctx context.Context, req resource.Upd
         requestDataMap["labelsToAdd"] = r.convertTerraformSetToInterface(data.LabelsToAdd)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(ioTFleetLabelRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/iot-fleet-label-rule/" + data.Id.ValueString() + "", ioTFleetLabelRuleRequest)
     if err != nil {

@@ -1201,6 +1201,12 @@ func (r *RunbookRuleResource) Update(ctx context.Context, req resource.UpdateReq
         requestDataMap["runbooks"] = r.convertTerraformSetToInterface(data.Runbooks)
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(runbookRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/runbook-rule/" + data.Id.ValueString() + "", runbookRuleRequest)
     if err != nil {

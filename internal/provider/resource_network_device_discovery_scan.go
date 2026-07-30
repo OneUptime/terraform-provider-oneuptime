@@ -96,7 +96,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                 Required: true,
             },
             "cidr": schema.StringAttribute{
-                MarkdownDescription: "Subnet to scan in CIDR notation, e.g. 192.168.1.0/24. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Address space to scan, either in CIDR notation (192.168.1.0/24) or octet-range notation where any octet may be an inclusive low-high range (10.16-22.0-255.51-66). Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Network Device Discovery Scan], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Network Device Discovery Scan], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
             "snmp_version": schema.StringAttribute{
@@ -2204,6 +2204,12 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     }
     if !data.RescanIntervalInMinutes.IsUnknown() && !state.RescanIntervalInMinutes.IsUnknown() && !data.RescanIntervalInMinutes.Equal(state.RescanIntervalInMinutes) {
         requestDataMap["rescanIntervalInMinutes"] = r.bigFloatToFloat64(data.RescanIntervalInMinutes.ValueBigFloat())
+    }
+
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(networkDeviceDiscoveryScanRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
     }
 
     // Make API call

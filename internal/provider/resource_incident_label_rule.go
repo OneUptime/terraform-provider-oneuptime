@@ -1738,6 +1738,12 @@ func (r *IncidentLabelRuleResource) Update(ctx context.Context, req resource.Upd
         requestDataMap["inheritLabelsFromServices"] = data.InheritLabelsFromServices.ValueBool()
     }
 
+    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
+    if len(incidentLabelRuleRequest["data"].(map[string]interface{})) == 0 {
+        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+        return
+    }
+
     // Make API call
     httpResp, err := r.client.Put("/incident-label-rule/" + data.Id.ValueString() + "", incidentLabelRuleRequest)
     if err != nil {
