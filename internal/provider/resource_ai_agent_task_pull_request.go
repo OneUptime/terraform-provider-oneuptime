@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -49,12 +49,14 @@ type AiAgentTaskPullRequestResourceModel struct {
     BaseRefName types.String `tfsdk:"base_ref_name"`
     RepoOrganizationName types.String `tfsdk:"repo_organization_name"`
     RepoName types.String `tfsdk:"repo_name"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     CiStatus types.String `tfsdk:"ci_status"`
-    CiStatusAt JSONSubsetValue `tfsdk:"ci_status_at"`
+    CiStatusAt RFC3339Value `tfsdk:"ci_status_at"`
+    RunnerVerificationStatus types.String `tfsdk:"runner_verification_status"`
+    RunnerVerificationSummary types.String `tfsdk:"runner_verification_summary"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -64,12 +66,11 @@ func (r *AiAgentTaskPullRequestResource) Metadata(ctx context.Context, req resou
 
 func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "ai_agent_task_pull_request resource",
+        MarkdownDescription: "Pull requests created by AI agents during task execution.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -88,6 +89,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "ai_agent_id": schema.StringAttribute{
@@ -96,6 +98,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "code_repository_id": schema.StringAttribute{
@@ -104,14 +107,15 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the pull request.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Title of the pull request..",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description/body of the pull request.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Description/body of the pull request..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -119,7 +123,7 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "pull_request_url": schema.StringAttribute{
-                MarkdownDescription: "URL to the pull request on the hosting platform.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "URL to the pull request on the hosting platform..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -127,70 +131,76 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 },
             },
             "pull_request_id": schema.NumberAttribute{
-                MarkdownDescription: "The unique ID of the pull request from the hosting platform.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The unique ID of the pull request from the hosting platform..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                    numberplanmodifier.RequiresReplace(),
                 },
             },
             "pull_request_number": schema.NumberAttribute{
-                MarkdownDescription: "The pull request number (e.g., #123).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The pull request number (e.g., #123)..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                    numberplanmodifier.RequiresReplace(),
                 },
             },
             "pull_request_state": schema.StringAttribute{
-                MarkdownDescription: "Current state of the pull request (open, closed, merged).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [Project Owner, Project Admin, Project Member, Edit AI Agent Task]",
+                MarkdownDescription: "Current state of the pull request (open, closed, merged)..",
                 Required: true,
             },
             "head_ref_name": schema.StringAttribute{
-                MarkdownDescription: "The branch name of the pull request (source branch).. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The branch name of the pull request (source branch)..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "base_ref_name": schema.StringAttribute{
-                MarkdownDescription: "The target branch for the pull request.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "The target branch for the pull request..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "repo_organization_name": schema.StringAttribute{
-                MarkdownDescription: "Organization or username that owns the repository.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Organization or username that owns the repository..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "repo_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the repository.. Permissions - Create: [Project Owner, Project Admin, Project Member, Create AI Agent Task], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the repository..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
@@ -198,12 +208,20 @@ func (r *AiAgentTaskPullRequestResource) Schema(ctx context.Context, req resourc
                 Computed: true,
             },
             "ci_status": schema.StringAttribute{
-                MarkdownDescription: "Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read AI Agent Task], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Rolled-up conclusion of the repository's own CI check runs on this pull request (Pending, Green, Red, ExpectedFailureObserved for should-fail regression-test PRs, NoCiConfigured). Null until the sync job first polls check runs. Written by AIAgent:SyncPullRequestStates — never by users..",
                 Computed: true,
             },
             "ci_status_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "runner_verification_status": schema.StringAttribute{
+                MarkdownDescription: "Outcome of the Runner-side build/test verification that ran against the fix BEFORE this pull request opened (Passed, Failed, Skipped when the repository has no verification commands configured). Distinct from CI Status, which mirrors the repository's own CI checks after the PR exists. Written by the Runner at record time — never by users..",
+                Computed: true,
+            },
+            "runner_verification_summary": schema.StringAttribute{
+                MarkdownDescription: "Human-readable summary of the Runner-side verification (which commands ran, what failed, how many repair attempts were used). Written by the Runner at record time..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -247,27 +265,56 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     aiAgentTaskPullRequestRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "aiRunId": data.AiRunId.ValueString(),
-        "aiAgentId": data.AiAgentId.ValueString(),
-        "codeRepositoryId": data.CodeRepositoryId.ValueString(),
-        "title": data.Title.ValueString(),
-        "description": data.Description.ValueString(),
-        "pullRequestUrl": data.PullRequestUrl.ValueString(),
-        "pullRequestId": r.bigFloatToFloat64(data.PullRequestId.ValueBigFloat()),
-        "pullRequestNumber": r.bigFloatToFloat64(data.PullRequestNumber.ValueBigFloat()),
-        "pullRequestState": data.PullRequestState.ValueString(),
-        "headRefName": data.HeadRefName.ValueString(),
-        "baseRefName": data.BaseRefName.ValueString(),
-        "repoOrganizationName": data.RepoOrganizationName.ValueString(),
-        "repoName": data.RepoName.ValueString(),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := aiAgentTaskPullRequestRequest["data"].(map[string]interface{})
+
+    if !data.AiRunId.IsNull() && !data.AiRunId.IsUnknown() {
+        requestDataMap["aiRunId"] = data.AiRunId.ValueString()
+    }
+    if !data.AiAgentId.IsNull() && !data.AiAgentId.IsUnknown() {
+        requestDataMap["aiAgentId"] = data.AiAgentId.ValueString()
+    }
+    if !data.CodeRepositoryId.IsNull() && !data.CodeRepositoryId.IsUnknown() {
+        requestDataMap["codeRepositoryId"] = data.CodeRepositoryId.ValueString()
+    }
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        requestDataMap["title"] = data.Title.ValueString()
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.PullRequestUrl.IsNull() && !data.PullRequestUrl.IsUnknown() {
+        requestDataMap["pullRequestUrl"] = data.PullRequestUrl.ValueString()
+    }
+    if !data.PullRequestId.IsNull() && !data.PullRequestId.IsUnknown() {
+        requestDataMap["pullRequestId"] = r.bigFloatToFloat64(data.PullRequestId.ValueBigFloat())
+    }
+    if !data.PullRequestNumber.IsNull() && !data.PullRequestNumber.IsUnknown() {
+        requestDataMap["pullRequestNumber"] = r.bigFloatToFloat64(data.PullRequestNumber.ValueBigFloat())
+    }
+    if !data.PullRequestState.IsNull() && !data.PullRequestState.IsUnknown() {
+        requestDataMap["pullRequestState"] = data.PullRequestState.ValueString()
+    }
+    if !data.HeadRefName.IsNull() && !data.HeadRefName.IsUnknown() {
+        requestDataMap["headRefName"] = data.HeadRefName.ValueString()
+    }
+    if !data.BaseRefName.IsNull() && !data.BaseRefName.IsUnknown() {
+        requestDataMap["baseRefName"] = data.BaseRefName.ValueString()
+    }
+    if !data.RepoOrganizationName.IsNull() && !data.RepoOrganizationName.IsUnknown() {
+        requestDataMap["repoOrganizationName"] = data.RepoOrganizationName.ValueString()
+    }
+    if !data.RepoName.IsNull() && !data.RepoName.IsUnknown() {
+        requestDataMap["repoName"] = data.RepoName.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/ai-agent-task-pull-request", aiAgentTaskPullRequestRequest)
+    httpResp, err := r.client.Post(ctx, "/ai-agent-task-pull-request", aiAgentTaskPullRequestRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create ai_agent_task_pull_request, got error: %s", err))
         return
@@ -276,58 +323,95 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     var aiAgentTaskPullRequestResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &aiAgentTaskPullRequestResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse ai_agent_task_pull_request response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create ai_agent_task_pull_request: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := aiAgentTaskPullRequestResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := aiAgentTaskPullRequestResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for ai_agent_task_pull_request did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * ai_agent_task_pull_request is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "aiRunId": true,
+        "aiAgentId": true,
+        "codeRepositoryId": true,
+        "title": true,
+        "description": true,
+        "pullRequestUrl": true,
+        "pullRequestId": true,
+        "pullRequestNumber": true,
+        "pullRequestState": true,
+        "headRefName": true,
+        "baseRefName": true,
+        "repoOrganizationName": true,
+        "repoName": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "ciStatus": true,
+        "ciStatusAt": true,
+        "runnerVerificationStatus": true,
+        "runnerVerificationSummary": true,
+        "createdByUserId": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/ai-agent-task-pull-request/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created ai_agent_task_pull_request but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created ai_agent_task_pull_request but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := aiAgentTaskPullRequestResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = aiAgentTaskPullRequestResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -371,7 +455,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.AiRunId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiRunId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["aiRunId"].(string); ok {
         data.AiRunId = types.StringValue(val)
     } else {
         data.AiRunId = types.StringNull()
@@ -408,7 +492,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.AiAgentId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiAgentId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["aiAgentId"].(string); ok {
         data.AiAgentId = types.StringValue(val)
     } else {
         data.AiAgentId = types.StringNull()
@@ -445,7 +529,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.CodeRepositoryId = types.StringNull()
         }
-    } else if val, ok := dataMap["codeRepositoryId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["codeRepositoryId"].(string); ok {
         data.CodeRepositoryId = types.StringValue(val)
     } else {
         data.CodeRepositoryId = types.StringNull()
@@ -482,7 +566,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.Title = types.StringNull()
         }
-    } else if val, ok := dataMap["title"].(string); ok && val != "" {
+    } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
@@ -519,7 +603,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -556,7 +640,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.PullRequestUrl = types.StringNull()
         }
-    } else if val, ok := dataMap["pullRequestUrl"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pullRequestUrl"].(string); ok {
         data.PullRequestUrl = types.StringValue(val)
     } else {
         data.PullRequestUrl = types.StringNull()
@@ -567,7 +651,15 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pullRequestId"].(int64); ok {
         data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pullRequestId"] == nil {
+    } else if obj, ok := dataMap["pullRequestId"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PullRequestId = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PullRequestId = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PullRequestId = types.NumberNull()
     }
     if val, ok := dataMap["pullRequestNumber"].(float64); ok {
@@ -576,7 +668,15 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pullRequestNumber"].(int64); ok {
         data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pullRequestNumber"] == nil {
+    } else if obj, ok := dataMap["pullRequestNumber"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PullRequestNumber = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PullRequestNumber = types.NumberNull()
     }
     if obj, ok := dataMap["pullRequestState"].(map[string]interface{}); ok {
@@ -611,7 +711,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.PullRequestState = types.StringNull()
         }
-    } else if val, ok := dataMap["pullRequestState"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pullRequestState"].(string); ok {
         data.PullRequestState = types.StringValue(val)
     } else {
         data.PullRequestState = types.StringNull()
@@ -648,7 +748,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.HeadRefName = types.StringNull()
         }
-    } else if val, ok := dataMap["headRefName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["headRefName"].(string); ok {
         data.HeadRefName = types.StringValue(val)
     } else {
         data.HeadRefName = types.StringNull()
@@ -685,7 +785,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.BaseRefName = types.StringNull()
         }
-    } else if val, ok := dataMap["baseRefName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["baseRefName"].(string); ok {
         data.BaseRefName = types.StringValue(val)
     } else {
         data.BaseRefName = types.StringNull()
@@ -722,7 +822,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.RepoOrganizationName = types.StringNull()
         }
-    } else if val, ok := dataMap["repoOrganizationName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["repoOrganizationName"].(string); ok {
         data.RepoOrganizationName = types.StringValue(val)
     } else {
         data.RepoOrganizationName = types.StringNull()
@@ -759,121 +859,43 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.RepoName = types.StringNull()
         }
-    } else if val, ok := dataMap["repoName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["repoName"].(string); ok {
         data.RepoName = types.StringValue(val)
     } else {
         data.RepoName = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -881,7 +903,15 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
@@ -916,47 +946,95 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.CiStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["ciStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["ciStatus"].(string); ok {
         data.CiStatus = types.StringValue(val)
     } else {
         data.CiStatus = types.StringNull()
     }
     if obj, ok := dataMap["ciStatusAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CiStatusAt = NewRFC3339Value(val)
+        } else {
+            data.CiStatusAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["ciStatusAt"].(string); ok && val != "" {
+        data.CiStatusAt = NewRFC3339Value(val)
+    } else {
+        data.CiStatusAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["runnerVerificationStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CiStatusAt = NewJSONSubsetValue(val)
+            data.RunnerVerificationStatus = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CiStatusAt = NewJSONSubsetValue(val)
+            data.RunnerVerificationStatus = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+                data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+                data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+            data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
         } else {
-            data.CiStatusAt = NewJSONSubsetNull()
+            data.RunnerVerificationStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["ciStatusAt"].(string); ok && val != "" {
-        data.CiStatusAt = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["runnerVerificationStatus"].(string); ok {
+        data.RunnerVerificationStatus = types.StringValue(val)
     } else {
-        data.CiStatusAt = NewJSONSubsetNull()
+        data.RunnerVerificationStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["runnerVerificationSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerVerificationSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerVerificationSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerVerificationSummary = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerVerificationSummary"].(string); ok {
+        data.RunnerVerificationSummary = types.StringValue(val)
+    } else {
+        data.RunnerVerificationSummary = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -990,7 +1068,7 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
@@ -1000,6 +1078,8 @@ func (r *AiAgentTaskPullRequestResource) Create(ctx context.Context, req resourc
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1040,12 +1120,14 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         "version": true,
         "ciStatus": true,
         "ciStatusAt": true,
+        "runnerVerificationStatus": true,
+        "runnerVerificationSummary": true,
         "createdByUserId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/ai-agent-task-pull-request/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/ai-agent-task-pull-request/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_agent_task_pull_request, got error: %s", err))
         return
@@ -1074,43 +1156,6 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         dataMap = aiAgentTaskPullRequestResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1154,7 +1199,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.AiRunId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiRunId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["aiRunId"].(string); ok {
         data.AiRunId = types.StringValue(val)
     } else {
         data.AiRunId = types.StringNull()
@@ -1191,7 +1236,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.AiAgentId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiAgentId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["aiAgentId"].(string); ok {
         data.AiAgentId = types.StringValue(val)
     } else {
         data.AiAgentId = types.StringNull()
@@ -1228,7 +1273,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.CodeRepositoryId = types.StringNull()
         }
-    } else if val, ok := dataMap["codeRepositoryId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["codeRepositoryId"].(string); ok {
         data.CodeRepositoryId = types.StringValue(val)
     } else {
         data.CodeRepositoryId = types.StringNull()
@@ -1265,7 +1310,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.Title = types.StringNull()
         }
-    } else if val, ok := dataMap["title"].(string); ok && val != "" {
+    } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
@@ -1302,7 +1347,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -1339,7 +1384,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.PullRequestUrl = types.StringNull()
         }
-    } else if val, ok := dataMap["pullRequestUrl"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pullRequestUrl"].(string); ok {
         data.PullRequestUrl = types.StringValue(val)
     } else {
         data.PullRequestUrl = types.StringNull()
@@ -1350,7 +1395,15 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pullRequestId"].(int64); ok {
         data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pullRequestId"] == nil {
+    } else if obj, ok := dataMap["pullRequestId"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PullRequestId = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PullRequestId = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PullRequestId = types.NumberNull()
     }
     if val, ok := dataMap["pullRequestNumber"].(float64); ok {
@@ -1359,7 +1412,15 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pullRequestNumber"].(int64); ok {
         data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pullRequestNumber"] == nil {
+    } else if obj, ok := dataMap["pullRequestNumber"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PullRequestNumber = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PullRequestNumber = types.NumberNull()
     }
     if obj, ok := dataMap["pullRequestState"].(map[string]interface{}); ok {
@@ -1394,7 +1455,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.PullRequestState = types.StringNull()
         }
-    } else if val, ok := dataMap["pullRequestState"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pullRequestState"].(string); ok {
         data.PullRequestState = types.StringValue(val)
     } else {
         data.PullRequestState = types.StringNull()
@@ -1431,7 +1492,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.HeadRefName = types.StringNull()
         }
-    } else if val, ok := dataMap["headRefName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["headRefName"].(string); ok {
         data.HeadRefName = types.StringValue(val)
     } else {
         data.HeadRefName = types.StringNull()
@@ -1468,7 +1529,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.BaseRefName = types.StringNull()
         }
-    } else if val, ok := dataMap["baseRefName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["baseRefName"].(string); ok {
         data.BaseRefName = types.StringValue(val)
     } else {
         data.BaseRefName = types.StringNull()
@@ -1505,7 +1566,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.RepoOrganizationName = types.StringNull()
         }
-    } else if val, ok := dataMap["repoOrganizationName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["repoOrganizationName"].(string); ok {
         data.RepoOrganizationName = types.StringValue(val)
     } else {
         data.RepoOrganizationName = types.StringNull()
@@ -1542,121 +1603,43 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.RepoName = types.StringNull()
         }
-    } else if val, ok := dataMap["repoName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["repoName"].(string); ok {
         data.RepoName = types.StringValue(val)
     } else {
         data.RepoName = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -1664,7 +1647,15 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
@@ -1699,47 +1690,95 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.CiStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["ciStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["ciStatus"].(string); ok {
         data.CiStatus = types.StringValue(val)
     } else {
         data.CiStatus = types.StringNull()
     }
     if obj, ok := dataMap["ciStatusAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CiStatusAt = NewRFC3339Value(val)
+        } else {
+            data.CiStatusAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["ciStatusAt"].(string); ok && val != "" {
+        data.CiStatusAt = NewRFC3339Value(val)
+    } else {
+        data.CiStatusAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["runnerVerificationStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CiStatusAt = NewJSONSubsetValue(val)
+            data.RunnerVerificationStatus = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CiStatusAt = NewJSONSubsetValue(val)
+            data.RunnerVerificationStatus = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+                data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+                data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+            data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
         } else {
-            data.CiStatusAt = NewJSONSubsetNull()
+            data.RunnerVerificationStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["ciStatusAt"].(string); ok && val != "" {
-        data.CiStatusAt = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["runnerVerificationStatus"].(string); ok {
+        data.RunnerVerificationStatus = types.StringValue(val)
     } else {
-        data.CiStatusAt = NewJSONSubsetNull()
+        data.RunnerVerificationStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["runnerVerificationSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerVerificationSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerVerificationSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerVerificationSummary = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerVerificationSummary"].(string); ok {
+        data.RunnerVerificationSummary = types.StringValue(val)
+    } else {
+        data.RunnerVerificationSummary = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1773,7 +1812,7 @@ func (r *AiAgentTaskPullRequestResource) Read(ctx context.Context, req resource.
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
@@ -1826,25 +1865,24 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         requestDataMap["pullRequestState"] = data.PullRequestState.ValueString()
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(aiAgentTaskPullRequestRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(aiAgentTaskPullRequestRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/ai-agent-task-pull-request/" + data.Id.ValueString() + "", aiAgentTaskPullRequestRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update ai_agent_task_pull_request, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/ai-agent-task-pull-request/" + data.Id.ValueString() + "", aiAgentTaskPullRequestRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update ai_agent_task_pull_request, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var aiAgentTaskPullRequestResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &aiAgentTaskPullRequestResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse ai_agent_task_pull_request response, got error: %s", err))
-        return
+        // Parse the update response
+        var aiAgentTaskPullRequestResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &aiAgentTaskPullRequestResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update ai_agent_task_pull_request: %s", err))
+            return
+        }
+        _ = aiAgentTaskPullRequestResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -1869,11 +1907,13 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         "version": true,
         "ciStatus": true,
         "ciStatusAt": true,
+        "runnerVerificationStatus": true,
+        "runnerVerificationSummary": true,
         "createdByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/ai-agent-task-pull-request/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/ai-agent-task-pull-request/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_agent_task_pull_request after update, got error: %s", err))
         return
@@ -1882,7 +1922,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse ai_agent_task_pull_request read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_agent_task_pull_request after update: %s", err))
         return
     }
 
@@ -1897,43 +1937,6 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1977,7 +1980,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.AiRunId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiRunId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["aiRunId"].(string); ok {
         data.AiRunId = types.StringValue(val)
     } else {
         data.AiRunId = types.StringNull()
@@ -2014,7 +2017,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.AiAgentId = types.StringNull()
         }
-    } else if val, ok := dataMap["aiAgentId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["aiAgentId"].(string); ok {
         data.AiAgentId = types.StringValue(val)
     } else {
         data.AiAgentId = types.StringNull()
@@ -2051,7 +2054,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.CodeRepositoryId = types.StringNull()
         }
-    } else if val, ok := dataMap["codeRepositoryId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["codeRepositoryId"].(string); ok {
         data.CodeRepositoryId = types.StringValue(val)
     } else {
         data.CodeRepositoryId = types.StringNull()
@@ -2088,7 +2091,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.Title = types.StringNull()
         }
-    } else if val, ok := dataMap["title"].(string); ok && val != "" {
+    } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
@@ -2125,7 +2128,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -2162,7 +2165,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.PullRequestUrl = types.StringNull()
         }
-    } else if val, ok := dataMap["pullRequestUrl"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pullRequestUrl"].(string); ok {
         data.PullRequestUrl = types.StringValue(val)
     } else {
         data.PullRequestUrl = types.StringNull()
@@ -2173,7 +2176,15 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pullRequestId"].(int64); ok {
         data.PullRequestId = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pullRequestId"] == nil {
+    } else if obj, ok := dataMap["pullRequestId"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PullRequestId = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PullRequestId = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PullRequestId = types.NumberNull()
     }
     if val, ok := dataMap["pullRequestNumber"].(float64); ok {
@@ -2182,7 +2193,15 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pullRequestNumber"].(int64); ok {
         data.PullRequestNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pullRequestNumber"] == nil {
+    } else if obj, ok := dataMap["pullRequestNumber"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PullRequestNumber = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PullRequestNumber = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PullRequestNumber = types.NumberNull()
     }
     if obj, ok := dataMap["pullRequestState"].(map[string]interface{}); ok {
@@ -2217,7 +2236,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.PullRequestState = types.StringNull()
         }
-    } else if val, ok := dataMap["pullRequestState"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pullRequestState"].(string); ok {
         data.PullRequestState = types.StringValue(val)
     } else {
         data.PullRequestState = types.StringNull()
@@ -2254,7 +2273,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.HeadRefName = types.StringNull()
         }
-    } else if val, ok := dataMap["headRefName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["headRefName"].(string); ok {
         data.HeadRefName = types.StringValue(val)
     } else {
         data.HeadRefName = types.StringNull()
@@ -2291,7 +2310,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.BaseRefName = types.StringNull()
         }
-    } else if val, ok := dataMap["baseRefName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["baseRefName"].(string); ok {
         data.BaseRefName = types.StringValue(val)
     } else {
         data.BaseRefName = types.StringNull()
@@ -2328,7 +2347,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.RepoOrganizationName = types.StringNull()
         }
-    } else if val, ok := dataMap["repoOrganizationName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["repoOrganizationName"].(string); ok {
         data.RepoOrganizationName = types.StringValue(val)
     } else {
         data.RepoOrganizationName = types.StringNull()
@@ -2365,121 +2384,43 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.RepoName = types.StringNull()
         }
-    } else if val, ok := dataMap["repoName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["repoName"].(string); ok {
         data.RepoName = types.StringValue(val)
     } else {
         data.RepoName = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -2487,7 +2428,15 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["ciStatus"].(map[string]interface{}); ok {
@@ -2522,47 +2471,95 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.CiStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["ciStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["ciStatus"].(string); ok {
         data.CiStatus = types.StringValue(val)
     } else {
         data.CiStatus = types.StringNull()
     }
     if obj, ok := dataMap["ciStatusAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CiStatusAt = NewRFC3339Value(val)
+        } else {
+            data.CiStatusAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["ciStatusAt"].(string); ok && val != "" {
+        data.CiStatusAt = NewRFC3339Value(val)
+    } else {
+        data.CiStatusAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["runnerVerificationStatus"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CiStatusAt = NewJSONSubsetValue(val)
+            data.RunnerVerificationStatus = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CiStatusAt = NewJSONSubsetValue(val)
+            data.RunnerVerificationStatus = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+                data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+                data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
             } else {
-                data.CiStatusAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.RunnerVerificationStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CiStatusAt = NewJSONSubsetValue(string(jsonBytes))
+            data.RunnerVerificationStatus = types.StringValue(string(jsonBytes))
         } else {
-            data.CiStatusAt = NewJSONSubsetNull()
+            data.RunnerVerificationStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["ciStatusAt"].(string); ok && val != "" {
-        data.CiStatusAt = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["runnerVerificationStatus"].(string); ok {
+        data.RunnerVerificationStatus = types.StringValue(val)
     } else {
-        data.CiStatusAt = NewJSONSubsetNull()
+        data.RunnerVerificationStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["runnerVerificationSummary"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RunnerVerificationSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.RunnerVerificationSummary = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+            } else {
+                data.RunnerVerificationSummary = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.RunnerVerificationSummary = types.StringValue(string(jsonBytes))
+        } else {
+            data.RunnerVerificationSummary = types.StringNull()
+        }
+    } else if val, ok := dataMap["runnerVerificationSummary"].(string); ok {
+        data.RunnerVerificationSummary = types.StringValue(val)
+    } else {
+        data.RunnerVerificationSummary = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2596,7 +2593,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
@@ -2606,6 +2603,7 @@ func (r *AiAgentTaskPullRequestResource) Update(ctx context.Context, req resourc
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2622,10 +2620,21 @@ func (r *AiAgentTaskPullRequestResource) Delete(ctx context.Context, req resourc
     }
 
     // Make API call
-    _, err := r.client.Delete("/ai-agent-task-pull-request/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/ai-agent-task-pull-request/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete ai_agent_task_pull_request, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete ai_agent_task_pull_request: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -2657,10 +2666,10 @@ func (r *AiAgentTaskPullRequestResource) convertTerraformListToInterface(terrafo
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -2678,10 +2687,10 @@ func (r *AiAgentTaskPullRequestResource) convertTerraformSetToInterface(terrafor
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -2693,6 +2702,7 @@ func (r *AiAgentTaskPullRequestResource) convertTerraformSetToInterface(terrafor
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *AiAgentTaskPullRequestResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -2753,57 +2763,8 @@ func (r *AiAgentTaskPullRequestResource) bigFloatToFloat64(bf *big.Float) interf
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *AiAgentTaskPullRequestResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

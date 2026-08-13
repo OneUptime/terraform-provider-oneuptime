@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -52,11 +52,11 @@ type AlertOnCallRuleResourceModel struct {
     MonitorNamePattern types.String `tfsdk:"monitor_name_pattern"`
     MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
+    Version types.Number `tfsdk:"version"`
 }
 
 func (r *AlertOnCallRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -65,12 +65,11 @@ func (r *AlertOnCallRuleResource) Metadata(ctx context.Context, req resource.Met
 
 func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "alert_on_call_rule resource",
+        MarkdownDescription: "Configure rules for automatically executing on-call duty policies when matching alerts are created",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -84,11 +83,11 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this alert on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Name of this alert on-call rule.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this alert on-call rule. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Description of this alert on-call rule.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -96,7 +95,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Whether this rule is enabled.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -105,7 +104,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts from these monitors. Leave empty to match alerts from any monitor..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -114,7 +113,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts with these severities. Leave empty to match alerts of any severity..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -123,7 +122,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts that have at least one of these labels. Leave empty to match alerts regardless of alert labels..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -132,7 +131,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Only trigger for alerts from monitors that have at least one of these labels. Leave empty to match alerts regardless of monitor labels..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -141,7 +140,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match alert titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -149,7 +148,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "alert_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match alert descriptions. Leave empty to match any description..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -157,7 +156,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -165,7 +164,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -173,7 +172,7 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when an alert matches this rule.. Permissions - Create: [Project Owner, Project Admin, Create Alert On-Call Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Alert Admin, Alert Member, Alert Viewer, Read Alert On-Call Rule], Update: [Project Owner, Project Admin, Edit Alert On-Call Rule]",
+                MarkdownDescription: "On-call duty policies to execute when an alert matches this rule..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -181,27 +180,32 @@ func (r *AlertOnCallRuleResource) Schema(ctx context.Context, req resource.Schem
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
         },
@@ -241,26 +245,56 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     alertOnCallRuleRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "name": data.Name.ValueString(),
-        "description": data.Description.ValueString(),
-        "isEnabled": data.IsEnabled.ValueBool(),
-        "monitors": r.convertTerraformSetToInterface(data.Monitors),
-        "alertSeverities": r.convertTerraformSetToInterface(data.AlertSeverities),
-        "alertLabels": r.convertTerraformSetToInterface(data.AlertLabels),
-        "monitorLabels": r.convertTerraformSetToInterface(data.MonitorLabels),
-        "alertTitlePattern": data.AlertTitlePattern.ValueString(),
-        "alertDescriptionPattern": data.AlertDescriptionPattern.ValueString(),
-        "monitorNamePattern": data.MonitorNamePattern.ValueString(),
-        "monitorDescriptionPattern": data.MonitorDescriptionPattern.ValueString(),
-        "onCallDutyPolicies": r.convertTerraformSetToInterface(data.OnCallDutyPolicies),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := alertOnCallRuleRequest["data"].(map[string]interface{})
+
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
+    }
+    if !data.Monitors.IsNull() && !data.Monitors.IsUnknown() {
+        requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
+    }
+    if !data.AlertSeverities.IsNull() && !data.AlertSeverities.IsUnknown() {
+        requestDataMap["alertSeverities"] = r.convertTerraformSetToInterface(data.AlertSeverities)
+    }
+    if !data.AlertLabels.IsNull() && !data.AlertLabels.IsUnknown() {
+        requestDataMap["alertLabels"] = r.convertTerraformSetToInterface(data.AlertLabels)
+    }
+    if !data.MonitorLabels.IsNull() && !data.MonitorLabels.IsUnknown() {
+        requestDataMap["monitorLabels"] = r.convertTerraformSetToInterface(data.MonitorLabels)
+    }
+    if !data.AlertTitlePattern.IsNull() && !data.AlertTitlePattern.IsUnknown() {
+        requestDataMap["alertTitlePattern"] = data.AlertTitlePattern.ValueString()
+    }
+    if !data.AlertDescriptionPattern.IsNull() && !data.AlertDescriptionPattern.IsUnknown() {
+        requestDataMap["alertDescriptionPattern"] = data.AlertDescriptionPattern.ValueString()
+    }
+    if !data.MonitorNamePattern.IsNull() && !data.MonitorNamePattern.IsUnknown() {
+        requestDataMap["monitorNamePattern"] = data.MonitorNamePattern.ValueString()
+    }
+    if !data.MonitorDescriptionPattern.IsNull() && !data.MonitorDescriptionPattern.IsUnknown() {
+        requestDataMap["monitorDescriptionPattern"] = data.MonitorDescriptionPattern.ValueString()
+    }
+    if !data.OnCallDutyPolicies.IsNull() && !data.OnCallDutyPolicies.IsUnknown() {
+        requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/alert-on-call-rule", alertOnCallRuleRequest)
+    httpResp, err := r.client.Post(ctx, "/alert-on-call-rule", alertOnCallRuleRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create alert_on_call_rule, got error: %s", err))
         return
@@ -269,58 +303,90 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
     var alertOnCallRuleResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &alertOnCallRuleResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse alert_on_call_rule response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create alert_on_call_rule: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := alertOnCallRuleResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := alertOnCallRuleResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for alert_on_call_rule did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * alert_on_call_rule is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "description": true,
+        "isEnabled": true,
+        "monitors": true,
+        "alertSeverities": true,
+        "alertLabels": true,
+        "monitorLabels": true,
+        "alertTitlePattern": true,
+        "alertDescriptionPattern": true,
+        "monitorNamePattern": true,
+        "monitorDescriptionPattern": true,
+        "onCallDutyPolicies": true,
+        "createdByUserId": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/alert-on-call-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created alert_on_call_rule but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created alert_on_call_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := alertOnCallRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = alertOnCallRuleResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -364,7 +430,7 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -401,7 +467,7 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -569,7 +635,7 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.AlertTitlePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["alertTitlePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertTitlePattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
     } else {
         data.AlertTitlePattern = types.StringNull()
@@ -606,7 +672,7 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.AlertDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["alertDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertDescriptionPattern"].(string); ok {
         data.AlertDescriptionPattern = types.StringValue(val)
     } else {
         data.AlertDescriptionPattern = types.StringNull()
@@ -643,7 +709,7 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
         data.MonitorNamePattern = types.StringNull()
@@ -680,7 +746,7 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
         data.MonitorDescriptionPattern = types.StringValue(val)
     } else {
         data.MonitorDescriptionPattern = types.StringNull()
@@ -717,126 +783,6 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -869,16 +815,68 @@ func (r *AlertOnCallRuleResource) Create(ctx context.Context, req resource.Creat
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -912,16 +910,16 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         "monitorNamePattern": true,
         "monitorDescriptionPattern": true,
         "onCallDutyPolicies": true,
+        "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "createdByUserId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/alert-on-call-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/alert-on-call-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read alert_on_call_rule, got error: %s", err))
         return
@@ -950,43 +948,6 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         dataMap = alertOnCallRuleResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1030,7 +991,7 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -1067,7 +1028,7 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -1235,7 +1196,7 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.AlertTitlePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["alertTitlePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertTitlePattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
     } else {
         data.AlertTitlePattern = types.StringNull()
@@ -1272,7 +1233,7 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.AlertDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["alertDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertDescriptionPattern"].(string); ok {
         data.AlertDescriptionPattern = types.StringValue(val)
     } else {
         data.AlertDescriptionPattern = types.StringNull()
@@ -1309,7 +1270,7 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
         data.MonitorNamePattern = types.StringNull()
@@ -1346,7 +1307,7 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
         data.MonitorDescriptionPattern = types.StringValue(val)
     } else {
         data.MonitorDescriptionPattern = types.StringNull()
@@ -1383,126 +1344,6 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1535,10 +1376,60 @@ func (r *AlertOnCallRuleResource) Read(ctx context.Context, req resource.ReadReq
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -1612,25 +1503,24 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(alertOnCallRuleRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(alertOnCallRuleRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/alert-on-call-rule/" + data.Id.ValueString() + "", alertOnCallRuleRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update alert_on_call_rule, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/alert-on-call-rule/" + data.Id.ValueString() + "", alertOnCallRuleRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update alert_on_call_rule, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var alertOnCallRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &alertOnCallRuleResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse alert_on_call_rule response, got error: %s", err))
-        return
+        // Parse the update response
+        var alertOnCallRuleResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &alertOnCallRuleResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update alert_on_call_rule: %s", err))
+            return
+        }
+        _ = alertOnCallRuleResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -1648,15 +1538,15 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         "monitorNamePattern": true,
         "monitorDescriptionPattern": true,
         "onCallDutyPolicies": true,
+        "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "createdByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/alert-on-call-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/alert-on-call-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read alert_on_call_rule after update, got error: %s", err))
         return
@@ -1665,7 +1555,7 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse alert_on_call_rule read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read alert_on_call_rule after update: %s", err))
         return
     }
 
@@ -1680,43 +1570,6 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1760,7 +1613,7 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -1797,7 +1650,7 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -1965,7 +1818,7 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.AlertTitlePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["alertTitlePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertTitlePattern"].(string); ok {
         data.AlertTitlePattern = types.StringValue(val)
     } else {
         data.AlertTitlePattern = types.StringNull()
@@ -2002,7 +1855,7 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.AlertDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["alertDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertDescriptionPattern"].(string); ok {
         data.AlertDescriptionPattern = types.StringValue(val)
     } else {
         data.AlertDescriptionPattern = types.StringNull()
@@ -2039,7 +1892,7 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
         data.MonitorNamePattern = types.StringNull()
@@ -2076,7 +1929,7 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
         data.MonitorDescriptionPattern = types.StringValue(val)
     } else {
         data.MonitorDescriptionPattern = types.StringNull()
@@ -2113,126 +1966,6 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
-    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2265,16 +1998,67 @@ func (r *AlertOnCallRuleResource) Update(ctx context.Context, req resource.Updat
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2291,10 +2075,21 @@ func (r *AlertOnCallRuleResource) Delete(ctx context.Context, req resource.Delet
     }
 
     // Make API call
-    _, err := r.client.Delete("/alert-on-call-rule/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/alert-on-call-rule/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete alert_on_call_rule, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete alert_on_call_rule: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -2326,10 +2121,10 @@ func (r *AlertOnCallRuleResource) convertTerraformListToInterface(terraformList 
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -2347,10 +2142,10 @@ func (r *AlertOnCallRuleResource) convertTerraformSetToInterface(terraformSet ty
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -2362,6 +2157,7 @@ func (r *AlertOnCallRuleResource) convertTerraformSetToInterface(terraformSet ty
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *AlertOnCallRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -2422,57 +2218,8 @@ func (r *AlertOnCallRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *AlertOnCallRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

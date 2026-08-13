@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -21,6 +21,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -42,6 +43,7 @@ type ScheduledMaintenanceEventResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
     Hosts types.Set `tfsdk:"hosts"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
@@ -56,28 +58,27 @@ type ScheduledMaintenanceEventResourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     CurrentScheduledMaintenanceStateId types.String `tfsdk:"current_scheduled_maintenance_state_id"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
-    StartsAt JSONSubsetValue `tfsdk:"starts_at"`
-    EndsAt JSONSubsetValue `tfsdk:"ends_at"`
-    SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
+    StartsAt RFC3339Value `tfsdk:"starts_at"`
+    EndsAt RFC3339Value `tfsdk:"ends_at"`
     ShouldStatusPageSubscribersBeNotifiedOnEventCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_event_created"`
     ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing types.Bool `tfsdk:"should_status_page_subscribers_be_notified_when_event_changed_to_ongoing"`
     ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded types.Bool `tfsdk:"should_status_page_subscribers_be_notified_when_event_changed_to_ended"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     SendSubscriberNotificationsOnBeforeTheEvent JSONSubsetValue `tfsdk:"send_subscriber_notifications_on_before_the_event"`
-    NextSubscriberNotificationBeforeTheEventAt JSONSubsetValue `tfsdk:"next_subscriber_notification_before_the_event_at"`
+    NextSubscriberNotificationBeforeTheEventAt RFC3339Value `tfsdk:"next_subscriber_notification_before_the_event_at"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatusOnEventScheduled types.String `tfsdk:"subscriber_notification_status_on_event_scheduled"`
+    SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
     ScheduledMaintenanceNumber types.Number `tfsdk:"scheduled_maintenance_number"`
     ScheduledMaintenanceNumberWithPrefix types.String `tfsdk:"scheduled_maintenance_number_with_prefix"`
-    NextReminderNotificationAt JSONSubsetValue `tfsdk:"next_reminder_notification_at"`
+    NextReminderNotificationAt RFC3339Value `tfsdk:"next_reminder_notification_at"`
     ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
 }
 
@@ -87,12 +88,11 @@ func (r *ScheduledMaintenanceEventResource) Metadata(ctx context.Context, req re
 
 func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "scheduled_maintenance_event resource",
+        MarkdownDescription: "Manage scheduled maintenance event for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -106,19 +106,28 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "title": schema.StringAttribute{
-                MarkdownDescription: "Title of this scheduled event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Title of this scheduled event..",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Description of this scheduled event that will show up on Status Page. This is in markdown..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors attached to this event. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of monitors attached to this event.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -127,7 +136,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "hosts": schema.SetAttribute{
-                MarkdownDescription: "List of hosts affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of hosts affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -136,7 +145,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "kubernetes_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Kubernetes clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of Kubernetes clusters affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -145,7 +154,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "docker_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Docker hosts affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of Docker hosts affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -154,7 +163,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "podman_hosts": schema.SetAttribute{
-                MarkdownDescription: "List of Podman hosts affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of Podman hosts affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -163,7 +172,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "proxmox_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Proxmox clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of Proxmox clusters affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -172,7 +181,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "iot_fleets": schema.SetAttribute{
-                MarkdownDescription: "List of IoT fleets affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of IoT fleets affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -181,7 +190,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "docker_swarm_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Docker Swarm clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of Docker Swarm clusters affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -190,7 +199,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "ceph_clusters": schema.SetAttribute{
-                MarkdownDescription: "List of Ceph clusters affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of Ceph clusters affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -199,7 +208,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "services": schema.SetAttribute{
-                MarkdownDescription: "List of services affected by this event.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of services affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -208,7 +217,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "status_pages": schema.SetAttribute{
-                MarkdownDescription: "List of status pages to show this event on. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "List of status pages to show this event on.",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -217,7 +226,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -243,70 +252,71 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
             },
             "starts_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Required: true,
             },
             "ends_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Required: true,
             },
-            "subscriber_notification_status_message": schema.StringAttribute{
-                MarkdownDescription: "Status message for subscriber notifications when event is scheduled - includes success messages, failure reasons, or skip reasons. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Incident Status Page Note], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
             "should_status_page_subscribers_be_notified_on_event_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event creation?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this event creation?.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                    boolplanmodifier.RequiresReplace(),
                 },
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ongoing": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ongoing?.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                    boolplanmodifier.RequiresReplace(),
                 },
             },
             "should_status_page_subscribers_be_notified_when_event_changed_to_ended": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Should subscribers be notified about this event event is changed to ended?.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                    boolplanmodifier.RequiresReplace(),
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Custom Fields on this resource..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "send_subscriber_notifications_on_before_the_event": schema.StringAttribute{
-                MarkdownDescription: "Should subscribers be notified before the event?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Should subscribers be notified before the event?.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "next_subscriber_notification_before_the_event_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -314,7 +324,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "is_visible_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should this incident be visible on the status page?. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Should this incident be visible on the status page?.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -323,7 +333,7 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 },
             },
             "enable_reminders": schema.BoolAttribute{
-                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project.. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Should reminder notifications be sent to owners while this scheduled maintenance event is still not complete? Reminders are sent based on the reminder rules configured for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -333,17 +343,17 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
@@ -351,36 +361,36 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
             },
             "subscriber_notification_status_on_event_scheduled": schema.StringAttribute{
-                MarkdownDescription: "Status of notification sent to subscribers when event was scheduled. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Edit Scheduled Maintenance]",
+                MarkdownDescription: "Status of notification sent to subscribers when event was scheduled.",
+                Computed: true,
+            },
+            "subscriber_notification_status_message": schema.StringAttribute{
+                MarkdownDescription: "Status message for subscriber notifications when event is scheduled - includes success messages, failure reasons, or skip reasons.",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
-                MarkdownDescription: "Are owners notified of when this resource is created?. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Are owners notified of when this resource is created?.",
                 Computed: true,
             },
             "scheduled_maintenance_number": schema.NumberAttribute{
-                MarkdownDescription: "Scheduled Maintenance Number. Permissions - Create: [Project Owner, Project Admin, Project Member, Scheduled Maintenance Admin, Scheduled Maintenance Member, Create Scheduled Maintenance], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Scheduled Maintenance Number.",
                 Computed: true,
             },
             "scheduled_maintenance_number_with_prefix": schema.StringAttribute{
-                MarkdownDescription: "Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42'). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Scheduled maintenance number with prefix (e.g., 'SM-42' or '#42').",
                 Computed: true,
             },
             "next_reminder_notification_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
-                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Scheduled Maintenance Admin, Scheduled Maintenance Member, Scheduled Maintenance Viewer, Read Scheduled Maintenance], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "How many reminder notifications have been sent to owners of this scheduled maintenance event so far..",
                 Computed: true,
             },
         },
@@ -420,41 +430,98 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     scheduledMaintenanceEventRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "title": data.Title.ValueString(),
-        "description": data.Description.ValueString(),
-        "monitors": r.convertTerraformSetToInterface(data.Monitors),
-        "hosts": r.convertTerraformSetToInterface(data.Hosts),
-        "kubernetesClusters": r.convertTerraformSetToInterface(data.KubernetesClusters),
-        "dockerHosts": r.convertTerraformSetToInterface(data.DockerHosts),
-        "podmanHosts": r.convertTerraformSetToInterface(data.PodmanHosts),
-        "proxmoxClusters": r.convertTerraformSetToInterface(data.ProxmoxClusters),
-        "iotFleets": r.convertTerraformSetToInterface(data.IotFleets),
-        "dockerSwarmClusters": r.convertTerraformSetToInterface(data.DockerSwarmClusters),
-        "cephClusters": r.convertTerraformSetToInterface(data.CephClusters),
-        "services": r.convertTerraformSetToInterface(data.Services),
-        "statusPages": r.convertTerraformSetToInterface(data.StatusPages),
-        "labels": r.convertTerraformSetToInterface(data.Labels),
-        "currentScheduledMaintenanceStateId": data.CurrentScheduledMaintenanceStateId.ValueString(),
-        "changeMonitorStatusToId": data.ChangeMonitorStatusToId.ValueString(),
-        "startsAt": r.parseJSONField(data.StartsAt),
-        "endsAt": r.parseJSONField(data.EndsAt),
-        "subscriberNotificationStatusMessage": data.SubscriberNotificationStatusMessage.ValueString(),
-        "shouldStatusPageSubscribersBeNotifiedOnEventCreated": data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool(),
-        "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing": data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.ValueBool(),
-        "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded": data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.ValueBool(),
-        "customFields": r.parseJSONField(data.CustomFields),
-        "sendSubscriberNotificationsOnBeforeTheEvent": r.parseJSONField(data.SendSubscriberNotificationsOnBeforeTheEvent),
-        "nextSubscriberNotificationBeforeTheEventAt": r.parseJSONField(data.NextSubscriberNotificationBeforeTheEventAt),
-        "isVisibleOnStatusPage": data.IsVisibleOnStatusPage.ValueBool(),
-        "enableReminders": data.EnableReminders.ValueBool(),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := scheduledMaintenanceEventRequest["data"].(map[string]interface{})
+
+    if !data.Title.IsNull() && !data.Title.IsUnknown() {
+        requestDataMap["title"] = data.Title.ValueString()
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
+    }
+    if !data.Monitors.IsNull() && !data.Monitors.IsUnknown() {
+        requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
+    }
+    if !data.Hosts.IsNull() && !data.Hosts.IsUnknown() {
+        requestDataMap["hosts"] = r.convertTerraformSetToInterface(data.Hosts)
+    }
+    if !data.KubernetesClusters.IsNull() && !data.KubernetesClusters.IsUnknown() {
+        requestDataMap["kubernetesClusters"] = r.convertTerraformSetToInterface(data.KubernetesClusters)
+    }
+    if !data.DockerHosts.IsNull() && !data.DockerHosts.IsUnknown() {
+        requestDataMap["dockerHosts"] = r.convertTerraformSetToInterface(data.DockerHosts)
+    }
+    if !data.PodmanHosts.IsNull() && !data.PodmanHosts.IsUnknown() {
+        requestDataMap["podmanHosts"] = r.convertTerraformSetToInterface(data.PodmanHosts)
+    }
+    if !data.ProxmoxClusters.IsNull() && !data.ProxmoxClusters.IsUnknown() {
+        requestDataMap["proxmoxClusters"] = r.convertTerraformSetToInterface(data.ProxmoxClusters)
+    }
+    if !data.IotFleets.IsNull() && !data.IotFleets.IsUnknown() {
+        requestDataMap["iotFleets"] = r.convertTerraformSetToInterface(data.IotFleets)
+    }
+    if !data.DockerSwarmClusters.IsNull() && !data.DockerSwarmClusters.IsUnknown() {
+        requestDataMap["dockerSwarmClusters"] = r.convertTerraformSetToInterface(data.DockerSwarmClusters)
+    }
+    if !data.CephClusters.IsNull() && !data.CephClusters.IsUnknown() {
+        requestDataMap["cephClusters"] = r.convertTerraformSetToInterface(data.CephClusters)
+    }
+    if !data.Services.IsNull() && !data.Services.IsUnknown() {
+        requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
+    }
+    if !data.StatusPages.IsNull() && !data.StatusPages.IsUnknown() {
+        requestDataMap["statusPages"] = r.convertTerraformSetToInterface(data.StatusPages)
+    }
+    if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+        requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
+    }
+    if !data.CurrentScheduledMaintenanceStateId.IsNull() && !data.CurrentScheduledMaintenanceStateId.IsUnknown() {
+        requestDataMap["currentScheduledMaintenanceStateId"] = data.CurrentScheduledMaintenanceStateId.ValueString()
+    }
+    if !data.ChangeMonitorStatusToId.IsNull() && !data.ChangeMonitorStatusToId.IsUnknown() {
+        requestDataMap["changeMonitorStatusToId"] = data.ChangeMonitorStatusToId.ValueString()
+    }
+    if !data.StartsAt.IsNull() && !data.StartsAt.IsUnknown() {
+        requestDataMap["startsAt"] = data.StartsAt.ValueString()
+    }
+    if !data.EndsAt.IsNull() && !data.EndsAt.IsUnknown() {
+        requestDataMap["endsAt"] = data.EndsAt.ValueString()
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.IsUnknown() {
+        requestDataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"] = data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated.ValueBool()
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.IsUnknown() {
+        requestDataMap["shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing"] = data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing.ValueBool()
+    }
+    if !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsNull() && !data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.IsUnknown() {
+        requestDataMap["shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded"] = data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded.ValueBool()
+    }
+    if parsedCustomFields := r.parseJSONField(data.CustomFields); parsedCustomFields != nil {
+        requestDataMap["customFields"] = parsedCustomFields
+    }
+    if parsedSendSubscriberNotificationsOnBeforeTheEvent := r.parseJSONField(data.SendSubscriberNotificationsOnBeforeTheEvent); parsedSendSubscriberNotificationsOnBeforeTheEvent != nil {
+        requestDataMap["sendSubscriberNotificationsOnBeforeTheEvent"] = parsedSendSubscriberNotificationsOnBeforeTheEvent
+    }
+    if !data.NextSubscriberNotificationBeforeTheEventAt.IsNull() && !data.NextSubscriberNotificationBeforeTheEventAt.IsUnknown() {
+        requestDataMap["nextSubscriberNotificationBeforeTheEventAt"] = data.NextSubscriberNotificationBeforeTheEventAt.ValueString()
+    }
+    if !data.IsVisibleOnStatusPage.IsNull() && !data.IsVisibleOnStatusPage.IsUnknown() {
+        requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
+    }
+    if !data.EnableReminders.IsNull() && !data.EnableReminders.IsUnknown() {
+        requestDataMap["enableReminders"] = data.EnableReminders.ValueBool()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/scheduled-maintenance", scheduledMaintenanceEventRequest)
+    httpResp, err := r.client.Post(ctx, "/scheduled-maintenance", scheduledMaintenanceEventRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create scheduled_maintenance_event, got error: %s", err))
         return
@@ -463,58 +530,112 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     var scheduledMaintenanceEventResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &scheduledMaintenanceEventResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse scheduled_maintenance_event response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create scheduled_maintenance_event: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := scheduledMaintenanceEventResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := scheduledMaintenanceEventResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for scheduled_maintenance_event did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * scheduled_maintenance_event is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "title": true,
+        "description": true,
+        "createdByUserId": true,
+        "monitors": true,
+        "hosts": true,
+        "kubernetesClusters": true,
+        "dockerHosts": true,
+        "podmanHosts": true,
+        "proxmoxClusters": true,
+        "iotFleets": true,
+        "dockerSwarmClusters": true,
+        "cephClusters": true,
+        "services": true,
+        "statusPages": true,
+        "labels": true,
+        "currentScheduledMaintenanceStateId": true,
+        "changeMonitorStatusToId": true,
+        "startsAt": true,
+        "endsAt": true,
+        "shouldStatusPageSubscribersBeNotifiedOnEventCreated": true,
+        "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing": true,
+        "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded": true,
+        "customFields": true,
+        "sendSubscriberNotificationsOnBeforeTheEvent": true,
+        "nextSubscriberNotificationBeforeTheEventAt": true,
+        "isVisibleOnStatusPage": true,
+        "enableReminders": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "slug": true,
+        "subscriberNotificationStatusOnEventScheduled": true,
+        "subscriberNotificationStatusMessage": true,
+        "isOwnerNotifiedOfResourceCreation": true,
+        "scheduledMaintenanceNumber": true,
+        "scheduledMaintenanceNumberWithPrefix": true,
+        "nextReminderNotificationAt": true,
+        "reminderNotificationSentCount": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/scheduled-maintenance/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created scheduled_maintenance_event but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created scheduled_maintenance_event but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := scheduledMaintenanceEventResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = scheduledMaintenanceEventResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -558,7 +679,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.Title = types.StringNull()
         }
-    } else if val, ok := dataMap["title"].(string); ok && val != "" {
+    } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
@@ -595,10 +716,47 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1016,7 +1174,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.CurrentScheduledMaintenanceStateId = types.StringNull()
         }
-    } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok {
         data.CurrentScheduledMaintenanceStateId = types.StringValue(val)
     } else {
         data.CurrentScheduledMaintenanceStateId = types.StringNull()
@@ -1053,121 +1211,32 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.ChangeMonitorStatusToId = types.StringNull()
         }
-    } else if val, ok := dataMap["changeMonitorStatusToId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["changeMonitorStatusToId"].(string); ok {
         data.ChangeMonitorStatusToId = types.StringValue(val)
     } else {
         data.ChangeMonitorStatusToId = types.StringNull()
     }
     if obj, ok := dataMap["startsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StartsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StartsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.StartsAt = NewRFC3339Value(val)
         } else {
-            data.StartsAt = NewJSONSubsetNull()
+            data.StartsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["startsAt"].(string); ok && val != "" {
-        data.StartsAt = NewJSONSubsetValue(val)
+        data.StartsAt = NewRFC3339Value(val)
     } else {
-        data.StartsAt = NewJSONSubsetNull()
+        data.StartsAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["endsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.EndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.EndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.EndsAt = NewRFC3339Value(val)
         } else {
-            data.EndsAt = NewJSONSubsetNull()
+            data.EndsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["endsAt"].(string); ok && val != "" {
-        data.EndsAt = NewJSONSubsetValue(val)
+        data.EndsAt = NewRFC3339Value(val)
     } else {
-        data.EndsAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SubscriberNotificationStatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SubscriberNotificationStatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-        } else {
-            data.SubscriberNotificationStatusMessage = types.StringNull()
-        }
-    } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok && val != "" {
-        data.SubscriberNotificationStatusMessage = types.StringValue(val)
-    } else {
-        data.SubscriberNotificationStatusMessage = types.StringNull()
+        data.EndsAt = NewRFC3339Null()
     }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated = types.BoolValue(val)
@@ -1179,7 +1248,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded = types.BoolValue(val)
     }
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CustomFields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1210,13 +1279,13 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["customFields"].(string); ok && val != "" {
+    } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1247,47 +1316,21 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(string); ok {
         data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(val)
     } else {
         data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["nextSubscriberNotificationBeforeTheEventAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Value(val)
         } else {
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetNull()
+            data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["nextSubscriberNotificationBeforeTheEventAt"].(string); ok && val != "" {
-        data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
+        data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Value(val)
     } else {
-        data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetNull()
+        data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
@@ -1296,115 +1339,37 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         data.EnableReminders = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -1412,7 +1377,15 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -1447,47 +1420,10 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1521,10 +1457,47 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
         }
-    } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok && val != "" {
+    } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(val)
     } else {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
+    }
+    if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusMessage = types.StringNull()
     }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
@@ -1535,7 +1508,15 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int64); ok {
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["scheduledMaintenanceNumber"] == nil {
+    } else if obj, ok := dataMap["scheduledMaintenanceNumber"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ScheduledMaintenanceNumber = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ScheduledMaintenanceNumber = types.NumberNull()
     }
     if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
@@ -1570,47 +1551,21 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         } else {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
     } else {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
     }
     if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextReminderNotificationAt = NewRFC3339Value(val)
         } else {
-            data.NextReminderNotificationAt = NewJSONSubsetNull()
+            data.NextReminderNotificationAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["nextReminderNotificationAt"].(string); ok && val != "" {
-        data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        data.NextReminderNotificationAt = NewRFC3339Value(val)
     } else {
-        data.NextReminderNotificationAt = NewJSONSubsetNull()
+        data.NextReminderNotificationAt = NewRFC3339Null()
     }
     if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
@@ -1618,7 +1573,15 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["reminderNotificationSentCount"] == nil {
+    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ReminderNotificationSentCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReminderNotificationSentCount = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
@@ -1626,6 +1589,8 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1649,6 +1614,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "projectId": true,
         "title": true,
         "description": true,
+        "createdByUserId": true,
         "monitors": true,
         "hosts": true,
         "kubernetesClusters": true,
@@ -1665,7 +1631,6 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "changeMonitorStatusToId": true,
         "startsAt": true,
         "endsAt": true,
-        "subscriberNotificationStatusMessage": true,
         "shouldStatusPageSubscribersBeNotifiedOnEventCreated": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded": true,
@@ -1679,8 +1644,8 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "createdByUserId": true,
         "subscriberNotificationStatusOnEventScheduled": true,
+        "subscriberNotificationStatusMessage": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "scheduledMaintenanceNumber": true,
         "scheduledMaintenanceNumberWithPrefix": true,
@@ -1690,7 +1655,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/scheduled-maintenance/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/scheduled-maintenance/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read scheduled_maintenance_event, got error: %s", err))
         return
@@ -1719,43 +1684,6 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         dataMap = scheduledMaintenanceEventResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1799,7 +1727,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.Title = types.StringNull()
         }
-    } else if val, ok := dataMap["title"].(string); ok && val != "" {
+    } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
@@ -1836,10 +1764,47 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2257,7 +2222,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.CurrentScheduledMaintenanceStateId = types.StringNull()
         }
-    } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok {
         data.CurrentScheduledMaintenanceStateId = types.StringValue(val)
     } else {
         data.CurrentScheduledMaintenanceStateId = types.StringNull()
@@ -2294,121 +2259,32 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.ChangeMonitorStatusToId = types.StringNull()
         }
-    } else if val, ok := dataMap["changeMonitorStatusToId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["changeMonitorStatusToId"].(string); ok {
         data.ChangeMonitorStatusToId = types.StringValue(val)
     } else {
         data.ChangeMonitorStatusToId = types.StringNull()
     }
     if obj, ok := dataMap["startsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StartsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StartsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.StartsAt = NewRFC3339Value(val)
         } else {
-            data.StartsAt = NewJSONSubsetNull()
+            data.StartsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["startsAt"].(string); ok && val != "" {
-        data.StartsAt = NewJSONSubsetValue(val)
+        data.StartsAt = NewRFC3339Value(val)
     } else {
-        data.StartsAt = NewJSONSubsetNull()
+        data.StartsAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["endsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.EndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.EndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.EndsAt = NewRFC3339Value(val)
         } else {
-            data.EndsAt = NewJSONSubsetNull()
+            data.EndsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["endsAt"].(string); ok && val != "" {
-        data.EndsAt = NewJSONSubsetValue(val)
+        data.EndsAt = NewRFC3339Value(val)
     } else {
-        data.EndsAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SubscriberNotificationStatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SubscriberNotificationStatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-        } else {
-            data.SubscriberNotificationStatusMessage = types.StringNull()
-        }
-    } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok && val != "" {
-        data.SubscriberNotificationStatusMessage = types.StringValue(val)
-    } else {
-        data.SubscriberNotificationStatusMessage = types.StringNull()
+        data.EndsAt = NewRFC3339Null()
     }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated = types.BoolValue(val)
@@ -2420,7 +2296,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded = types.BoolValue(val)
     }
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CustomFields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -2451,13 +2327,13 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["customFields"].(string); ok && val != "" {
+    } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -2488,47 +2364,21 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(string); ok {
         data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(val)
     } else {
         data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["nextSubscriberNotificationBeforeTheEventAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Value(val)
         } else {
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetNull()
+            data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["nextSubscriberNotificationBeforeTheEventAt"].(string); ok && val != "" {
-        data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
+        data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Value(val)
     } else {
-        data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetNull()
+        data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
@@ -2537,115 +2387,37 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         data.EnableReminders = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -2653,7 +2425,15 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -2688,47 +2468,10 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2762,10 +2505,47 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
         }
-    } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok && val != "" {
+    } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(val)
     } else {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
+    }
+    if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusMessage = types.StringNull()
     }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
@@ -2776,7 +2556,15 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int64); ok {
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["scheduledMaintenanceNumber"] == nil {
+    } else if obj, ok := dataMap["scheduledMaintenanceNumber"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ScheduledMaintenanceNumber = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ScheduledMaintenanceNumber = types.NumberNull()
     }
     if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
@@ -2811,47 +2599,21 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         } else {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
     } else {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
     }
     if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextReminderNotificationAt = NewRFC3339Value(val)
         } else {
-            data.NextReminderNotificationAt = NewJSONSubsetNull()
+            data.NextReminderNotificationAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["nextReminderNotificationAt"].(string); ok && val != "" {
-        data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        data.NextReminderNotificationAt = NewRFC3339Value(val)
     } else {
-        data.NextReminderNotificationAt = NewJSONSubsetNull()
+        data.NextReminderNotificationAt = NewRFC3339Null()
     }
     if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
@@ -2859,7 +2621,15 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["reminderNotificationSentCount"] == nil {
+    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ReminderNotificationSentCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReminderNotificationSentCount = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
@@ -2946,23 +2716,10 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         requestDataMap["changeMonitorStatusToId"] = data.ChangeMonitorStatusToId.ValueString()
     }
     if !data.StartsAt.IsUnknown() && !state.StartsAt.IsUnknown() && !data.StartsAt.Equal(state.StartsAt) {
-        var startsatData interface{}
-        if err := json.Unmarshal([]byte(data.StartsAt.ValueString()), &startsatData); err == nil {
-            requestDataMap["startsAt"] = startsatData
-        } else {
-            requestDataMap["startsAt"] = data.StartsAt.ValueString()
-        }
+        requestDataMap["startsAt"] = data.StartsAt.ValueString()
     }
     if !data.EndsAt.IsUnknown() && !state.EndsAt.IsUnknown() && !data.EndsAt.Equal(state.EndsAt) {
-        var endsatData interface{}
-        if err := json.Unmarshal([]byte(data.EndsAt.ValueString()), &endsatData); err == nil {
-            requestDataMap["endsAt"] = endsatData
-        } else {
-            requestDataMap["endsAt"] = data.EndsAt.ValueString()
-        }
-    }
-    if !data.SubscriberNotificationStatusMessage.IsUnknown() && !state.SubscriberNotificationStatusMessage.IsUnknown() && !data.SubscriberNotificationStatusMessage.Equal(state.SubscriberNotificationStatusMessage) {
-        requestDataMap["subscriberNotificationStatusMessage"] = data.SubscriberNotificationStatusMessage.ValueString()
+        requestDataMap["endsAt"] = data.EndsAt.ValueString()
     }
     if !data.CustomFields.IsUnknown() && !state.CustomFields.IsUnknown() && !data.CustomFields.Equal(state.CustomFields) {
         var customfieldsData interface{}
@@ -2981,12 +2738,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         }
     }
     if !data.NextSubscriberNotificationBeforeTheEventAt.IsUnknown() && !state.NextSubscriberNotificationBeforeTheEventAt.IsUnknown() && !data.NextSubscriberNotificationBeforeTheEventAt.Equal(state.NextSubscriberNotificationBeforeTheEventAt) {
-        var nextsubscribernotificationbeforetheeventatData interface{}
-        if err := json.Unmarshal([]byte(data.NextSubscriberNotificationBeforeTheEventAt.ValueString()), &nextsubscribernotificationbeforetheeventatData); err == nil {
-            requestDataMap["nextSubscriberNotificationBeforeTheEventAt"] = nextsubscribernotificationbeforetheeventatData
-        } else {
-            requestDataMap["nextSubscriberNotificationBeforeTheEventAt"] = data.NextSubscriberNotificationBeforeTheEventAt.ValueString()
-        }
+        requestDataMap["nextSubscriberNotificationBeforeTheEventAt"] = data.NextSubscriberNotificationBeforeTheEventAt.ValueString()
     }
     if !data.IsVisibleOnStatusPage.IsUnknown() && !state.IsVisibleOnStatusPage.IsUnknown() && !data.IsVisibleOnStatusPage.Equal(state.IsVisibleOnStatusPage) {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
@@ -2995,25 +2747,24 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         requestDataMap["enableReminders"] = data.EnableReminders.ValueBool()
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(scheduledMaintenanceEventRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(scheduledMaintenanceEventRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/scheduled-maintenance/" + data.Id.ValueString() + "", scheduledMaintenanceEventRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update scheduled_maintenance_event, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/scheduled-maintenance/" + data.Id.ValueString() + "", scheduledMaintenanceEventRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update scheduled_maintenance_event, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var scheduledMaintenanceEventResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &scheduledMaintenanceEventResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse scheduled_maintenance_event response, got error: %s", err))
-        return
+        // Parse the update response
+        var scheduledMaintenanceEventResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &scheduledMaintenanceEventResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update scheduled_maintenance_event: %s", err))
+            return
+        }
+        _ = scheduledMaintenanceEventResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -3021,6 +2772,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "projectId": true,
         "title": true,
         "description": true,
+        "createdByUserId": true,
         "monitors": true,
         "hosts": true,
         "kubernetesClusters": true,
@@ -3037,7 +2789,6 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "changeMonitorStatusToId": true,
         "startsAt": true,
         "endsAt": true,
-        "subscriberNotificationStatusMessage": true,
         "shouldStatusPageSubscribersBeNotifiedOnEventCreated": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToOngoing": true,
         "shouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded": true,
@@ -3051,8 +2802,8 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "createdByUserId": true,
         "subscriberNotificationStatusOnEventScheduled": true,
+        "subscriberNotificationStatusMessage": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "scheduledMaintenanceNumber": true,
         "scheduledMaintenanceNumberWithPrefix": true,
@@ -3061,7 +2812,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/scheduled-maintenance/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/scheduled-maintenance/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read scheduled_maintenance_event after update, got error: %s", err))
         return
@@ -3070,7 +2821,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse scheduled_maintenance_event read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read scheduled_maintenance_event after update: %s", err))
         return
     }
 
@@ -3085,43 +2836,6 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -3165,7 +2879,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.Title = types.StringNull()
         }
-    } else if val, ok := dataMap["title"].(string); ok && val != "" {
+    } else if val, ok := dataMap["title"].(string); ok {
         data.Title = types.StringValue(val)
     } else {
         data.Title = types.StringNull()
@@ -3202,10 +2916,47 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -3623,7 +3374,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.CurrentScheduledMaintenanceStateId = types.StringNull()
         }
-    } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["currentScheduledMaintenanceStateId"].(string); ok {
         data.CurrentScheduledMaintenanceStateId = types.StringValue(val)
     } else {
         data.CurrentScheduledMaintenanceStateId = types.StringNull()
@@ -3660,121 +3411,32 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.ChangeMonitorStatusToId = types.StringNull()
         }
-    } else if val, ok := dataMap["changeMonitorStatusToId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["changeMonitorStatusToId"].(string); ok {
         data.ChangeMonitorStatusToId = types.StringValue(val)
     } else {
         data.ChangeMonitorStatusToId = types.StringNull()
     }
     if obj, ok := dataMap["startsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StartsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.StartsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.StartsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.StartsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.StartsAt = NewRFC3339Value(val)
         } else {
-            data.StartsAt = NewJSONSubsetNull()
+            data.StartsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["startsAt"].(string); ok && val != "" {
-        data.StartsAt = NewJSONSubsetValue(val)
+        data.StartsAt = NewRFC3339Value(val)
     } else {
-        data.StartsAt = NewJSONSubsetNull()
+        data.StartsAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["endsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.EndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.EndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.EndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.EndsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.EndsAt = NewRFC3339Value(val)
         } else {
-            data.EndsAt = NewJSONSubsetNull()
+            data.EndsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["endsAt"].(string); ok && val != "" {
-        data.EndsAt = NewJSONSubsetValue(val)
+        data.EndsAt = NewRFC3339Value(val)
     } else {
-        data.EndsAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SubscriberNotificationStatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SubscriberNotificationStatusMessage = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-            } else {
-                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
-        } else {
-            data.SubscriberNotificationStatusMessage = types.StringNull()
-        }
-    } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok && val != "" {
-        data.SubscriberNotificationStatusMessage = types.StringValue(val)
-    } else {
-        data.SubscriberNotificationStatusMessage = types.StringNull()
+        data.EndsAt = NewRFC3339Null()
     }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnEventCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnEventCreated = types.BoolValue(val)
@@ -3786,7 +3448,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         data.ShouldStatusPageSubscribersBeNotifiedWhenEventChangedToEnded = types.BoolValue(val)
     }
     if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CustomFields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -3817,13 +3479,13 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.CustomFields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["customFields"].(string); ok && val != "" {
+    } else if val, ok := dataMap["customFields"].(string); ok {
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -3854,47 +3516,21 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sendSubscriberNotificationsOnBeforeTheEvent"].(string); ok {
         data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetValue(val)
     } else {
         data.SendSubscriberNotificationsOnBeforeTheEvent = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["nextSubscriberNotificationBeforeTheEventAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Value(val)
         } else {
-            data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetNull()
+            data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["nextSubscriberNotificationBeforeTheEventAt"].(string); ok && val != "" {
-        data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetValue(val)
+        data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Value(val)
     } else {
-        data.NextSubscriberNotificationBeforeTheEventAt = NewJSONSubsetNull()
+        data.NextSubscriberNotificationBeforeTheEventAt = NewRFC3339Null()
     }
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
@@ -3903,115 +3539,37 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         data.EnableReminders = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -4019,7 +3577,15 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -4054,47 +3620,10 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4128,10 +3657,47 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
         }
-    } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok && val != "" {
+    } else if val, ok := dataMap["subscriberNotificationStatusOnEventScheduled"].(string); ok {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringValue(val)
     } else {
         data.SubscriberNotificationStatusOnEventScheduled = types.StringNull()
+    }
+    if obj, ok := dataMap["subscriberNotificationStatusMessage"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusMessage = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessage = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessage = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessage = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusMessage"].(string); ok {
+        data.SubscriberNotificationStatusMessage = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusMessage = types.StringNull()
     }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
@@ -4142,7 +3708,15 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["scheduledMaintenanceNumber"].(int64); ok {
         data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["scheduledMaintenanceNumber"] == nil {
+    } else if obj, ok := dataMap["scheduledMaintenanceNumber"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ScheduledMaintenanceNumber = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ScheduledMaintenanceNumber = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ScheduledMaintenanceNumber = types.NumberNull()
     }
     if obj, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(map[string]interface{}); ok {
@@ -4177,47 +3751,21 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         } else {
             data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["scheduledMaintenanceNumberWithPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringValue(val)
     } else {
         data.ScheduledMaintenanceNumberWithPrefix = types.StringNull()
     }
     if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NextReminderNotificationAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.NextReminderNotificationAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.NextReminderNotificationAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.NextReminderNotificationAt = NewRFC3339Value(val)
         } else {
-            data.NextReminderNotificationAt = NewJSONSubsetNull()
+            data.NextReminderNotificationAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["nextReminderNotificationAt"].(string); ok && val != "" {
-        data.NextReminderNotificationAt = NewJSONSubsetValue(val)
+        data.NextReminderNotificationAt = NewRFC3339Value(val)
     } else {
-        data.NextReminderNotificationAt = NewJSONSubsetNull()
+        data.NextReminderNotificationAt = NewRFC3339Null()
     }
     if val, ok := dataMap["reminderNotificationSentCount"].(float64); ok {
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
@@ -4225,7 +3773,15 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["reminderNotificationSentCount"].(int64); ok {
         data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["reminderNotificationSentCount"] == nil {
+    } else if obj, ok := dataMap["reminderNotificationSentCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ReminderNotificationSentCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ReminderNotificationSentCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReminderNotificationSentCount = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
@@ -4233,6 +3789,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -4249,10 +3806,21 @@ func (r *ScheduledMaintenanceEventResource) Delete(ctx context.Context, req reso
     }
 
     // Make API call
-    _, err := r.client.Delete("/scheduled-maintenance/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/scheduled-maintenance/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete scheduled_maintenance_event, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete scheduled_maintenance_event: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -4284,10 +3852,10 @@ func (r *ScheduledMaintenanceEventResource) convertTerraformListToInterface(terr
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -4305,10 +3873,10 @@ func (r *ScheduledMaintenanceEventResource) convertTerraformSetToInterface(terra
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -4320,6 +3888,7 @@ func (r *ScheduledMaintenanceEventResource) convertTerraformSetToInterface(terra
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *ScheduledMaintenanceEventResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -4380,57 +3949,8 @@ func (r *ScheduledMaintenanceEventResource) bigFloatToFloat64(bf *big.Float) int
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *ScheduledMaintenanceEventResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

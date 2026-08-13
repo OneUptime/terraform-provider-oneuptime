@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -20,6 +20,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -45,10 +46,11 @@ type LogSavedViewResourceModel struct {
     SortField types.String `tfsdk:"sort_field"`
     SortOrder types.String `tfsdk:"sort_order"`
     PageSize types.Number `tfsdk:"page_size"`
+    TimeRange JSONSubsetValue `tfsdk:"time_range"`
     IsDefault types.Bool `tfsdk:"is_default"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
@@ -60,12 +62,11 @@ func (r *LogSavedViewResource) Metadata(ctx context.Context, req resource.Metada
 
 func (r *LogSavedViewResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "log_saved_view resource",
+        MarkdownDescription: "Save and reuse log explorer views, including the current filters, columns, sorting, and page size.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -82,27 +83,36 @@ func (r *LogSavedViewResource) Schema(ctx context.Context, req resource.SchemaRe
                 MarkdownDescription: "Name object",
                 CustomType: JSONSubsetType{},
                 Required: true,
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "query": schema.StringAttribute{
-                MarkdownDescription: "Serialized log query for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Serialized log query for this saved view..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "columns": schema.StringAttribute{
-                MarkdownDescription: "Selected log table columns for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Selected log table columns for this saved view..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "sort_field": schema.StringAttribute{
-                MarkdownDescription: "Active sort field for this saved log view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Active sort field for this saved log view..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -110,7 +120,7 @@ func (r *LogSavedViewResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "sort_order": schema.StringAttribute{
-                MarkdownDescription: "Sort order for this saved log view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Sort order for this saved log view..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -118,7 +128,7 @@ func (r *LogSavedViewResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "page_size": schema.NumberAttribute{
-                MarkdownDescription: "Number of logs per page for this saved view.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Number of logs per page for this saved view..",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(100)),
@@ -126,8 +136,20 @@ func (r *LogSavedViewResource) Schema(ctx context.Context, req resource.SchemaRe
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "time_range": schema.StringAttribute{
+                MarkdownDescription: "Time selection for this saved view — the rolling range token (e.g. Past 1 Hour), or an absolute window when the range is Custom..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "is_default": schema.BoolAttribute{
-                MarkdownDescription: "Whether this saved log view should be applied by default.. Permissions - Create: [Project Owner, Project Admin, Project Member], Read: [Project Owner, Project Admin, Project Member, Viewer], Update: [Project Owner, Project Admin, Project Member]",
+                MarkdownDescription: "Whether this saved log view should be applied by default..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -137,17 +159,17 @@ func (r *LogSavedViewResource) Schema(ctx context.Context, req resource.SchemaRe
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
@@ -199,21 +221,41 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     logSavedViewRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "name": r.parseJSONField(data.Name),
-        "query": r.parseJSONField(data.Query),
-        "columns": r.parseJSONField(data.Columns),
-        "sortField": data.SortField.ValueString(),
-        "sortOrder": data.SortOrder.ValueString(),
-        "pageSize": r.bigFloatToFloat64(data.PageSize.ValueBigFloat()),
-        "isDefault": data.IsDefault.ValueBool(),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := logSavedViewRequest["data"].(map[string]interface{})
+
+    if parsedName := r.parseJSONField(data.Name); parsedName != nil {
+        requestDataMap["name"] = parsedName
+    }
+    if parsedQuery := r.parseJSONField(data.Query); parsedQuery != nil {
+        requestDataMap["query"] = parsedQuery
+    }
+    if parsedColumns := r.parseJSONField(data.Columns); parsedColumns != nil {
+        requestDataMap["columns"] = parsedColumns
+    }
+    if !data.SortField.IsNull() && !data.SortField.IsUnknown() {
+        requestDataMap["sortField"] = data.SortField.ValueString()
+    }
+    if !data.SortOrder.IsNull() && !data.SortOrder.IsUnknown() {
+        requestDataMap["sortOrder"] = data.SortOrder.ValueString()
+    }
+    if !data.PageSize.IsNull() && !data.PageSize.IsUnknown() {
+        requestDataMap["pageSize"] = r.bigFloatToFloat64(data.PageSize.ValueBigFloat())
+    }
+    if parsedTimeRange := r.parseJSONField(data.TimeRange); parsedTimeRange != nil {
+        requestDataMap["timeRange"] = parsedTimeRange
+    }
+    if !data.IsDefault.IsNull() && !data.IsDefault.IsUnknown() {
+        requestDataMap["isDefault"] = data.IsDefault.ValueBool()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/log-saved-view", logSavedViewRequest)
+    httpResp, err := r.client.Post(ctx, "/log-saved-view", logSavedViewRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create log_saved_view, got error: %s", err))
         return
@@ -222,58 +264,87 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
     var logSavedViewResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &logSavedViewResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse log_saved_view response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create log_saved_view: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := logSavedViewResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := logSavedViewResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for log_saved_view did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * log_saved_view is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "query": true,
+        "columns": true,
+        "sortField": true,
+        "sortOrder": true,
+        "pageSize": true,
+        "timeRange": true,
+        "isDefault": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "createdByUserId": true,
+        "deletedByUserId": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/log-saved-view/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created log_saved_view but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created log_saved_view but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := logSavedViewResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = logSavedViewResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -286,7 +357,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         data.ProjectId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -317,13 +388,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.Name = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = NewJSONSubsetValue(val)
     } else {
         data.Name = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["query"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Query = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -354,13 +425,13 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.Query = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["query"].(string); ok && val != "" {
+    } else if val, ok := dataMap["query"].(string); ok {
         data.Query = NewJSONSubsetValue(val)
     } else {
         data.Query = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Columns = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -391,7 +462,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.Columns = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["columns"].(string); ok && val != "" {
+    } else if val, ok := dataMap["columns"].(string); ok {
         data.Columns = NewJSONSubsetValue(val)
     } else {
         data.Columns = NewJSONSubsetNull()
@@ -428,7 +499,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.SortField = types.StringNull()
         }
-    } else if val, ok := dataMap["sortField"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sortField"].(string); ok {
         data.SortField = types.StringValue(val)
     } else {
         data.SortField = types.StringNull()
@@ -465,7 +536,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.SortOrder = types.StringNull()
         }
-    } else if val, ok := dataMap["sortOrder"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sortOrder"].(string); ok {
         data.SortOrder = types.StringValue(val)
     } else {
         data.SortOrder = types.StringNull()
@@ -476,122 +547,89 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pageSize"].(int64); ok {
         data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pageSize"] == nil {
+    } else if obj, ok := dataMap["pageSize"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PageSize = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PageSize = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PageSize = types.NumberNull()
+    }
+    if obj, ok := dataMap["timeRange"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TimeRange = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TimeRange = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TimeRange = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["timeRange"].(string); ok {
+        data.TimeRange = NewJSONSubsetValue(val)
+    } else {
+        data.TimeRange = NewJSONSubsetNull()
     }
     if val, ok := dataMap["isDefault"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -599,7 +637,15 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
@@ -634,7 +680,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
@@ -671,7 +717,7 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -681,6 +727,8 @@ func (r *LogSavedViewResource) Create(ctx context.Context, req resource.CreateRe
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -708,6 +756,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         "sortField": true,
         "sortOrder": true,
         "pageSize": true,
+        "timeRange": true,
         "isDefault": true,
         "createdAt": true,
         "updatedAt": true,
@@ -719,7 +768,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/log-saved-view/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/log-saved-view/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read log_saved_view, got error: %s", err))
         return
@@ -748,43 +797,6 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         dataMap = logSavedViewResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -797,7 +809,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         data.ProjectId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -828,13 +840,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.Name = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = NewJSONSubsetValue(val)
     } else {
         data.Name = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["query"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Query = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -865,13 +877,13 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.Query = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["query"].(string); ok && val != "" {
+    } else if val, ok := dataMap["query"].(string); ok {
         data.Query = NewJSONSubsetValue(val)
     } else {
         data.Query = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Columns = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -902,7 +914,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.Columns = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["columns"].(string); ok && val != "" {
+    } else if val, ok := dataMap["columns"].(string); ok {
         data.Columns = NewJSONSubsetValue(val)
     } else {
         data.Columns = NewJSONSubsetNull()
@@ -939,7 +951,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.SortField = types.StringNull()
         }
-    } else if val, ok := dataMap["sortField"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sortField"].(string); ok {
         data.SortField = types.StringValue(val)
     } else {
         data.SortField = types.StringNull()
@@ -976,7 +988,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.SortOrder = types.StringNull()
         }
-    } else if val, ok := dataMap["sortOrder"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sortOrder"].(string); ok {
         data.SortOrder = types.StringValue(val)
     } else {
         data.SortOrder = types.StringNull()
@@ -987,122 +999,89 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pageSize"].(int64); ok {
         data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pageSize"] == nil {
+    } else if obj, ok := dataMap["pageSize"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PageSize = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PageSize = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PageSize = types.NumberNull()
+    }
+    if obj, ok := dataMap["timeRange"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TimeRange = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TimeRange = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TimeRange = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["timeRange"].(string); ok {
+        data.TimeRange = NewJSONSubsetValue(val)
+    } else {
+        data.TimeRange = NewJSONSubsetNull()
     }
     if val, ok := dataMap["isDefault"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -1110,7 +1089,15 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
@@ -1145,7 +1132,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
@@ -1182,7 +1169,7 @@ func (r *LogSavedViewResource) Read(ctx context.Context, req resource.ReadReques
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -1255,29 +1242,36 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
     if !data.PageSize.IsUnknown() && !state.PageSize.IsUnknown() && !data.PageSize.Equal(state.PageSize) {
         requestDataMap["pageSize"] = r.bigFloatToFloat64(data.PageSize.ValueBigFloat())
     }
+    if !data.TimeRange.IsUnknown() && !state.TimeRange.IsUnknown() && !data.TimeRange.Equal(state.TimeRange) {
+        var timerangeData interface{}
+        if err := json.Unmarshal([]byte(data.TimeRange.ValueString()), &timerangeData); err == nil {
+            requestDataMap["timeRange"] = timerangeData
+        } else {
+            requestDataMap["timeRange"] = data.TimeRange.ValueString()
+        }
+    }
     if !data.IsDefault.IsUnknown() && !state.IsDefault.IsUnknown() && !data.IsDefault.Equal(state.IsDefault) {
         requestDataMap["isDefault"] = data.IsDefault.ValueBool()
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(logSavedViewRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(logSavedViewRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/log-saved-view/" + data.Id.ValueString() + "", logSavedViewRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update log_saved_view, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/log-saved-view/" + data.Id.ValueString() + "", logSavedViewRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update log_saved_view, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var logSavedViewResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &logSavedViewResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse log_saved_view response, got error: %s", err))
-        return
+        // Parse the update response
+        var logSavedViewResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &logSavedViewResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update log_saved_view: %s", err))
+            return
+        }
+        _ = logSavedViewResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -1289,6 +1283,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         "sortField": true,
         "sortOrder": true,
         "pageSize": true,
+        "timeRange": true,
         "isDefault": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1299,7 +1294,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/log-saved-view/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/log-saved-view/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read log_saved_view after update, got error: %s", err))
         return
@@ -1308,7 +1303,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse log_saved_view read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read log_saved_view after update: %s", err))
         return
     }
 
@@ -1323,43 +1318,6 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1372,7 +1330,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         data.ProjectId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1403,13 +1361,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.Name = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = NewJSONSubsetValue(val)
     } else {
         data.Name = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["query"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Query = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1440,13 +1398,13 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.Query = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["query"].(string); ok && val != "" {
+    } else if val, ok := dataMap["query"].(string); ok {
         data.Query = NewJSONSubsetValue(val)
     } else {
         data.Query = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["columns"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Columns = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1477,7 +1435,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.Columns = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["columns"].(string); ok && val != "" {
+    } else if val, ok := dataMap["columns"].(string); ok {
         data.Columns = NewJSONSubsetValue(val)
     } else {
         data.Columns = NewJSONSubsetNull()
@@ -1514,7 +1472,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.SortField = types.StringNull()
         }
-    } else if val, ok := dataMap["sortField"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sortField"].(string); ok {
         data.SortField = types.StringValue(val)
     } else {
         data.SortField = types.StringNull()
@@ -1551,7 +1509,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.SortOrder = types.StringNull()
         }
-    } else if val, ok := dataMap["sortOrder"].(string); ok && val != "" {
+    } else if val, ok := dataMap["sortOrder"].(string); ok {
         data.SortOrder = types.StringValue(val)
     } else {
         data.SortOrder = types.StringNull()
@@ -1562,122 +1520,89 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["pageSize"].(int64); ok {
         data.PageSize = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["pageSize"] == nil {
+    } else if obj, ok := dataMap["pageSize"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PageSize = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PageSize = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PageSize = types.NumberNull()
+    }
+    if obj, ok := dataMap["timeRange"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TimeRange = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TimeRange = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TimeRange = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TimeRange = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TimeRange = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["timeRange"].(string); ok {
+        data.TimeRange = NewJSONSubsetValue(val)
+    } else {
+        data.TimeRange = NewJSONSubsetNull()
     }
     if val, ok := dataMap["isDefault"].(bool); ok {
         data.IsDefault = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -1685,7 +1610,15 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
@@ -1720,7 +1653,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
@@ -1757,7 +1690,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -1767,6 +1700,7 @@ func (r *LogSavedViewResource) Update(ctx context.Context, req resource.UpdateRe
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1783,10 +1717,21 @@ func (r *LogSavedViewResource) Delete(ctx context.Context, req resource.DeleteRe
     }
 
     // Make API call
-    _, err := r.client.Delete("/log-saved-view/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/log-saved-view/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete log_saved_view, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete log_saved_view: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -1818,10 +1763,10 @@ func (r *LogSavedViewResource) convertTerraformListToInterface(terraformList typ
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -1839,10 +1784,10 @@ func (r *LogSavedViewResource) convertTerraformSetToInterface(terraformSet types
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -1854,6 +1799,7 @@ func (r *LogSavedViewResource) convertTerraformSetToInterface(terraformSet types
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *LogSavedViewResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -1914,57 +1860,8 @@ func (r *LogSavedViewResource) bigFloatToFloat64(bf *big.Float) interface{} {
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *LogSavedViewResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

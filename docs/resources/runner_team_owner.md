@@ -1,0 +1,49 @@
+---
+page_title: "oneuptime_runner_team_owner Resource - oneuptime"
+subcategory: "Other"
+description: |-
+  Add teams as owners to your runbook agents.
+---
+
+# oneuptime_runner_team_owner (Resource)
+
+Add teams as owners to your runbook agents.
+
+## Example Usage
+
+```terraform
+resource "oneuptime_runner_team_owner" "example" {
+  runner_id = "123e4567-e89b-12d3-a456-426614174000"
+  team_id = "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+## Schema
+
+### Required
+
+- `runner_id` (String) A unique identifier for an object, represented as a UUID..
+- `team_id` (String) A unique identifier for an object, represented as a UUID..
+
+### Optional
+
+- `project_id` (String) A unique identifier for an object, represented as a UUID..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+
+### Read-Only
+
+- `id` (String) Unique identifier for the resource.
+- `created_at` (String) A date time object..
+- `updated_at` (String) A date time object..
+- `deleted_at` (String) A date time object..
+- `version` (Number) Object version.
+- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `is_owner_notified` (Bool) Are owners notified of this resource ownership?..
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import oneuptime_runner_team_owner.example <id>
+```

@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -37,11 +37,11 @@ type TelemetryIngestionKeyResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
+    Version types.Number `tfsdk:"version"`
     SecretKey types.String `tfsdk:"secret_key"`
 }
 
@@ -51,12 +51,11 @@ func (r *TelemetryIngestionKeyResource) Metadata(ctx context.Context, req resour
 
 func (r *TelemetryIngestionKeyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "telemetry_ingestion_key resource",
+        MarkdownDescription: "Manage Telemetry Ingestion Keys for your project",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -70,38 +69,43 @@ func (r *TelemetryIngestionKeyResource) Schema(ctx context.Context, req resource
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]",
+                MarkdownDescription: "Any friendly name of this object.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember. Permissions - Create: [Project Owner, Project Admin, Create Telemetry Ingestion Key], Read: [Project Owner, Project Admin, Read Telemetry Ingestion Key], Update: [Project Owner, Project Admin, Edit Telemetry Ingestion Key]",
+                MarkdownDescription: "Friendly description that will help you remember.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "secret_key": schema.StringAttribute{
@@ -145,16 +149,26 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     telemetryIngestionKeyRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "name": data.Name.ValueString(),
-        "description": data.Description.ValueString(),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := telemetryIngestionKeyRequest["data"].(map[string]interface{})
+
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/telemetry-ingestion-key", telemetryIngestionKeyRequest)
+    httpResp, err := r.client.Post(ctx, "/telemetry-ingestion-key", telemetryIngestionKeyRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create telemetry_ingestion_key, got error: %s", err))
         return
@@ -163,58 +177,81 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     var telemetryIngestionKeyResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &telemetryIngestionKeyResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_ingestion_key response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create telemetry_ingestion_key: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := telemetryIngestionKeyResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := telemetryIngestionKeyResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for telemetry_ingestion_key did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * telemetry_ingestion_key is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "description": true,
+        "createdByUserId": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "secretKey": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/telemetry-ingestion-key/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created telemetry_ingestion_key but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created telemetry_ingestion_key but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := telemetryIngestionKeyResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = telemetryIngestionKeyResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -258,7 +295,7 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -295,130 +332,10 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
-    }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -452,10 +369,60 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["secretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -489,7 +456,7 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         } else {
             data.SecretKey = types.StringNull()
         }
-    } else if val, ok := dataMap["secretKey"].(string); ok && val != "" {
+    } else if val, ok := dataMap["secretKey"].(string); ok {
         data.SecretKey = types.StringValue(val)
     } else {
         data.SecretKey = types.StringNull()
@@ -499,6 +466,8 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -522,17 +491,17 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         "projectId": true,
         "name": true,
         "description": true,
+        "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "createdByUserId": true,
         "secretKey": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/telemetry-ingestion-key/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/telemetry-ingestion-key/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_ingestion_key, got error: %s", err))
         return
@@ -561,43 +530,6 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         dataMap = telemetryIngestionKeyResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -641,7 +573,7 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -678,130 +610,10 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
-    }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -835,10 +647,60 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["secretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -872,7 +734,7 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         } else {
             data.SecretKey = types.StringNull()
         }
-    } else if val, ok := dataMap["secretKey"].(string); ok && val != "" {
+    } else if val, ok := dataMap["secretKey"].(string); ok {
         data.SecretKey = types.StringValue(val)
     } else {
         data.SecretKey = types.StringNull()
@@ -919,25 +781,24 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         requestDataMap["description"] = data.Description.ValueString()
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(telemetryIngestionKeyRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(telemetryIngestionKeyRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/telemetry-ingestion-key/" + data.Id.ValueString() + "", telemetryIngestionKeyRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update telemetry_ingestion_key, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/telemetry-ingestion-key/" + data.Id.ValueString() + "", telemetryIngestionKeyRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update telemetry_ingestion_key, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var telemetryIngestionKeyResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &telemetryIngestionKeyResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_ingestion_key response, got error: %s", err))
-        return
+        // Parse the update response
+        var telemetryIngestionKeyResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &telemetryIngestionKeyResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update telemetry_ingestion_key: %s", err))
+            return
+        }
+        _ = telemetryIngestionKeyResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -945,16 +806,16 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         "projectId": true,
         "name": true,
         "description": true,
+        "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "createdByUserId": true,
         "secretKey": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/telemetry-ingestion-key/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/telemetry-ingestion-key/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_ingestion_key after update, got error: %s", err))
         return
@@ -963,7 +824,7 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_ingestion_key read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read telemetry_ingestion_key after update: %s", err))
         return
     }
 
@@ -978,43 +839,6 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1058,7 +882,7 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -1095,130 +919,10 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
-    }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1252,10 +956,60 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["secretKey"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1289,7 +1043,7 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         } else {
             data.SecretKey = types.StringNull()
         }
-    } else if val, ok := dataMap["secretKey"].(string); ok && val != "" {
+    } else if val, ok := dataMap["secretKey"].(string); ok {
         data.SecretKey = types.StringValue(val)
     } else {
         data.SecretKey = types.StringNull()
@@ -1299,6 +1053,7 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -1315,10 +1070,21 @@ func (r *TelemetryIngestionKeyResource) Delete(ctx context.Context, req resource
     }
 
     // Make API call
-    _, err := r.client.Delete("/telemetry-ingestion-key/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/telemetry-ingestion-key/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete telemetry_ingestion_key, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete telemetry_ingestion_key: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -1350,10 +1116,10 @@ func (r *TelemetryIngestionKeyResource) convertTerraformListToInterface(terrafor
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -1371,10 +1137,10 @@ func (r *TelemetryIngestionKeyResource) convertTerraformSetToInterface(terraform
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -1386,6 +1152,7 @@ func (r *TelemetryIngestionKeyResource) convertTerraformSetToInterface(terraform
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *TelemetryIngestionKeyResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -1446,57 +1213,8 @@ func (r *TelemetryIngestionKeyResource) bigFloatToFloat64(bf *big.Float) interfa
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *TelemetryIngestionKeyResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

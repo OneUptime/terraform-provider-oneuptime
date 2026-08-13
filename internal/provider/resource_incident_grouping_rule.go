@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -23,6 +23,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -79,12 +80,12 @@ type IncidentGroupingRuleResourceModel struct {
     EpisodeOwnerTeams types.Set `tfsdk:"episode_owner_teams"`
     EpisodeMemberRoles types.Set `tfsdk:"episode_member_roles"`
     EpisodeMemberRoleAssignments JSONSubsetValue `tfsdk:"episode_member_role_assignments"`
-    ShowEpisodeOnStatusPage types.Bool `tfsdk:"show_episode_on_status_page"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
-    Version types.Number `tfsdk:"version"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ShowEpisodeOnStatusPage types.Bool `tfsdk:"show_episode_on_status_page"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
+    Version types.Number `tfsdk:"version"`
 }
 
 func (r *IncidentGroupingRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -93,12 +94,11 @@ func (r *IncidentGroupingRuleResource) Metadata(ctx context.Context, req resourc
 
 func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "incident_grouping_rule resource",
+        MarkdownDescription: "Configure rules for automatically grouping related incidents into episodes",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -112,11 +112,11 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Name of this incident grouping rule.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this incident grouping rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Description of this incident grouping rule.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -124,7 +124,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order..",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
@@ -133,7 +133,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Whether this rule is enabled.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -142,16 +142,19 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "match_criteria": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "JSON object defining the criteria for matching incidents to this rule.",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents from these monitors. Leave empty to match incidents from any monitor..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -160,7 +163,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents with these severities. Leave empty to match incidents of any severity..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -169,7 +172,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents that have at least one of these labels. Leave empty to match incidents regardless of incident labels..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -178,7 +181,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Only group incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -187,7 +190,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_title_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -195,7 +198,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "incident_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match incident descriptions. Leave empty to match any description..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -203,7 +206,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor names. Leave empty to match any monitor name. Example: 'prod-.*' matches monitors starting with 'prod-'..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -211,7 +214,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Regular expression pattern to match monitor descriptions. Leave empty to match any monitor description..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -219,7 +222,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_monitor": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents from different monitors will be grouped into separate episodes. When disabled, incidents from any monitor can be grouped together..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -228,7 +231,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_severity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents with different severities will be grouped into separate episodes. When disabled, incidents of any severity can be grouped together..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -237,7 +240,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_incident_title": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents with different titles will be grouped into separate episodes. When disabled, incidents with any title can be grouped together..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -246,7 +249,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_incident_labels": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents with different sets of labels will be grouped into separate episodes (exact set match). When disabled, incident labels are ignored for grouping..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -255,7 +258,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_monitor_labels": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, incidents whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "When enabled, incidents whose monitors have different sets of labels will be grouped into separate episodes (exact set match). When disabled, monitor labels are ignored for grouping..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -264,7 +267,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_time_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable time-based grouping. When enabled, incidents are grouped within the specified time window. When disabled, all matching incidents are grouped into a single ongoing episode regardless of time..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -273,7 +276,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "time_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Rolling time window in minutes. Incidents are grouped if they arrive within this gap from the last incident..",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
@@ -282,16 +285,19 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "group_by_fields": schema.StringAttribute{
-                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity). Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "JSON object defining the fields to group incidents by (e.g., monitorId, severity).",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "episode_title_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Template for generating episode titles. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -299,7 +305,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_description_template": schema.StringAttribute{
-                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Template for generating episode descriptions. Supports placeholders like {{incidentSeverity}}, {{monitorName}}, {{incidentTitle}}, {{incidentDescription}}.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -307,7 +313,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_resolve_delay": schema.BoolAttribute{
-                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable grace period before auto-resolving episode after all incidents resolve. Helps prevent rapid state changes during incident flapping..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -316,7 +322,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "resolve_delay_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all incidents are resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Grace period in minutes before auto-resolving an episode after all incidents are resolved.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -325,7 +331,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_reopen_window": schema.BoolAttribute{
-                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable reopening recently resolved episodes instead of creating new ones. Useful when related issues recur shortly after resolution..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -334,7 +340,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "reopen_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Time window in minutes to reopen a recently resolved episode instead of creating a new one.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
@@ -343,7 +349,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "enable_inactivity_timeout": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Enable auto-resolving episodes after a period of inactivity. Helps automatically close episodes when no new incidents arrive..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -352,7 +358,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "inactivity_timeout_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Time in minutes after which an inactive episode will be auto-resolved.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(60)),
@@ -361,7 +367,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "List of on-call duty policies to execute for episodes created by this rule..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -386,7 +392,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_labels": schema.SetAttribute{
-                MarkdownDescription: "Labels to automatically apply to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Labels to automatically apply to episodes created by this rule..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -395,7 +401,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Users to automatically add as owners to episodes created by this rule..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -404,7 +410,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to automatically add as owners to episodes created by this rule.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Teams to automatically add as owners to episodes created by this rule..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -413,7 +419,7 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_member_roles": schema.SetAttribute{
-                MarkdownDescription: "Incident roles to display in the episode members form. Select the roles that can be assigned to episode members.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Incident roles to display in the episode members form. Select the roles that can be assigned to episode members..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -422,16 +428,28 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
                 },
             },
             "episode_member_role_assignments": schema.StringAttribute{
-                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID.. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
             },
             "show_episode_on_status_page": schema.BoolAttribute{
-                MarkdownDescription: "Should episodes created by this rule be shown on the status page?. Permissions - Create: [Project Owner, Project Admin, Create Incident Grouping Rule], Read: [Project Owner, Project Admin, Project Member, Viewer, Incident Admin, Incident Member, Incident Viewer, Read Incident Grouping Rule], Update: [Project Owner, Project Admin, Edit Incident Grouping Rule]",
+                MarkdownDescription: "Should episodes created by this rule be shown on the status page?.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -441,25 +459,21 @@ func (r *IncidentGroupingRuleResource) Schema(ctx context.Context, req resource.
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
         },
@@ -499,52 +513,134 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     incidentGroupingRuleRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "name": data.Name.ValueString(),
-        "description": data.Description.ValueString(),
-        "priority": r.bigFloatToFloat64(data.Priority.ValueBigFloat()),
-        "isEnabled": data.IsEnabled.ValueBool(),
-        "matchCriteria": r.parseJSONField(data.MatchCriteria),
-        "monitors": r.convertTerraformSetToInterface(data.Monitors),
-        "incidentSeverities": r.convertTerraformSetToInterface(data.IncidentSeverities),
-        "incidentLabels": r.convertTerraformSetToInterface(data.IncidentLabels),
-        "monitorLabels": r.convertTerraformSetToInterface(data.MonitorLabels),
-        "incidentTitlePattern": data.IncidentTitlePattern.ValueString(),
-        "incidentDescriptionPattern": data.IncidentDescriptionPattern.ValueString(),
-        "monitorNamePattern": data.MonitorNamePattern.ValueString(),
-        "monitorDescriptionPattern": data.MonitorDescriptionPattern.ValueString(),
-        "groupByMonitor": data.GroupByMonitor.ValueBool(),
-        "groupBySeverity": data.GroupBySeverity.ValueBool(),
-        "groupByIncidentTitle": data.GroupByIncidentTitle.ValueBool(),
-        "groupByIncidentLabels": data.GroupByIncidentLabels.ValueBool(),
-        "groupByMonitorLabels": data.GroupByMonitorLabels.ValueBool(),
-        "enableTimeWindow": data.EnableTimeWindow.ValueBool(),
-        "timeWindowMinutes": r.bigFloatToFloat64(data.TimeWindowMinutes.ValueBigFloat()),
-        "groupByFields": r.parseJSONField(data.GroupByFields),
-        "episodeTitleTemplate": data.EpisodeTitleTemplate.ValueString(),
-        "episodeDescriptionTemplate": data.EpisodeDescriptionTemplate.ValueString(),
-        "enableResolveDelay": data.EnableResolveDelay.ValueBool(),
-        "resolveDelayMinutes": r.bigFloatToFloat64(data.ResolveDelayMinutes.ValueBigFloat()),
-        "enableReopenWindow": data.EnableReopenWindow.ValueBool(),
-        "reopenWindowMinutes": r.bigFloatToFloat64(data.ReopenWindowMinutes.ValueBigFloat()),
-        "enableInactivityTimeout": data.EnableInactivityTimeout.ValueBool(),
-        "inactivityTimeoutMinutes": r.bigFloatToFloat64(data.InactivityTimeoutMinutes.ValueBigFloat()),
-        "onCallDutyPolicies": r.convertTerraformSetToInterface(data.OnCallDutyPolicies),
-        "defaultAssignToUserId": data.DefaultAssignToUserId.ValueString(),
-        "defaultAssignToTeamId": data.DefaultAssignToTeamId.ValueString(),
-        "episodeLabels": r.convertTerraformSetToInterface(data.EpisodeLabels),
-        "episodeOwnerUsers": r.convertTerraformSetToInterface(data.EpisodeOwnerUsers),
-        "episodeOwnerTeams": r.convertTerraformSetToInterface(data.EpisodeOwnerTeams),
-        "episodeMemberRoles": r.convertTerraformSetToInterface(data.EpisodeMemberRoles),
-        "episodeMemberRoleAssignments": r.parseJSONField(data.EpisodeMemberRoleAssignments),
-        "showEpisodeOnStatusPage": data.ShowEpisodeOnStatusPage.ValueBool(),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := incidentGroupingRuleRequest["data"].(map[string]interface{})
+
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.Priority.IsNull() && !data.Priority.IsUnknown() {
+        requestDataMap["priority"] = r.bigFloatToFloat64(data.Priority.ValueBigFloat())
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
+    }
+    if parsedMatchCriteria := r.parseJSONField(data.MatchCriteria); parsedMatchCriteria != nil {
+        requestDataMap["matchCriteria"] = parsedMatchCriteria
+    }
+    if !data.Monitors.IsNull() && !data.Monitors.IsUnknown() {
+        requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
+    }
+    if !data.IncidentSeverities.IsNull() && !data.IncidentSeverities.IsUnknown() {
+        requestDataMap["incidentSeverities"] = r.convertTerraformSetToInterface(data.IncidentSeverities)
+    }
+    if !data.IncidentLabels.IsNull() && !data.IncidentLabels.IsUnknown() {
+        requestDataMap["incidentLabels"] = r.convertTerraformSetToInterface(data.IncidentLabels)
+    }
+    if !data.MonitorLabels.IsNull() && !data.MonitorLabels.IsUnknown() {
+        requestDataMap["monitorLabels"] = r.convertTerraformSetToInterface(data.MonitorLabels)
+    }
+    if !data.IncidentTitlePattern.IsNull() && !data.IncidentTitlePattern.IsUnknown() {
+        requestDataMap["incidentTitlePattern"] = data.IncidentTitlePattern.ValueString()
+    }
+    if !data.IncidentDescriptionPattern.IsNull() && !data.IncidentDescriptionPattern.IsUnknown() {
+        requestDataMap["incidentDescriptionPattern"] = data.IncidentDescriptionPattern.ValueString()
+    }
+    if !data.MonitorNamePattern.IsNull() && !data.MonitorNamePattern.IsUnknown() {
+        requestDataMap["monitorNamePattern"] = data.MonitorNamePattern.ValueString()
+    }
+    if !data.MonitorDescriptionPattern.IsNull() && !data.MonitorDescriptionPattern.IsUnknown() {
+        requestDataMap["monitorDescriptionPattern"] = data.MonitorDescriptionPattern.ValueString()
+    }
+    if !data.GroupByMonitor.IsNull() && !data.GroupByMonitor.IsUnknown() {
+        requestDataMap["groupByMonitor"] = data.GroupByMonitor.ValueBool()
+    }
+    if !data.GroupBySeverity.IsNull() && !data.GroupBySeverity.IsUnknown() {
+        requestDataMap["groupBySeverity"] = data.GroupBySeverity.ValueBool()
+    }
+    if !data.GroupByIncidentTitle.IsNull() && !data.GroupByIncidentTitle.IsUnknown() {
+        requestDataMap["groupByIncidentTitle"] = data.GroupByIncidentTitle.ValueBool()
+    }
+    if !data.GroupByIncidentLabels.IsNull() && !data.GroupByIncidentLabels.IsUnknown() {
+        requestDataMap["groupByIncidentLabels"] = data.GroupByIncidentLabels.ValueBool()
+    }
+    if !data.GroupByMonitorLabels.IsNull() && !data.GroupByMonitorLabels.IsUnknown() {
+        requestDataMap["groupByMonitorLabels"] = data.GroupByMonitorLabels.ValueBool()
+    }
+    if !data.EnableTimeWindow.IsNull() && !data.EnableTimeWindow.IsUnknown() {
+        requestDataMap["enableTimeWindow"] = data.EnableTimeWindow.ValueBool()
+    }
+    if !data.TimeWindowMinutes.IsNull() && !data.TimeWindowMinutes.IsUnknown() {
+        requestDataMap["timeWindowMinutes"] = r.bigFloatToFloat64(data.TimeWindowMinutes.ValueBigFloat())
+    }
+    if parsedGroupByFields := r.parseJSONField(data.GroupByFields); parsedGroupByFields != nil {
+        requestDataMap["groupByFields"] = parsedGroupByFields
+    }
+    if !data.EpisodeTitleTemplate.IsNull() && !data.EpisodeTitleTemplate.IsUnknown() {
+        requestDataMap["episodeTitleTemplate"] = data.EpisodeTitleTemplate.ValueString()
+    }
+    if !data.EpisodeDescriptionTemplate.IsNull() && !data.EpisodeDescriptionTemplate.IsUnknown() {
+        requestDataMap["episodeDescriptionTemplate"] = data.EpisodeDescriptionTemplate.ValueString()
+    }
+    if !data.EnableResolveDelay.IsNull() && !data.EnableResolveDelay.IsUnknown() {
+        requestDataMap["enableResolveDelay"] = data.EnableResolveDelay.ValueBool()
+    }
+    if !data.ResolveDelayMinutes.IsNull() && !data.ResolveDelayMinutes.IsUnknown() {
+        requestDataMap["resolveDelayMinutes"] = r.bigFloatToFloat64(data.ResolveDelayMinutes.ValueBigFloat())
+    }
+    if !data.EnableReopenWindow.IsNull() && !data.EnableReopenWindow.IsUnknown() {
+        requestDataMap["enableReopenWindow"] = data.EnableReopenWindow.ValueBool()
+    }
+    if !data.ReopenWindowMinutes.IsNull() && !data.ReopenWindowMinutes.IsUnknown() {
+        requestDataMap["reopenWindowMinutes"] = r.bigFloatToFloat64(data.ReopenWindowMinutes.ValueBigFloat())
+    }
+    if !data.EnableInactivityTimeout.IsNull() && !data.EnableInactivityTimeout.IsUnknown() {
+        requestDataMap["enableInactivityTimeout"] = data.EnableInactivityTimeout.ValueBool()
+    }
+    if !data.InactivityTimeoutMinutes.IsNull() && !data.InactivityTimeoutMinutes.IsUnknown() {
+        requestDataMap["inactivityTimeoutMinutes"] = r.bigFloatToFloat64(data.InactivityTimeoutMinutes.ValueBigFloat())
+    }
+    if !data.OnCallDutyPolicies.IsNull() && !data.OnCallDutyPolicies.IsUnknown() {
+        requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
+    }
+    if !data.DefaultAssignToUserId.IsNull() && !data.DefaultAssignToUserId.IsUnknown() {
+        requestDataMap["defaultAssignToUserId"] = data.DefaultAssignToUserId.ValueString()
+    }
+    if !data.DefaultAssignToTeamId.IsNull() && !data.DefaultAssignToTeamId.IsUnknown() {
+        requestDataMap["defaultAssignToTeamId"] = data.DefaultAssignToTeamId.ValueString()
+    }
+    if !data.EpisodeLabels.IsNull() && !data.EpisodeLabels.IsUnknown() {
+        requestDataMap["episodeLabels"] = r.convertTerraformSetToInterface(data.EpisodeLabels)
+    }
+    if !data.EpisodeOwnerUsers.IsNull() && !data.EpisodeOwnerUsers.IsUnknown() {
+        requestDataMap["episodeOwnerUsers"] = r.convertTerraformSetToInterface(data.EpisodeOwnerUsers)
+    }
+    if !data.EpisodeOwnerTeams.IsNull() && !data.EpisodeOwnerTeams.IsUnknown() {
+        requestDataMap["episodeOwnerTeams"] = r.convertTerraformSetToInterface(data.EpisodeOwnerTeams)
+    }
+    if !data.EpisodeMemberRoles.IsNull() && !data.EpisodeMemberRoles.IsUnknown() {
+        requestDataMap["episodeMemberRoles"] = r.convertTerraformSetToInterface(data.EpisodeMemberRoles)
+    }
+    if parsedEpisodeMemberRoleAssignments := r.parseJSONField(data.EpisodeMemberRoleAssignments); parsedEpisodeMemberRoleAssignments != nil {
+        requestDataMap["episodeMemberRoleAssignments"] = parsedEpisodeMemberRoleAssignments
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
+    }
+    if !data.ShowEpisodeOnStatusPage.IsNull() && !data.ShowEpisodeOnStatusPage.IsUnknown() {
+        requestDataMap["showEpisodeOnStatusPage"] = data.ShowEpisodeOnStatusPage.ValueBool()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/incident-grouping-rule", incidentGroupingRuleRequest)
+    httpResp, err := r.client.Post(ctx, "/incident-grouping-rule", incidentGroupingRuleRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create incident_grouping_rule, got error: %s", err))
         return
@@ -553,58 +649,116 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
     var incidentGroupingRuleResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &incidentGroupingRuleResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse incident_grouping_rule response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create incident_grouping_rule: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := incidentGroupingRuleResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := incidentGroupingRuleResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for incident_grouping_rule did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * incident_grouping_rule is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "description": true,
+        "priority": true,
+        "isEnabled": true,
+        "matchCriteria": true,
+        "monitors": true,
+        "incidentSeverities": true,
+        "incidentLabels": true,
+        "monitorLabels": true,
+        "incidentTitlePattern": true,
+        "incidentDescriptionPattern": true,
+        "monitorNamePattern": true,
+        "monitorDescriptionPattern": true,
+        "groupByMonitor": true,
+        "groupBySeverity": true,
+        "groupByIncidentTitle": true,
+        "groupByIncidentLabels": true,
+        "groupByMonitorLabels": true,
+        "enableTimeWindow": true,
+        "timeWindowMinutes": true,
+        "groupByFields": true,
+        "episodeTitleTemplate": true,
+        "episodeDescriptionTemplate": true,
+        "enableResolveDelay": true,
+        "resolveDelayMinutes": true,
+        "enableReopenWindow": true,
+        "reopenWindowMinutes": true,
+        "enableInactivityTimeout": true,
+        "inactivityTimeoutMinutes": true,
+        "onCallDutyPolicies": true,
+        "defaultAssignToUserId": true,
+        "defaultAssignToTeamId": true,
+        "episodeLabels": true,
+        "episodeOwnerUsers": true,
+        "episodeOwnerTeams": true,
+        "episodeMemberRoles": true,
+        "episodeMemberRoleAssignments": true,
+        "createdByUserId": true,
+        "showEpisodeOnStatusPage": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/incident-grouping-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created incident_grouping_rule but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created incident_grouping_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := incidentGroupingRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = incidentGroupingRuleResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -648,7 +802,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -685,7 +839,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -696,14 +850,22 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         data.Priority = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["priority"].(int64); ok {
         data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["priority"] == nil {
+    } else if obj, ok := dataMap["priority"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Priority = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Priority = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Priority = types.NumberNull()
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
     if obj, ok := dataMap["matchCriteria"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.MatchCriteria = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -734,7 +896,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.MatchCriteria = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["matchCriteria"].(string); ok && val != "" {
+    } else if val, ok := dataMap["matchCriteria"].(string); ok {
         data.MatchCriteria = NewJSONSubsetValue(val)
     } else {
         data.MatchCriteria = NewJSONSubsetNull()
@@ -899,7 +1061,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.IncidentTitlePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentTitlePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentTitlePattern"].(string); ok {
         data.IncidentTitlePattern = types.StringValue(val)
     } else {
         data.IncidentTitlePattern = types.StringNull()
@@ -936,7 +1098,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.IncidentDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentDescriptionPattern"].(string); ok {
         data.IncidentDescriptionPattern = types.StringValue(val)
     } else {
         data.IncidentDescriptionPattern = types.StringNull()
@@ -973,7 +1135,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
         data.MonitorNamePattern = types.StringNull()
@@ -1010,7 +1172,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
         data.MonitorDescriptionPattern = types.StringValue(val)
     } else {
         data.MonitorDescriptionPattern = types.StringNull()
@@ -1039,11 +1201,19 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["timeWindowMinutes"].(int64); ok {
         data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["timeWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["timeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.TimeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.TimeWindowMinutes = types.NumberNull()
     }
     if obj, ok := dataMap["groupByFields"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.GroupByFields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1074,7 +1244,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.GroupByFields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["groupByFields"].(string); ok && val != "" {
+    } else if val, ok := dataMap["groupByFields"].(string); ok {
         data.GroupByFields = NewJSONSubsetValue(val)
     } else {
         data.GroupByFields = NewJSONSubsetNull()
@@ -1111,7 +1281,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.EpisodeTitleTemplate = types.StringNull()
         }
-    } else if val, ok := dataMap["episodeTitleTemplate"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeTitleTemplate"].(string); ok {
         data.EpisodeTitleTemplate = types.StringValue(val)
     } else {
         data.EpisodeTitleTemplate = types.StringNull()
@@ -1148,7 +1318,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.EpisodeDescriptionTemplate = types.StringNull()
         }
-    } else if val, ok := dataMap["episodeDescriptionTemplate"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeDescriptionTemplate"].(string); ok {
         data.EpisodeDescriptionTemplate = types.StringValue(val)
     } else {
         data.EpisodeDescriptionTemplate = types.StringNull()
@@ -1162,7 +1332,15 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["resolveDelayMinutes"].(int64); ok {
         data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["resolveDelayMinutes"] == nil {
+    } else if obj, ok := dataMap["resolveDelayMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ResolveDelayMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ResolveDelayMinutes = types.NumberNull()
     }
     if val, ok := dataMap["enableReopenWindow"].(bool); ok {
@@ -1174,7 +1352,15 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["reopenWindowMinutes"].(int64); ok {
         data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["reopenWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["reopenWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ReopenWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReopenWindowMinutes = types.NumberNull()
     }
     if val, ok := dataMap["enableInactivityTimeout"].(bool); ok {
@@ -1186,7 +1372,15 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int64); ok {
         data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["inactivityTimeoutMinutes"] == nil {
+    } else if obj, ok := dataMap["inactivityTimeoutMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.InactivityTimeoutMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.InactivityTimeoutMinutes = types.NumberNull()
     }
     if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
@@ -1253,7 +1447,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.DefaultAssignToUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["defaultAssignToUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultAssignToUserId"].(string); ok {
         data.DefaultAssignToUserId = types.StringValue(val)
     } else {
         data.DefaultAssignToUserId = types.StringNull()
@@ -1290,7 +1484,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.DefaultAssignToTeamId = types.StringNull()
         }
-    } else if val, ok := dataMap["defaultAssignToTeamId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultAssignToTeamId"].(string); ok {
         data.DefaultAssignToTeamId = types.StringValue(val)
     } else {
         data.DefaultAssignToTeamId = types.StringNull()
@@ -1424,7 +1618,7 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         data.EpisodeMemberRoles = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["episodeMemberRoleAssignments"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EpisodeMemberRoleAssignments = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1455,133 +1649,10 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.EpisodeMemberRoleAssignments = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok {
         data.EpisodeMemberRoleAssignments = NewJSONSubsetValue(val)
     } else {
         data.EpisodeMemberRoleAssignments = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
-        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1615,16 +1686,71 @@ func (r *IncidentGroupingRuleResource) Create(ctx context.Context, req resource.
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
+        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1683,17 +1809,17 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         "episodeOwnerTeams": true,
         "episodeMemberRoles": true,
         "episodeMemberRoleAssignments": true,
+        "createdByUserId": true,
         "showEpisodeOnStatusPage": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "createdByUserId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/incident-grouping-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/incident-grouping-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read incident_grouping_rule, got error: %s", err))
         return
@@ -1722,43 +1848,6 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         dataMap = incidentGroupingRuleResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1802,7 +1891,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -1839,7 +1928,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -1850,14 +1939,22 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         data.Priority = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["priority"].(int64); ok {
         data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["priority"] == nil {
+    } else if obj, ok := dataMap["priority"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Priority = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Priority = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Priority = types.NumberNull()
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
     if obj, ok := dataMap["matchCriteria"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.MatchCriteria = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1888,7 +1985,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.MatchCriteria = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["matchCriteria"].(string); ok && val != "" {
+    } else if val, ok := dataMap["matchCriteria"].(string); ok {
         data.MatchCriteria = NewJSONSubsetValue(val)
     } else {
         data.MatchCriteria = NewJSONSubsetNull()
@@ -2053,7 +2150,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.IncidentTitlePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentTitlePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentTitlePattern"].(string); ok {
         data.IncidentTitlePattern = types.StringValue(val)
     } else {
         data.IncidentTitlePattern = types.StringNull()
@@ -2090,7 +2187,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.IncidentDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentDescriptionPattern"].(string); ok {
         data.IncidentDescriptionPattern = types.StringValue(val)
     } else {
         data.IncidentDescriptionPattern = types.StringNull()
@@ -2127,7 +2224,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
         data.MonitorNamePattern = types.StringNull()
@@ -2164,7 +2261,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
         data.MonitorDescriptionPattern = types.StringValue(val)
     } else {
         data.MonitorDescriptionPattern = types.StringNull()
@@ -2193,11 +2290,19 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["timeWindowMinutes"].(int64); ok {
         data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["timeWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["timeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.TimeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.TimeWindowMinutes = types.NumberNull()
     }
     if obj, ok := dataMap["groupByFields"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.GroupByFields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -2228,7 +2333,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.GroupByFields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["groupByFields"].(string); ok && val != "" {
+    } else if val, ok := dataMap["groupByFields"].(string); ok {
         data.GroupByFields = NewJSONSubsetValue(val)
     } else {
         data.GroupByFields = NewJSONSubsetNull()
@@ -2265,7 +2370,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.EpisodeTitleTemplate = types.StringNull()
         }
-    } else if val, ok := dataMap["episodeTitleTemplate"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeTitleTemplate"].(string); ok {
         data.EpisodeTitleTemplate = types.StringValue(val)
     } else {
         data.EpisodeTitleTemplate = types.StringNull()
@@ -2302,7 +2407,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.EpisodeDescriptionTemplate = types.StringNull()
         }
-    } else if val, ok := dataMap["episodeDescriptionTemplate"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeDescriptionTemplate"].(string); ok {
         data.EpisodeDescriptionTemplate = types.StringValue(val)
     } else {
         data.EpisodeDescriptionTemplate = types.StringNull()
@@ -2316,7 +2421,15 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["resolveDelayMinutes"].(int64); ok {
         data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["resolveDelayMinutes"] == nil {
+    } else if obj, ok := dataMap["resolveDelayMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ResolveDelayMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ResolveDelayMinutes = types.NumberNull()
     }
     if val, ok := dataMap["enableReopenWindow"].(bool); ok {
@@ -2328,7 +2441,15 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["reopenWindowMinutes"].(int64); ok {
         data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["reopenWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["reopenWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ReopenWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReopenWindowMinutes = types.NumberNull()
     }
     if val, ok := dataMap["enableInactivityTimeout"].(bool); ok {
@@ -2340,7 +2461,15 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int64); ok {
         data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["inactivityTimeoutMinutes"] == nil {
+    } else if obj, ok := dataMap["inactivityTimeoutMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.InactivityTimeoutMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.InactivityTimeoutMinutes = types.NumberNull()
     }
     if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
@@ -2407,7 +2536,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.DefaultAssignToUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["defaultAssignToUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultAssignToUserId"].(string); ok {
         data.DefaultAssignToUserId = types.StringValue(val)
     } else {
         data.DefaultAssignToUserId = types.StringNull()
@@ -2444,7 +2573,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.DefaultAssignToTeamId = types.StringNull()
         }
-    } else if val, ok := dataMap["defaultAssignToTeamId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultAssignToTeamId"].(string); ok {
         data.DefaultAssignToTeamId = types.StringValue(val)
     } else {
         data.DefaultAssignToTeamId = types.StringNull()
@@ -2578,7 +2707,7 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         data.EpisodeMemberRoles = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["episodeMemberRoleAssignments"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EpisodeMemberRoleAssignments = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -2609,133 +2738,10 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.EpisodeMemberRoleAssignments = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok {
         data.EpisodeMemberRoleAssignments = NewJSONSubsetValue(val)
     } else {
         data.EpisodeMemberRoleAssignments = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
-        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2769,10 +2775,63 @@ func (r *IncidentGroupingRuleResource) Read(ctx context.Context, req resource.Re
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
+        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -2939,25 +2998,24 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         requestDataMap["showEpisodeOnStatusPage"] = data.ShowEpisodeOnStatusPage.ValueBool()
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(incidentGroupingRuleRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(incidentGroupingRuleRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/incident-grouping-rule/" + data.Id.ValueString() + "", incidentGroupingRuleRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update incident_grouping_rule, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/incident-grouping-rule/" + data.Id.ValueString() + "", incidentGroupingRuleRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update incident_grouping_rule, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var incidentGroupingRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &incidentGroupingRuleResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse incident_grouping_rule response, got error: %s", err))
-        return
+        // Parse the update response
+        var incidentGroupingRuleResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &incidentGroupingRuleResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update incident_grouping_rule: %s", err))
+            return
+        }
+        _ = incidentGroupingRuleResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -3000,16 +3058,16 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         "episodeOwnerTeams": true,
         "episodeMemberRoles": true,
         "episodeMemberRoleAssignments": true,
+        "createdByUserId": true,
         "showEpisodeOnStatusPage": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "createdByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/incident-grouping-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/incident-grouping-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read incident_grouping_rule after update, got error: %s", err))
         return
@@ -3018,7 +3076,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse incident_grouping_rule read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read incident_grouping_rule after update: %s", err))
         return
     }
 
@@ -3033,43 +3091,6 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -3113,7 +3134,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -3150,7 +3171,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -3161,14 +3182,22 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.Priority = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["priority"].(int64); ok {
         data.Priority = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["priority"] == nil {
+    } else if obj, ok := dataMap["priority"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Priority = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Priority = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Priority = types.NumberNull()
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
     if obj, ok := dataMap["matchCriteria"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.MatchCriteria = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -3199,7 +3228,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.MatchCriteria = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["matchCriteria"].(string); ok && val != "" {
+    } else if val, ok := dataMap["matchCriteria"].(string); ok {
         data.MatchCriteria = NewJSONSubsetValue(val)
     } else {
         data.MatchCriteria = NewJSONSubsetNull()
@@ -3364,7 +3393,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.IncidentTitlePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentTitlePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentTitlePattern"].(string); ok {
         data.IncidentTitlePattern = types.StringValue(val)
     } else {
         data.IncidentTitlePattern = types.StringNull()
@@ -3401,7 +3430,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.IncidentDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentDescriptionPattern"].(string); ok {
         data.IncidentDescriptionPattern = types.StringValue(val)
     } else {
         data.IncidentDescriptionPattern = types.StringNull()
@@ -3438,7 +3467,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.MonitorNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
         data.MonitorNamePattern = types.StringValue(val)
     } else {
         data.MonitorNamePattern = types.StringNull()
@@ -3475,7 +3504,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok && val != "" {
+    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
         data.MonitorDescriptionPattern = types.StringValue(val)
     } else {
         data.MonitorDescriptionPattern = types.StringNull()
@@ -3504,11 +3533,19 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["timeWindowMinutes"].(int64); ok {
         data.TimeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["timeWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["timeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.TimeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.TimeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.TimeWindowMinutes = types.NumberNull()
     }
     if obj, ok := dataMap["groupByFields"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.GroupByFields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -3539,7 +3576,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.GroupByFields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["groupByFields"].(string); ok && val != "" {
+    } else if val, ok := dataMap["groupByFields"].(string); ok {
         data.GroupByFields = NewJSONSubsetValue(val)
     } else {
         data.GroupByFields = NewJSONSubsetNull()
@@ -3576,7 +3613,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.EpisodeTitleTemplate = types.StringNull()
         }
-    } else if val, ok := dataMap["episodeTitleTemplate"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeTitleTemplate"].(string); ok {
         data.EpisodeTitleTemplate = types.StringValue(val)
     } else {
         data.EpisodeTitleTemplate = types.StringNull()
@@ -3613,7 +3650,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.EpisodeDescriptionTemplate = types.StringNull()
         }
-    } else if val, ok := dataMap["episodeDescriptionTemplate"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeDescriptionTemplate"].(string); ok {
         data.EpisodeDescriptionTemplate = types.StringValue(val)
     } else {
         data.EpisodeDescriptionTemplate = types.StringNull()
@@ -3627,7 +3664,15 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["resolveDelayMinutes"].(int64); ok {
         data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["resolveDelayMinutes"] == nil {
+    } else if obj, ok := dataMap["resolveDelayMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ResolveDelayMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ResolveDelayMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ResolveDelayMinutes = types.NumberNull()
     }
     if val, ok := dataMap["enableReopenWindow"].(bool); ok {
@@ -3639,7 +3684,15 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["reopenWindowMinutes"].(int64); ok {
         data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["reopenWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["reopenWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ReopenWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ReopenWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReopenWindowMinutes = types.NumberNull()
     }
     if val, ok := dataMap["enableInactivityTimeout"].(bool); ok {
@@ -3651,7 +3704,15 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["inactivityTimeoutMinutes"].(int64); ok {
         data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["inactivityTimeoutMinutes"] == nil {
+    } else if obj, ok := dataMap["inactivityTimeoutMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.InactivityTimeoutMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.InactivityTimeoutMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.InactivityTimeoutMinutes = types.NumberNull()
     }
     if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
@@ -3718,7 +3779,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.DefaultAssignToUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["defaultAssignToUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultAssignToUserId"].(string); ok {
         data.DefaultAssignToUserId = types.StringValue(val)
     } else {
         data.DefaultAssignToUserId = types.StringNull()
@@ -3755,7 +3816,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.DefaultAssignToTeamId = types.StringNull()
         }
-    } else if val, ok := dataMap["defaultAssignToTeamId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultAssignToTeamId"].(string); ok {
         data.DefaultAssignToTeamId = types.StringValue(val)
     } else {
         data.DefaultAssignToTeamId = types.StringNull()
@@ -3889,7 +3950,7 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         data.EpisodeMemberRoles = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["episodeMemberRoleAssignments"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.EpisodeMemberRoleAssignments = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -3920,133 +3981,10 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.EpisodeMemberRoleAssignments = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok && val != "" {
+    } else if val, ok := dataMap["episodeMemberRoleAssignments"].(string); ok {
         data.EpisodeMemberRoleAssignments = NewJSONSubsetValue(val)
     } else {
         data.EpisodeMemberRoleAssignments = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
-        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CreatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.CreatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.UpdatedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
-    } else {
-        data.UpdatedAt = NewJSONSubsetNull()
-    }
-    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.DeletedAt = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
-    } else {
-        data.DeletedAt = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["version"].(float64); ok {
-        data.Version = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["version"].(int); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["version"].(int64); ok {
-        data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
-        data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4080,16 +4018,70 @@ func (r *IncidentGroupingRuleResource) Update(ctx context.Context, req resource.
         } else {
             data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["showEpisodeOnStatusPage"].(bool); ok {
+        data.ShowEpisodeOnStatusPage = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
+        } else {
+            data.CreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
+        data.CreatedAt = NewRFC3339Value(val)
+    } else {
+        data.CreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
+        } else {
+            data.UpdatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
+        data.UpdatedAt = NewRFC3339Value(val)
+    } else {
+        data.UpdatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
+        } else {
+            data.DeletedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
+        data.DeletedAt = NewRFC3339Value(val)
+    } else {
+        data.DeletedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["version"].(int); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["version"].(int64); ok {
+        data.Version = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.Version = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -4106,10 +4098,21 @@ func (r *IncidentGroupingRuleResource) Delete(ctx context.Context, req resource.
     }
 
     // Make API call
-    _, err := r.client.Delete("/incident-grouping-rule/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/incident-grouping-rule/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete incident_grouping_rule, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete incident_grouping_rule: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -4141,10 +4144,10 @@ func (r *IncidentGroupingRuleResource) convertTerraformListToInterface(terraform
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -4162,10 +4165,10 @@ func (r *IncidentGroupingRuleResource) convertTerraformSetToInterface(terraformS
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -4177,6 +4180,7 @@ func (r *IncidentGroupingRuleResource) convertTerraformSetToInterface(terraformS
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *IncidentGroupingRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -4237,57 +4241,8 @@ func (r *IncidentGroupingRuleResource) bigFloatToFloat64(bf *big.Float) interfac
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *IncidentGroupingRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

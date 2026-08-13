@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -20,6 +20,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -44,6 +45,7 @@ type ProjectResourceModel struct {
     BusinessDetailsCountry types.String `tfsdk:"business_details_country"`
     FinanceAccountingEmail types.String `tfsdk:"finance_accounting_email"`
     PaymentProviderPromoCode types.String `tfsdk:"payment_provider_promo_code"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsFeatureFlagMonitorGroupsEnabled types.Bool `tfsdk:"is_feature_flag_monitor_groups_enabled"`
     ActiveMonitorsLimit types.Number `tfsdk:"active_monitors_limit"`
     SeatLimit types.Number `tfsdk:"seat_limit"`
@@ -55,6 +57,7 @@ type ProjectResourceModel struct {
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     UtmContent types.String `tfsdk:"utm_content"`
     EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
+    IsSessionReplayAllowed types.Bool `tfsdk:"is_session_replay_allowed"`
     AuditLogsRetentionInDays types.Number `tfsdk:"audit_logs_retention_in_days"`
     StoreSystemEventsInAuditLogs types.Bool `tfsdk:"store_system_events_in_audit_logs"`
     RequireSsoForLogin types.Bool `tfsdk:"require_sso_for_login"`
@@ -69,37 +72,48 @@ type ProjectResourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
+    EnableAutoRemediation types.Bool `tfsdk:"enable_auto_remediation"`
+    EnableAiCommandExecution types.Bool `tfsdk:"enable_ai_command_execution"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
-    EnableInstrumentationFixTasks types.Bool `tfsdk:"enable_instrumentation_fix_tasks"`
+    EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
+    EnableAlertInstrumentationFixTasks types.Bool `tfsdk:"enable_alert_instrumentation_fix_tasks"`
+    EnableAutomaticIncidentCodeFixes types.Bool `tfsdk:"enable_automatic_incident_code_fixes"`
+    EnableAutomaticAlertCodeFixes types.Bool `tfsdk:"enable_automatic_alert_code_fixes"`
     EnableAiInsights types.Bool `tfsdk:"enable_ai_insights"`
     EnableInsightFixTasks types.Bool `tfsdk:"enable_insight_fix_tasks"`
     AutoArchiveNonActionableExceptions types.Bool `tfsdk:"auto_archive_non_actionable_exceptions"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
     AiDailyAutonomousTokenLimit types.Number `tfsdk:"ai_daily_autonomous_token_limit"`
+    IncidentAiDailyAutonomousTokenLimit types.Number `tfsdk:"incident_ai_daily_autonomous_token_limit"`
+    AlertAiDailyAutonomousTokenLimit types.Number `tfsdk:"alert_ai_daily_autonomous_token_limit"`
     AiDailyFixTaskLimit types.Number `tfsdk:"ai_daily_fix_task_limit"`
+    IncidentAiDailyFixTaskLimit types.Number `tfsdk:"incident_ai_daily_fix_task_limit"`
+    AlertAiDailyFixTaskLimit types.Number `tfsdk:"alert_ai_daily_fix_task_limit"`
     AlertInvestigationDedupeWindowMinutes types.Number `tfsdk:"alert_investigation_dedupe_window_minutes"`
+    IncidentInvestigationMinimumSeverityId types.String `tfsdk:"incident_investigation_minimum_severity_id"`
+    IncidentInvestigationDedupeWindowMinutes types.Number `tfsdk:"incident_investigation_dedupe_window_minutes"`
     AiMaxConcurrentInvestigations types.Number `tfsdk:"ai_max_concurrent_investigations"`
+    IncidentAiMaxConcurrentInvestigations types.Number `tfsdk:"incident_ai_max_concurrent_investigations"`
+    AlertAiMaxConcurrentInvestigations types.Number `tfsdk:"alert_ai_max_concurrent_investigations"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
-    GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
     DefaultTelemetryRetentionInDays types.Number `tfsdk:"default_telemetry_retention_in_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
     DefaultMetricDownsamplingRetentionDays JSONSubsetValue `tfsdk:"default_metric_downsampling_retention_days"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
     PaymentProviderSubscriptionId types.String `tfsdk:"payment_provider_subscription_id"`
     PaymentProviderMeteredSubscriptionId types.String `tfsdk:"payment_provider_metered_subscription_id"`
     PaymentProviderSubscriptionSeats types.Number `tfsdk:"payment_provider_subscription_seats"`
-    TrialEndsAt JSONSubsetValue `tfsdk:"trial_ends_at"`
+    TrialEndsAt RFC3339Value `tfsdk:"trial_ends_at"`
     PaymentProviderCustomerId types.String `tfsdk:"payment_provider_customer_id"`
     PaymentProviderSubscriptionStatus types.String `tfsdk:"payment_provider_subscription_status"`
     PaymentProviderMeteredSubscriptionStatus types.String `tfsdk:"payment_provider_metered_subscription_status"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     WorkflowRunsInLast30Days types.Number `tfsdk:"workflow_runs_in_last30_days"`
     SmsOrCallCurrentBalanceInUsdCents types.Number `tfsdk:"sms_or_call_current_balance_in_usd_cents"`
@@ -108,6 +122,7 @@ type ProjectResourceModel struct {
     ResellerId types.String `tfsdk:"reseller_id"`
     ResellerPlanId types.String `tfsdk:"reseller_plan_id"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
+    GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -116,23 +131,21 @@ func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataReq
 
 func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "project resource",
+        MarkdownDescription: "OneUptime Project, and everything happens inside it",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]",
+                MarkdownDescription: "Any friendly name of this object.",
                 Required: true,
             },
             "payment_provider_plan_id": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -140,7 +153,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "business_details": schema.StringAttribute{
-                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Business legal name, address and any tax information to appear on invoices..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -148,7 +161,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "business_details_country": schema.StringAttribute{
-                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE).. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Two-letter ISO country code for billing address (e.g., US, GB, DE)..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -156,7 +169,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "finance_accounting_email": schema.StringAttribute{
-                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -164,15 +177,24 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "payment_provider_promo_code": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "is_feature_flag_monitor_groups_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Is Feature Flag Monitor Groups Enabled. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing, Edit Project]",
+                MarkdownDescription: "Is Feature Flag Monitor Groups Enabled.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -181,15 +203,19 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "active_monitors_limit": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.RequiresReplace(),
+                },
             },
             "seat_limit": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.RequiresReplace(),
+                },
             },
             "incident_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for incident numbers (e.g., 'INC-'). If empty, '#' is used..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -197,7 +223,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for alert numbers (e.g., 'ALT-'). If empty, '#' is used..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -205,7 +231,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "scheduled_maintenance_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for scheduled maintenance numbers (e.g., 'SM-'). If empty, '#' is used..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -213,7 +239,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "incident_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for incident episode numbers (e.g., 'IE-'). If empty, '#' is used..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -221,7 +247,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_episode_number_prefix": schema.StringAttribute{
-                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Custom prefix for alert episode numbers (e.g., 'AE-'). If empty, '#' is used..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -229,7 +255,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "send_invoices_by_email": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated.. Permissions - Create: [Project Owner, Manage Billing], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -238,11 +264,13 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "utm_content": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [User], Read: [No access - you don't have permission for this operation], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.RequiresReplace(),
+                },
             },
             "enable_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "When enabled, changes to resources in this project are recorded as audit log entries..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -250,8 +278,17 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_session_replay_allowed": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, RUM applications in this project may record session replays if they are individually enabled too. On by default; switch it off here to stop session replay across the entire project in one place..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "audit_logs_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "Number of days to retain audit log entries. Minimum 7, maximum 180..",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(7)),
@@ -260,7 +297,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "store_system_events_in_audit_logs": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "When enabled, audit logs will also include events triggered by the system. By default, only events triggered by users are recorded..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -269,7 +306,6 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "require_sso_for_login": schema.BoolAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -286,7 +322,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_recharge_sms_or_call_by_balance_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge amount in USD for SMS, Call, and WhatsApp.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(20)),
@@ -295,7 +331,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_recharge_sms_or_call_when_current_balance_falls_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for SMS, Call, and WhatsApp.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(10)),
@@ -304,7 +340,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_sms_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable SMS notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable SMS notifications for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -313,7 +349,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_whats_app_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable WhatsApp notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable WhatsApp notifications for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -322,7 +358,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_telegram_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable Telegram notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable Telegram notifications for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -331,7 +367,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_call_notifications": schema.BoolAttribute{
-                MarkdownDescription: "Enable call notifications for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable call notifications for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -340,7 +376,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable auto recharge for SMS, Call, and WhatsApp balance for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -349,7 +385,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_ai_recharge_by_balance_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge amount in USD for AI services.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(20)),
@@ -358,7 +394,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_recharge_ai_when_current_balance_falls_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Auto recharge is triggered when current balance falls to this amount in USD for AI services.",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(10)),
@@ -367,7 +403,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_ai": schema.BoolAttribute{
-                MarkdownDescription: "Enable AI services for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable AI services for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -375,8 +411,26 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "enable_auto_remediation": schema.BoolAttribute{
+                MarkdownDescription: "Kill switch for auto-remediation: when disabled, no auto-remediation rule fires in this project..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_ai_command_execution": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, auto-remediation rules may let the AI compose and run commands on opted-in Runners (with an operator allowlist for auto-execution, and one-click approval for everything else). Off by default..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -385,7 +439,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -393,8 +447,35 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
-            "enable_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+            "enable_incident_instrumentation_fix_tasks": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_alert_instrumentation_fix_tasks": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_automatic_incident_code_fixes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_automatic_alert_code_fixes": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -403,7 +484,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_ai_insights": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -412,7 +493,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_insight_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a draft pull request with a proposed fix. Honors the daily fix task budget and per-repository open-PR caps. Pull requests are always human-reviewed — nothing merges automatically.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors the daily fix task budget and per-repository open-PR caps. Pull requests are always human-reviewed — nothing merges automatically..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -421,7 +502,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "auto_archive_non_actionable_exceptions": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -438,7 +519,23 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum tokens per UTC day that autonomous AI investigations may consume for this project. When the limit is reached, new autonomous investigations are skipped until the next day — interactive AI chat is never blocked. Unset means no limit.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Fallback maximum tokens per UTC day for autonomous AI work that is not associated with an incident or alert. When the limit is reached, new autonomous work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_ai_daily_autonomous_token_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous incident-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new incident-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_ai_daily_autonomous_token_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum tokens per UTC day that autonomous alert-linked AI work may consume for this project, including investigations, remediation, and follow-up fix tasks. When the limit is reached, new alert-linked AI work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -446,7 +543,23 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI fix tasks (agent runs that open pull requests) that may be created per UTC day for this project, across every fix recipe and trigger. Unset means the default of 25 per day; 0 pauses AI fix tasks entirely.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Fallback maximum AI fix tasks (agent runs that open pull requests) that may be created per UTC day for work not associated with an incident or alert, across every fix recipe and trigger. Unset means the default of 25 per day; 0 pauses these AI fix tasks entirely..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_ai_daily_fix_task_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum AI fix tasks derived from incidents that may be created per UTC day for this project. Unset means the default of 25 per day; 0 pauses incident AI fix tasks entirely..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_ai_daily_fix_task_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum AI fix tasks derived from alerts that may be created per UTC day for this project. Unset means the default of 25 per day; 0 pauses alert AI fix tasks entirely..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -454,7 +567,23 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_investigation_minimum_severity_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_investigation_dedupe_window_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -462,7 +591,23 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many AI investigations may run at the same time for this project, shared across incidents and alerts. Unset means the default of 3. Minimum 1 — pause investigations with the opt-in toggles or a daily token limit of 0 instead.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Fallback maximum number of non-incident and non-alert AI investigations that may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause autonomous work with its opt-in toggle or a daily token limit of 0 instead..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_ai_max_concurrent_investigations": schema.NumberAttribute{
+                MarkdownDescription: "How many incident AI investigations may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause incident investigations with the opt-in toggle or a daily token limit of 0 instead..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_ai_max_concurrent_investigations": schema.NumberAttribute{
+                MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause alert investigations with the opt-in toggle or a daily token limit of 0 instead..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -470,7 +615,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
-                MarkdownDescription: "Enable auto recharge for AI balance for this project.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Manage Billing]",
+                MarkdownDescription: "Enable auto recharge for AI balance for this project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -479,7 +624,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "do_not_add_global_probes_by_default_on_new_monitors": schema.BoolAttribute{
-                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [Project Owner, Project Admin, Edit Project]",
+                MarkdownDescription: "If enabled, global probes will NOT be automatically added to new monitors. Enable this only if you are using ONLY custom probes to monitor your resources..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -487,16 +632,8 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
-            "git_hub_app_installation_id": schema.StringAttribute{
-                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
             "default_metric_cardinality_budget": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Project-wide default max distinct series per metric. Services without a per-service override use this value..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -504,7 +641,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "default_telemetry_retention_in_days": schema.NumberAttribute{
-                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Project-wide default number of days to retain telemetry data (logs, traces, metrics). Services without a per-service override use this value..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -512,36 +649,42 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Project-wide per-pillar retention overrides for telemetry data (logs by severity, traces by status, metrics, profiles). Falls back to defaultTelemetryRetentionInDays when a pillar or bucket is not set..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "default_metric_downsampling_retention_days": schema.StringAttribute{
-                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "Project-wide default retention for each downsampling tier (raw, 1m, 5m, 1h, 1d) in days..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
@@ -549,7 +692,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
             },
             "payment_provider_subscription_id": schema.StringAttribute{
@@ -566,7 +709,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             },
             "trial_ends_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "payment_provider_customer_id": schema.StringAttribute{
@@ -581,10 +724,6 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
             "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -594,15 +733,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "sms_or_call_current_balance_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Balance in USD for SMS, Call, and WhatsApp. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Balance in USD for SMS, Call, and WhatsApp.",
                 Computed: true,
             },
             "ai_current_balance_in_usd_cents": schema.NumberAttribute{
-                MarkdownDescription: "Balance in USD for AI services. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Balance in USD for AI services.",
                 Computed: true,
             },
             "plan_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the plan this project is subscribed to.. Permissions - Create: [User], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Name of the plan this project is subscribed to..",
                 Computed: true,
             },
             "reseller_id": schema.StringAttribute{
@@ -614,7 +753,11 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
             },
             "let_customer_support_access_project": schema.BoolAttribute{
-                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project], Update: [Project Owner, Project Admin]",
+                MarkdownDescription: "OneUptime customer support can access this project. This is used for debugging purposes..",
+                Computed: true,
+            },
+            "git_hub_app_installation_id": schema.StringAttribute{
+                MarkdownDescription: "The GitHub App installation ID for this project. This is set when the GitHub App is installed on the organization..",
                 Computed: true,
             },
         },
@@ -654,63 +797,80 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     projectRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "name": data.Name.ValueString(),
-        "paymentProviderPlanId": data.PaymentProviderPlanId.ValueString(),
-        "businessDetails": data.BusinessDetails.ValueString(),
-        "businessDetailsCountry": data.BusinessDetailsCountry.ValueString(),
-        "financeAccountingEmail": data.FinanceAccountingEmail.ValueString(),
-        "paymentProviderPromoCode": data.PaymentProviderPromoCode.ValueString(),
-        "isFeatureFlagMonitorGroupsEnabled": data.IsFeatureFlagMonitorGroupsEnabled.ValueBool(),
-        "activeMonitorsLimit": r.bigFloatToFloat64(data.ActiveMonitorsLimit.ValueBigFloat()),
-        "seatLimit": r.bigFloatToFloat64(data.SeatLimit.ValueBigFloat()),
-        "incidentNumberPrefix": data.IncidentNumberPrefix.ValueString(),
-        "alertNumberPrefix": data.AlertNumberPrefix.ValueString(),
-        "scheduledMaintenanceNumberPrefix": data.ScheduledMaintenanceNumberPrefix.ValueString(),
-        "incidentEpisodeNumberPrefix": data.IncidentEpisodeNumberPrefix.ValueString(),
-        "alertEpisodeNumberPrefix": data.AlertEpisodeNumberPrefix.ValueString(),
-        "sendInvoicesByEmail": data.SendInvoicesByEmail.ValueBool(),
-        "utmContent": data.UtmContent.ValueString(),
-        "enableAuditLogs": data.EnableAuditLogs.ValueBool(),
-        "auditLogsRetentionInDays": r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat()),
-        "storeSystemEventsInAuditLogs": data.StoreSystemEventsInAuditLogs.ValueBool(),
-        "requireSsoForLogin": data.RequireSsoForLogin.ValueBool(),
-        "requireSsoWithSsoProviderId": data.RequireSsoWithSsoProviderId.ValueString(),
-        "autoRechargeSmsOrCallByBalanceInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallByBalanceInUsd.ValueBigFloat()),
-        "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": r.bigFloatToFloat64(data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd.ValueBigFloat()),
-        "enableSmsNotifications": data.EnableSmsNotifications.ValueBool(),
-        "enableWhatsAppNotifications": data.EnableWhatsAppNotifications.ValueBool(),
-        "enableTelegramNotifications": data.EnableTelegramNotifications.ValueBool(),
-        "enableCallNotifications": data.EnableCallNotifications.ValueBool(),
-        "enableAutoRechargeSmsOrCallBalance": data.EnableAutoRechargeSmsOrCallBalance.ValueBool(),
-        "autoAiRechargeByBalanceInUSD": r.bigFloatToFloat64(data.AutoAiRechargeByBalanceInUsd.ValueBigFloat()),
-        "autoRechargeAiWhenCurrentBalanceFallsInUSD": r.bigFloatToFloat64(data.AutoRechargeAiWhenCurrentBalanceFallsInUsd.ValueBigFloat()),
-        "enableAi": data.EnableAi.ValueBool(),
-        "enableAutomaticIncidentInvestigation": data.EnableAutomaticIncidentInvestigation.ValueBool(),
-        "enableAutomaticAlertInvestigation": data.EnableAutomaticAlertInvestigation.ValueBool(),
-        "enableInstrumentationFixTasks": data.EnableInstrumentationFixTasks.ValueBool(),
-        "enableAiInsights": data.EnableAiInsights.ValueBool(),
-        "enableInsightFixTasks": data.EnableInsightFixTasks.ValueBool(),
-        "autoArchiveNonActionableExceptions": data.AutoArchiveNonActionableExceptions.ValueBool(),
-        "alertInvestigationMinimumSeverityId": data.AlertInvestigationMinimumSeverityId.ValueString(),
-        "aiDailyAutonomousTokenLimit": r.bigFloatToFloat64(data.AiDailyAutonomousTokenLimit.ValueBigFloat()),
-        "aiDailyFixTaskLimit": r.bigFloatToFloat64(data.AiDailyFixTaskLimit.ValueBigFloat()),
-        "alertInvestigationDedupeWindowMinutes": r.bigFloatToFloat64(data.AlertInvestigationDedupeWindowMinutes.ValueBigFloat()),
-        "aiMaxConcurrentInvestigations": r.bigFloatToFloat64(data.AiMaxConcurrentInvestigations.ValueBigFloat()),
-        "enableAutoRechargeAiBalance": data.EnableAutoRechargeAiBalance.ValueBool(),
-        "doNotAddGlobalProbesByDefaultOnNewMonitors": data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool(),
-        "gitHubAppInstallationId": data.GitHubAppInstallationId.ValueString(),
-        "defaultMetricCardinalityBudget": r.bigFloatToFloat64(data.DefaultMetricCardinalityBudget.ValueBigFloat()),
-        "defaultTelemetryRetentionInDays": r.bigFloatToFloat64(data.DefaultTelemetryRetentionInDays.ValueBigFloat()),
-        "telemetryRetentionConfig": r.parseJSONField(data.TelemetryRetentionConfig),
-        "defaultMetricDownsamplingRetentionDays": r.parseJSONField(data.DefaultMetricDownsamplingRetentionDays),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := projectRequest["data"].(map[string]interface{})
+
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.PaymentProviderPlanId.IsNull() && !data.PaymentProviderPlanId.IsUnknown() {
+        requestDataMap["paymentProviderPlanId"] = data.PaymentProviderPlanId.ValueString()
+    }
+    if !data.BusinessDetails.IsNull() && !data.BusinessDetails.IsUnknown() {
+        requestDataMap["businessDetails"] = data.BusinessDetails.ValueString()
+    }
+    if !data.BusinessDetailsCountry.IsNull() && !data.BusinessDetailsCountry.IsUnknown() {
+        requestDataMap["businessDetailsCountry"] = data.BusinessDetailsCountry.ValueString()
+    }
+    if !data.FinanceAccountingEmail.IsNull() && !data.FinanceAccountingEmail.IsUnknown() {
+        requestDataMap["financeAccountingEmail"] = data.FinanceAccountingEmail.ValueString()
+    }
+    if !data.PaymentProviderPromoCode.IsNull() && !data.PaymentProviderPromoCode.IsUnknown() {
+        requestDataMap["paymentProviderPromoCode"] = data.PaymentProviderPromoCode.ValueString()
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
+    }
+    if !data.IsFeatureFlagMonitorGroupsEnabled.IsNull() && !data.IsFeatureFlagMonitorGroupsEnabled.IsUnknown() {
+        requestDataMap["isFeatureFlagMonitorGroupsEnabled"] = data.IsFeatureFlagMonitorGroupsEnabled.ValueBool()
+    }
+    if !data.ActiveMonitorsLimit.IsNull() && !data.ActiveMonitorsLimit.IsUnknown() {
+        requestDataMap["activeMonitorsLimit"] = r.bigFloatToFloat64(data.ActiveMonitorsLimit.ValueBigFloat())
+    }
+    if !data.SeatLimit.IsNull() && !data.SeatLimit.IsUnknown() {
+        requestDataMap["seatLimit"] = r.bigFloatToFloat64(data.SeatLimit.ValueBigFloat())
+    }
+    if !data.IncidentNumberPrefix.IsNull() && !data.IncidentNumberPrefix.IsUnknown() {
+        requestDataMap["incidentNumberPrefix"] = data.IncidentNumberPrefix.ValueString()
+    }
+    if !data.AlertNumberPrefix.IsNull() && !data.AlertNumberPrefix.IsUnknown() {
+        requestDataMap["alertNumberPrefix"] = data.AlertNumberPrefix.ValueString()
+    }
+    if !data.ScheduledMaintenanceNumberPrefix.IsNull() && !data.ScheduledMaintenanceNumberPrefix.IsUnknown() {
+        requestDataMap["scheduledMaintenanceNumberPrefix"] = data.ScheduledMaintenanceNumberPrefix.ValueString()
+    }
+    if !data.IncidentEpisodeNumberPrefix.IsNull() && !data.IncidentEpisodeNumberPrefix.IsUnknown() {
+        requestDataMap["incidentEpisodeNumberPrefix"] = data.IncidentEpisodeNumberPrefix.ValueString()
+    }
+    if !data.AlertEpisodeNumberPrefix.IsNull() && !data.AlertEpisodeNumberPrefix.IsUnknown() {
+        requestDataMap["alertEpisodeNumberPrefix"] = data.AlertEpisodeNumberPrefix.ValueString()
+    }
+    if !data.SendInvoicesByEmail.IsNull() && !data.SendInvoicesByEmail.IsUnknown() {
+        requestDataMap["sendInvoicesByEmail"] = data.SendInvoicesByEmail.ValueBool()
+    }
+    if !data.UtmContent.IsNull() && !data.UtmContent.IsUnknown() {
+        requestDataMap["utmContent"] = data.UtmContent.ValueString()
+    }
+    if !data.EnableAuditLogs.IsNull() && !data.EnableAuditLogs.IsUnknown() {
+        requestDataMap["enableAuditLogs"] = data.EnableAuditLogs.ValueBool()
+    }
+    if !data.IsSessionReplayAllowed.IsNull() && !data.IsSessionReplayAllowed.IsUnknown() {
+        requestDataMap["isSessionReplayAllowed"] = data.IsSessionReplayAllowed.ValueBool()
+    }
+    if !data.AuditLogsRetentionInDays.IsNull() && !data.AuditLogsRetentionInDays.IsUnknown() {
+        requestDataMap["auditLogsRetentionInDays"] = r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat())
+    }
+    if !data.StoreSystemEventsInAuditLogs.IsNull() && !data.StoreSystemEventsInAuditLogs.IsUnknown() {
+        requestDataMap["storeSystemEventsInAuditLogs"] = data.StoreSystemEventsInAuditLogs.ValueBool()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/project", projectRequest)
+    httpResp, err := r.client.Post(ctx, "/project", projectRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create project, got error: %s", err))
         return
@@ -719,58 +879,153 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     var projectResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &projectResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse project response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create project: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := projectResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := projectResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for project did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * project is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "name": true,
+        "paymentProviderPlanId": true,
+        "businessDetails": true,
+        "businessDetailsCountry": true,
+        "financeAccountingEmail": true,
+        "paymentProviderPromoCode": true,
+        "createdByUserId": true,
+        "isFeatureFlagMonitorGroupsEnabled": true,
+        "incidentNumberPrefix": true,
+        "alertNumberPrefix": true,
+        "scheduledMaintenanceNumberPrefix": true,
+        "incidentEpisodeNumberPrefix": true,
+        "alertEpisodeNumberPrefix": true,
+        "sendInvoicesByEmail": true,
+        "enableAuditLogs": true,
+        "isSessionReplayAllowed": true,
+        "auditLogsRetentionInDays": true,
+        "storeSystemEventsInAuditLogs": true,
+        "requireSsoForLogin": true,
+        "requireSsoWithSsoProviderId": true,
+        "autoRechargeSmsOrCallByBalanceInUSD": true,
+        "autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD": true,
+        "enableSmsNotifications": true,
+        "enableWhatsAppNotifications": true,
+        "enableTelegramNotifications": true,
+        "enableCallNotifications": true,
+        "enableAutoRechargeSmsOrCallBalance": true,
+        "autoAiRechargeByBalanceInUSD": true,
+        "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
+        "enableAi": true,
+        "enableAutoRemediation": true,
+        "enableAiCommandExecution": true,
+        "enableAutomaticIncidentInvestigation": true,
+        "enableAutomaticAlertInvestigation": true,
+        "enableIncidentInstrumentationFixTasks": true,
+        "enableAlertInstrumentationFixTasks": true,
+        "enableAutomaticIncidentCodeFixes": true,
+        "enableAutomaticAlertCodeFixes": true,
+        "enableAiInsights": true,
+        "enableInsightFixTasks": true,
+        "autoArchiveNonActionableExceptions": true,
+        "alertInvestigationMinimumSeverityId": true,
+        "aiDailyAutonomousTokenLimit": true,
+        "incidentAiDailyAutonomousTokenLimit": true,
+        "alertAiDailyAutonomousTokenLimit": true,
+        "aiDailyFixTaskLimit": true,
+        "incidentAiDailyFixTaskLimit": true,
+        "alertAiDailyFixTaskLimit": true,
+        "alertInvestigationDedupeWindowMinutes": true,
+        "incidentInvestigationMinimumSeverityId": true,
+        "incidentInvestigationDedupeWindowMinutes": true,
+        "aiMaxConcurrentInvestigations": true,
+        "incidentAiMaxConcurrentInvestigations": true,
+        "alertAiMaxConcurrentInvestigations": true,
+        "enableAutoRechargeAiBalance": true,
+        "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
+        "defaultMetricCardinalityBudget": true,
+        "defaultTelemetryRetentionInDays": true,
+        "telemetryRetentionConfig": true,
+        "defaultMetricDownsamplingRetentionDays": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "slug": true,
+        "paymentProviderSubscriptionId": true,
+        "paymentProviderMeteredSubscriptionId": true,
+        "paymentProviderSubscriptionSeats": true,
+        "trialEndsAt": true,
+        "paymentProviderCustomerId": true,
+        "paymentProviderSubscriptionStatus": true,
+        "paymentProviderMeteredSubscriptionStatus": true,
+        "deletedByUserId": true,
+        "workflowRunsInLast30Days": true,
+        "smsOrCallCurrentBalanceInUSDCents": true,
+        "aiCurrentBalanceInUSDCents": true,
+        "planName": true,
+        "resellerId": true,
+        "resellerPlanId": true,
+        "letCustomerSupportAccessProject": true,
+        "gitHubAppInstallationId": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/project/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created project but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created project but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := projectResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = projectResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -803,7 +1058,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -840,7 +1095,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderPlanId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderPlanId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderPlanId"].(string); ok {
         data.PaymentProviderPlanId = types.StringValue(val)
     } else {
         data.PaymentProviderPlanId = types.StringNull()
@@ -877,7 +1132,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.BusinessDetails = types.StringNull()
         }
-    } else if val, ok := dataMap["businessDetails"].(string); ok && val != "" {
+    } else if val, ok := dataMap["businessDetails"].(string); ok {
         data.BusinessDetails = types.StringValue(val)
     } else {
         data.BusinessDetails = types.StringNull()
@@ -914,7 +1169,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.BusinessDetailsCountry = types.StringNull()
         }
-    } else if val, ok := dataMap["businessDetailsCountry"].(string); ok && val != "" {
+    } else if val, ok := dataMap["businessDetailsCountry"].(string); ok {
         data.BusinessDetailsCountry = types.StringValue(val)
     } else {
         data.BusinessDetailsCountry = types.StringNull()
@@ -951,7 +1206,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.FinanceAccountingEmail = types.StringNull()
         }
-    } else if val, ok := dataMap["financeAccountingEmail"].(string); ok && val != "" {
+    } else if val, ok := dataMap["financeAccountingEmail"].(string); ok {
         data.FinanceAccountingEmail = types.StringValue(val)
     } else {
         data.FinanceAccountingEmail = types.StringNull()
@@ -988,31 +1243,50 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderPromoCode = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderPromoCode"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderPromoCode"].(string); ok {
         data.PaymentProviderPromoCode = types.StringValue(val)
     } else {
         data.PaymentProviderPromoCode = types.StringNull()
     }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["isFeatureFlagMonitorGroupsEnabled"].(bool); ok {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolValue(val)
-    }
-    if val, ok := dataMap["activeMonitorsLimit"].(float64); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["activeMonitorsLimit"].(int); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["activeMonitorsLimit"].(int64); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["activeMonitorsLimit"] == nil {
-        data.ActiveMonitorsLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["seatLimit"].(float64); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["seatLimit"].(int); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["seatLimit"].(int64); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["seatLimit"] == nil {
-        data.SeatLimit = types.NumberNull()
     }
     if obj, ok := dataMap["incidentNumberPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1046,7 +1320,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.IncidentNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok {
         data.IncidentNumberPrefix = types.StringValue(val)
     } else {
         data.IncidentNumberPrefix = types.StringNull()
@@ -1083,7 +1357,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.AlertNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok {
         data.AlertNumberPrefix = types.StringValue(val)
     } else {
         data.AlertNumberPrefix = types.StringNull()
@@ -1120,7 +1394,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ScheduledMaintenanceNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
     } else {
         data.ScheduledMaintenanceNumberPrefix = types.StringNull()
@@ -1157,7 +1431,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.IncidentEpisodeNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok {
         data.IncidentEpisodeNumberPrefix = types.StringValue(val)
     } else {
         data.IncidentEpisodeNumberPrefix = types.StringNull()
@@ -1194,7 +1468,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.AlertEpisodeNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok {
         data.AlertEpisodeNumberPrefix = types.StringValue(val)
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
@@ -1202,45 +1476,11 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
     }
-    if obj, ok := dataMap["utmContent"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UtmContent = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UtmContent = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UtmContent = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UtmContent = types.StringValue(string(jsonBytes))
-            } else {
-                data.UtmContent = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UtmContent = types.StringValue(string(jsonBytes))
-            } else {
-                data.UtmContent = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UtmContent = types.StringValue(string(jsonBytes))
-        } else {
-            data.UtmContent = types.StringNull()
-        }
-    } else if val, ok := dataMap["utmContent"].(string); ok && val != "" {
-        data.UtmContent = types.StringValue(val)
-    } else {
-        data.UtmContent = types.StringNull()
-    }
     if val, ok := dataMap["enableAuditLogs"].(bool); ok {
         data.EnableAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isSessionReplayAllowed"].(bool); ok {
+        data.IsSessionReplayAllowed = types.BoolValue(val)
     }
     if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
@@ -1248,7 +1488,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["auditLogsRetentionInDays"] == nil {
+    } else if obj, ok := dataMap["auditLogsRetentionInDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AuditLogsRetentionInDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AuditLogsRetentionInDays = types.NumberNull()
     }
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
@@ -1289,7 +1537,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.RequireSsoWithSsoProviderId = types.StringNull()
         }
-    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok {
         data.RequireSsoWithSsoProviderId = types.StringValue(val)
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
@@ -1300,7 +1548,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int64); ok {
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeSmsOrCallByBalanceInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
     }
     if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(float64); ok {
@@ -1309,7 +1565,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int64); ok {
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
     }
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
@@ -1333,7 +1597,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int64); ok {
         data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoAiRechargeByBalanceInUSD"] == nil {
+    } else if obj, ok := dataMap["autoAiRechargeByBalanceInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
     }
     if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(float64); ok {
@@ -1342,11 +1614,25 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int64); ok {
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutoRemediation"].(bool); ok {
+        data.EnableAutoRemediation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAiCommandExecution"].(bool); ok {
+        data.EnableAiCommandExecution = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
@@ -1354,8 +1640,17 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
-    if val, ok := dataMap["enableInstrumentationFixTasks"].(bool); ok {
-        data.EnableInstrumentationFixTasks = types.BoolValue(val)
+    if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
+        data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAlertInstrumentationFixTasks"].(bool); ok {
+        data.EnableAlertInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticIncidentCodeFixes"].(bool); ok {
+        data.EnableAutomaticIncidentCodeFixes = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertCodeFixes"].(bool); ok {
+        data.EnableAutomaticAlertCodeFixes = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)
@@ -1398,7 +1693,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.AlertInvestigationMinimumSeverityId = types.StringNull()
         }
-    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok {
         data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
     } else {
         data.AlertInvestigationMinimumSeverityId = types.StringNull()
@@ -1409,8 +1704,50 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
+    } else if obj, ok := dataMap["aiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(float64); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int64); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(float64); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int64); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
     }
     if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
@@ -1418,8 +1755,50 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiDailyFixTaskLimit"] == nil {
+    } else if obj, ok := dataMap["aiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiDailyFixTaskLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(float64); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int64); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiDailyFixTaskLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiDailyFixTaskLimit"].(float64); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int64); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiDailyFixTaskLimit = types.NumberNull()
     }
     if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
@@ -1427,8 +1806,70 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["alertInvestigationDedupeWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentInvestigationMinimumSeverityId"].(string); ok {
+        data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(float64); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int64); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
     }
     if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
@@ -1436,8 +1877,50 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiMaxConcurrentInvestigations"] == nil {
+    } else if obj, ok := dataMap["aiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(float64); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int64); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(float64); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int64); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
@@ -1445,50 +1928,21 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     }
-    if obj, ok := dataMap["gitHubAppInstallationId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.GitHubAppInstallationId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.GitHubAppInstallationId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-        } else {
-            data.GitHubAppInstallationId = types.StringNull()
-        }
-    } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok && val != "" {
-        data.GitHubAppInstallationId = types.StringValue(val)
-    } else {
-        data.GitHubAppInstallationId = types.StringNull()
-    }
     if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["defaultMetricCardinalityBudget"] == nil {
+    } else if obj, ok := dataMap["defaultMetricCardinalityBudget"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.DefaultMetricCardinalityBudget = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DefaultMetricCardinalityBudget = types.NumberNull()
     }
     if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
@@ -1497,11 +1951,19 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
         data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["defaultTelemetryRetentionInDays"] == nil {
+    } else if obj, ok := dataMap["defaultTelemetryRetentionInDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.DefaultTelemetryRetentionInDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DefaultTelemetryRetentionInDays = types.NumberNull()
     }
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1532,13 +1994,13 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1569,121 +2031,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
     } else {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -1691,7 +2075,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -1726,7 +2118,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
@@ -1763,7 +2155,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderSubscriptionId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok {
         data.PaymentProviderSubscriptionId = types.StringValue(val)
     } else {
         data.PaymentProviderSubscriptionId = types.StringNull()
@@ -1800,7 +2192,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderMeteredSubscriptionId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionId"].(string); ok {
         data.PaymentProviderMeteredSubscriptionId = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionId = types.StringNull()
@@ -1811,45 +2203,27 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int64); ok {
         data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["paymentProviderSubscriptionSeats"] == nil {
+    } else if obj, ok := dataMap["paymentProviderSubscriptionSeats"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PaymentProviderSubscriptionSeats = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PaymentProviderSubscriptionSeats = types.NumberNull()
     }
     if obj, ok := dataMap["trialEndsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.TrialEndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.TrialEndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TrialEndsAt = NewRFC3339Value(val)
         } else {
-            data.TrialEndsAt = NewJSONSubsetNull()
+            data.TrialEndsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["trialEndsAt"].(string); ok && val != "" {
-        data.TrialEndsAt = NewJSONSubsetValue(val)
+        data.TrialEndsAt = NewRFC3339Value(val)
     } else {
-        data.TrialEndsAt = NewJSONSubsetNull()
+        data.TrialEndsAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["paymentProviderCustomerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1883,7 +2257,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderCustomerId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok {
         data.PaymentProviderCustomerId = types.StringValue(val)
     } else {
         data.PaymentProviderCustomerId = types.StringNull()
@@ -1920,7 +2294,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderSubscriptionStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderSubscriptionStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderSubscriptionStatus"].(string); ok {
         data.PaymentProviderSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderSubscriptionStatus = types.StringNull()
@@ -1957,47 +2331,10 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2031,7 +2368,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -2042,7 +2379,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["workflowRunsInLast30Days"].(int64); ok {
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["workflowRunsInLast30Days"] == nil {
+    } else if obj, ok := dataMap["workflowRunsInLast30Days"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.WorkflowRunsInLast30Days = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.WorkflowRunsInLast30Days = types.NumberNull()
     }
     if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(float64); ok {
@@ -2051,7 +2396,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int64); ok {
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["smsOrCallCurrentBalanceInUSDCents"] == nil {
+    } else if obj, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
     }
     if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(float64); ok {
@@ -2060,7 +2413,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int64); ok {
         data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiCurrentBalanceInUSDCents"] == nil {
+    } else if obj, ok := dataMap["aiCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiCurrentBalanceInUsdCents = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiCurrentBalanceInUsdCents = types.NumberNull()
     }
     if obj, ok := dataMap["planName"].(map[string]interface{}); ok {
@@ -2095,7 +2456,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.PlanName = types.StringNull()
         }
-    } else if val, ok := dataMap["planName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["planName"].(string); ok {
         data.PlanName = types.StringValue(val)
     } else {
         data.PlanName = types.StringNull()
@@ -2132,7 +2493,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ResellerId = types.StringNull()
         }
-    } else if val, ok := dataMap["resellerId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["resellerId"].(string); ok {
         data.ResellerId = types.StringValue(val)
     } else {
         data.ResellerId = types.StringNull()
@@ -2169,7 +2530,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         } else {
             data.ResellerPlanId = types.StringNull()
         }
-    } else if val, ok := dataMap["resellerPlanId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["resellerPlanId"].(string); ok {
         data.ResellerPlanId = types.StringValue(val)
     } else {
         data.ResellerPlanId = types.StringNull()
@@ -2177,11 +2538,50 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if val, ok := dataMap["letCustomerSupportAccessProject"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)
     }
+    if obj, ok := dataMap["gitHubAppInstallationId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok {
+        data.GitHubAppInstallationId = types.StringValue(val)
+    } else {
+        data.GitHubAppInstallationId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -2208,17 +2608,16 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "businessDetailsCountry": true,
         "financeAccountingEmail": true,
         "paymentProviderPromoCode": true,
+        "createdByUserId": true,
         "isFeatureFlagMonitorGroupsEnabled": true,
-        "activeMonitorsLimit": true,
-        "seatLimit": true,
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
         "sendInvoicesByEmail": true,
-        "utmContent": true,
         "enableAuditLogs": true,
+        "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
         "requireSsoForLogin": true,
@@ -2233,20 +2632,32 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "enableAutoRemediation": true,
+        "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
-        "enableInstrumentationFixTasks": true,
+        "enableIncidentInstrumentationFixTasks": true,
+        "enableAlertInstrumentationFixTasks": true,
+        "enableAutomaticIncidentCodeFixes": true,
+        "enableAutomaticAlertCodeFixes": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
+        "incidentAiDailyAutonomousTokenLimit": true,
+        "alertAiDailyAutonomousTokenLimit": true,
         "aiDailyFixTaskLimit": true,
+        "incidentAiDailyFixTaskLimit": true,
+        "alertAiDailyFixTaskLimit": true,
         "alertInvestigationDedupeWindowMinutes": true,
+        "incidentInvestigationMinimumSeverityId": true,
+        "incidentInvestigationDedupeWindowMinutes": true,
         "aiMaxConcurrentInvestigations": true,
+        "incidentAiMaxConcurrentInvestigations": true,
+        "alertAiMaxConcurrentInvestigations": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
-        "gitHubAppInstallationId": true,
         "defaultMetricCardinalityBudget": true,
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
@@ -2263,7 +2674,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "paymentProviderCustomerId": true,
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
-        "createdByUserId": true,
         "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
@@ -2272,11 +2682,12 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "resellerId": true,
         "resellerPlanId": true,
         "letCustomerSupportAccessProject": true,
+        "gitHubAppInstallationId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/project/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/project/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read project, got error: %s", err))
         return
@@ -2305,43 +2716,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         dataMap = projectResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2374,7 +2748,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -2411,7 +2785,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderPlanId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderPlanId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderPlanId"].(string); ok {
         data.PaymentProviderPlanId = types.StringValue(val)
     } else {
         data.PaymentProviderPlanId = types.StringNull()
@@ -2448,7 +2822,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.BusinessDetails = types.StringNull()
         }
-    } else if val, ok := dataMap["businessDetails"].(string); ok && val != "" {
+    } else if val, ok := dataMap["businessDetails"].(string); ok {
         data.BusinessDetails = types.StringValue(val)
     } else {
         data.BusinessDetails = types.StringNull()
@@ -2485,7 +2859,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.BusinessDetailsCountry = types.StringNull()
         }
-    } else if val, ok := dataMap["businessDetailsCountry"].(string); ok && val != "" {
+    } else if val, ok := dataMap["businessDetailsCountry"].(string); ok {
         data.BusinessDetailsCountry = types.StringValue(val)
     } else {
         data.BusinessDetailsCountry = types.StringNull()
@@ -2522,7 +2896,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.FinanceAccountingEmail = types.StringNull()
         }
-    } else if val, ok := dataMap["financeAccountingEmail"].(string); ok && val != "" {
+    } else if val, ok := dataMap["financeAccountingEmail"].(string); ok {
         data.FinanceAccountingEmail = types.StringValue(val)
     } else {
         data.FinanceAccountingEmail = types.StringNull()
@@ -2559,31 +2933,50 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderPromoCode = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderPromoCode"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderPromoCode"].(string); ok {
         data.PaymentProviderPromoCode = types.StringValue(val)
     } else {
         data.PaymentProviderPromoCode = types.StringNull()
     }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["isFeatureFlagMonitorGroupsEnabled"].(bool); ok {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolValue(val)
-    }
-    if val, ok := dataMap["activeMonitorsLimit"].(float64); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["activeMonitorsLimit"].(int); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["activeMonitorsLimit"].(int64); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["activeMonitorsLimit"] == nil {
-        data.ActiveMonitorsLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["seatLimit"].(float64); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["seatLimit"].(int); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["seatLimit"].(int64); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["seatLimit"] == nil {
-        data.SeatLimit = types.NumberNull()
     }
     if obj, ok := dataMap["incidentNumberPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2617,7 +3010,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.IncidentNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok {
         data.IncidentNumberPrefix = types.StringValue(val)
     } else {
         data.IncidentNumberPrefix = types.StringNull()
@@ -2654,7 +3047,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.AlertNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok {
         data.AlertNumberPrefix = types.StringValue(val)
     } else {
         data.AlertNumberPrefix = types.StringNull()
@@ -2691,7 +3084,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ScheduledMaintenanceNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
     } else {
         data.ScheduledMaintenanceNumberPrefix = types.StringNull()
@@ -2728,7 +3121,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.IncidentEpisodeNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok {
         data.IncidentEpisodeNumberPrefix = types.StringValue(val)
     } else {
         data.IncidentEpisodeNumberPrefix = types.StringNull()
@@ -2765,7 +3158,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.AlertEpisodeNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok {
         data.AlertEpisodeNumberPrefix = types.StringValue(val)
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
@@ -2773,45 +3166,11 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
     }
-    if obj, ok := dataMap["utmContent"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UtmContent = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UtmContent = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UtmContent = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UtmContent = types.StringValue(string(jsonBytes))
-            } else {
-                data.UtmContent = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UtmContent = types.StringValue(string(jsonBytes))
-            } else {
-                data.UtmContent = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UtmContent = types.StringValue(string(jsonBytes))
-        } else {
-            data.UtmContent = types.StringNull()
-        }
-    } else if val, ok := dataMap["utmContent"].(string); ok && val != "" {
-        data.UtmContent = types.StringValue(val)
-    } else {
-        data.UtmContent = types.StringNull()
-    }
     if val, ok := dataMap["enableAuditLogs"].(bool); ok {
         data.EnableAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isSessionReplayAllowed"].(bool); ok {
+        data.IsSessionReplayAllowed = types.BoolValue(val)
     }
     if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
@@ -2819,7 +3178,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["auditLogsRetentionInDays"] == nil {
+    } else if obj, ok := dataMap["auditLogsRetentionInDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AuditLogsRetentionInDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AuditLogsRetentionInDays = types.NumberNull()
     }
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
@@ -2860,7 +3227,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.RequireSsoWithSsoProviderId = types.StringNull()
         }
-    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok {
         data.RequireSsoWithSsoProviderId = types.StringValue(val)
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
@@ -2871,7 +3238,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int64); ok {
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeSmsOrCallByBalanceInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
     }
     if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(float64); ok {
@@ -2880,7 +3255,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int64); ok {
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
     }
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
@@ -2904,7 +3287,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int64); ok {
         data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoAiRechargeByBalanceInUSD"] == nil {
+    } else if obj, ok := dataMap["autoAiRechargeByBalanceInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
     }
     if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(float64); ok {
@@ -2913,11 +3304,25 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int64); ok {
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutoRemediation"].(bool); ok {
+        data.EnableAutoRemediation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAiCommandExecution"].(bool); ok {
+        data.EnableAiCommandExecution = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
@@ -2925,8 +3330,17 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
-    if val, ok := dataMap["enableInstrumentationFixTasks"].(bool); ok {
-        data.EnableInstrumentationFixTasks = types.BoolValue(val)
+    if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
+        data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAlertInstrumentationFixTasks"].(bool); ok {
+        data.EnableAlertInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticIncidentCodeFixes"].(bool); ok {
+        data.EnableAutomaticIncidentCodeFixes = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertCodeFixes"].(bool); ok {
+        data.EnableAutomaticAlertCodeFixes = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)
@@ -2969,7 +3383,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.AlertInvestigationMinimumSeverityId = types.StringNull()
         }
-    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok {
         data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
     } else {
         data.AlertInvestigationMinimumSeverityId = types.StringNull()
@@ -2980,8 +3394,50 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
+    } else if obj, ok := dataMap["aiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(float64); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int64); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(float64); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int64); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
     }
     if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
@@ -2989,8 +3445,50 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiDailyFixTaskLimit"] == nil {
+    } else if obj, ok := dataMap["aiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiDailyFixTaskLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(float64); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int64); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiDailyFixTaskLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiDailyFixTaskLimit"].(float64); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int64); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiDailyFixTaskLimit = types.NumberNull()
     }
     if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
@@ -2998,8 +3496,70 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["alertInvestigationDedupeWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentInvestigationMinimumSeverityId"].(string); ok {
+        data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(float64); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int64); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
     }
     if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
@@ -3007,8 +3567,50 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiMaxConcurrentInvestigations"] == nil {
+    } else if obj, ok := dataMap["aiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(float64); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int64); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(float64); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int64); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
@@ -3016,50 +3618,21 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     }
-    if obj, ok := dataMap["gitHubAppInstallationId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.GitHubAppInstallationId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.GitHubAppInstallationId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-        } else {
-            data.GitHubAppInstallationId = types.StringNull()
-        }
-    } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok && val != "" {
-        data.GitHubAppInstallationId = types.StringValue(val)
-    } else {
-        data.GitHubAppInstallationId = types.StringNull()
-    }
     if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["defaultMetricCardinalityBudget"] == nil {
+    } else if obj, ok := dataMap["defaultMetricCardinalityBudget"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.DefaultMetricCardinalityBudget = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DefaultMetricCardinalityBudget = types.NumberNull()
     }
     if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
@@ -3068,11 +3641,19 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
         data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["defaultTelemetryRetentionInDays"] == nil {
+    } else if obj, ok := dataMap["defaultTelemetryRetentionInDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.DefaultTelemetryRetentionInDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DefaultTelemetryRetentionInDays = types.NumberNull()
     }
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -3103,13 +3684,13 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -3140,121 +3721,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
     } else {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -3262,7 +3765,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -3297,7 +3808,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
@@ -3334,7 +3845,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderSubscriptionId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok {
         data.PaymentProviderSubscriptionId = types.StringValue(val)
     } else {
         data.PaymentProviderSubscriptionId = types.StringNull()
@@ -3371,7 +3882,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderMeteredSubscriptionId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionId"].(string); ok {
         data.PaymentProviderMeteredSubscriptionId = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionId = types.StringNull()
@@ -3382,45 +3893,27 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int64); ok {
         data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["paymentProviderSubscriptionSeats"] == nil {
+    } else if obj, ok := dataMap["paymentProviderSubscriptionSeats"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PaymentProviderSubscriptionSeats = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PaymentProviderSubscriptionSeats = types.NumberNull()
     }
     if obj, ok := dataMap["trialEndsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.TrialEndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.TrialEndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TrialEndsAt = NewRFC3339Value(val)
         } else {
-            data.TrialEndsAt = NewJSONSubsetNull()
+            data.TrialEndsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["trialEndsAt"].(string); ok && val != "" {
-        data.TrialEndsAt = NewJSONSubsetValue(val)
+        data.TrialEndsAt = NewRFC3339Value(val)
     } else {
-        data.TrialEndsAt = NewJSONSubsetNull()
+        data.TrialEndsAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["paymentProviderCustomerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3454,7 +3947,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderCustomerId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok {
         data.PaymentProviderCustomerId = types.StringValue(val)
     } else {
         data.PaymentProviderCustomerId = types.StringNull()
@@ -3491,7 +3984,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderSubscriptionStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderSubscriptionStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderSubscriptionStatus"].(string); ok {
         data.PaymentProviderSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderSubscriptionStatus = types.StringNull()
@@ -3528,47 +4021,10 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3602,7 +4058,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -3613,7 +4069,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["workflowRunsInLast30Days"].(int64); ok {
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["workflowRunsInLast30Days"] == nil {
+    } else if obj, ok := dataMap["workflowRunsInLast30Days"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.WorkflowRunsInLast30Days = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.WorkflowRunsInLast30Days = types.NumberNull()
     }
     if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(float64); ok {
@@ -3622,7 +4086,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int64); ok {
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["smsOrCallCurrentBalanceInUSDCents"] == nil {
+    } else if obj, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
     }
     if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(float64); ok {
@@ -3631,7 +4103,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int64); ok {
         data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiCurrentBalanceInUSDCents"] == nil {
+    } else if obj, ok := dataMap["aiCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiCurrentBalanceInUsdCents = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiCurrentBalanceInUsdCents = types.NumberNull()
     }
     if obj, ok := dataMap["planName"].(map[string]interface{}); ok {
@@ -3666,7 +4146,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.PlanName = types.StringNull()
         }
-    } else if val, ok := dataMap["planName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["planName"].(string); ok {
         data.PlanName = types.StringValue(val)
     } else {
         data.PlanName = types.StringNull()
@@ -3703,7 +4183,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ResellerId = types.StringNull()
         }
-    } else if val, ok := dataMap["resellerId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["resellerId"].(string); ok {
         data.ResellerId = types.StringValue(val)
     } else {
         data.ResellerId = types.StringNull()
@@ -3740,13 +4220,50 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         } else {
             data.ResellerPlanId = types.StringNull()
         }
-    } else if val, ok := dataMap["resellerPlanId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["resellerPlanId"].(string); ok {
         data.ResellerPlanId = types.StringValue(val)
     } else {
         data.ResellerPlanId = types.StringNull()
     }
     if val, ok := dataMap["letCustomerSupportAccessProject"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["gitHubAppInstallationId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok {
+        data.GitHubAppInstallationId = types.StringValue(val)
+    } else {
+        data.GitHubAppInstallationId = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -3852,14 +4369,29 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAi.IsUnknown() && !state.EnableAi.IsUnknown() && !data.EnableAi.Equal(state.EnableAi) {
         requestDataMap["enableAi"] = data.EnableAi.ValueBool()
     }
+    if !data.EnableAutoRemediation.IsUnknown() && !state.EnableAutoRemediation.IsUnknown() && !data.EnableAutoRemediation.Equal(state.EnableAutoRemediation) {
+        requestDataMap["enableAutoRemediation"] = data.EnableAutoRemediation.ValueBool()
+    }
+    if !data.EnableAiCommandExecution.IsUnknown() && !state.EnableAiCommandExecution.IsUnknown() && !data.EnableAiCommandExecution.Equal(state.EnableAiCommandExecution) {
+        requestDataMap["enableAiCommandExecution"] = data.EnableAiCommandExecution.ValueBool()
+    }
     if !data.EnableAutomaticIncidentInvestigation.IsUnknown() && !state.EnableAutomaticIncidentInvestigation.IsUnknown() && !data.EnableAutomaticIncidentInvestigation.Equal(state.EnableAutomaticIncidentInvestigation) {
         requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
     }
     if !data.EnableAutomaticAlertInvestigation.IsUnknown() && !state.EnableAutomaticAlertInvestigation.IsUnknown() && !data.EnableAutomaticAlertInvestigation.Equal(state.EnableAutomaticAlertInvestigation) {
         requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
     }
-    if !data.EnableInstrumentationFixTasks.IsUnknown() && !state.EnableInstrumentationFixTasks.IsUnknown() && !data.EnableInstrumentationFixTasks.Equal(state.EnableInstrumentationFixTasks) {
-        requestDataMap["enableInstrumentationFixTasks"] = data.EnableInstrumentationFixTasks.ValueBool()
+    if !data.EnableIncidentInstrumentationFixTasks.IsUnknown() && !state.EnableIncidentInstrumentationFixTasks.IsUnknown() && !data.EnableIncidentInstrumentationFixTasks.Equal(state.EnableIncidentInstrumentationFixTasks) {
+        requestDataMap["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
+    }
+    if !data.EnableAlertInstrumentationFixTasks.IsUnknown() && !state.EnableAlertInstrumentationFixTasks.IsUnknown() && !data.EnableAlertInstrumentationFixTasks.Equal(state.EnableAlertInstrumentationFixTasks) {
+        requestDataMap["enableAlertInstrumentationFixTasks"] = data.EnableAlertInstrumentationFixTasks.ValueBool()
+    }
+    if !data.EnableAutomaticIncidentCodeFixes.IsUnknown() && !state.EnableAutomaticIncidentCodeFixes.IsUnknown() && !data.EnableAutomaticIncidentCodeFixes.Equal(state.EnableAutomaticIncidentCodeFixes) {
+        requestDataMap["enableAutomaticIncidentCodeFixes"] = data.EnableAutomaticIncidentCodeFixes.ValueBool()
+    }
+    if !data.EnableAutomaticAlertCodeFixes.IsUnknown() && !state.EnableAutomaticAlertCodeFixes.IsUnknown() && !data.EnableAutomaticAlertCodeFixes.Equal(state.EnableAutomaticAlertCodeFixes) {
+        requestDataMap["enableAutomaticAlertCodeFixes"] = data.EnableAutomaticAlertCodeFixes.ValueBool()
     }
     if !data.EnableAiInsights.IsUnknown() && !state.EnableAiInsights.IsUnknown() && !data.EnableAiInsights.Equal(state.EnableAiInsights) {
         requestDataMap["enableAiInsights"] = data.EnableAiInsights.ValueBool()
@@ -3876,14 +4408,38 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.AiDailyAutonomousTokenLimit.IsUnknown() && !state.AiDailyAutonomousTokenLimit.IsUnknown() && !data.AiDailyAutonomousTokenLimit.Equal(state.AiDailyAutonomousTokenLimit) {
         requestDataMap["aiDailyAutonomousTokenLimit"] = r.bigFloatToFloat64(data.AiDailyAutonomousTokenLimit.ValueBigFloat())
     }
+    if !data.IncidentAiDailyAutonomousTokenLimit.IsUnknown() && !state.IncidentAiDailyAutonomousTokenLimit.IsUnknown() && !data.IncidentAiDailyAutonomousTokenLimit.Equal(state.IncidentAiDailyAutonomousTokenLimit) {
+        requestDataMap["incidentAiDailyAutonomousTokenLimit"] = r.bigFloatToFloat64(data.IncidentAiDailyAutonomousTokenLimit.ValueBigFloat())
+    }
+    if !data.AlertAiDailyAutonomousTokenLimit.IsUnknown() && !state.AlertAiDailyAutonomousTokenLimit.IsUnknown() && !data.AlertAiDailyAutonomousTokenLimit.Equal(state.AlertAiDailyAutonomousTokenLimit) {
+        requestDataMap["alertAiDailyAutonomousTokenLimit"] = r.bigFloatToFloat64(data.AlertAiDailyAutonomousTokenLimit.ValueBigFloat())
+    }
     if !data.AiDailyFixTaskLimit.IsUnknown() && !state.AiDailyFixTaskLimit.IsUnknown() && !data.AiDailyFixTaskLimit.Equal(state.AiDailyFixTaskLimit) {
         requestDataMap["aiDailyFixTaskLimit"] = r.bigFloatToFloat64(data.AiDailyFixTaskLimit.ValueBigFloat())
+    }
+    if !data.IncidentAiDailyFixTaskLimit.IsUnknown() && !state.IncidentAiDailyFixTaskLimit.IsUnknown() && !data.IncidentAiDailyFixTaskLimit.Equal(state.IncidentAiDailyFixTaskLimit) {
+        requestDataMap["incidentAiDailyFixTaskLimit"] = r.bigFloatToFloat64(data.IncidentAiDailyFixTaskLimit.ValueBigFloat())
+    }
+    if !data.AlertAiDailyFixTaskLimit.IsUnknown() && !state.AlertAiDailyFixTaskLimit.IsUnknown() && !data.AlertAiDailyFixTaskLimit.Equal(state.AlertAiDailyFixTaskLimit) {
+        requestDataMap["alertAiDailyFixTaskLimit"] = r.bigFloatToFloat64(data.AlertAiDailyFixTaskLimit.ValueBigFloat())
     }
     if !data.AlertInvestigationDedupeWindowMinutes.IsUnknown() && !state.AlertInvestigationDedupeWindowMinutes.IsUnknown() && !data.AlertInvestigationDedupeWindowMinutes.Equal(state.AlertInvestigationDedupeWindowMinutes) {
         requestDataMap["alertInvestigationDedupeWindowMinutes"] = r.bigFloatToFloat64(data.AlertInvestigationDedupeWindowMinutes.ValueBigFloat())
     }
+    if !data.IncidentInvestigationMinimumSeverityId.IsUnknown() && !state.IncidentInvestigationMinimumSeverityId.IsUnknown() && !data.IncidentInvestigationMinimumSeverityId.Equal(state.IncidentInvestigationMinimumSeverityId) {
+        requestDataMap["incidentInvestigationMinimumSeverityId"] = data.IncidentInvestigationMinimumSeverityId.ValueString()
+    }
+    if !data.IncidentInvestigationDedupeWindowMinutes.IsUnknown() && !state.IncidentInvestigationDedupeWindowMinutes.IsUnknown() && !data.IncidentInvestigationDedupeWindowMinutes.Equal(state.IncidentInvestigationDedupeWindowMinutes) {
+        requestDataMap["incidentInvestigationDedupeWindowMinutes"] = r.bigFloatToFloat64(data.IncidentInvestigationDedupeWindowMinutes.ValueBigFloat())
+    }
     if !data.AiMaxConcurrentInvestigations.IsUnknown() && !state.AiMaxConcurrentInvestigations.IsUnknown() && !data.AiMaxConcurrentInvestigations.Equal(state.AiMaxConcurrentInvestigations) {
         requestDataMap["aiMaxConcurrentInvestigations"] = r.bigFloatToFloat64(data.AiMaxConcurrentInvestigations.ValueBigFloat())
+    }
+    if !data.IncidentAiMaxConcurrentInvestigations.IsUnknown() && !state.IncidentAiMaxConcurrentInvestigations.IsUnknown() && !data.IncidentAiMaxConcurrentInvestigations.Equal(state.IncidentAiMaxConcurrentInvestigations) {
+        requestDataMap["incidentAiMaxConcurrentInvestigations"] = r.bigFloatToFloat64(data.IncidentAiMaxConcurrentInvestigations.ValueBigFloat())
+    }
+    if !data.AlertAiMaxConcurrentInvestigations.IsUnknown() && !state.AlertAiMaxConcurrentInvestigations.IsUnknown() && !data.AlertAiMaxConcurrentInvestigations.Equal(state.AlertAiMaxConcurrentInvestigations) {
+        requestDataMap["alertAiMaxConcurrentInvestigations"] = r.bigFloatToFloat64(data.AlertAiMaxConcurrentInvestigations.ValueBigFloat())
     }
     if !data.EnableAutoRechargeAiBalance.IsUnknown() && !state.EnableAutoRechargeAiBalance.IsUnknown() && !data.EnableAutoRechargeAiBalance.Equal(state.EnableAutoRechargeAiBalance) {
         requestDataMap["enableAutoRechargeAiBalance"] = data.EnableAutoRechargeAiBalance.ValueBool()
@@ -3893,9 +4449,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !state.DoNotAddGlobalProbesByDefaultOnNewMonitors.IsUnknown() && !data.DoNotAddGlobalProbesByDefaultOnNewMonitors.Equal(state.DoNotAddGlobalProbesByDefaultOnNewMonitors) {
         requestDataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"] = data.DoNotAddGlobalProbesByDefaultOnNewMonitors.ValueBool()
-    }
-    if !data.GitHubAppInstallationId.IsUnknown() && !state.GitHubAppInstallationId.IsUnknown() && !data.GitHubAppInstallationId.Equal(state.GitHubAppInstallationId) {
-        requestDataMap["gitHubAppInstallationId"] = data.GitHubAppInstallationId.ValueString()
     }
     if !data.DefaultMetricCardinalityBudget.IsUnknown() && !state.DefaultMetricCardinalityBudget.IsUnknown() && !data.DefaultMetricCardinalityBudget.Equal(state.DefaultMetricCardinalityBudget) {
         requestDataMap["defaultMetricCardinalityBudget"] = r.bigFloatToFloat64(data.DefaultMetricCardinalityBudget.ValueBigFloat())
@@ -3922,6 +4475,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAuditLogs.IsUnknown() && !state.EnableAuditLogs.IsUnknown() && !data.EnableAuditLogs.Equal(state.EnableAuditLogs) {
         requestDataMap["enableAuditLogs"] = data.EnableAuditLogs.ValueBool()
     }
+    if !data.IsSessionReplayAllowed.IsUnknown() && !state.IsSessionReplayAllowed.IsUnknown() && !data.IsSessionReplayAllowed.Equal(state.IsSessionReplayAllowed) {
+        requestDataMap["isSessionReplayAllowed"] = data.IsSessionReplayAllowed.ValueBool()
+    }
     if !data.AuditLogsRetentionInDays.IsUnknown() && !state.AuditLogsRetentionInDays.IsUnknown() && !data.AuditLogsRetentionInDays.Equal(state.AuditLogsRetentionInDays) {
         requestDataMap["auditLogsRetentionInDays"] = r.bigFloatToFloat64(data.AuditLogsRetentionInDays.ValueBigFloat())
     }
@@ -3929,25 +4485,24 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         requestDataMap["storeSystemEventsInAuditLogs"] = data.StoreSystemEventsInAuditLogs.ValueBool()
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(projectRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(projectRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/project/" + data.Id.ValueString() + "", projectRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update project, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/project/" + data.Id.ValueString() + "", projectRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update project, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var projectResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &projectResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse project response, got error: %s", err))
-        return
+        // Parse the update response
+        var projectResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &projectResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update project: %s", err))
+            return
+        }
+        _ = projectResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -3958,17 +4513,16 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "businessDetailsCountry": true,
         "financeAccountingEmail": true,
         "paymentProviderPromoCode": true,
+        "createdByUserId": true,
         "isFeatureFlagMonitorGroupsEnabled": true,
-        "activeMonitorsLimit": true,
-        "seatLimit": true,
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
         "sendInvoicesByEmail": true,
-        "utmContent": true,
         "enableAuditLogs": true,
+        "isSessionReplayAllowed": true,
         "auditLogsRetentionInDays": true,
         "storeSystemEventsInAuditLogs": true,
         "requireSsoForLogin": true,
@@ -3983,20 +4537,32 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "enableAutoRemediation": true,
+        "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
-        "enableInstrumentationFixTasks": true,
+        "enableIncidentInstrumentationFixTasks": true,
+        "enableAlertInstrumentationFixTasks": true,
+        "enableAutomaticIncidentCodeFixes": true,
+        "enableAutomaticAlertCodeFixes": true,
         "enableAiInsights": true,
         "enableInsightFixTasks": true,
         "autoArchiveNonActionableExceptions": true,
         "alertInvestigationMinimumSeverityId": true,
         "aiDailyAutonomousTokenLimit": true,
+        "incidentAiDailyAutonomousTokenLimit": true,
+        "alertAiDailyAutonomousTokenLimit": true,
         "aiDailyFixTaskLimit": true,
+        "incidentAiDailyFixTaskLimit": true,
+        "alertAiDailyFixTaskLimit": true,
         "alertInvestigationDedupeWindowMinutes": true,
+        "incidentInvestigationMinimumSeverityId": true,
+        "incidentInvestigationDedupeWindowMinutes": true,
         "aiMaxConcurrentInvestigations": true,
+        "incidentAiMaxConcurrentInvestigations": true,
+        "alertAiMaxConcurrentInvestigations": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
-        "gitHubAppInstallationId": true,
         "defaultMetricCardinalityBudget": true,
         "defaultTelemetryRetentionInDays": true,
         "telemetryRetentionConfig": true,
@@ -4013,7 +4579,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "paymentProviderCustomerId": true,
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
-        "createdByUserId": true,
         "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
@@ -4022,10 +4587,11 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "resellerId": true,
         "resellerPlanId": true,
         "letCustomerSupportAccessProject": true,
+        "gitHubAppInstallationId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/project/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/project/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read project after update, got error: %s", err))
         return
@@ -4034,7 +4600,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse project read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read project after update: %s", err))
         return
     }
 
@@ -4049,43 +4615,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4118,7 +4647,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -4155,7 +4684,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderPlanId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderPlanId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderPlanId"].(string); ok {
         data.PaymentProviderPlanId = types.StringValue(val)
     } else {
         data.PaymentProviderPlanId = types.StringNull()
@@ -4192,7 +4721,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.BusinessDetails = types.StringNull()
         }
-    } else if val, ok := dataMap["businessDetails"].(string); ok && val != "" {
+    } else if val, ok := dataMap["businessDetails"].(string); ok {
         data.BusinessDetails = types.StringValue(val)
     } else {
         data.BusinessDetails = types.StringNull()
@@ -4229,7 +4758,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.BusinessDetailsCountry = types.StringNull()
         }
-    } else if val, ok := dataMap["businessDetailsCountry"].(string); ok && val != "" {
+    } else if val, ok := dataMap["businessDetailsCountry"].(string); ok {
         data.BusinessDetailsCountry = types.StringValue(val)
     } else {
         data.BusinessDetailsCountry = types.StringNull()
@@ -4266,7 +4795,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.FinanceAccountingEmail = types.StringNull()
         }
-    } else if val, ok := dataMap["financeAccountingEmail"].(string); ok && val != "" {
+    } else if val, ok := dataMap["financeAccountingEmail"].(string); ok {
         data.FinanceAccountingEmail = types.StringValue(val)
     } else {
         data.FinanceAccountingEmail = types.StringNull()
@@ -4303,31 +4832,50 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderPromoCode = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderPromoCode"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderPromoCode"].(string); ok {
         data.PaymentProviderPromoCode = types.StringValue(val)
     } else {
         data.PaymentProviderPromoCode = types.StringNull()
     }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["isFeatureFlagMonitorGroupsEnabled"].(bool); ok {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolValue(val)
-    }
-    if val, ok := dataMap["activeMonitorsLimit"].(float64); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["activeMonitorsLimit"].(int); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["activeMonitorsLimit"].(int64); ok {
-        data.ActiveMonitorsLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["activeMonitorsLimit"] == nil {
-        data.ActiveMonitorsLimit = types.NumberNull()
-    }
-    if val, ok := dataMap["seatLimit"].(float64); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["seatLimit"].(int); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["seatLimit"].(int64); ok {
-        data.SeatLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["seatLimit"] == nil {
-        data.SeatLimit = types.NumberNull()
     }
     if obj, ok := dataMap["incidentNumberPrefix"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4361,7 +4909,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.IncidentNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentNumberPrefix"].(string); ok {
         data.IncidentNumberPrefix = types.StringValue(val)
     } else {
         data.IncidentNumberPrefix = types.StringNull()
@@ -4398,7 +4946,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.AlertNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertNumberPrefix"].(string); ok {
         data.AlertNumberPrefix = types.StringValue(val)
     } else {
         data.AlertNumberPrefix = types.StringNull()
@@ -4435,7 +4983,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ScheduledMaintenanceNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["scheduledMaintenanceNumberPrefix"].(string); ok {
         data.ScheduledMaintenanceNumberPrefix = types.StringValue(val)
     } else {
         data.ScheduledMaintenanceNumberPrefix = types.StringNull()
@@ -4472,7 +5020,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.IncidentEpisodeNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["incidentEpisodeNumberPrefix"].(string); ok {
         data.IncidentEpisodeNumberPrefix = types.StringValue(val)
     } else {
         data.IncidentEpisodeNumberPrefix = types.StringNull()
@@ -4509,7 +5057,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.AlertEpisodeNumberPrefix = types.StringNull()
         }
-    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertEpisodeNumberPrefix"].(string); ok {
         data.AlertEpisodeNumberPrefix = types.StringValue(val)
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
@@ -4517,45 +5065,11 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
     }
-    if obj, ok := dataMap["utmContent"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UtmContent = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UtmContent = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UtmContent = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UtmContent = types.StringValue(string(jsonBytes))
-            } else {
-                data.UtmContent = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UtmContent = types.StringValue(string(jsonBytes))
-            } else {
-                data.UtmContent = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UtmContent = types.StringValue(string(jsonBytes))
-        } else {
-            data.UtmContent = types.StringNull()
-        }
-    } else if val, ok := dataMap["utmContent"].(string); ok && val != "" {
-        data.UtmContent = types.StringValue(val)
-    } else {
-        data.UtmContent = types.StringNull()
-    }
     if val, ok := dataMap["enableAuditLogs"].(bool); ok {
         data.EnableAuditLogs = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isSessionReplayAllowed"].(bool); ok {
+        data.IsSessionReplayAllowed = types.BoolValue(val)
     }
     if val, ok := dataMap["auditLogsRetentionInDays"].(float64); ok {
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
@@ -4563,7 +5077,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["auditLogsRetentionInDays"].(int64); ok {
         data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["auditLogsRetentionInDays"] == nil {
+    } else if obj, ok := dataMap["auditLogsRetentionInDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AuditLogsRetentionInDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AuditLogsRetentionInDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AuditLogsRetentionInDays = types.NumberNull()
     }
     if val, ok := dataMap["storeSystemEventsInAuditLogs"].(bool); ok {
@@ -4604,7 +5126,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.RequireSsoWithSsoProviderId = types.StringNull()
         }
-    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["requireSsoWithSsoProviderId"].(string); ok {
         data.RequireSsoWithSsoProviderId = types.StringValue(val)
     } else {
         data.RequireSsoWithSsoProviderId = types.StringNull()
@@ -4615,7 +5137,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(int64); ok {
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeSmsOrCallByBalanceInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeSmsOrCallByBalanceInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeSmsOrCallByBalanceInUsd = types.NumberNull()
     }
     if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(float64); ok {
@@ -4624,7 +5154,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(int64); ok {
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeSmsOrCallWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeSmsOrCallWhenCurrentBalanceFallsInUsd = types.NumberNull()
     }
     if val, ok := dataMap["enableSmsNotifications"].(bool); ok {
@@ -4648,7 +5186,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoAiRechargeByBalanceInUSD"].(int64); ok {
         data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoAiRechargeByBalanceInUSD"] == nil {
+    } else if obj, ok := dataMap["autoAiRechargeByBalanceInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoAiRechargeByBalanceInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoAiRechargeByBalanceInUsd = types.NumberNull()
     }
     if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(float64); ok {
@@ -4657,11 +5203,25 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(int64); ok {
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"] == nil {
+    } else if obj, ok := dataMap["autoRechargeAiWhenCurrentBalanceFallsInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AutoRechargeAiWhenCurrentBalanceFallsInUsd = types.NumberNull()
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutoRemediation"].(bool); ok {
+        data.EnableAutoRemediation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAiCommandExecution"].(bool); ok {
+        data.EnableAiCommandExecution = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
@@ -4669,8 +5229,17 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
-    if val, ok := dataMap["enableInstrumentationFixTasks"].(bool); ok {
-        data.EnableInstrumentationFixTasks = types.BoolValue(val)
+    if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
+        data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAlertInstrumentationFixTasks"].(bool); ok {
+        data.EnableAlertInstrumentationFixTasks = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticIncidentCodeFixes"].(bool); ok {
+        data.EnableAutomaticIncidentCodeFixes = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertCodeFixes"].(bool); ok {
+        data.EnableAutomaticAlertCodeFixes = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAiInsights"].(bool); ok {
         data.EnableAiInsights = types.BoolValue(val)
@@ -4713,7 +5282,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.AlertInvestigationMinimumSeverityId = types.StringNull()
         }
-    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["alertInvestigationMinimumSeverityId"].(string); ok {
         data.AlertInvestigationMinimumSeverityId = types.StringValue(val)
     } else {
         data.AlertInvestigationMinimumSeverityId = types.StringNull()
@@ -4724,8 +5293,50 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiDailyAutonomousTokenLimit"].(int64); ok {
         data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiDailyAutonomousTokenLimit"] == nil {
+    } else if obj, ok := dataMap["aiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(float64); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(int64); ok {
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiDailyAutonomousTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(float64); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(int64); ok {
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiDailyAutonomousTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiDailyAutonomousTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiDailyAutonomousTokenLimit = types.NumberNull()
     }
     if val, ok := dataMap["aiDailyFixTaskLimit"].(float64); ok {
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
@@ -4733,8 +5344,50 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiDailyFixTaskLimit"].(int64); ok {
         data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiDailyFixTaskLimit"] == nil {
+    } else if obj, ok := dataMap["aiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiDailyFixTaskLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(float64); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiDailyFixTaskLimit"].(int64); ok {
+        data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiDailyFixTaskLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiDailyFixTaskLimit"].(float64); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiDailyFixTaskLimit"].(int64); ok {
+        data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiDailyFixTaskLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiDailyFixTaskLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiDailyFixTaskLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiDailyFixTaskLimit = types.NumberNull()
     }
     if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(float64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
@@ -4742,8 +5395,70 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(int64); ok {
         data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["alertInvestigationDedupeWindowMinutes"] == nil {
+    } else if obj, ok := dataMap["alertInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AlertInvestigationDedupeWindowMinutes = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentInvestigationMinimumSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentInvestigationMinimumSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentInvestigationMinimumSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentInvestigationMinimumSeverityId"].(string); ok {
+        data.IncidentInvestigationMinimumSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentInvestigationMinimumSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(float64); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(int64); ok {
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentInvestigationDedupeWindowMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentInvestigationDedupeWindowMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentInvestigationDedupeWindowMinutes = types.NumberNull()
     }
     if val, ok := dataMap["aiMaxConcurrentInvestigations"].(float64); ok {
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
@@ -4751,8 +5466,50 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiMaxConcurrentInvestigations"].(int64); ok {
         data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiMaxConcurrentInvestigations"] == nil {
+    } else if obj, ok := dataMap["aiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(float64); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(int64); ok {
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(float64); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiMaxConcurrentInvestigations"].(int64); ok {
+        data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiMaxConcurrentInvestigations"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiMaxConcurrentInvestigations = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
@@ -4760,50 +5517,21 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["doNotAddGlobalProbesByDefaultOnNewMonitors"].(bool); ok {
         data.DoNotAddGlobalProbesByDefaultOnNewMonitors = types.BoolValue(val)
     }
-    if obj, ok := dataMap["gitHubAppInstallationId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.GitHubAppInstallationId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.GitHubAppInstallationId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-            } else {
-                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
-        } else {
-            data.GitHubAppInstallationId = types.StringNull()
-        }
-    } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok && val != "" {
-        data.GitHubAppInstallationId = types.StringValue(val)
-    } else {
-        data.GitHubAppInstallationId = types.StringNull()
-    }
     if val, ok := dataMap["defaultMetricCardinalityBudget"].(float64); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["defaultMetricCardinalityBudget"].(int64); ok {
         data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["defaultMetricCardinalityBudget"] == nil {
+    } else if obj, ok := dataMap["defaultMetricCardinalityBudget"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.DefaultMetricCardinalityBudget = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.DefaultMetricCardinalityBudget = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DefaultMetricCardinalityBudget = types.NumberNull()
     }
     if val, ok := dataMap["defaultTelemetryRetentionInDays"].(float64); ok {
@@ -4812,11 +5540,19 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["defaultTelemetryRetentionInDays"].(int64); ok {
         data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["defaultTelemetryRetentionInDays"] == nil {
+    } else if obj, ok := dataMap["defaultTelemetryRetentionInDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.DefaultTelemetryRetentionInDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.DefaultTelemetryRetentionInDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DefaultTelemetryRetentionInDays = types.NumberNull()
     }
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -4847,13 +5583,13 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -4884,121 +5620,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok && val != "" {
+    } else if val, ok := dataMap["defaultMetricDownsamplingRetentionDays"].(string); ok {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetValue(val)
     } else {
         data.DefaultMetricDownsamplingRetentionDays = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -5006,7 +5664,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -5041,7 +5707,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
@@ -5078,7 +5744,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderSubscriptionId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderSubscriptionId"].(string); ok {
         data.PaymentProviderSubscriptionId = types.StringValue(val)
     } else {
         data.PaymentProviderSubscriptionId = types.StringNull()
@@ -5115,7 +5781,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderMeteredSubscriptionId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionId"].(string); ok {
         data.PaymentProviderMeteredSubscriptionId = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionId = types.StringNull()
@@ -5126,45 +5792,27 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["paymentProviderSubscriptionSeats"].(int64); ok {
         data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["paymentProviderSubscriptionSeats"] == nil {
+    } else if obj, ok := dataMap["paymentProviderSubscriptionSeats"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.PaymentProviderSubscriptionSeats = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PaymentProviderSubscriptionSeats = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PaymentProviderSubscriptionSeats = types.NumberNull()
     }
     if obj, ok := dataMap["trialEndsAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.TrialEndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.TrialEndsAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.TrialEndsAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.TrialEndsAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TrialEndsAt = NewRFC3339Value(val)
         } else {
-            data.TrialEndsAt = NewJSONSubsetNull()
+            data.TrialEndsAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["trialEndsAt"].(string); ok && val != "" {
-        data.TrialEndsAt = NewJSONSubsetValue(val)
+        data.TrialEndsAt = NewRFC3339Value(val)
     } else {
-        data.TrialEndsAt = NewJSONSubsetNull()
+        data.TrialEndsAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["paymentProviderCustomerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5198,7 +5846,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderCustomerId = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderCustomerId"].(string); ok {
         data.PaymentProviderCustomerId = types.StringValue(val)
     } else {
         data.PaymentProviderCustomerId = types.StringNull()
@@ -5235,7 +5883,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderSubscriptionStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderSubscriptionStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderSubscriptionStatus"].(string); ok {
         data.PaymentProviderSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderSubscriptionStatus = types.StringNull()
@@ -5272,47 +5920,10 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["paymentProviderMeteredSubscriptionStatus"].(string); ok {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -5346,7 +5957,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -5357,7 +5968,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["workflowRunsInLast30Days"].(int64); ok {
         data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["workflowRunsInLast30Days"] == nil {
+    } else if obj, ok := dataMap["workflowRunsInLast30Days"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.WorkflowRunsInLast30Days = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.WorkflowRunsInLast30Days = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.WorkflowRunsInLast30Days = types.NumberNull()
     }
     if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(float64); ok {
@@ -5366,7 +5985,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(int64); ok {
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["smsOrCallCurrentBalanceInUSDCents"] == nil {
+    } else if obj, ok := dataMap["smsOrCallCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.SmsOrCallCurrentBalanceInUsdCents = types.NumberNull()
     }
     if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(float64); ok {
@@ -5375,7 +6002,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["aiCurrentBalanceInUSDCents"].(int64); ok {
         data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["aiCurrentBalanceInUSDCents"] == nil {
+    } else if obj, ok := dataMap["aiCurrentBalanceInUSDCents"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiCurrentBalanceInUsdCents = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiCurrentBalanceInUsdCents = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AiCurrentBalanceInUsdCents = types.NumberNull()
     }
     if obj, ok := dataMap["planName"].(map[string]interface{}); ok {
@@ -5410,7 +6045,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.PlanName = types.StringNull()
         }
-    } else if val, ok := dataMap["planName"].(string); ok && val != "" {
+    } else if val, ok := dataMap["planName"].(string); ok {
         data.PlanName = types.StringValue(val)
     } else {
         data.PlanName = types.StringNull()
@@ -5447,7 +6082,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ResellerId = types.StringNull()
         }
-    } else if val, ok := dataMap["resellerId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["resellerId"].(string); ok {
         data.ResellerId = types.StringValue(val)
     } else {
         data.ResellerId = types.StringNull()
@@ -5484,7 +6119,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         } else {
             data.ResellerPlanId = types.StringNull()
         }
-    } else if val, ok := dataMap["resellerPlanId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["resellerPlanId"].(string); ok {
         data.ResellerPlanId = types.StringValue(val)
     } else {
         data.ResellerPlanId = types.StringNull()
@@ -5492,11 +6127,49 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if val, ok := dataMap["letCustomerSupportAccessProject"].(bool); ok {
         data.LetCustomerSupportAccessProject = types.BoolValue(val)
     }
+    if obj, ok := dataMap["gitHubAppInstallationId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitHubAppInstallationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubAppInstallationId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitHubAppInstallationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubAppInstallationId = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitHubAppInstallationId"].(string); ok {
+        data.GitHubAppInstallationId = types.StringValue(val)
+    } else {
+        data.GitHubAppInstallationId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -5513,10 +6186,21 @@ func (r *ProjectResource) Delete(ctx context.Context, req resource.DeleteRequest
     }
 
     // Make API call
-    _, err := r.client.Delete("/project/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/project/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete project, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete project: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -5548,10 +6232,10 @@ func (r *ProjectResource) convertTerraformListToInterface(terraformList types.Li
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -5569,10 +6253,10 @@ func (r *ProjectResource) convertTerraformSetToInterface(terraformSet types.Set)
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -5584,6 +6268,7 @@ func (r *ProjectResource) convertTerraformSetToInterface(terraformSet types.Set)
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *ProjectResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -5644,57 +6329,8 @@ func (r *ProjectResource) bigFloatToFloat64(bf *big.Float) interface{} {
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *ProjectResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

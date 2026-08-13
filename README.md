@@ -4,7 +4,7 @@ OpenAPI specification for OneUptime. This document describes the API endpoints, 
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.0 **or** [OpenTofu](https://opentofu.org/docs/intro/install/) >= 1.6
 - [Go](https://golang.org/doc/install) >= 1.21
 
 ## Building The Provider
@@ -27,16 +27,35 @@ terraform {
   required_providers {
     oneuptime = {
       source = "oneuptime/oneuptime"
-      version = "1.0.0"
+      version = "12.0.8"
     }
   }
 }
 
 provider "oneuptime" {
-  oneuptime_url = "https://api.oneuptime.com"
+  oneuptime_url = "https://oneuptime.com" # or your self-hosted instance URL
   api_key       = var.oneuptime_api_key
 }
 ```
+
+The source address carries no registry hostname on purpose: OpenTofu resolves it against `registry.opentofu.org` and Terraform against `registry.terraform.io`, and the provider is published to both. Drive it with `tofu` or `terraform` — see [docs/guides/opentofu.md](./docs/guides/opentofu.md).
+
+## Reusable Modules
+
+[`modules/`](./modules) holds hand-written, engine-agnostic HCL modules:
+
+- [`monitoring-and-incident-response`](./modules/monitoring-and-incident-response) — HTTP monitors for a service, an on-call rotation paged when they fail, and a status page listing them.
+
+```terraform
+module "storefront" {
+  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v12.0.8"
+
+  service_name = "storefront"
+  monitors     = { homepage = { url = "https://example.com" } }
+}
+```
+
+Pin `ref` to a published tag — this repository is regenerated on every release.
 
 ## Developing the Provider
 

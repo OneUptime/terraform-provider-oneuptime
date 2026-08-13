@@ -4,8 +4,8 @@ HOSTNAME=registry.terraform.io
 NAMESPACE=oneuptime
 NAME=oneuptime
 BINARY=terraform-provider-${NAME}
-VERSION=1.0.0
-OS_ARCH=darwin_amd64
+VERSION=12.0.8
+OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: install
 
@@ -44,8 +44,7 @@ install: build
 	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
 
 test:
-	go test -i $(go list ./... | grep -v examples)
-	go test $(go list ./... | grep -v examples) -v $(TESTARGS) -timeout 120m
+	go test ./... -v $(TESTARGS) -timeout 120m
 
 testacc:
 	TF_ACC=1 go test $(go list ./... | grep -v examples) -v $(TESTARGS) -timeout 120m

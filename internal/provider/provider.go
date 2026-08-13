@@ -44,8 +44,8 @@ func (p *OneuptimeProvider) Schema(ctx context.Context, req provider.SchemaReque
                 Optional:            true,
             },
             "api_key": schema.StringAttribute{
-                MarkdownDescription: "API key for authentication",
-                Required:            true,
+                MarkdownDescription: "Project-scoped API key for authentication. May also be set via the ONEUPTIME_API_KEY environment variable.",
+                Optional:            true,
                 Sensitive:           true,
             },
         },
@@ -66,10 +66,9 @@ func (p *OneuptimeProvider) Configure(ctx context.Context, req provider.Configur
     var apiKey string
 
     if data.OneuptimeUrl.IsUnknown() {
-        // Cannot connect to client with an unknown value
-        resp.Diagnostics.AddWarning(
-            "Unable to create client",
-            "Cannot use unknown value as oneuptime_url",
+        resp.Diagnostics.AddError(
+            "Unknown Provider Configuration",
+            "oneuptime_url is not known at configure time. Set it to a static value or resolve the reference before applying.",
         )
         return
     }
@@ -84,10 +83,9 @@ func (p *OneuptimeProvider) Configure(ctx context.Context, req provider.Configur
     }
 
     if data.ApiKey.IsUnknown() {
-        // Cannot connect to client with an unknown value
-        resp.Diagnostics.AddWarning(
-            "Unable to create client",
-            "Cannot use unknown value as api_key",
+        resp.Diagnostics.AddError(
+            "Unknown Provider Configuration",
+            "api_key is not known at configure time. Set it to a static value or resolve the reference before applying.",
         )
         return
     }
@@ -106,7 +104,7 @@ func (p *OneuptimeProvider) Configure(ctx context.Context, req provider.Configur
         apiKey = data.ApiKey.ValueString()
     }
 
-    client, err := NewClient(oneuptimeUrl, apiKey)
+    client, err := NewClient(oneuptimeUrl, apiKey, p.version)
     if err != nil {
         resp.Diagnostics.AddError(
             "Unable to Create Oneuptime API Client",

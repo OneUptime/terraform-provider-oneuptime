@@ -2,14 +2,14 @@ terraform {
   required_providers {
     oneuptime = {
       source = "oneuptime/oneuptime"
-      version = "1.0.0"
+      version = "12.0.8"
     }
   }
 }
 
 provider "oneuptime" {
-  host    = "oneuptime.com"  # Optional, defaults to oneuptime.com (provider appends /api automatically)
-  api_key = var.oneuptime_api_key
+  oneuptime_url = "oneuptime.com" # Optional, defaults to oneuptime.com (provider appends /api automatically)
+  api_key       = var.oneuptime_api_key
 }
 
 # Configure variables

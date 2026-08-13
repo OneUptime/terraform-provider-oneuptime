@@ -1,11 +1,11 @@
-# Example usage of oneuptime_user resource
-resource "oneuptime_user" "example" {
-  name        = "example-user"
-  description = "Example user created by Terraform"
+# Example usage of oneuptime_probe resource
+resource "oneuptime_probe" "example" {
+  name        = "example-probe"
+  description = "Example probe created by Terraform"
 }
 
 # Output the resource ID
-output "user_id" {
-  description = "ID of the created user"
-  value       = oneuptime_user.example.id
+output "probe_id" {
+  description = "ID of the created probe"
+  value       = oneuptime_probe.example.id
 }

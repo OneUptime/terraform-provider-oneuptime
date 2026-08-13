@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -15,6 +14,7 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -36,9 +36,9 @@ type FileResourceModel struct {
     File types.String `tfsdk:"file"`
     Name types.String `tfsdk:"name"`
     FileType types.String `tfsdk:"file_type"`
-    IsPublic types.String `tfsdk:"is_public"`
-    ImageAccessToken types.String `tfsdk:"image_access_token"`
     Slug types.String `tfsdk:"slug"`
+    IsPublic types.Bool `tfsdk:"is_public"`
+    ImageAccessToken types.String `tfsdk:"image_access_token"`
 }
 
 func (r *FileResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -47,19 +47,17 @@ func (r *FileResource) Metadata(ctx context.Context, req resource.MetadataReques
 
 func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "file resource",
+        MarkdownDescription: "BLOB or File storage",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "file": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -67,32 +65,32 @@ func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Any friendly name of this object. Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Any friendly name of this object.",
                 Required: true,
             },
             "file_type": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
                 Required: true,
             },
-            "is_public": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
+            "slug": schema.StringAttribute{
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_public": schema.BoolAttribute{
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "image_access_token": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
-            },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Permissions - Create: [Logged in User], Read: [Logged in User], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
             },
         },
     }
@@ -133,19 +131,35 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     originalFileValue := data.File.ValueString()
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     fileRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "file": data.File.ValueString(),
-        "name": data.Name.ValueString(),
-        "fileType": data.FileType.ValueString(),
-        "isPublic": data.IsPublic.ValueString(),
-        "imageAccessToken": data.ImageAccessToken.ValueString(),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := fileRequest["data"].(map[string]interface{})
+
+    if !data.File.IsNull() && !data.File.IsUnknown() {
+        requestDataMap["file"] = data.File.ValueString()
+    }
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.FileType.IsNull() && !data.FileType.IsUnknown() {
+        requestDataMap["fileType"] = data.FileType.ValueString()
+    }
+    if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
+        requestDataMap["slug"] = data.Slug.ValueString()
+    }
+    if !data.IsPublic.IsNull() && !data.IsPublic.IsUnknown() {
+        requestDataMap["isPublic"] = data.IsPublic.ValueBool()
+    }
+    if !data.ImageAccessToken.IsNull() && !data.ImageAccessToken.IsUnknown() {
+        requestDataMap["imageAccessToken"] = data.ImageAccessToken.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/file", fileRequest)
+    httpResp, err := r.client.Post(ctx, "/file", fileRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create file, got error: %s", err))
         return
@@ -154,10 +168,11 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     var fileResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &fileResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse file response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create file: %s", err))
         return
     }
 
+    // No read endpoint for this resource: map the create response directly.
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
@@ -169,43 +184,6 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         dataMap = fileResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if val, ok := dataMap["file"].(string); ok {
         data.File = types.StringValue(val)
     } else {
@@ -244,7 +222,7 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -281,84 +259,10 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         } else {
             data.FileType = types.StringNull()
         }
-    } else if val, ok := dataMap["fileType"].(string); ok && val != "" {
+    } else if val, ok := dataMap["fileType"].(string); ok {
         data.FileType = types.StringValue(val)
     } else {
         data.FileType = types.StringNull()
-    }
-    if obj, ok := dataMap["isPublic"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IsPublic = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IsPublic = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IsPublic = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IsPublic = types.StringValue(string(jsonBytes))
-            } else {
-                data.IsPublic = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IsPublic = types.StringValue(string(jsonBytes))
-            } else {
-                data.IsPublic = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IsPublic = types.StringValue(string(jsonBytes))
-        } else {
-            data.IsPublic = types.StringNull()
-        }
-    } else if val, ok := dataMap["isPublic"].(string); ok && val != "" {
-        data.IsPublic = types.StringValue(val)
-    } else {
-        data.IsPublic = types.StringNull()
-    }
-    if obj, ok := dataMap["imageAccessToken"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ImageAccessToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ImageAccessToken = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ImageAccessToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ImageAccessToken = types.StringValue(string(jsonBytes))
-            } else {
-                data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ImageAccessToken = types.StringValue(string(jsonBytes))
-        } else {
-            data.ImageAccessToken = types.StringNull()
-        }
-    } else if val, ok := dataMap["imageAccessToken"].(string); ok && val != "" {
-        data.ImageAccessToken = types.StringValue(val)
-    } else {
-        data.ImageAccessToken = types.StringNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -392,10 +296,52 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if val, ok := dataMap["isPublic"].(bool); ok {
+        data.IsPublic = types.BoolValue(val)
+    } else {
+        data.IsPublic = types.BoolNull()
+    }
+    if obj, ok := dataMap["imageAccessToken"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImageAccessToken = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ImageAccessToken = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ImageAccessToken = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ImageAccessToken = types.StringValue(string(jsonBytes))
+            } else {
+                data.ImageAccessToken = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ImageAccessToken = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImageAccessToken = types.StringNull()
+        }
+    } else if val, ok := dataMap["imageAccessToken"].(string); ok {
+        data.ImageAccessToken = types.StringValue(val)
+    } else {
+        data.ImageAccessToken = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
@@ -454,7 +400,12 @@ func (r *FileResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 
 
 func (r *FileResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+    // Without a read endpoint, a passthrough import would silently create
+    // id-only state that can never be refreshed. Fail loudly instead.
+    resp.Diagnostics.AddError(
+        "Import Not Supported",
+        "oneuptime_file cannot be imported: the OneUptime API exposes no read endpoint for it.",
+    )
 }
 
 // Helper method to convert Terraform map to Go interface{}
@@ -480,10 +431,10 @@ func (r *FileResource) convertTerraformListToInterface(terraformList types.List)
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -501,10 +452,10 @@ func (r *FileResource) convertTerraformSetToInterface(terraformSet types.Set) in
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -516,6 +467,7 @@ func (r *FileResource) convertTerraformSetToInterface(terraformSet types.Set) in
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *FileResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -576,57 +528,8 @@ func (r *FileResource) bigFloatToFloat64(bf *big.Float) interface{} {
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *FileResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

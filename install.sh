@@ -9,7 +9,8 @@ echo "Building provider..."
 go build -o terraform-provider-oneuptime
 
 # Create plugin directory
-PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/oneuptime/oneuptime/1.0.0/darwin_amd64"
+OS_ARCH="$(go env GOOS)_$(go env GOARCH)"
+PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/oneuptime/oneuptime/12.0.8/$OS_ARCH"
 mkdir -p "$PLUGIN_DIR"
 
 # Copy binary
@@ -22,8 +23,8 @@ echo ""
 echo "terraform {"
 echo "  required_providers {"
 echo "    oneuptime = {"
-echo "      source = "oneuptime/oneuptime""
-echo "      version = "1.0.0""
+echo "      source = \"oneuptime/oneuptime\""
+echo "      version = \"12.0.8\""
 echo "    }"
 echo "  }"
 echo "}"

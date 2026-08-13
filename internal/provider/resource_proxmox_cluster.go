@@ -3,7 +3,6 @@ package provider
 import (
     "context"
     "fmt"
-    "github.com/hashicorp/terraform-plugin-framework/path"
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +10,7 @@ import (
     "github.com/hashicorp/terraform-plugin-log/tflog"
     "math/big"
     "net/http"
+    "github.com/hashicorp/terraform-plugin-framework/path"
     "encoding/json"
     "net/url"
     "strings"
@@ -22,6 +22,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -44,6 +45,7 @@ type ProxmoxClusterResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     CephClusterId types.String `tfsdk:"ceph_cluster_id"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
@@ -51,19 +53,18 @@ type ProxmoxClusterResourceModel struct {
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
     AgentVersion types.String `tfsdk:"agent_version"`
     PveVersion types.String `tfsdk:"pve_version"`
-    LastSeenAt JSONSubsetValue `tfsdk:"last_seen_at"`
+    LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
     NodeCount types.Number `tfsdk:"node_count"`
     OnlineNodeCount types.Number `tfsdk:"online_node_count"`
     GuestCount types.Number `tfsdk:"guest_count"`
     StorageCount types.Number `tfsdk:"storage_count"`
     GuestsWithoutBackupCount types.Number `tfsdk:"guests_without_backup_count"`
-    CreatedAt JSONSubsetValue `tfsdk:"created_at"`
-    UpdatedAt JSONSubsetValue `tfsdk:"updated_at"`
-    DeletedAt JSONSubsetValue `tfsdk:"deleted_at"`
+    CreatedAt RFC3339Value `tfsdk:"created_at"`
+    UpdatedAt RFC3339Value `tfsdk:"updated_at"`
+    DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    ArchivedAt JSONSubsetValue `tfsdk:"archived_at"`
+    ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -74,12 +75,11 @@ func (r *ProxmoxClusterResource) Metadata(ctx context.Context, req resource.Meta
 
 func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "proxmox_cluster resource",
+        MarkdownDescription: "Proxmox VE clusters that are being monitored in this project. Each cluster is auto-discovered when the OneUptime Proxmox Agent sends metrics, or can be manually registered.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
                 MarkdownDescription: "Unique identifier for the resource",
-                Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -93,11 +93,11 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Proxmox Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Proxmox Cluster]",
+                MarkdownDescription: "Name of this Proxmox cluster. This is the join key — it must match the proxmox.cluster.name OTel resource attribute stamped by the OneUptime Proxmox Agent..",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description for this Proxmox cluster. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Proxmox Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Proxmox Cluster]",
+                MarkdownDescription: "Friendly description for this Proxmox cluster.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -112,8 +112,17 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
             "is_archived": schema.BoolAttribute{
-                MarkdownDescription: "Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Proxmox Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Proxmox Cluster]",
+                MarkdownDescription: "Is this Proxmox cluster archived? Archived Proxmox clusters are hidden from lists but keep collecting telemetry..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -122,7 +131,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Relation to Labels Array where this object is categorized in.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Proxmox Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Proxmox Cluster]",
+                MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -131,7 +140,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "retain_telemetry_data_for_days": schema.NumberAttribute{
-                MarkdownDescription: "Number of days to retain telemetry data for this Proxmox cluster. Leave blank to use the project-wide default.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Proxmox Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Proxmox Cluster]",
+                MarkdownDescription: "Number of days to retain telemetry data for this Proxmox cluster. Leave blank to use the project-wide default..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -139,16 +148,19 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "telemetry_retention_config": schema.StringAttribute{
-                MarkdownDescription: "Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings.. Permissions - Create: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Create Proxmox Cluster], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Project Member, Settings Admin, Settings Member, Edit Proxmox Cluster]",
+                MarkdownDescription: "Per-pillar retention overrides for this Proxmox cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the Proxmox cluster default, then the project's retention settings..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "otel_collector_status": schema.StringAttribute{
-                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected). Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Connection status of the OTel Collector agent (connected or disconnected).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -156,7 +168,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "agent_version": schema.StringAttribute{
-                MarkdownDescription: "Version of the OneUptime Proxmox agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Version of the OneUptime Proxmox agent reporting telemetry, as self-reported via the oneuptime.agent.version resource attribute.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -164,7 +176,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "pve_version": schema.StringAttribute{
-                MarkdownDescription: "Proxmox VE version reported by this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Proxmox VE version reported by this cluster.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -173,7 +185,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
             },
             "last_seen_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -181,7 +193,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "node_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of nodes in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Cached count of nodes in this cluster.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -189,7 +201,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "online_node_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Cached count of nodes currently online (pve_up == 1) in this cluster. Rendered as 'Nodes X/Y online' next to nodeCount..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -197,7 +209,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "guest_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of guests (VMs and containers) in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Cached count of guests (VMs and containers) in this cluster.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -205,7 +217,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "storage_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of storage pools in this cluster. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Cached count of storage pools in this cluster.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -213,7 +225,7 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "guests_without_backup_count": schema.NumberAttribute{
-                MarkdownDescription: "Cached count of guests not covered by ANY backup job (pve_not_backed_up_total). NULL until the exporter's cluster-level backup-info collector reports. Coverage by a job is NOT the same as recent/successful backups — freshness needs the PVE task log or PBS API.. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [Project Owner, Project Admin, Edit Proxmox Cluster]",
+                MarkdownDescription: "Cached count of guests not covered by ANY backup job (pve_not_backed_up_total). NULL until the exporter's cluster-level backup-info collector reports. Coverage by a job is NOT the same as recent/successful backups — freshness needs the PVE task log or PBS API..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -222,17 +234,17 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "updated_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "version": schema.NumberAttribute{
@@ -240,16 +252,12 @@ func (r *ProxmoxClusterResource) Schema(ctx context.Context, req resource.Schema
                 Computed: true,
             },
             "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object. Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Settings Admin, Settings Member, Settings Viewer, Read Proxmox Cluster], Update: [No access - you don't have permission for this operation]",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
             },
             "archived_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                CustomType: JSONSubsetType{},
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "archived_by_user_id": schema.StringAttribute{
@@ -297,30 +305,41 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
 
 
 
-    // Create API request body
+    // Create API request body. Unset (null/unknown) optional fields are
+    // omitted so server-side defaults apply instead of being overwritten
+    // with zero values.
     proxmoxClusterRequest := map[string]interface{}{
-        "data": map[string]interface{}{
-        "name": data.Name.ValueString(),
-        "description": data.Description.ValueString(),
-        "cephClusterId": data.CephClusterId.ValueString(),
-        "isArchived": data.IsArchived.ValueBool(),
-        "labels": r.convertTerraformSetToInterface(data.Labels),
-        "retainTelemetryDataForDays": r.bigFloatToFloat64(data.RetainTelemetryDataForDays.ValueBigFloat()),
-        "telemetryRetentionConfig": r.parseJSONField(data.TelemetryRetentionConfig),
-        "otelCollectorStatus": data.OtelCollectorStatus.ValueString(),
-        "agentVersion": data.AgentVersion.ValueString(),
-        "pveVersion": data.PveVersion.ValueString(),
-        "lastSeenAt": r.parseJSONField(data.LastSeenAt),
-        "nodeCount": r.bigFloatToFloat64(data.NodeCount.ValueBigFloat()),
-        "onlineNodeCount": r.bigFloatToFloat64(data.OnlineNodeCount.ValueBigFloat()),
-        "guestCount": r.bigFloatToFloat64(data.GuestCount.ValueBigFloat()),
-        "storageCount": r.bigFloatToFloat64(data.StorageCount.ValueBigFloat()),
-        "guestsWithoutBackupCount": r.bigFloatToFloat64(data.GuestsWithoutBackupCount.ValueBigFloat()),
-        },
+        "data": map[string]interface{}{},
+    }
+    requestDataMap := proxmoxClusterRequest["data"].(map[string]interface{})
+
+    if !data.Name.IsNull() && !data.Name.IsUnknown() {
+        requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.Description.IsNull() && !data.Description.IsUnknown() {
+        requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.CephClusterId.IsNull() && !data.CephClusterId.IsUnknown() {
+        requestDataMap["cephClusterId"] = data.CephClusterId.ValueString()
+    }
+    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
+        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
+    if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+        requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
+    }
+    if !data.RetainTelemetryDataForDays.IsNull() && !data.RetainTelemetryDataForDays.IsUnknown() {
+        requestDataMap["retainTelemetryDataForDays"] = r.bigFloatToFloat64(data.RetainTelemetryDataForDays.ValueBigFloat())
+    }
+    if parsedTelemetryRetentionConfig := r.parseJSONField(data.TelemetryRetentionConfig); parsedTelemetryRetentionConfig != nil {
+        requestDataMap["telemetryRetentionConfig"] = parsedTelemetryRetentionConfig
     }
 
     // Make API call
-    httpResp, err := r.client.Post("/proxmox-cluster", proxmoxClusterRequest)
+    httpResp, err := r.client.Post(ctx, "/proxmox-cluster", proxmoxClusterRequest)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create proxmox_cluster, got error: %s", err))
         return
@@ -329,58 +348,98 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     var proxmoxClusterResponse map[string]interface{}
     err = r.client.ParseResponse(httpResp, &proxmoxClusterResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse proxmox_cluster response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create proxmox_cluster: %s", err))
         return
     }
 
-    // Update the model with response data
+    // Extract the new resource id from the create response.
+    createdId := ""
+    if wrapper, ok := proxmoxClusterResponse["data"].(map[string]interface{}); ok {
+        if val, ok := wrapper["_id"].(string); ok {
+            createdId = val
+        }
+    } else if val, ok := proxmoxClusterResponse["_id"].(string); ok {
+        createdId = val
+    }
+    if createdId == "" {
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for proxmox_cluster did not contain an id. This is a bug in the provider or the API; please report it.")
+        return
+    }
+    data.Id = types.StringValue(createdId)
+
+    /*
+     * The server has committed the row. Persist what we know to state BEFORE
+     * the read-back: if the read-back fails and we return without setting
+     * state, Terraform never learns the resource exists and the created
+     * proxmox_cluster is orphaned server-side — never refreshed, never
+     * destroyed. Delete already refuses to drop state on failure for the
+     * same reason; Create must not either.
+     */
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    // Re-read the resource so state reflects server-normalized values.
+    selectParam := map[string]interface{}{
+        "projectId": true,
+        "name": true,
+        "description": true,
+        "cephClusterId": true,
+        "createdByUserId": true,
+        "isArchived": true,
+        "labels": true,
+        "retainTelemetryDataForDays": true,
+        "telemetryRetentionConfig": true,
+        "otelCollectorStatus": true,
+        "agentVersion": true,
+        "pveVersion": true,
+        "lastSeenAt": true,
+        "nodeCount": true,
+        "onlineNodeCount": true,
+        "guestCount": true,
+        "storageCount": true,
+        "guestsWithoutBackupCount": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "slug": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
+        "deletedByUserId": true,
+        "_id": true,
+    }
+
+    readResp, err := r.client.PostWithSelect(ctx, "/proxmox-cluster/" + data.Id.ValueString() + "/get-item", selectParam)
+    if err != nil {
+        /*
+         * State already owns the id, so the resource is tracked and the next
+         * refresh reconciles the remaining attributes. Warn rather than
+         * error: erroring here would strand a real resource.
+         */
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created proxmox_cluster but could not read it back; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    var readResponse map[string]interface{}
+    err = r.client.ParseResponse(readResp, &readResponse)
+    if err != nil {
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created proxmox_cluster but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        return
+    }
+
+    // Update the model with the authoritative read response
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := proxmoxClusterResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := readResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = proxmoxClusterResponse
+        dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -424,7 +483,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -461,7 +520,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -498,10 +557,47 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.CephClusterId = types.StringNull()
         }
-    } else if val, ok := dataMap["cephClusterId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["cephClusterId"].(string); ok {
         data.CephClusterId = types.StringValue(val)
     } else {
         data.CephClusterId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
@@ -544,11 +640,19 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
         data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["retainTelemetryDataForDays"] == nil {
+    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.RetainTelemetryDataForDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.RetainTelemetryDataForDays = types.NumberNull()
     }
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -579,7 +683,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
@@ -616,7 +720,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["otelCollectorStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
         data.OtelCollectorStatus = types.StringNull()
@@ -653,7 +757,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.AgentVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+    } else if val, ok := dataMap["agentVersion"].(string); ok {
         data.AgentVersion = types.StringValue(val)
     } else {
         data.AgentVersion = types.StringNull()
@@ -690,47 +794,21 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.PveVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["pveVersion"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pveVersion"].(string); ok {
         data.PveVersion = types.StringValue(val)
     } else {
         data.PveVersion = types.StringNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSeenAt = NewRFC3339Value(val)
         } else {
-            data.LastSeenAt = NewJSONSubsetNull()
+            data.LastSeenAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["lastSeenAt"].(string); ok && val != "" {
-        data.LastSeenAt = NewJSONSubsetValue(val)
+        data.LastSeenAt = NewRFC3339Value(val)
     } else {
-        data.LastSeenAt = NewJSONSubsetNull()
+        data.LastSeenAt = NewRFC3339Null()
     }
     if val, ok := dataMap["nodeCount"].(float64); ok {
         data.NodeCount = types.NumberValue(big.NewFloat(val))
@@ -738,7 +816,15 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["nodeCount"].(int64); ok {
         data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["nodeCount"] == nil {
+    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.NodeCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.NodeCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.NodeCount = types.NumberNull()
     }
     if val, ok := dataMap["onlineNodeCount"].(float64); ok {
@@ -747,7 +833,15 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["onlineNodeCount"].(int64); ok {
         data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["onlineNodeCount"] == nil {
+    } else if obj, ok := dataMap["onlineNodeCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.OnlineNodeCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.OnlineNodeCount = types.NumberNull()
     }
     if val, ok := dataMap["guestCount"].(float64); ok {
@@ -756,7 +850,15 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["guestCount"].(int64); ok {
         data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["guestCount"] == nil {
+    } else if obj, ok := dataMap["guestCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.GuestCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.GuestCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.GuestCount = types.NumberNull()
     }
     if val, ok := dataMap["storageCount"].(float64); ok {
@@ -765,7 +867,15 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["storageCount"].(int64); ok {
         data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["storageCount"] == nil {
+    } else if obj, ok := dataMap["storageCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.StorageCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.StorageCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.StorageCount = types.NumberNull()
     }
     if val, ok := dataMap["guestsWithoutBackupCount"].(float64); ok {
@@ -774,119 +884,49 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["guestsWithoutBackupCount"].(int64); ok {
         data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["guestsWithoutBackupCount"] == nil {
+    } else if obj, ok := dataMap["guestsWithoutBackupCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.GuestsWithoutBackupCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.GuestsWithoutBackupCount = types.NumberNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -894,7 +934,15 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -929,84 +977,21 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
     }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ArchivedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ArchivedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
         } else {
-            data.ArchivedAt = NewJSONSubsetNull()
+            data.ArchivedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
-        data.ArchivedAt = NewJSONSubsetValue(val)
+        data.ArchivedAt = NewRFC3339Value(val)
     } else {
-        data.ArchivedAt = NewJSONSubsetNull()
+        data.ArchivedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1040,7 +1025,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
@@ -1077,7 +1062,7 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -1087,6 +1072,8 @@ func (r *ProxmoxClusterResource) Create(ctx context.Context, req resource.Create
     } else {
         data.Id = types.StringNull()
     }
+    // The read response is authoritative, but never let it clobber the id we just received.
+    data.Id = types.StringValue(createdId)
 
     // Write logs using the tflog package
     tflog.Trace(ctx, "created a resource")
@@ -1111,6 +1098,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         "name": true,
         "description": true,
         "cephClusterId": true,
+        "createdByUserId": true,
         "isArchived": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
@@ -1129,7 +1117,6 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
         "deletedByUserId": true,
@@ -1137,7 +1124,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect("/proxmox-cluster/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/proxmox-cluster/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read proxmox_cluster, got error: %s", err))
         return
@@ -1166,43 +1153,6 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         dataMap = proxmoxClusterResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1246,7 +1196,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -1283,7 +1233,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -1320,10 +1270,47 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.CephClusterId = types.StringNull()
         }
-    } else if val, ok := dataMap["cephClusterId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["cephClusterId"].(string); ok {
         data.CephClusterId = types.StringValue(val)
     } else {
         data.CephClusterId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
@@ -1366,11 +1353,19 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
         data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["retainTelemetryDataForDays"] == nil {
+    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.RetainTelemetryDataForDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.RetainTelemetryDataForDays = types.NumberNull()
     }
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -1401,7 +1396,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
@@ -1438,7 +1433,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["otelCollectorStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
         data.OtelCollectorStatus = types.StringNull()
@@ -1475,7 +1470,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.AgentVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+    } else if val, ok := dataMap["agentVersion"].(string); ok {
         data.AgentVersion = types.StringValue(val)
     } else {
         data.AgentVersion = types.StringNull()
@@ -1512,47 +1507,21 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.PveVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["pveVersion"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pveVersion"].(string); ok {
         data.PveVersion = types.StringValue(val)
     } else {
         data.PveVersion = types.StringNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSeenAt = NewRFC3339Value(val)
         } else {
-            data.LastSeenAt = NewJSONSubsetNull()
+            data.LastSeenAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["lastSeenAt"].(string); ok && val != "" {
-        data.LastSeenAt = NewJSONSubsetValue(val)
+        data.LastSeenAt = NewRFC3339Value(val)
     } else {
-        data.LastSeenAt = NewJSONSubsetNull()
+        data.LastSeenAt = NewRFC3339Null()
     }
     if val, ok := dataMap["nodeCount"].(float64); ok {
         data.NodeCount = types.NumberValue(big.NewFloat(val))
@@ -1560,7 +1529,15 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["nodeCount"].(int64); ok {
         data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["nodeCount"] == nil {
+    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.NodeCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.NodeCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.NodeCount = types.NumberNull()
     }
     if val, ok := dataMap["onlineNodeCount"].(float64); ok {
@@ -1569,7 +1546,15 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["onlineNodeCount"].(int64); ok {
         data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["onlineNodeCount"] == nil {
+    } else if obj, ok := dataMap["onlineNodeCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.OnlineNodeCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.OnlineNodeCount = types.NumberNull()
     }
     if val, ok := dataMap["guestCount"].(float64); ok {
@@ -1578,7 +1563,15 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["guestCount"].(int64); ok {
         data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["guestCount"] == nil {
+    } else if obj, ok := dataMap["guestCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.GuestCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.GuestCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.GuestCount = types.NumberNull()
     }
     if val, ok := dataMap["storageCount"].(float64); ok {
@@ -1587,7 +1580,15 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["storageCount"].(int64); ok {
         data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["storageCount"] == nil {
+    } else if obj, ok := dataMap["storageCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.StorageCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.StorageCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.StorageCount = types.NumberNull()
     }
     if val, ok := dataMap["guestsWithoutBackupCount"].(float64); ok {
@@ -1596,119 +1597,49 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["guestsWithoutBackupCount"].(int64); ok {
         data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["guestsWithoutBackupCount"] == nil {
+    } else if obj, ok := dataMap["guestsWithoutBackupCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.GuestsWithoutBackupCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.GuestsWithoutBackupCount = types.NumberNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -1716,7 +1647,15 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -1751,84 +1690,21 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
     }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ArchivedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ArchivedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
         } else {
-            data.ArchivedAt = NewJSONSubsetNull()
+            data.ArchivedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
-        data.ArchivedAt = NewJSONSubsetValue(val)
+        data.ArchivedAt = NewRFC3339Value(val)
     } else {
-        data.ArchivedAt = NewJSONSubsetNull()
+        data.ArchivedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1862,7 +1738,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
@@ -1899,7 +1775,7 @@ func (r *ProxmoxClusterResource) Read(ctx context.Context, req resource.ReadRequ
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -1955,12 +1831,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         requestDataMap["pveVersion"] = data.PveVersion.ValueString()
     }
     if !data.LastSeenAt.IsUnknown() && !state.LastSeenAt.IsUnknown() && !data.LastSeenAt.Equal(state.LastSeenAt) {
-        var lastseenatData interface{}
-        if err := json.Unmarshal([]byte(data.LastSeenAt.ValueString()), &lastseenatData); err == nil {
-            requestDataMap["lastSeenAt"] = lastseenatData
-        } else {
-            requestDataMap["lastSeenAt"] = data.LastSeenAt.ValueString()
-        }
+        requestDataMap["lastSeenAt"] = data.LastSeenAt.ValueString()
     }
     if !data.NodeCount.IsUnknown() && !state.NodeCount.IsUnknown() && !data.NodeCount.Equal(state.NodeCount) {
         requestDataMap["nodeCount"] = r.bigFloatToFloat64(data.NodeCount.ValueBigFloat())
@@ -1998,25 +1869,24 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         }
     }
 
-    // Nothing to send. The API rejects an update that carries no fields, so keep the current state and skip the call.
-    if len(proxmoxClusterRequest["data"].(map[string]interface{})) == 0 {
-        resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-        return
-    }
+    // Only call the API when there are changed fields to send. An empty
+    // update body is rejected by the API; state is still refreshed below so
+    // this method never writes unverified plan values into state.
+    if len(proxmoxClusterRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/proxmox-cluster/" + data.Id.ValueString() + "", proxmoxClusterRequest)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update proxmox_cluster, got error: %s", err))
+            return
+        }
 
-    // Make API call
-    httpResp, err := r.client.Put("/proxmox-cluster/" + data.Id.ValueString() + "", proxmoxClusterRequest)
-    if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update proxmox_cluster, got error: %s", err))
-        return
-    }
-
-    // Parse the update response
-    var proxmoxClusterResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &proxmoxClusterResponse)
-    if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse proxmox_cluster response, got error: %s", err))
-        return
+        // Parse the update response
+        var proxmoxClusterResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &proxmoxClusterResponse)
+        if err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update proxmox_cluster: %s", err))
+            return
+        }
+        _ = proxmoxClusterResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -2025,6 +1895,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         "name": true,
         "description": true,
         "cephClusterId": true,
+        "createdByUserId": true,
         "isArchived": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
@@ -2043,14 +1914,13 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "createdByUserId": true,
         "archivedAt": true,
         "archivedByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect("/proxmox-cluster/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/proxmox-cluster/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read proxmox_cluster after update, got error: %s", err))
         return
@@ -2059,7 +1929,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse proxmox_cluster read response, got error: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read proxmox_cluster after update: %s", err))
         return
     }
 
@@ -2074,43 +1944,6 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         dataMap = readResponse
     }
 
-    if obj, ok := dataMap["id"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Id = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Id = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Id = types.StringValue(string(jsonBytes))
-            } else {
-                data.Id = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Id = types.StringValue(string(jsonBytes))
-        } else {
-            data.Id = types.StringNull()
-        }
-    } else if val, ok := dataMap["id"].(string); ok && val != "" {
-        data.Id = types.StringValue(val)
-    } else {
-        data.Id = types.StringNull()
-    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -2154,7 +1987,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Name = types.StringNull()
         }
-    } else if val, ok := dataMap["name"].(string); ok && val != "" {
+    } else if val, ok := dataMap["name"].(string); ok {
         data.Name = types.StringValue(val)
     } else {
         data.Name = types.StringNull()
@@ -2191,7 +2024,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Description = types.StringNull()
         }
-    } else if val, ok := dataMap["description"].(string); ok && val != "" {
+    } else if val, ok := dataMap["description"].(string); ok {
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
@@ -2228,10 +2061,47 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.CephClusterId = types.StringNull()
         }
-    } else if val, ok := dataMap["cephClusterId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["cephClusterId"].(string); ok {
         data.CephClusterId = types.StringValue(val)
     } else {
         data.CephClusterId = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)
@@ -2274,11 +2144,19 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["retainTelemetryDataForDays"].(int64); ok {
         data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["retainTelemetryDataForDays"] == nil {
+    } else if obj, ok := dataMap["retainTelemetryDataForDays"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.RetainTelemetryDataForDays = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.RetainTelemetryDataForDays = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.RetainTelemetryDataForDays = types.NumberNull()
     }
     if obj, ok := dataMap["telemetryRetentionConfig"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
@@ -2309,7 +2187,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.TelemetryRetentionConfig = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok && val != "" {
+    } else if val, ok := dataMap["telemetryRetentionConfig"].(string); ok {
         data.TelemetryRetentionConfig = NewJSONSubsetValue(val)
     } else {
         data.TelemetryRetentionConfig = NewJSONSubsetNull()
@@ -2346,7 +2224,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.OtelCollectorStatus = types.StringNull()
         }
-    } else if val, ok := dataMap["otelCollectorStatus"].(string); ok && val != "" {
+    } else if val, ok := dataMap["otelCollectorStatus"].(string); ok {
         data.OtelCollectorStatus = types.StringValue(val)
     } else {
         data.OtelCollectorStatus = types.StringNull()
@@ -2383,7 +2261,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.AgentVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["agentVersion"].(string); ok && val != "" {
+    } else if val, ok := dataMap["agentVersion"].(string); ok {
         data.AgentVersion = types.StringValue(val)
     } else {
         data.AgentVersion = types.StringNull()
@@ -2420,47 +2298,21 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.PveVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["pveVersion"].(string); ok && val != "" {
+    } else if val, ok := dataMap["pveVersion"].(string); ok {
         data.PveVersion = types.StringValue(val)
     } else {
         data.PveVersion = types.StringNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.LastSeenAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.LastSeenAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.LastSeenAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSeenAt = NewRFC3339Value(val)
         } else {
-            data.LastSeenAt = NewJSONSubsetNull()
+            data.LastSeenAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["lastSeenAt"].(string); ok && val != "" {
-        data.LastSeenAt = NewJSONSubsetValue(val)
+        data.LastSeenAt = NewRFC3339Value(val)
     } else {
-        data.LastSeenAt = NewJSONSubsetNull()
+        data.LastSeenAt = NewRFC3339Null()
     }
     if val, ok := dataMap["nodeCount"].(float64); ok {
         data.NodeCount = types.NumberValue(big.NewFloat(val))
@@ -2468,7 +2320,15 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["nodeCount"].(int64); ok {
         data.NodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["nodeCount"] == nil {
+    } else if obj, ok := dataMap["nodeCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.NodeCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.NodeCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.NodeCount = types.NumberNull()
     }
     if val, ok := dataMap["onlineNodeCount"].(float64); ok {
@@ -2477,7 +2337,15 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["onlineNodeCount"].(int64); ok {
         data.OnlineNodeCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["onlineNodeCount"] == nil {
+    } else if obj, ok := dataMap["onlineNodeCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.OnlineNodeCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.OnlineNodeCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.OnlineNodeCount = types.NumberNull()
     }
     if val, ok := dataMap["guestCount"].(float64); ok {
@@ -2486,7 +2354,15 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["guestCount"].(int64); ok {
         data.GuestCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["guestCount"] == nil {
+    } else if obj, ok := dataMap["guestCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.GuestCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.GuestCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.GuestCount = types.NumberNull()
     }
     if val, ok := dataMap["storageCount"].(float64); ok {
@@ -2495,7 +2371,15 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["storageCount"].(int64); ok {
         data.StorageCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["storageCount"] == nil {
+    } else if obj, ok := dataMap["storageCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.StorageCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.StorageCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.StorageCount = types.NumberNull()
     }
     if val, ok := dataMap["guestsWithoutBackupCount"].(float64); ok {
@@ -2504,119 +2388,49 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["guestsWithoutBackupCount"].(int64); ok {
         data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["guestsWithoutBackupCount"] == nil {
+    } else if obj, ok := dataMap["guestsWithoutBackupCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.GuestsWithoutBackupCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.GuestsWithoutBackupCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.GuestsWithoutBackupCount = types.NumberNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CreatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CreatedAt = NewRFC3339Value(val)
         } else {
-            data.CreatedAt = NewJSONSubsetNull()
+            data.CreatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["createdAt"].(string); ok && val != "" {
-        data.CreatedAt = NewJSONSubsetValue(val)
+        data.CreatedAt = NewRFC3339Value(val)
     } else {
-        data.CreatedAt = NewJSONSubsetNull()
+        data.CreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["updatedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.UpdatedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.UpdatedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.UpdatedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UpdatedAt = NewRFC3339Value(val)
         } else {
-            data.UpdatedAt = NewJSONSubsetNull()
+            data.UpdatedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["updatedAt"].(string); ok && val != "" {
-        data.UpdatedAt = NewJSONSubsetValue(val)
+        data.UpdatedAt = NewRFC3339Value(val)
     } else {
-        data.UpdatedAt = NewJSONSubsetNull()
+        data.UpdatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DeletedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.DeletedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DeletedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.DeletedAt = NewRFC3339Value(val)
         } else {
-            data.DeletedAt = NewJSONSubsetNull()
+            data.DeletedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["deletedAt"].(string); ok && val != "" {
-        data.DeletedAt = NewJSONSubsetValue(val)
+        data.DeletedAt = NewRFC3339Value(val)
     } else {
-        data.DeletedAt = NewJSONSubsetNull()
+        data.DeletedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["version"].(float64); ok {
         data.Version = types.NumberValue(big.NewFloat(val))
@@ -2624,7 +2438,15 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
     } else if val, ok := dataMap["version"].(int64); ok {
         data.Version = types.NumberValue(big.NewFloat(float64(val)))
-    } else if dataMap["version"] == nil {
+    } else if obj, ok := dataMap["version"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
     if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
@@ -2659,84 +2481,21 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.Slug = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok && val != "" {
+    } else if val, ok := dataMap["slug"].(string); ok {
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
     }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok && val != "" {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
-    }
     if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ArchivedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ArchivedAt = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.ArchivedAt = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ArchivedAt = NewJSONSubsetValue(string(jsonBytes))
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
         } else {
-            data.ArchivedAt = NewJSONSubsetNull()
+            data.ArchivedAt = NewRFC3339Null()
         }
     } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
-        data.ArchivedAt = NewJSONSubsetValue(val)
+        data.ArchivedAt = NewRFC3339Value(val)
     } else {
-        data.ArchivedAt = NewJSONSubsetNull()
+        data.ArchivedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2770,7 +2529,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.ArchivedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["archivedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
@@ -2807,7 +2566,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
         } else {
             data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := dataMap["deletedByUserId"].(string); ok && val != "" {
+    } else if val, ok := dataMap["deletedByUserId"].(string); ok {
         data.DeletedByUserId = types.StringValue(val)
     } else {
         data.DeletedByUserId = types.StringNull()
@@ -2817,6 +2576,7 @@ func (r *ProxmoxClusterResource) Update(ctx context.Context, req resource.Update
     } else {
         data.Id = types.StringNull()
     }
+    data.Id = state.Id
 
     // Save updated data into Terraform state
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -2833,10 +2593,21 @@ func (r *ProxmoxClusterResource) Delete(ctx context.Context, req resource.Delete
     }
 
     // Make API call
-    _, err := r.client.Delete("/proxmox-cluster/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/proxmox-cluster/" + data.Id.ValueString() + "")
     if err != nil {
         resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete proxmox_cluster, got error: %s", err))
         return
+    }
+
+    // A failed delete must keep the resource in state — silently dropping it
+    // orphans real infrastructure. 404 means it is already gone.
+    if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
+        err = r.client.ParseResponse(httpResp, nil)
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete proxmox_cluster: %s", err))
+        return
+    }
+    if httpResp.Body != nil {
+        httpResp.Body.Close()
     }
 }
 
@@ -2868,10 +2639,10 @@ func (r *ProxmoxClusterResource) convertTerraformListToInterface(terraformList t
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformList.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -2889,10 +2660,10 @@ func (r *ProxmoxClusterResource) convertTerraformSetToInterface(terraformSet typ
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
-    
+
     var stringList []string
     terraformSet.ElementsAs(context.Background(), &stringList, false)
-    
+
     // Convert string array to OneUptime format with _id fields
     var result []interface{}
     for _, str := range stringList {
@@ -2904,6 +2675,7 @@ func (r *ProxmoxClusterResource) convertTerraformSetToInterface(terraformSet typ
     }
     return result
 }
+
 
 // Helper method to parse JSON field for complex objects
 func (r *ProxmoxClusterResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
@@ -2964,57 +2736,8 @@ func (r *ProxmoxClusterResource) bigFloatToFloat64(bf *big.Float) interface{} {
     return f
 }
 
-// Helper method to check if a type string is a valid OneUptime ObjectType
-// Only these types should be marshalled/unmarshalled as typed wrapper objects
-// This list is dynamically generated from Common/Types/JSON.ts ObjectType enum
+// Helper method to check if a type string is a valid OneUptime ObjectType.
+// The registry itself lives in objecttypes.go, shared across the package.
 func (r *ProxmoxClusterResource) isValidOneUptimeObjectType(typeStr string) bool {
-    validTypes := map[string]bool{
-        "ObjectID": true,
-        "Decimal": true,
-        "Name": true,
-        "EqualTo": true,
-        "EqualToOrNull": true,
-        "MonitorSteps": true,
-        "MonitorStep": true,
-        "Recurring": true,
-        "RestrictionTimes": true,
-        "MonitorCriteria": true,
-        "PositiveNumber": true,
-        "MonitorCriteriaInstance": true,
-        "NotEqual": true,
-        "Email": true,
-        "Phone": true,
-        "Color": true,
-        "Domain": true,
-        "Version": true,
-        "IP": true,
-        "Route": true,
-        "URL": true,
-        "Permission": true,
-        "Search": true,
-        "MultiSearch": true,
-        "GreaterThan": true,
-        "GreaterThanOrEqual": true,
-        "GreaterThanOrNull": true,
-        "LessThanOrNull": true,
-        "LessThan": true,
-        "LessThanOrEqual": true,
-        "Port": true,
-        "Hostname": true,
-        "HashedString": true,
-        "DateTime": true,
-        "Buffer": true,
-        "InBetween": true,
-        "NotNull": true,
-        "IsNull": true,
-        "Includes": true,
-        "IncludesAll": true,
-        "IncludesNone": true,
-        "StartsWith": true,
-        "EndsWith": true,
-        "NotContains": true,
-        "DashboardComponent": true,
-        "DashboardViewConfig": true,
-    }
-    return validTypes[typeStr]
+    return validOneUptimeObjectTypes[typeStr]
 }

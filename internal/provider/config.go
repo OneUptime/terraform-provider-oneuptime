@@ -46,7 +46,7 @@ func NewConfig(ctx context.Context, model OneuptimeProviderModel) (*Config, diag
     }
 
     // Create client
-    client, err := NewClient(config.OneuptimeUrl, config.ApiKey)
+    client, err := NewClient(config.OneuptimeUrl, config.ApiKey, "dev")
     if err != nil {
         diags.AddError(
             "Unable to Create API Client",
