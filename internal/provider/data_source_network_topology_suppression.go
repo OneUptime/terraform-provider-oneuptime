@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &AiConversationDataSource{}
+var _ datasource.DataSource = &NetworkTopologySuppressionDataSource{}
 
-func NewAiConversationDataSource() datasource.DataSource {
-    return &AiConversationDataSource{}
+func NewNetworkTopologySuppressionDataSource() datasource.DataSource {
+    return &NetworkTopologySuppressionDataSource{}
 }
 
-// AiConversationDataSource defines the data source implementation.
-type AiConversationDataSource struct {
+// NetworkTopologySuppressionDataSource defines the data source implementation.
+type NetworkTopologySuppressionDataSource struct {
     client *Client
 }
 
-// AiConversationDataSourceModel describes the data source data model.
-type AiConversationDataSourceModel struct {
+// NetworkTopologySuppressionDataSourceModel describes the data source data model.
+type NetworkTopologySuppressionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,21 +34,20 @@ type AiConversationDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Title types.String `tfsdk:"title"`
-    LastMessageAt types.String `tfsdk:"last_message_at"`
-    LlmProviderId types.String `tfsdk:"llm_provider_id"`
-    PermissionMode types.String `tfsdk:"permission_mode"`
-    PageContext types.String `tfsdk:"page_context"`
+    NodeKey types.String `tfsdk:"node_key"`
+    NodeName types.String `tfsdk:"node_name"`
+    Reason types.String `tfsdk:"reason"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *AiConversationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_ai_conversation"
+func (d *NetworkTopologySuppressionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_network_topology_suppression"
 }
 
-func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *NetworkTopologySuppressionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts). Look up an existing ai_conversation by `id` or by `name`.",
+        MarkdownDescription: "Nodes hidden from the Network Topology map for the whole project. Display only — the device and its monitoring are untouched. Look up an existing network_topology_suppression by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -81,27 +80,23 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the conversation. Generated from the first message..",
+            "node_key": schema.StringAttribute{
+                MarkdownDescription: "The topology node id to hide. A device id for a managed device, 'unmanaged:<name>' for a discovery-protocol peer, or 'endpoint:<id>' for a discovered endpoint. Free text rather than a foreign key because two of the three are synthesised by the topology builder and have no row of their own..",
                 Computed: true,
             },
-            "last_message_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+            "node_name": schema.StringAttribute{
+                MarkdownDescription: "What the node was called when it was hidden, so the hidden list is readable without rebuilding the graph..",
                 Computed: true,
             },
-            "llm_provider_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "permission_mode": schema.StringAttribute{
-                MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly..",
-                Computed: true,
-            },
-            "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context..",
+            "reason": schema.StringAttribute{
+                MarkdownDescription: "Why this node was hidden — the note the next person needs to decide whether it should stay hidden..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -109,7 +104,7 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
     }
 }
 
-func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *NetworkTopologySuppressionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -129,8 +124,8 @@ func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource
     d.client = client
 }
 
-func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data AiConversationDataSourceModel
+func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data NetworkTopologySuppressionDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -144,7 +139,7 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_conversation.",
+            "Exactly one of `id` or `name` must be set to look up a network_topology_suppression.",
         )
         return
     }
@@ -156,30 +151,29 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "title": true,
-        "lastMessageAt": true,
-        "llmProviderId": true,
-        "permissionMode": true,
-        "pageContext": true,
+        "nodeKey": true,
+        "nodeName": true,
+        "reason": true,
         "createdByUserId": true,
+        "deletedByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/ai-conversation/" + data.Id.ValueString() + "/get-item"
+        readPath := "/network-topology-suppression/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_topology_suppression, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_topology_suppression found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_topology_suppression: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -196,28 +190,28 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/ai-conversation/get-list", listBody)
+        httpResp, err := d.client.Post(ctx, "/network-topology-suppression/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_topology_suppression, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_topology_suppression: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_topology_suppression found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_conversation matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_topology_suppression matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for ai_conversation.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_topology_suppression.")
             return
         }
         item = first
@@ -337,90 +331,56 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["title"].(map[string]interface{}); ok {
+    if obj, ok := item["nodeKey"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Title = types.StringValue(val)
+            data.NodeKey = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Title = types.StringValue(val)
+            data.NodeKey = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Title = types.StringValue(fmt.Sprintf("%v", val))
+            data.NodeKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Title = types.StringValue(string(jsonBytes))
+            data.NodeKey = types.StringValue(string(jsonBytes))
         } else {
-            data.Title = types.StringNull()
+            data.NodeKey = types.StringNull()
         }
-    } else if val, ok := item["title"].(string); ok {
-        data.Title = types.StringValue(val)
+    } else if val, ok := item["nodeKey"].(string); ok {
+        data.NodeKey = types.StringValue(val)
     } else {
-        data.Title = types.StringNull()
+        data.NodeKey = types.StringNull()
     }
-    if obj, ok := item["lastMessageAt"].(map[string]interface{}); ok {
+    if obj, ok := item["nodeName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastMessageAt = types.StringValue(val)
+            data.NodeName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastMessageAt = types.StringValue(val)
+            data.NodeName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastMessageAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.NodeName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastMessageAt = types.StringValue(string(jsonBytes))
+            data.NodeName = types.StringValue(string(jsonBytes))
         } else {
-            data.LastMessageAt = types.StringNull()
+            data.NodeName = types.StringNull()
         }
-    } else if val, ok := item["lastMessageAt"].(string); ok {
-        data.LastMessageAt = types.StringValue(val)
+    } else if val, ok := item["nodeName"].(string); ok {
+        data.NodeName = types.StringValue(val)
     } else {
-        data.LastMessageAt = types.StringNull()
+        data.NodeName = types.StringNull()
     }
-    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
+    if obj, ok := item["reason"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderId = types.StringValue(val)
+            data.Reason = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LlmProviderId = types.StringValue(val)
+            data.Reason = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+            data.Reason = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LlmProviderId = types.StringValue(string(jsonBytes))
+            data.Reason = types.StringValue(string(jsonBytes))
         } else {
-            data.LlmProviderId = types.StringNull()
+            data.Reason = types.StringNull()
         }
-    } else if val, ok := item["llmProviderId"].(string); ok {
-        data.LlmProviderId = types.StringValue(val)
+    } else if val, ok := item["reason"].(string); ok {
+        data.Reason = types.StringValue(val)
     } else {
-        data.LlmProviderId = types.StringNull()
-    }
-    if obj, ok := item["permissionMode"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PermissionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PermissionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PermissionMode = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PermissionMode = types.StringValue(string(jsonBytes))
-        } else {
-            data.PermissionMode = types.StringNull()
-        }
-    } else if val, ok := item["permissionMode"].(string); ok {
-        data.PermissionMode = types.StringValue(val)
-    } else {
-        data.PermissionMode = types.StringNull()
-    }
-    if obj, ok := item["pageContext"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PageContext = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PageContext = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PageContext = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PageContext = types.StringValue(string(jsonBytes))
-        } else {
-            data.PageContext = types.StringNull()
-        }
-    } else if val, ok := item["pageContext"].(string); ok {
-        data.PageContext = types.StringValue(val)
-    } else {
-        data.PageContext = types.StringNull()
+        data.Reason = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -438,6 +398,23 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeletedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeletedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["deletedByUserId"].(string); ok {
+        data.DeletedByUserId = types.StringValue(val)
+    } else {
+        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

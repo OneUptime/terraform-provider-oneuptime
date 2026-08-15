@@ -1,24 +1,24 @@
 ---
-page_title: "oneuptime_telemetry_entity Data Source - oneuptime"
-subcategory: "Telemetry & Dashboards"
+page_title: "oneuptime_inventory_item Data Source - oneuptime"
+subcategory: "Other"
 description: |-
-  Catalog of OpenTelemetry entities (service, host, k8s.pod, container, ...) discovered from telemetry resource attributes.
+  Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand.
 ---
 
-# oneuptime_telemetry_entity (Data Source)
+# oneuptime_inventory_item (Data Source)
 
-Catalog of OpenTelemetry entities (service, host, k8s.pod, container, ...) discovered from telemetry resource attributes. Look up by `id` or by `name` (must match exactly one item).
+Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand. Look up by `id` or by `name` (must match exactly one item).
 
 ## Example Usage
 
 Look up by `name` (must match exactly one item) or by `id`:
 
 ```terraform
-data "oneuptime_telemetry_entity" "by_name" {
-  name = "example-telemetry_entity"
+data "oneuptime_inventory_item" "by_name" {
+  name = "example-inventory_item"
 }
 
-data "oneuptime_telemetry_entity" "by_id" {
+data "oneuptime_inventory_item" "by_id" {
   id = "123e4567-e89b-12d3-a456-426614174000"
 }
 ```
@@ -34,7 +34,7 @@ data "oneuptime_telemetry_entity" "by_id" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `entity_type` (String) The OpenTelemetry entity type (service, host, k8s.pod, container, ...)... Computed.
 - `entity_key` (String) Stable identity hash derived from the entity's identifying attributes (matches the keys stamped into signal entityKeys columns)... Computed.
-- `display_name` (String) Human-readable name derived for the entity explorer UI... Computed.
+- `display_name` (String) Human-readable name shown in the Inventory list... Computed.
 - `source` (String) How this row came to exist: discovered from telemetry, mirrored from a OneUptime inventory table, or created manually by a user. Determines whether stale-entity pruning applies... Computed.
 - `description` (String) Free-text description. Primarily for manually created entities, where there are no telemetry attributes to explain what the thing is... Computed.
 - `identifying_attributes` (String) The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key... Computed.
@@ -44,5 +44,9 @@ data "oneuptime_telemetry_entity" "by_id" {
 - `resource_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `first_seen_at` (String) A date time object.. Computed.
 - `last_seen_at` (String) A date time object.. Computed.
+- `is_archived` (Bool) Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry... Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `custom_fields` (String) Custom fields on this item... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

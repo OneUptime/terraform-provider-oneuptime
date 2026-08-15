@@ -44,6 +44,7 @@ type AiConversationMessageDataSourceModel struct {
     Widgets types.String `tfsdk:"widgets"`
     ToolActions types.String `tfsdk:"tool_actions"`
     ErrorMessage types.String `tfsdk:"error_message"`
+    UserFeedback types.String `tfsdk:"user_feedback"`
 }
 
 func (d *AiConversationMessageDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -125,6 +126,10 @@ func (d *AiConversationMessageDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Error message if this message failed to generate..",
                 Computed: true,
             },
+            "user_feedback": schema.StringAttribute{
+                MarkdownDescription: "Thumbs feedback the user left on this assistant message: Up or Down..",
+                Computed: true,
+            },
         },
     }
 }
@@ -186,6 +191,7 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
         "widgets": true,
         "toolActions": true,
         "errorMessage": true,
+        "userFeedback": true,
         "_id": true,
     }
 
@@ -530,6 +536,23 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
         data.ErrorMessage = types.StringValue(val)
     } else {
         data.ErrorMessage = types.StringNull()
+    }
+    if obj, ok := item["userFeedback"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UserFeedback = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UserFeedback = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UserFeedback = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UserFeedback = types.StringValue(string(jsonBytes))
+        } else {
+            data.UserFeedback = types.StringNull()
+        }
+    } else if val, ok := item["userFeedback"].(string); ok {
+        data.UserFeedback = types.StringValue(val)
+    } else {
+        data.UserFeedback = types.StringNull()
     }
 
     // Write logs using the tflog package

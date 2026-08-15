@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &TelemetryEntityRelationshipDataSource{}
+var _ datasource.DataSource = &InventoryItemDataSource{}
 
-func NewTelemetryEntityRelationshipDataSource() datasource.DataSource {
-    return &TelemetryEntityRelationshipDataSource{}
+func NewInventoryItemDataSource() datasource.DataSource {
+    return &InventoryItemDataSource{}
 }
 
-// TelemetryEntityRelationshipDataSource defines the data source implementation.
-type TelemetryEntityRelationshipDataSource struct {
+// InventoryItemDataSource defines the data source implementation.
+type InventoryItemDataSource struct {
     client *Client
 }
 
-// TelemetryEntityRelationshipDataSourceModel describes the data source data model.
-type TelemetryEntityRelationshipDataSourceModel struct {
+// InventoryItemDataSourceModel describes the data source data model.
+type InventoryItemDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,26 +34,33 @@ type TelemetryEntityRelationshipDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    FromEntityKey types.String `tfsdk:"from_entity_key"`
-    ToEntityKey types.String `tfsdk:"to_entity_key"`
-    RelationshipType types.String `tfsdk:"relationship_type"`
+    EntityType types.String `tfsdk:"entity_type"`
+    EntityKey types.String `tfsdk:"entity_key"`
+    DisplayName types.String `tfsdk:"display_name"`
     Source types.String `tfsdk:"source"`
+    Description types.String `tfsdk:"description"`
+    IdentifyingAttributes types.String `tfsdk:"identifying_attributes"`
+    DescriptiveAttributes types.String `tfsdk:"descriptive_attributes"`
+    Labels types.String `tfsdk:"labels"`
+    ResourceType types.String `tfsdk:"resource_type"`
+    ResourceId types.String `tfsdk:"resource_id"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
-    CallCount types.Number `tfsdk:"call_count"`
-    ErrorCount types.Number `tfsdk:"error_count"`
-    AvgDurationMs types.Number `tfsdk:"avg_duration_ms"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
+    CustomFields types.String `tfsdk:"custom_fields"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *TelemetryEntityRelationshipDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_telemetry_entity_relationship"
+func (d *InventoryItemDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_inventory_item"
 }
 
-func (d *TelemetryEntityRelationshipDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *InventoryItemDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Directed relationships between telemetry entities (runs-on, member-of, hosted-on, part-of, instance-of), inferred from resource co-occurrence. Look up an existing telemetry_entity_relationship by `id` or by `name`.",
+        MarkdownDescription: "Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand. Look up an existing inventory_item by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -86,20 +93,44 @@ func (d *TelemetryEntityRelationshipDataSource) Schema(ctx context.Context, req 
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "from_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Stable identity key of the source entity of this edge..",
+            "entity_type": schema.StringAttribute{
+                MarkdownDescription: "The OpenTelemetry entity type (service, host, k8s.pod, container, ...)..",
                 Computed: true,
             },
-            "to_entity_key": schema.StringAttribute{
-                MarkdownDescription: "Stable identity key of the target entity of this edge..",
+            "entity_key": schema.StringAttribute{
+                MarkdownDescription: "Stable identity hash derived from the entity's identifying attributes (matches the keys stamped into signal entityKeys columns)..",
                 Computed: true,
             },
-            "relationship_type": schema.StringAttribute{
-                MarkdownDescription: "The inferred relationship (runs-on, member-of, hosted-on, part-of, instance-of)..",
+            "display_name": schema.StringAttribute{
+                MarkdownDescription: "Human-readable name shown in the Inventory list..",
                 Computed: true,
             },
             "source": schema.StringAttribute{
-                MarkdownDescription: "Whether this edge was derived from telemetry or drawn manually by a user. Determines whether stale-edge pruning applies..",
+                MarkdownDescription: "How this row came to exist: discovered from telemetry, mirrored from a OneUptime inventory table, or created manually by a user. Determines whether stale-entity pruning applies..",
+                Computed: true,
+            },
+            "description": schema.StringAttribute{
+                MarkdownDescription: "Free-text description. Primarily for manually created entities, where there are no telemetry attributes to explain what the thing is..",
+                Computed: true,
+            },
+            "identifying_attributes": schema.StringAttribute{
+                MarkdownDescription: "The immutable identifying attribute set (the entity's identity). Descriptive attributes are deliberately excluded so they can change without changing the entity key..",
+                Computed: true,
+            },
+            "descriptive_attributes": schema.StringAttribute{
+                MarkdownDescription: "Mutable descriptive metadata (image tag, version, IP, ...) merged last-writer-wins. Never part of the identity..",
+                Computed: true,
+            },
+            "labels": schema.StringAttribute{
+                MarkdownDescription: "Labels observed on this entity's telemetry (e.g. promoted from oneuptime.label.* resource attributes), merged as a set union. Simple string array in v1 — a relation to the Label table is a follow-up..",
+                Computed: true,
+            },
+            "resource_type": schema.StringAttribute{
+                MarkdownDescription: "Polymorphic pointer type to a rich typed row, if one exists (Service / Host / DockerHost / KubernetesCluster)..",
+                Computed: true,
+            },
+            "resource_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "first_seen_at": schema.StringAttribute{
@@ -110,16 +141,20 @@ func (d *TelemetryEntityRelationshipDataSource) Schema(ctx context.Context, req 
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
-            "call_count": schema.NumberAttribute{
-                MarkdownDescription: "Calls observed over this edge in the most recent computation window (depends-on edges only)..",
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry..",
                 Computed: true,
             },
-            "error_count": schema.NumberAttribute{
-                MarkdownDescription: "Errored calls observed over this edge in the most recent computation window (depends-on edges only)..",
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
-            "avg_duration_ms": schema.NumberAttribute{
-                MarkdownDescription: "Average call duration in milliseconds over this edge in the most recent computation window (depends-on edges only)..",
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "custom_fields": schema.StringAttribute{
+                MarkdownDescription: "Custom fields on this item..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -134,7 +169,7 @@ func (d *TelemetryEntityRelationshipDataSource) Schema(ctx context.Context, req 
     }
 }
 
-func (d *TelemetryEntityRelationshipDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *InventoryItemDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -154,8 +189,8 @@ func (d *TelemetryEntityRelationshipDataSource) Configure(ctx context.Context, r
     d.client = client
 }
 
-func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data TelemetryEntityRelationshipDataSourceModel
+func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data InventoryItemDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -169,7 +204,7 @@ func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req da
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a telemetry_entity_relationship.",
+            "Exactly one of `id` or `name` must be set to look up a inventory_item.",
         )
         return
     }
@@ -181,15 +216,22 @@ func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req da
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "fromEntityKey": true,
-        "toEntityKey": true,
-        "relationshipType": true,
+        "entityType": true,
+        "entityKey": true,
+        "displayName": true,
         "source": true,
+        "description": true,
+        "identifyingAttributes": true,
+        "descriptiveAttributes": true,
+        "labels": true,
+        "resourceType": true,
+        "resourceId": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
-        "callCount": true,
-        "errorCount": true,
-        "avgDurationMs": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
+        "customFields": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -197,19 +239,19 @@ func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req da
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/telemetry-entity-relationship/" + data.Id.ValueString() + "/get-item"
+        readPath := "/inventory-item/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_entity_relationship, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read inventory_item, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No telemetry_entity_relationship found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No inventory_item found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read telemetry_entity_relationship: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read inventory_item: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -226,28 +268,28 @@ func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req da
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/telemetry-entity-relationship/get-list", listBody)
+        httpResp, err := d.client.Post(ctx, "/inventory-item/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list telemetry_entity_relationship, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list inventory_item, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list telemetry_entity_relationship: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list inventory_item: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No telemetry_entity_relationship found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No inventory_item found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one telemetry_entity_relationship matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one inventory_item matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for telemetry_entity_relationship.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for inventory_item.")
             return
         }
         item = first
@@ -367,56 +409,56 @@ func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req da
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["fromEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := item["entityType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.FromEntityKey = types.StringValue(val)
+            data.EntityType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.FromEntityKey = types.StringValue(val)
+            data.EntityType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.FromEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.EntityType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.FromEntityKey = types.StringValue(string(jsonBytes))
+            data.EntityType = types.StringValue(string(jsonBytes))
         } else {
-            data.FromEntityKey = types.StringNull()
+            data.EntityType = types.StringNull()
         }
-    } else if val, ok := item["fromEntityKey"].(string); ok {
-        data.FromEntityKey = types.StringValue(val)
+    } else if val, ok := item["entityType"].(string); ok {
+        data.EntityType = types.StringValue(val)
     } else {
-        data.FromEntityKey = types.StringNull()
+        data.EntityType = types.StringNull()
     }
-    if obj, ok := item["toEntityKey"].(map[string]interface{}); ok {
+    if obj, ok := item["entityKey"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ToEntityKey = types.StringValue(val)
+            data.EntityKey = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.ToEntityKey = types.StringValue(val)
+            data.EntityKey = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.ToEntityKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.EntityKey = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ToEntityKey = types.StringValue(string(jsonBytes))
+            data.EntityKey = types.StringValue(string(jsonBytes))
         } else {
-            data.ToEntityKey = types.StringNull()
+            data.EntityKey = types.StringNull()
         }
-    } else if val, ok := item["toEntityKey"].(string); ok {
-        data.ToEntityKey = types.StringValue(val)
+    } else if val, ok := item["entityKey"].(string); ok {
+        data.EntityKey = types.StringValue(val)
     } else {
-        data.ToEntityKey = types.StringNull()
+        data.EntityKey = types.StringNull()
     }
-    if obj, ok := item["relationshipType"].(map[string]interface{}); ok {
+    if obj, ok := item["displayName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RelationshipType = types.StringValue(val)
+            data.DisplayName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.RelationshipType = types.StringValue(val)
+            data.DisplayName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.RelationshipType = types.StringValue(fmt.Sprintf("%v", val))
+            data.DisplayName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.RelationshipType = types.StringValue(string(jsonBytes))
+            data.DisplayName = types.StringValue(string(jsonBytes))
         } else {
-            data.RelationshipType = types.StringNull()
+            data.DisplayName = types.StringNull()
         }
-    } else if val, ok := item["relationshipType"].(string); ok {
-        data.RelationshipType = types.StringValue(val)
+    } else if val, ok := item["displayName"].(string); ok {
+        data.DisplayName = types.StringValue(val)
     } else {
-        data.RelationshipType = types.StringNull()
+        data.DisplayName = types.StringNull()
     }
     if obj, ok := item["source"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -434,6 +476,108 @@ func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req da
         data.Source = types.StringValue(val)
     } else {
         data.Source = types.StringNull()
+    }
+    if obj, ok := item["description"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if val, ok := item["description"].(string); ok {
+        data.Description = types.StringValue(val)
+    } else {
+        data.Description = types.StringNull()
+    }
+    if obj, ok := item["identifyingAttributes"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IdentifyingAttributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IdentifyingAttributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IdentifyingAttributes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IdentifyingAttributes = types.StringValue(string(jsonBytes))
+        } else {
+            data.IdentifyingAttributes = types.StringNull()
+        }
+    } else if val, ok := item["identifyingAttributes"].(string); ok {
+        data.IdentifyingAttributes = types.StringValue(val)
+    } else {
+        data.IdentifyingAttributes = types.StringNull()
+    }
+    if obj, ok := item["descriptiveAttributes"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DescriptiveAttributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DescriptiveAttributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DescriptiveAttributes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DescriptiveAttributes = types.StringValue(string(jsonBytes))
+        } else {
+            data.DescriptiveAttributes = types.StringNull()
+        }
+    } else if val, ok := item["descriptiveAttributes"].(string); ok {
+        data.DescriptiveAttributes = types.StringValue(val)
+    } else {
+        data.DescriptiveAttributes = types.StringNull()
+    }
+    if obj, ok := item["labels"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Labels = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Labels = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Labels = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Labels = types.StringValue(string(jsonBytes))
+        } else {
+            data.Labels = types.StringNull()
+        }
+    } else if val, ok := item["labels"].(string); ok {
+        data.Labels = types.StringValue(val)
+    } else {
+        data.Labels = types.StringNull()
+    }
+    if obj, ok := item["resourceType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceType = types.StringNull()
+        }
+    } else if val, ok := item["resourceType"].(string); ok {
+        data.ResourceType = types.StringValue(val)
+    } else {
+        data.ResourceType = types.StringNull()
+    }
+    if obj, ok := item["resourceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ResourceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceId = types.StringNull()
+        }
+    } else if val, ok := item["resourceId"].(string); ok {
+        data.ResourceId = types.StringValue(val)
+    } else {
+        data.ResourceId = types.StringNull()
     }
     if obj, ok := item["firstSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -469,38 +613,61 @@ func (d *TelemetryEntityRelationshipDataSource) Read(ctx context.Context, req da
     } else {
         data.LastSeenAt = types.StringNull()
     }
-    if val, ok := item["callCount"].(float64); ok {
-        data.CallCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["callCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.CallCount = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.CallCount = types.NumberNull()
-        }
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
     } else {
-        data.CallCount = types.NumberNull()
+        data.IsArchived = types.BoolNull()
     }
-    if val, ok := item["errorCount"].(float64); ok {
-        data.ErrorCount = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["errorCount"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.ErrorCount = types.NumberValue(big.NewFloat(val))
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
         } else {
-            data.ErrorCount = types.NumberNull()
+            data.ArchivedAt = types.StringNull()
         }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
     } else {
-        data.ErrorCount = types.NumberNull()
+        data.ArchivedAt = types.StringNull()
     }
-    if val, ok := item["avgDurationMs"].(float64); ok {
-        data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["avgDurationMs"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.AvgDurationMs = types.NumberValue(big.NewFloat(val))
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
         } else {
-            data.AvgDurationMs = types.NumberNull()
+            data.ArchivedByUserId = types.StringNull()
         }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
     } else {
-        data.AvgDurationMs = types.NumberNull()
+        data.ArchivedByUserId = types.StringNull()
+    }
+    if obj, ok := item["customFields"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomFields = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomFields = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomFields = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFields = types.StringNull()
+        }
+    } else if val, ok := item["customFields"].(string); ok {
+        data.CustomFields = types.StringValue(val)
+    } else {
+        data.CustomFields = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

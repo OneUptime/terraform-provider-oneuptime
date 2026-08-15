@@ -6,6 +6,8 @@ import (
     "fmt"
     "net/http"
     "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -14,19 +16,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &AiConversationDataSource{}
+var _ datasource.DataSource = &NetworkDeviceLinkRuleDataSource{}
 
-func NewAiConversationDataSource() datasource.DataSource {
-    return &AiConversationDataSource{}
+func NewNetworkDeviceLinkRuleDataSource() datasource.DataSource {
+    return &NetworkDeviceLinkRuleDataSource{}
 }
 
-// AiConversationDataSource defines the data source implementation.
-type AiConversationDataSource struct {
+// NetworkDeviceLinkRuleDataSource defines the data source implementation.
+type NetworkDeviceLinkRuleDataSource struct {
     client *Client
 }
 
-// AiConversationDataSourceModel describes the data source data model.
-type AiConversationDataSourceModel struct {
+// NetworkDeviceLinkRuleDataSourceModel describes the data source data model.
+type NetworkDeviceLinkRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,21 +36,21 @@ type AiConversationDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Title types.String `tfsdk:"title"`
-    LastMessageAt types.String `tfsdk:"last_message_at"`
-    LlmProviderId types.String `tfsdk:"llm_provider_id"`
-    PermissionMode types.String `tfsdk:"permission_mode"`
-    PageContext types.String `tfsdk:"page_context"`
+    Description types.String `tfsdk:"description"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    ChildDeviceLabels types.Set `tfsdk:"child_device_labels"`
+    ParentDeviceLabels types.Set `tfsdk:"parent_device_labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *AiConversationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_ai_conversation"
+func (d *NetworkDeviceLinkRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_network_device_link_rule"
 }
 
-func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *NetworkDeviceLinkRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts). Look up an existing ai_conversation by `id` or by `name`.",
+        MarkdownDescription: "Draw uplinks on the network topology map from labels: every device carrying the child labels is linked to the single device carrying the parent labels. Look up an existing network_device_link_rule by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -81,27 +83,29 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the conversation. Generated from the first message..",
+            "description": schema.StringAttribute{
+                MarkdownDescription: "Description of this rule.",
                 Computed: true,
             },
-            "last_message_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this rule draws links. Disable to take its edges off the map without deleting the rule..",
                 Computed: true,
             },
-            "llm_provider_id": schema.StringAttribute{
+            "child_device_labels": schema.SetAttribute{
+                MarkdownDescription: "Devices carrying ALL of these labels each get one uplink drawn to the parent device. Empty matches nothing — a rule that linked every device in the project is never what anyone meant..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "parent_device_labels": schema.SetAttribute{
+                MarkdownDescription: "The device carrying ALL of these labels is what the children uplink to. It has to identify exactly one device: match none and the rule draws nothing, match several and the rule is ambiguous and also draws nothing..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "permission_mode": schema.StringAttribute{
-                MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly..",
-                Computed: true,
-            },
-            "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context..",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
+            "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -109,7 +113,7 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
     }
 }
 
-func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *NetworkDeviceLinkRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -129,8 +133,8 @@ func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource
     d.client = client
 }
 
-func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data AiConversationDataSourceModel
+func (d *NetworkDeviceLinkRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data NetworkDeviceLinkRuleDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -144,7 +148,7 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_conversation.",
+            "Exactly one of `id` or `name` must be set to look up a network_device_link_rule.",
         )
         return
     }
@@ -156,30 +160,30 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "title": true,
-        "lastMessageAt": true,
-        "llmProviderId": true,
-        "permissionMode": true,
-        "pageContext": true,
+        "description": true,
+        "isEnabled": true,
+        "childDeviceLabels": true,
+        "parentDeviceLabels": true,
         "createdByUserId": true,
+        "deletedByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/ai-conversation/" + data.Id.ValueString() + "/get-item"
+        readPath := "/network-device-link-rule/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_device_link_rule, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_link_rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_device_link_rule: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -196,28 +200,28 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/ai-conversation/get-list", listBody)
+        httpResp, err := d.client.Post(ctx, "/network-device-link-rule/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_device_link_rule, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_device_link_rule: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_link_rule found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_conversation matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_device_link_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for ai_conversation.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_device_link_rule.")
             return
         }
         item = first
@@ -337,90 +341,75 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["title"].(map[string]interface{}); ok {
+    if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Title = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Title = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Title = types.StringValue(fmt.Sprintf("%v", val))
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Title = types.StringValue(string(jsonBytes))
+            data.Description = types.StringValue(string(jsonBytes))
         } else {
-            data.Title = types.StringNull()
+            data.Description = types.StringNull()
         }
-    } else if val, ok := item["title"].(string); ok {
-        data.Title = types.StringValue(val)
+    } else if val, ok := item["description"].(string); ok {
+        data.Description = types.StringValue(val)
     } else {
-        data.Title = types.StringNull()
+        data.Description = types.StringNull()
     }
-    if obj, ok := item["lastMessageAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastMessageAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LastMessageAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LastMessageAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastMessageAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.LastMessageAt = types.StringNull()
-        }
-    } else if val, ok := item["lastMessageAt"].(string); ok {
-        data.LastMessageAt = types.StringValue(val)
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
     } else {
-        data.LastMessageAt = types.StringNull()
+        data.IsEnabled = types.BoolNull()
     }
-    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LlmProviderId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LlmProviderId = types.StringValue(string(jsonBytes))
-        } else {
-            data.LlmProviderId = types.StringNull()
+    if val, ok := item["childDeviceLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
         }
-    } else if val, ok := item["llmProviderId"].(string); ok {
-        data.LlmProviderId = types.StringValue(val)
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.ChildDeviceLabels = types.SetValueMust(types.StringType, setItems)
     } else {
-        data.LlmProviderId = types.StringNull()
+        data.ChildDeviceLabels = types.SetNull(types.StringType)
     }
-    if obj, ok := item["permissionMode"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PermissionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PermissionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PermissionMode = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PermissionMode = types.StringValue(string(jsonBytes))
-        } else {
-            data.PermissionMode = types.StringNull()
+    if val, ok := item["parentDeviceLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
         }
-    } else if val, ok := item["permissionMode"].(string); ok {
-        data.PermissionMode = types.StringValue(val)
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.ParentDeviceLabels = types.SetValueMust(types.StringType, setItems)
     } else {
-        data.PermissionMode = types.StringNull()
-    }
-    if obj, ok := item["pageContext"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PageContext = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PageContext = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PageContext = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PageContext = types.StringValue(string(jsonBytes))
-        } else {
-            data.PageContext = types.StringNull()
-        }
-    } else if val, ok := item["pageContext"].(string); ok {
-        data.PageContext = types.StringValue(val)
-    } else {
-        data.PageContext = types.StringNull()
+        data.ParentDeviceLabels = types.SetNull(types.StringType)
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -438,6 +427,23 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeletedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeletedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["deletedByUserId"].(string); ok {
+        data.DeletedByUserId = types.StringValue(val)
+    } else {
+        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &AiConversationDataSource{}
+var _ datasource.DataSource = &NetworkDeviceLinkDataSource{}
 
-func NewAiConversationDataSource() datasource.DataSource {
-    return &AiConversationDataSource{}
+func NewNetworkDeviceLinkDataSource() datasource.DataSource {
+    return &NetworkDeviceLinkDataSource{}
 }
 
-// AiConversationDataSource defines the data source implementation.
-type AiConversationDataSource struct {
+// NetworkDeviceLinkDataSource defines the data source implementation.
+type NetworkDeviceLinkDataSource struct {
     client *Client
 }
 
-// AiConversationDataSourceModel describes the data source data model.
-type AiConversationDataSourceModel struct {
+// NetworkDeviceLinkDataSourceModel describes the data source data model.
+type NetworkDeviceLinkDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,21 +34,22 @@ type AiConversationDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Title types.String `tfsdk:"title"`
-    LastMessageAt types.String `tfsdk:"last_message_at"`
-    LlmProviderId types.String `tfsdk:"llm_provider_id"`
-    PermissionMode types.String `tfsdk:"permission_mode"`
-    PageContext types.String `tfsdk:"page_context"`
+    FromDeviceId types.String `tfsdk:"from_device_id"`
+    ToDeviceId types.String `tfsdk:"to_device_id"`
+    FromPortName types.String `tfsdk:"from_port_name"`
+    ToPortName types.String `tfsdk:"to_port_name"`
+    MonitorId types.String `tfsdk:"monitor_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *AiConversationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_ai_conversation"
+func (d *NetworkDeviceLinkDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_network_device_link"
 }
 
-func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *NetworkDeviceLinkDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts). Look up an existing ai_conversation by `id` or by `name`.",
+        MarkdownDescription: "Operator-declared links between two Network Devices, for cables LLDP and CDP cannot see: a device with discovery disabled, a device that does not speak either protocol, or one monitored by ping alone. Drawn on the topology map alongside discovered links, and merged with a discovered link between the same pair rather than duplicating it. Look up an existing network_device_link by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -81,27 +82,31 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the conversation. Generated from the first message..",
-                Computed: true,
-            },
-            "last_message_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "llm_provider_id": schema.StringAttribute{
+            "from_device_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "permission_mode": schema.StringAttribute{
-                MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly..",
+            "to_device_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context..",
+            "from_port_name": schema.StringAttribute{
+                MarkdownDescription: "Port on the starting device, as free text. Nothing resolves it to an interface row — a hand-drawn link usually exists precisely because the port is not discoverable..",
+                Computed: true,
+            },
+            "to_port_name": schema.StringAttribute{
+                MarkdownDescription: "Port on the ending device, as free text..",
+                Computed: true,
+            },
+            "monitor_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -109,7 +114,7 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
     }
 }
 
-func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *NetworkDeviceLinkDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -129,8 +134,8 @@ func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource
     d.client = client
 }
 
-func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data AiConversationDataSourceModel
+func (d *NetworkDeviceLinkDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data NetworkDeviceLinkDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -144,7 +149,7 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_conversation.",
+            "Exactly one of `id` or `name` must be set to look up a network_device_link.",
         )
         return
     }
@@ -156,30 +161,31 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "title": true,
-        "lastMessageAt": true,
-        "llmProviderId": true,
-        "permissionMode": true,
-        "pageContext": true,
+        "fromDeviceId": true,
+        "toDeviceId": true,
+        "fromPortName": true,
+        "toPortName": true,
+        "monitorId": true,
         "createdByUserId": true,
+        "deletedByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/ai-conversation/" + data.Id.ValueString() + "/get-item"
+        readPath := "/network-device-link/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_device_link, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_link found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_device_link: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -196,28 +202,28 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/ai-conversation/get-list", listBody)
+        httpResp, err := d.client.Post(ctx, "/network-device-link/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_device_link, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_device_link: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_link found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_conversation matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_device_link matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for ai_conversation.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_device_link.")
             return
         }
         item = first
@@ -337,90 +343,90 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["title"].(map[string]interface{}); ok {
+    if obj, ok := item["fromDeviceId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Title = types.StringValue(val)
+            data.FromDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Title = types.StringValue(val)
+            data.FromDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Title = types.StringValue(fmt.Sprintf("%v", val))
+            data.FromDeviceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Title = types.StringValue(string(jsonBytes))
+            data.FromDeviceId = types.StringValue(string(jsonBytes))
         } else {
-            data.Title = types.StringNull()
+            data.FromDeviceId = types.StringNull()
         }
-    } else if val, ok := item["title"].(string); ok {
-        data.Title = types.StringValue(val)
+    } else if val, ok := item["fromDeviceId"].(string); ok {
+        data.FromDeviceId = types.StringValue(val)
     } else {
-        data.Title = types.StringNull()
+        data.FromDeviceId = types.StringNull()
     }
-    if obj, ok := item["lastMessageAt"].(map[string]interface{}); ok {
+    if obj, ok := item["toDeviceId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastMessageAt = types.StringValue(val)
+            data.ToDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastMessageAt = types.StringValue(val)
+            data.ToDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastMessageAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.ToDeviceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastMessageAt = types.StringValue(string(jsonBytes))
+            data.ToDeviceId = types.StringValue(string(jsonBytes))
         } else {
-            data.LastMessageAt = types.StringNull()
+            data.ToDeviceId = types.StringNull()
         }
-    } else if val, ok := item["lastMessageAt"].(string); ok {
-        data.LastMessageAt = types.StringValue(val)
+    } else if val, ok := item["toDeviceId"].(string); ok {
+        data.ToDeviceId = types.StringValue(val)
     } else {
-        data.LastMessageAt = types.StringNull()
+        data.ToDeviceId = types.StringNull()
     }
-    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
+    if obj, ok := item["fromPortName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderId = types.StringValue(val)
+            data.FromPortName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LlmProviderId = types.StringValue(val)
+            data.FromPortName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
+            data.FromPortName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LlmProviderId = types.StringValue(string(jsonBytes))
+            data.FromPortName = types.StringValue(string(jsonBytes))
         } else {
-            data.LlmProviderId = types.StringNull()
+            data.FromPortName = types.StringNull()
         }
-    } else if val, ok := item["llmProviderId"].(string); ok {
-        data.LlmProviderId = types.StringValue(val)
+    } else if val, ok := item["fromPortName"].(string); ok {
+        data.FromPortName = types.StringValue(val)
     } else {
-        data.LlmProviderId = types.StringNull()
+        data.FromPortName = types.StringNull()
     }
-    if obj, ok := item["permissionMode"].(map[string]interface{}); ok {
+    if obj, ok := item["toPortName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PermissionMode = types.StringValue(val)
+            data.ToPortName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.PermissionMode = types.StringValue(val)
+            data.ToPortName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.PermissionMode = types.StringValue(fmt.Sprintf("%v", val))
+            data.ToPortName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PermissionMode = types.StringValue(string(jsonBytes))
+            data.ToPortName = types.StringValue(string(jsonBytes))
         } else {
-            data.PermissionMode = types.StringNull()
+            data.ToPortName = types.StringNull()
         }
-    } else if val, ok := item["permissionMode"].(string); ok {
-        data.PermissionMode = types.StringValue(val)
+    } else if val, ok := item["toPortName"].(string); ok {
+        data.ToPortName = types.StringValue(val)
     } else {
-        data.PermissionMode = types.StringNull()
+        data.ToPortName = types.StringNull()
     }
-    if obj, ok := item["pageContext"].(map[string]interface{}); ok {
+    if obj, ok := item["monitorId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PageContext = types.StringValue(val)
+            data.MonitorId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.PageContext = types.StringValue(val)
+            data.MonitorId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.PageContext = types.StringValue(fmt.Sprintf("%v", val))
+            data.MonitorId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PageContext = types.StringValue(string(jsonBytes))
+            data.MonitorId = types.StringValue(string(jsonBytes))
         } else {
-            data.PageContext = types.StringNull()
+            data.MonitorId = types.StringNull()
         }
-    } else if val, ok := item["pageContext"].(string); ok {
-        data.PageContext = types.StringValue(val)
+    } else if val, ok := item["monitorId"].(string); ok {
+        data.MonitorId = types.StringValue(val)
     } else {
-        data.PageContext = types.StringNull()
+        data.MonitorId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -438,6 +444,23 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeletedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeletedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["deletedByUserId"].(string); ok {
+        data.DeletedByUserId = types.StringValue(val)
+    } else {
+        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

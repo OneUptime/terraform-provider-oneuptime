@@ -14,26 +14,28 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &TelemetryEntityResource{}
-var _ resource.ResourceWithImportState = &TelemetryEntityResource{}
+var _ resource.Resource = &InventoryItemResource{}
+var _ resource.ResourceWithImportState = &InventoryItemResource{}
 
-func NewTelemetryEntityResource() resource.Resource {
-    return &TelemetryEntityResource{}
+func NewInventoryItemResource() resource.Resource {
+    return &InventoryItemResource{}
 }
 
-// TelemetryEntityResource defines the resource implementation.
-type TelemetryEntityResource struct {
+// InventoryItemResource defines the resource implementation.
+type InventoryItemResource struct {
     client *Client
 }
 
-// TelemetryEntityResourceModel describes the resource data model.
-type TelemetryEntityResourceModel struct {
+// InventoryItemResourceModel describes the resource data model.
+type InventoryItemResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     EntityType types.String `tfsdk:"entity_type"`
@@ -48,21 +50,25 @@ type TelemetryEntityResourceModel struct {
     ResourceId types.String `tfsdk:"resource_id"`
     FirstSeenAt RFC3339Value `tfsdk:"first_seen_at"`
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    ArchivedAt RFC3339Value `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
 
-func (r *TelemetryEntityResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_telemetry_entity"
+func (r *InventoryItemResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_inventory_item"
 }
 
-func (r *TelemetryEntityResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *InventoryItemResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Catalog of OpenTelemetry entities (service, host, k8s.pod, container, ...) discovered from telemetry resource attributes.",
+        MarkdownDescription: "Catalog of everything OneUptime knows about your estate (service, host, k8s.pod, container, network device, ...), discovered from telemetry resource attributes, mirrored from inventory tables, or registered by hand.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -94,7 +100,7 @@ func (r *TelemetryEntityResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "display_name": schema.StringAttribute{
-                MarkdownDescription: "Human-readable name derived for the entity explorer UI..",
+                MarkdownDescription: "Human-readable name shown in the Inventory list..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -186,6 +192,27 @@ func (r *TelemetryEntityResource) Schema(ctx context.Context, req resource.Schem
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "custom_fields": schema.StringAttribute{
+                MarkdownDescription: "Custom fields on this item..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
@@ -222,11 +249,20 @@ func (r *TelemetryEntityResource) Schema(ctx context.Context, req resource.Schem
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
         },
     }
 }
 
-func (r *TelemetryEntityResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *InventoryItemResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -247,8 +283,8 @@ func (r *TelemetryEntityResource) Configure(ctx context.Context, req resource.Co
 }
 
 
-func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data TelemetryEntityResourceModel
+func (r *InventoryItemResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data InventoryItemResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -262,10 +298,10 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    telemetryEntityRequest := map[string]interface{}{
+    inventoryItemRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := telemetryEntityRequest["data"].(map[string]interface{})
+    requestDataMap := inventoryItemRequest["data"].(map[string]interface{})
 
     if !data.EntityType.IsNull() && !data.EntityType.IsUnknown() {
         requestDataMap["entityType"] = data.EntityType.ValueString()
@@ -303,6 +339,12 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
     if !data.LastSeenAt.IsNull() && !data.LastSeenAt.IsUnknown() {
         requestDataMap["lastSeenAt"] = data.LastSeenAt.ValueString()
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
+    if parsedCustomFields := r.parseJSONField(data.CustomFields); parsedCustomFields != nil {
+        requestDataMap["customFields"] = parsedCustomFields
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -311,30 +353,30 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/telemetry-entity", telemetryEntityRequest)
+    httpResp, err := r.client.Post(ctx, "/inventory-item", inventoryItemRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create telemetry_entity, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create inventory_item, got error: %s", err))
         return
     }
 
-    var telemetryEntityResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &telemetryEntityResponse)
+    var inventoryItemResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &inventoryItemResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create telemetry_entity: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create inventory_item: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := telemetryEntityResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := inventoryItemResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := telemetryEntityResponse["_id"].(string); ok {
+    } else if val, ok := inventoryItemResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for telemetry_entity did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for inventory_item did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -343,7 +385,7 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * telemetry_entity is orphaned server-side — never refreshed, never
+     * inventory_item is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -367,30 +409,34 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
         "resourceId": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
+        "isArchived": true,
+        "customFields": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/telemetry-entity/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/inventory-item/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created telemetry_entity but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created inventory_item but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created telemetry_entity but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created inventory_item but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -808,6 +854,46 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFields"].(string); ok {
+        data.CustomFields = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFields = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -932,6 +1018,54 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -947,8 +1081,8 @@ func (r *TelemetryEntityResource) Create(ctx context.Context, req resource.Creat
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *TelemetryEntityResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data TelemetryEntityResourceModel
+func (r *InventoryItemResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data InventoryItemResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -972,19 +1106,23 @@ func (r *TelemetryEntityResource) Read(ctx context.Context, req resource.ReadReq
         "resourceId": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
+        "isArchived": true,
+        "customFields": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/telemetry-entity/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/inventory-item/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_entity, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read inventory_item, got error: %s", err))
         return
     }
 
@@ -993,22 +1131,22 @@ func (r *TelemetryEntityResource) Read(ctx context.Context, req resource.ReadReq
         return
     }
 
-    var telemetryEntityResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &telemetryEntityResponse)
+    var inventoryItemResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &inventoryItemResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse telemetry_entity response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse inventory_item response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := telemetryEntityResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := inventoryItemResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = telemetryEntityResponse
+        dataMap = inventoryItemResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -1414,6 +1552,46 @@ func (r *TelemetryEntityResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFields"].(string); ok {
+        data.CustomFields = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFields = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1538,6 +1716,54 @@ func (r *TelemetryEntityResource) Read(ctx context.Context, req resource.ReadReq
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1548,9 +1774,9 @@ func (r *TelemetryEntityResource) Read(ctx context.Context, req resource.ReadReq
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data TelemetryEntityResourceModel
-    var state TelemetryEntityResourceModel
+func (r *InventoryItemResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data InventoryItemResourceModel
+    var state InventoryItemResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -1568,10 +1794,10 @@ func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.Updat
     data.Id = state.Id
 
     // Create API request body
-    telemetryEntityRequest := map[string]interface{}{
+    inventoryItemRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := telemetryEntityRequest["data"].(map[string]interface{})
+    requestDataMap := inventoryItemRequest["data"].(map[string]interface{})
 
     if !data.DisplayName.IsUnknown() && !state.DisplayName.IsUnknown() && !data.DisplayName.Equal(state.DisplayName) {
         requestDataMap["displayName"] = data.DisplayName.ValueString()
@@ -1615,6 +1841,17 @@ func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.Updat
     if !data.LastSeenAt.IsUnknown() && !state.LastSeenAt.IsUnknown() && !data.LastSeenAt.Equal(state.LastSeenAt) {
         requestDataMap["lastSeenAt"] = data.LastSeenAt.ValueString()
     }
+    if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
+    if !data.CustomFields.IsUnknown() && !state.CustomFields.IsUnknown() && !data.CustomFields.Equal(state.CustomFields) {
+        var customfieldsData interface{}
+        if err := json.Unmarshal([]byte(data.CustomFields.ValueString()), &customfieldsData); err == nil {
+            requestDataMap["customFields"] = customfieldsData
+        } else {
+            requestDataMap["customFields"] = data.CustomFields.ValueString()
+        }
+    }
     if !data.DeletedByUserId.IsUnknown() && !state.DeletedByUserId.IsUnknown() && !data.DeletedByUserId.Equal(state.DeletedByUserId) {
         requestDataMap["deletedByUserId"] = data.DeletedByUserId.ValueString()
     }
@@ -1622,21 +1859,21 @@ func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.Updat
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(telemetryEntityRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/telemetry-entity/" + data.Id.ValueString() + "", telemetryEntityRequest)
+    if len(inventoryItemRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/inventory-item/" + data.Id.ValueString() + "", inventoryItemRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update telemetry_entity, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update inventory_item, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var telemetryEntityResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &telemetryEntityResponse)
+        var inventoryItemResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &inventoryItemResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update telemetry_entity: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update inventory_item: %s", err))
             return
         }
-        _ = telemetryEntityResponse
+        _ = inventoryItemResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -1654,25 +1891,29 @@ func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.Updat
         "resourceId": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
+        "isArchived": true,
+        "customFields": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/telemetry-entity/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/inventory-item/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_entity after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read inventory_item after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read telemetry_entity after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read inventory_item after update: %s", err))
         return
     }
 
@@ -2090,6 +2331,46 @@ func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["customFields"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFields = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFields = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFields = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFields"].(string); ok {
+        data.CustomFields = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFields = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2214,6 +2495,54 @@ func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.Updat
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2225,8 +2554,8 @@ func (r *TelemetryEntityResource) Update(ctx context.Context, req resource.Updat
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *TelemetryEntityResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data TelemetryEntityResourceModel
+func (r *InventoryItemResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data InventoryItemResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -2236,9 +2565,9 @@ func (r *TelemetryEntityResource) Delete(ctx context.Context, req resource.Delet
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/telemetry-entity/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/inventory-item/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete telemetry_entity, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete inventory_item, got error: %s", err))
         return
     }
 
@@ -2246,7 +2575,7 @@ func (r *TelemetryEntityResource) Delete(ctx context.Context, req resource.Delet
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete telemetry_entity: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete inventory_item: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -2255,12 +2584,12 @@ func (r *TelemetryEntityResource) Delete(ctx context.Context, req resource.Delet
 }
 
 
-func (r *TelemetryEntityResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *InventoryItemResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *TelemetryEntityResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *InventoryItemResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -2278,7 +2607,7 @@ func (r *TelemetryEntityResource) convertTerraformMapToInterface(terraformMap ty
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *TelemetryEntityResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *InventoryItemResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -2299,7 +2628,7 @@ func (r *TelemetryEntityResource) convertTerraformListToInterface(terraformList 
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *TelemetryEntityResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *InventoryItemResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -2321,7 +2650,7 @@ func (r *TelemetryEntityResource) convertTerraformSetToInterface(terraformSet ty
 
 
 // Helper method to parse JSON field for complex objects
-func (r *TelemetryEntityResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *InventoryItemResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -2337,7 +2666,7 @@ func (r *TelemetryEntityResource) parseJSONField(terraformString basetypes.Strin
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *TelemetryEntityResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *InventoryItemResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -2359,7 +2688,7 @@ func (r *TelemetryEntityResource) normalizeURLWrappers(value interface{}) interf
     }
 }
 
-func (r *TelemetryEntityResource) normalizeURLString(value string) string {
+func (r *InventoryItemResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -2371,7 +2700,7 @@ func (r *TelemetryEntityResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *TelemetryEntityResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *InventoryItemResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -2381,6 +2710,6 @@ func (r *TelemetryEntityResource) bigFloatToFloat64(bf *big.Float) interface{} {
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *TelemetryEntityResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *InventoryItemResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

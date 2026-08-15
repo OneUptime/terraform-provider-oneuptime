@@ -43,6 +43,7 @@ type AiConversationResourceModel struct {
     LastMessageAt RFC3339Value `tfsdk:"last_message_at"`
     LlmProviderId types.String `tfsdk:"llm_provider_id"`
     PermissionMode types.String `tfsdk:"permission_mode"`
+    PageContext JSONSubsetValue `tfsdk:"page_context"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -103,6 +104,11 @@ func (r *AiConversationResource) Schema(ctx context.Context, req resource.Schema
             },
             "permission_mode": schema.StringAttribute{
                 MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly..",
+                Computed: true,
+            },
+            "page_context": schema.StringAttribute{
+                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context..",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -207,6 +213,7 @@ func (r *AiConversationResource) Create(ctx context.Context, req resource.Create
         "lastMessageAt": true,
         "llmProviderId": true,
         "permissionMode": true,
+        "pageContext": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -423,6 +430,43 @@ func (r *AiConversationResource) Create(ctx context.Context, req resource.Create
     } else {
         data.PermissionMode = types.StringNull()
     }
+    if obj, ok := dataMap["pageContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageContext = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageContext = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageContext = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageContext = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PageContext = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageContext = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PageContext = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageContext = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PageContext = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["pageContext"].(string); ok {
+        data.PageContext = NewJSONSubsetValue(val)
+    } else {
+        data.PageContext = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -496,6 +540,7 @@ func (r *AiConversationResource) Read(ctx context.Context, req resource.ReadRequ
         "lastMessageAt": true,
         "llmProviderId": true,
         "permissionMode": true,
+        "pageContext": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -712,6 +757,43 @@ func (r *AiConversationResource) Read(ctx context.Context, req resource.ReadRequ
         data.PermissionMode = types.StringValue(val)
     } else {
         data.PermissionMode = types.StringNull()
+    }
+    if obj, ok := dataMap["pageContext"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PageContext = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PageContext = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PageContext = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PageContext = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PageContext = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PageContext = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.PageContext = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PageContext = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.PageContext = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["pageContext"].(string); ok {
+        data.PageContext = NewJSONSubsetValue(val)
+    } else {
+        data.PageContext = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

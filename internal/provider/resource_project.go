@@ -68,6 +68,7 @@ type ProjectResourceModel struct {
     EnableWhatsAppNotifications types.Bool `tfsdk:"enable_whats_app_notifications"`
     EnableTelegramNotifications types.Bool `tfsdk:"enable_telegram_notifications"`
     EnableCallNotifications types.Bool `tfsdk:"enable_call_notifications"`
+    DisableOnCallNotificationFallback types.Bool `tfsdk:"disable_on_call_notification_fallback"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
@@ -368,6 +369,15 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             },
             "enable_call_notifications": schema.BoolAttribute{
                 MarkdownDescription: "Enable call notifications for this project..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "disable_on_call_notification_fallback": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -939,6 +949,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableWhatsAppNotifications": true,
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
+        "disableOnCallNotificationFallback": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -1587,6 +1598,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableCallNotifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
+    }
+    if val, ok := dataMap["disableOnCallNotificationFallback"].(bool); ok {
+        data.DisableOnCallNotificationFallback = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
@@ -2628,6 +2642,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableWhatsAppNotifications": true,
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
+        "disableOnCallNotificationFallback": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -3277,6 +3292,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableCallNotifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
+    }
+    if val, ok := dataMap["disableOnCallNotificationFallback"].(bool); ok {
+        data.DisableOnCallNotificationFallback = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)
@@ -4357,6 +4375,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableCallNotifications.IsUnknown() && !state.EnableCallNotifications.IsUnknown() && !data.EnableCallNotifications.Equal(state.EnableCallNotifications) {
         requestDataMap["enableCallNotifications"] = data.EnableCallNotifications.ValueBool()
     }
+    if !data.DisableOnCallNotificationFallback.IsUnknown() && !state.DisableOnCallNotificationFallback.IsUnknown() && !data.DisableOnCallNotificationFallback.Equal(state.DisableOnCallNotificationFallback) {
+        requestDataMap["disableOnCallNotificationFallback"] = data.DisableOnCallNotificationFallback.ValueBool()
+    }
     if !data.EnableAutoRechargeSmsOrCallBalance.IsUnknown() && !state.EnableAutoRechargeSmsOrCallBalance.IsUnknown() && !data.EnableAutoRechargeSmsOrCallBalance.Equal(state.EnableAutoRechargeSmsOrCallBalance) {
         requestDataMap["enableAutoRechargeSmsOrCallBalance"] = data.EnableAutoRechargeSmsOrCallBalance.ValueBool()
     }
@@ -4533,6 +4554,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableWhatsAppNotifications": true,
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
+        "disableOnCallNotificationFallback": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
@@ -5176,6 +5198,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableCallNotifications"].(bool); ok {
         data.EnableCallNotifications = types.BoolValue(val)
+    }
+    if val, ok := dataMap["disableOnCallNotificationFallback"].(bool); ok {
+        data.DisableOnCallNotificationFallback = types.BoolValue(val)
     }
     if val, ok := dataMap["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)

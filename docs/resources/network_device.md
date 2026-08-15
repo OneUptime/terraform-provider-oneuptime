@@ -32,6 +32,8 @@ resource "oneuptime_network_device" "example" {
 - `description` (String) Friendly description for this network device..
 - `probe_id` (String) A unique identifier for an object, represented as a UUID..
 - `site_id` (String) A unique identifier for an object, represented as a UUID..
+- `monitoring_method` (String) How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP...
+- `monitor_id` (String) A unique identifier for an object, represented as a UUID..
 - `snmp_version` (String) SNMP version to use when polling this device (V1, V2c, V3)..
 - `snmp_community_string` (String) Community string used for SNMP v1/v2c polling..
 - `snmp_port` (Number) UDP port used for SNMP polling..

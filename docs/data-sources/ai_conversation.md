@@ -36,4 +36,5 @@ data "oneuptime_ai_conversation" "by_id" {
 - `last_message_at` (String) A date time object.. Computed.
 - `llm_provider_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `permission_mode` (String) How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly... Computed.
+- `page_context` (String) The dashboard page (entity) this conversation is about. Set from the first message that carried a page context... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

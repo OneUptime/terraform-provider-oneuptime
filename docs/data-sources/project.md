@@ -62,6 +62,7 @@ data "oneuptime_project" "by_id" {
 - `enable_whats_app_notifications` (Bool) Enable WhatsApp notifications for this project... Computed.
 - `enable_telegram_notifications` (Bool) Enable Telegram notifications for this project... Computed.
 - `enable_call_notifications` (Bool) Enable call notifications for this project... Computed.
+- `disable_on_call_notification_fallback` (Bool) When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods... Computed.
 - `enable_auto_recharge_sms_or_call_balance` (Bool) Enable auto recharge for SMS, Call, and WhatsApp balance for this project... Computed.
 - `ai_current_balance_in_usd_cents` (Number) Balance in USD for AI services.. Computed.
 - `auto_ai_recharge_by_balance_in_usd` (Number) Auto recharge amount in USD for AI services.. Computed.

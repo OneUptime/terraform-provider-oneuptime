@@ -42,3 +42,4 @@ data "oneuptime_ai_conversation_message" "by_id" {
 - `widgets` (String) Inline widgets (charts, tables, trace waterfalls, resource cards) built from this assistant message's tool results and rendered inline in the chat... Computed.
 - `tool_actions` (String) Mutating actions the agent proposed or performed in this turn, with their approval status (pending, approved, denied, executed)... Computed.
 - `error_message` (String) Error message if this message failed to generate... Computed.
+- `user_feedback` (String) Thumbs feedback the user left on this assistant message: Up or Down... Computed.

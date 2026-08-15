@@ -1,18 +1,18 @@
 ---
-page_title: "oneuptime_telemetry_entity_relationship Resource - oneuptime"
-subcategory: "Telemetry & Dashboards"
+page_title: "oneuptime_inventory_item_relationship Resource - oneuptime"
+subcategory: "Other"
 description: |-
   Directed relationships between telemetry entities (runs-on, member-of, hosted-on, part-of, instance-of), inferred from resource co-occurrence.
 ---
 
-# oneuptime_telemetry_entity_relationship (Resource)
+# oneuptime_inventory_item_relationship (Resource)
 
 Directed relationships between telemetry entities (runs-on, member-of, hosted-on, part-of, instance-of), inferred from resource co-occurrence.
 
 ## Example Usage
 
 ```terraform
-resource "oneuptime_telemetry_entity_relationship" "example" {
+resource "oneuptime_inventory_item_relationship" "example" {
   from_entity_key = "Example short text"
   to_entity_key = "Example short text"
   relationship_type = "Example short text"
@@ -53,5 +53,5 @@ resource "oneuptime_telemetry_entity_relationship" "example" {
 Import is supported using the following syntax:
 
 ```shell
-terraform import oneuptime_telemetry_entity_relationship.example <id>
+terraform import oneuptime_inventory_item_relationship.example <id>
 ```

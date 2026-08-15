@@ -64,6 +64,7 @@ type ProjectDataSourceModel struct {
     EnableWhatsAppNotifications types.Bool `tfsdk:"enable_whats_app_notifications"`
     EnableTelegramNotifications types.Bool `tfsdk:"enable_telegram_notifications"`
     EnableCallNotifications types.Bool `tfsdk:"enable_call_notifications"`
+    DisableOnCallNotificationFallback types.Bool `tfsdk:"disable_on_call_notification_fallback"`
     EnableAutoRechargeSmsOrCallBalance types.Bool `tfsdk:"enable_auto_recharge_sms_or_call_balance"`
     AiCurrentBalanceInUsdCents types.Number `tfsdk:"ai_current_balance_in_usd_cents"`
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
@@ -258,6 +259,10 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "enable_call_notifications": schema.BoolAttribute{
                 MarkdownDescription: "Enable call notifications for this project..",
+                Computed: true,
+            },
+            "disable_on_call_notification_fallback": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, a page routed to a responder with no matching notification rule fails instead of falling back to their verified notification methods..",
                 Computed: true,
             },
             "enable_auto_recharge_sms_or_call_balance": schema.BoolAttribute{
@@ -521,6 +526,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableWhatsAppNotifications": true,
         "enableTelegramNotifications": true,
         "enableCallNotifications": true,
+        "disableOnCallNotificationFallback": true,
         "enableAutoRechargeSmsOrCallBalance": true,
         "aiCurrentBalanceInUSDCents": true,
         "autoAiRechargeByBalanceInUSD": true,
@@ -1148,6 +1154,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableCallNotifications = types.BoolValue(val)
     } else {
         data.EnableCallNotifications = types.BoolNull()
+    }
+    if val, ok := item["disableOnCallNotificationFallback"].(bool); ok {
+        data.DisableOnCallNotificationFallback = types.BoolValue(val)
+    } else {
+        data.DisableOnCallNotificationFallback = types.BoolNull()
     }
     if val, ok := item["enableAutoRechargeSmsOrCallBalance"].(bool); ok {
         data.EnableAutoRechargeSmsOrCallBalance = types.BoolValue(val)

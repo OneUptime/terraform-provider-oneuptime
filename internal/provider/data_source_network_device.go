@@ -42,6 +42,8 @@ type NetworkDeviceDataSourceModel struct {
     ProbeId types.String `tfsdk:"probe_id"`
     SiteId types.String `tfsdk:"site_id"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
+    MonitoringMethod types.String `tfsdk:"monitoring_method"`
+    MonitorId types.String `tfsdk:"monitor_id"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
@@ -144,6 +146,14 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "current_monitor_status_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "monitoring_method": schema.StringAttribute{
+                MarkdownDescription: "How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP..",
+                Computed: true,
+            },
+            "monitor_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -365,6 +375,8 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "probeId": true,
         "siteId": true,
         "currentMonitorStatusId": true,
+        "monitoringMethod": true,
+        "monitorId": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -681,6 +693,40 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.CurrentMonitorStatusId = types.StringValue(val)
     } else {
         data.CurrentMonitorStatusId = types.StringNull()
+    }
+    if obj, ok := item["monitoringMethod"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitoringMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitoringMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitoringMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitoringMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitoringMethod = types.StringNull()
+        }
+    } else if val, ok := item["monitoringMethod"].(string); ok {
+        data.MonitoringMethod = types.StringValue(val)
+    } else {
+        data.MonitoringMethod = types.StringNull()
+    }
+    if obj, ok := item["monitorId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitorId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitorId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorId = types.StringNull()
+        }
+    } else if val, ok := item["monitorId"].(string); ok {
+        data.MonitorId = types.StringValue(val)
+    } else {
+        data.MonitorId = types.StringNull()
     }
     if obj, ok := item["snmpVersion"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

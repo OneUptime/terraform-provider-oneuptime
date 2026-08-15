@@ -1,11 +1,11 @@
 ---
-page_title: "oneuptime_telemetry_entity_relationship Data Source - oneuptime"
-subcategory: "Telemetry & Dashboards"
+page_title: "oneuptime_inventory_item_relationship Data Source - oneuptime"
+subcategory: "Other"
 description: |-
   Directed relationships between telemetry entities (runs-on, member-of, hosted-on, part-of, instance-of), inferred from resource co-occurrence.
 ---
 
-# oneuptime_telemetry_entity_relationship (Data Source)
+# oneuptime_inventory_item_relationship (Data Source)
 
 Directed relationships between telemetry entities (runs-on, member-of, hosted-on, part-of, instance-of), inferred from resource co-occurrence. Look up by `id` or by `name` (must match exactly one item).
 
@@ -14,11 +14,11 @@ Directed relationships between telemetry entities (runs-on, member-of, hosted-on
 Look up by `name` (must match exactly one item) or by `id`:
 
 ```terraform
-data "oneuptime_telemetry_entity_relationship" "by_name" {
-  name = "example-telemetry_entity_relationship"
+data "oneuptime_inventory_item_relationship" "by_name" {
+  name = "example-inventory_item_relationship"
 }
 
-data "oneuptime_telemetry_entity_relationship" "by_id" {
+data "oneuptime_inventory_item_relationship" "by_id" {
   id = "123e4567-e89b-12d3-a456-426614174000"
 }
 ```
