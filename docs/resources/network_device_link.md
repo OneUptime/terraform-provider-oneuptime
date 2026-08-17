@@ -30,6 +30,7 @@ resource "oneuptime_network_device_link" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `name` (String) Friendly name for this link..
+- `parent_device_id` (String) A unique identifier for an object, represented as a UUID..
 - `from_port_name` (String) Port on the starting device, as free text. Nothing resolves it to an interface row — a hand-drawn link usually exists precisely because the port is not discoverable...
 - `to_port_name` (String) Port on the ending device, as free text...
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID..

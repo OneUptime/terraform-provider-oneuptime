@@ -36,6 +36,7 @@ type NetworkDeviceLinkDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     FromDeviceId types.String `tfsdk:"from_device_id"`
     ToDeviceId types.String `tfsdk:"to_device_id"`
+    ParentDeviceId types.String `tfsdk:"parent_device_id"`
     FromPortName types.String `tfsdk:"from_port_name"`
     ToPortName types.String `tfsdk:"to_port_name"`
     MonitorId types.String `tfsdk:"monitor_id"`
@@ -87,6 +88,10 @@ func (d *NetworkDeviceLinkDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "to_device_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "parent_device_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -163,6 +168,7 @@ func (d *NetworkDeviceLinkDataSource) Read(ctx context.Context, req datasource.R
         "projectId": true,
         "fromDeviceId": true,
         "toDeviceId": true,
+        "parentDeviceId": true,
         "fromPortName": true,
         "toPortName": true,
         "monitorId": true,
@@ -376,6 +382,23 @@ func (d *NetworkDeviceLinkDataSource) Read(ctx context.Context, req datasource.R
         data.ToDeviceId = types.StringValue(val)
     } else {
         data.ToDeviceId = types.StringNull()
+    }
+    if obj, ok := item["parentDeviceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ParentDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentDeviceId = types.StringNull()
+        }
+    } else if val, ok := item["parentDeviceId"].(string); ok {
+        data.ParentDeviceId = types.StringValue(val)
+    } else {
+        data.ParentDeviceId = types.StringNull()
     }
     if obj, ok := item["fromPortName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

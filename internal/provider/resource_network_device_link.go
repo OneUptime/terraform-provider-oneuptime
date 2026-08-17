@@ -38,6 +38,7 @@ type NetworkDeviceLinkResourceModel struct {
     Name types.String `tfsdk:"name"`
     FromDeviceId types.String `tfsdk:"from_device_id"`
     ToDeviceId types.String `tfsdk:"to_device_id"`
+    ParentDeviceId types.String `tfsdk:"parent_device_id"`
     FromPortName types.String `tfsdk:"from_port_name"`
     ToPortName types.String `tfsdk:"to_port_name"`
     MonitorId types.String `tfsdk:"monitor_id"`
@@ -87,6 +88,14 @@ func (r *NetworkDeviceLinkResource) Schema(ctx context.Context, req resource.Sch
             "to_device_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Required: true,
+            },
+            "parent_device_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "from_port_name": schema.StringAttribute{
                 MarkdownDescription: "Port on the starting device, as free text. Nothing resolves it to an interface row — a hand-drawn link usually exists precisely because the port is not discoverable..",
@@ -198,6 +207,9 @@ func (r *NetworkDeviceLinkResource) Create(ctx context.Context, req resource.Cre
     if !data.ToDeviceId.IsNull() && !data.ToDeviceId.IsUnknown() {
         requestDataMap["toDeviceId"] = data.ToDeviceId.ValueString()
     }
+    if !data.ParentDeviceId.IsNull() && !data.ParentDeviceId.IsUnknown() {
+        requestDataMap["parentDeviceId"] = data.ParentDeviceId.ValueString()
+    }
     if !data.FromPortName.IsNull() && !data.FromPortName.IsUnknown() {
         requestDataMap["fromPortName"] = data.FromPortName.ValueString()
     }
@@ -259,6 +271,7 @@ func (r *NetworkDeviceLinkResource) Create(ctx context.Context, req resource.Cre
         "name": true,
         "fromDeviceId": true,
         "toDeviceId": true,
+        "parentDeviceId": true,
         "fromPortName": true,
         "toPortName": true,
         "monitorId": true,
@@ -421,6 +434,43 @@ func (r *NetworkDeviceLinkResource) Create(ctx context.Context, req resource.Cre
         data.ToDeviceId = types.StringValue(val)
     } else {
         data.ToDeviceId = types.StringNull()
+    }
+    if obj, ok := dataMap["parentDeviceId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ParentDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ParentDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ParentDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentDeviceId = types.StringNull()
+        }
+    } else if val, ok := dataMap["parentDeviceId"].(string); ok {
+        data.ParentDeviceId = types.StringValue(val)
+    } else {
+        data.ParentDeviceId = types.StringNull()
     }
     if obj, ok := dataMap["fromPortName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -688,6 +738,7 @@ func (r *NetworkDeviceLinkResource) Read(ctx context.Context, req resource.ReadR
         "name": true,
         "fromDeviceId": true,
         "toDeviceId": true,
+        "parentDeviceId": true,
         "fromPortName": true,
         "toPortName": true,
         "monitorId": true,
@@ -851,6 +902,43 @@ func (r *NetworkDeviceLinkResource) Read(ctx context.Context, req resource.ReadR
         data.ToDeviceId = types.StringValue(val)
     } else {
         data.ToDeviceId = types.StringNull()
+    }
+    if obj, ok := dataMap["parentDeviceId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ParentDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ParentDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ParentDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentDeviceId = types.StringNull()
+        }
+    } else if val, ok := dataMap["parentDeviceId"].(string); ok {
+        data.ParentDeviceId = types.StringValue(val)
+    } else {
+        data.ParentDeviceId = types.StringNull()
     }
     if obj, ok := dataMap["fromPortName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1131,6 +1219,9 @@ func (r *NetworkDeviceLinkResource) Update(ctx context.Context, req resource.Upd
     if !data.ToDeviceId.IsUnknown() && !state.ToDeviceId.IsUnknown() && !data.ToDeviceId.Equal(state.ToDeviceId) {
         requestDataMap["toDeviceId"] = data.ToDeviceId.ValueString()
     }
+    if !data.ParentDeviceId.IsUnknown() && !state.ParentDeviceId.IsUnknown() && !data.ParentDeviceId.Equal(state.ParentDeviceId) {
+        requestDataMap["parentDeviceId"] = data.ParentDeviceId.ValueString()
+    }
     if !data.FromPortName.IsUnknown() && !state.FromPortName.IsUnknown() && !data.FromPortName.Equal(state.FromPortName) {
         requestDataMap["fromPortName"] = data.FromPortName.ValueString()
     }
@@ -1167,6 +1258,7 @@ func (r *NetworkDeviceLinkResource) Update(ctx context.Context, req resource.Upd
         "name": true,
         "fromDeviceId": true,
         "toDeviceId": true,
+        "parentDeviceId": true,
         "fromPortName": true,
         "toPortName": true,
         "monitorId": true,
@@ -1324,6 +1416,43 @@ func (r *NetworkDeviceLinkResource) Update(ctx context.Context, req resource.Upd
         data.ToDeviceId = types.StringValue(val)
     } else {
         data.ToDeviceId = types.StringNull()
+    }
+    if obj, ok := dataMap["parentDeviceId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ParentDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ParentDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ParentDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ParentDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ParentDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ParentDeviceId = types.StringNull()
+        }
+    } else if val, ok := dataMap["parentDeviceId"].(string); ok {
+        data.ParentDeviceId = types.StringValue(val)
+    } else {
+        data.ParentDeviceId = types.StringNull()
     }
     if obj, ok := dataMap["fromPortName"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -39,6 +39,7 @@ data "oneuptime_network_device" "by_id" {
 - `site_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitoring_method` (String) How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP... Computed.
+- `device_role` (String) What this device does on the network — router, switch, access point and so on. Left empty, the role is worked out from the device's own SNMP identity. Set it when there is no SNMP to read: a ping-only device has no identity to classify, and the role decides both the shape it is drawn with and where it sits in the topology hierarchy... Computed.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `snmp_version` (String) SNMP version to use when polling this device (V1, V2c, V3).. Computed.
 - `snmp_community_string` (String) Community string used for SNMP v1/v2c polling.. Computed.
