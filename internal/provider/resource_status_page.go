@@ -47,6 +47,7 @@ type StatusPageResourceModel struct {
     Name types.String `tfsdk:"name"`
     PageTitle types.String `tfsdk:"page_title"`
     PageDescription types.String `tfsdk:"page_description"`
+    EnableSearchEngineIndexing types.Bool `tfsdk:"enable_search_engine_indexing"`
     Description types.String `tfsdk:"description"`
     Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -158,6 +159,15 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_search_engine_indexing": schema.BoolAttribute{
+                MarkdownDescription: "Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "description": schema.StringAttribute{
@@ -793,6 +803,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if !data.PageDescription.IsNull() && !data.PageDescription.IsUnknown() {
         requestDataMap["pageDescription"] = data.PageDescription.ValueString()
     }
+    if !data.EnableSearchEngineIndexing.IsNull() && !data.EnableSearchEngineIndexing.IsUnknown() {
+        requestDataMap["enableSearchEngineIndexing"] = data.EnableSearchEngineIndexing.ValueBool()
+    }
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
@@ -1025,6 +1038,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "name": true,
         "pageTitle": true,
         "pageDescription": true,
+        "enableSearchEngineIndexing": true,
         "description": true,
         "labels": true,
         "createdByUserId": true,
@@ -1246,6 +1260,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         data.PageDescription = types.StringValue(val)
     } else {
         data.PageDescription = types.StringNull()
+    }
+    if val, ok := dataMap["enableSearchEngineIndexing"].(bool); ok {
+        data.EnableSearchEngineIndexing = types.BoolValue(val)
     }
     if obj, ok := dataMap["description"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2664,6 +2681,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "name": true,
         "pageTitle": true,
         "pageDescription": true,
+        "enableSearchEngineIndexing": true,
         "description": true,
         "labels": true,
         "createdByUserId": true,
@@ -2886,6 +2904,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         data.PageDescription = types.StringValue(val)
     } else {
         data.PageDescription = types.StringNull()
+    }
+    if val, ok := dataMap["enableSearchEngineIndexing"].(bool); ok {
+        data.EnableSearchEngineIndexing = types.BoolValue(val)
     }
     if obj, ok := dataMap["description"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4317,6 +4338,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.PageDescription.IsUnknown() && !state.PageDescription.IsUnknown() && !data.PageDescription.Equal(state.PageDescription) {
         requestDataMap["pageDescription"] = data.PageDescription.ValueString()
     }
+    if !data.EnableSearchEngineIndexing.IsUnknown() && !state.EnableSearchEngineIndexing.IsUnknown() && !data.EnableSearchEngineIndexing.Equal(state.EnableSearchEngineIndexing) {
+        requestDataMap["enableSearchEngineIndexing"] = data.EnableSearchEngineIndexing.ValueBool()
+    }
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
@@ -4549,6 +4573,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "name": true,
         "pageTitle": true,
         "pageDescription": true,
+        "enableSearchEngineIndexing": true,
         "description": true,
         "labels": true,
         "createdByUserId": true,
@@ -4765,6 +4790,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         data.PageDescription = types.StringValue(val)
     } else {
         data.PageDescription = types.StringNull()
+    }
+    if val, ok := dataMap["enableSearchEngineIndexing"].(bool); ok {
+        data.EnableSearchEngineIndexing = types.BoolValue(val)
     }
     if obj, ok := dataMap["description"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

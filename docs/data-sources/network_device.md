@@ -72,6 +72,8 @@ data "oneuptime_network_device" "by_id" {
 - `cdp_neighbors` (String) CDP neighbors discovered on the last SNMP walk, complementing LLDP for the topology graph. Managed by the probe... Computed.
 - `lldp_neighbors` (String) LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe... Computed.
 - `last_seen_at` (String) A date time object.. Computed.
+- `last_polled_at` (String) A date time object.. Computed.
+- `is_reachable` (Bool) Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe... Computed.
 - `interfaces_total` (Number) Cached total count of interfaces on this device.. Computed.
 - `interfaces_up` (Number) Cached count of operationally up interfaces on this device.. Computed.
 - `interfaces_down` (Number) Cached count of operationally down interfaces on this device.. Computed.

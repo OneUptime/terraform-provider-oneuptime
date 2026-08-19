@@ -34,6 +34,7 @@ data "oneuptime_status_page" "by_id" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `page_title` (String) Title of your Status Page. This is used for SEO... Computed.
 - `page_description` (String) Description of your Status Page. This is used for SEO... Computed.
+- `enable_search_engine_indexing` (Bool) Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results... Computed.
 - `description` (String) Friendly description that will help you remember.. Computed.
 - `slug` (String) Friendly globally unique name for your object.. Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.

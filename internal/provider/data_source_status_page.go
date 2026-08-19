@@ -38,6 +38,7 @@ type StatusPageDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     PageTitle types.String `tfsdk:"page_title"`
     PageDescription types.String `tfsdk:"page_description"`
+    EnableSearchEngineIndexing types.Bool `tfsdk:"enable_search_engine_indexing"`
     Description types.String `tfsdk:"description"`
     Slug types.String `tfsdk:"slug"`
     Labels types.Set `tfsdk:"labels"`
@@ -149,6 +150,10 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
             },
             "page_description": schema.StringAttribute{
                 MarkdownDescription: "Description of your Status Page. This is used for SEO..",
+                Computed: true,
+            },
+            "enable_search_engine_indexing": schema.BoolAttribute{
+                MarkdownDescription: "Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results..",
                 Computed: true,
             },
             "description": schema.StringAttribute{
@@ -463,6 +468,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "projectId": true,
         "pageTitle": true,
         "pageDescription": true,
+        "enableSearchEngineIndexing": true,
         "description": true,
         "slug": true,
         "labels": true,
@@ -735,6 +741,11 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.PageDescription = types.StringValue(val)
     } else {
         data.PageDescription = types.StringNull()
+    }
+    if val, ok := item["enableSearchEngineIndexing"].(bool); ok {
+        data.EnableSearchEngineIndexing = types.BoolValue(val)
+    } else {
+        data.EnableSearchEngineIndexing = types.BoolNull()
     }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

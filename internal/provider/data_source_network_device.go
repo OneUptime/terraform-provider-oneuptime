@@ -76,6 +76,8 @@ type NetworkDeviceDataSourceModel struct {
     CdpNeighbors types.String `tfsdk:"cdp_neighbors"`
     LldpNeighbors types.String `tfsdk:"lldp_neighbors"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
+    LastPolledAt types.String `tfsdk:"last_polled_at"`
+    IsReachable types.Bool `tfsdk:"is_reachable"`
     InterfacesTotal types.Number `tfsdk:"interfaces_total"`
     InterfacesUp types.Number `tfsdk:"interfaces_up"`
     InterfacesDown types.Number `tfsdk:"interfaces_down"`
@@ -286,6 +288,14 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
+            "last_polled_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "is_reachable": schema.BoolAttribute{
+                MarkdownDescription: "Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe..",
+                Computed: true,
+            },
             "interfaces_total": schema.NumberAttribute{
                 MarkdownDescription: "Cached total count of interfaces on this device.",
                 Computed: true,
@@ -414,6 +424,8 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "lastSeenAt": true,
+        "lastPolledAt": true,
+        "isReachable": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -1229,6 +1241,28 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.LastSeenAt = types.StringValue(val)
     } else {
         data.LastSeenAt = types.StringNull()
+    }
+    if obj, ok := item["lastPolledAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPolledAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastPolledAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastPolledAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastPolledAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastPolledAt = types.StringNull()
+        }
+    } else if val, ok := item["lastPolledAt"].(string); ok {
+        data.LastPolledAt = types.StringValue(val)
+    } else {
+        data.LastPolledAt = types.StringNull()
+    }
+    if val, ok := item["isReachable"].(bool); ok {
+        data.IsReachable = types.BoolValue(val)
+    } else {
+        data.IsReachable = types.BoolNull()
     }
     if val, ok := item["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))

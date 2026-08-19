@@ -84,6 +84,8 @@ type NetworkDeviceResourceModel struct {
     CdpNeighbors JSONSubsetValue `tfsdk:"cdp_neighbors"`
     LldpNeighbors JSONSubsetValue `tfsdk:"lldp_neighbors"`
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
+    LastPolledAt RFC3339Value `tfsdk:"last_polled_at"`
+    IsReachable types.Bool `tfsdk:"is_reachable"`
     InterfacesTotal types.Number `tfsdk:"interfaces_total"`
     InterfacesUp types.Number `tfsdk:"interfaces_up"`
     InterfacesDown types.Number `tfsdk:"interfaces_down"`
@@ -474,6 +476,23 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "last_polled_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_reachable": schema.BoolAttribute{
+                MarkdownDescription: "Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "interfaces_total": schema.NumberAttribute{
                 MarkdownDescription: "Cached total count of interfaces on this device.",
                 Optional: true,
@@ -750,6 +769,8 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "lastSeenAt": true,
+        "lastPolledAt": true,
+        "isReachable": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -2100,6 +2121,22 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastPolledAt = NewRFC3339Value(val)
+        } else {
+            data.LastPolledAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastPolledAt"].(string); ok && val != "" {
+        data.LastPolledAt = NewRFC3339Value(val)
+    } else {
+        data.LastPolledAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["isReachable"].(bool); ok {
+        data.IsReachable = types.BoolValue(val)
+    } else {
+        data.IsReachable = types.BoolNull()
+    }
     if val, ok := dataMap["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["interfacesTotal"].(int); ok {
@@ -2430,6 +2467,8 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "lastSeenAt": true,
+        "lastPolledAt": true,
+        "isReachable": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -3781,6 +3820,22 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.LastSeenAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastPolledAt = NewRFC3339Value(val)
+        } else {
+            data.LastPolledAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastPolledAt"].(string); ok && val != "" {
+        data.LastPolledAt = NewRFC3339Value(val)
+    } else {
+        data.LastPolledAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["isReachable"].(bool); ok {
+        data.IsReachable = types.BoolValue(val)
+    } else {
+        data.IsReachable = types.BoolNull()
+    }
     if val, ok := dataMap["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["interfacesTotal"].(int); ok {
@@ -4213,6 +4268,12 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     if !data.LastSeenAt.IsUnknown() && !state.LastSeenAt.IsUnknown() && !data.LastSeenAt.Equal(state.LastSeenAt) {
         requestDataMap["lastSeenAt"] = data.LastSeenAt.ValueString()
     }
+    if !data.LastPolledAt.IsUnknown() && !state.LastPolledAt.IsUnknown() && !data.LastPolledAt.Equal(state.LastPolledAt) {
+        requestDataMap["lastPolledAt"] = data.LastPolledAt.ValueString()
+    }
+    if !data.IsReachable.IsUnknown() && !state.IsReachable.IsUnknown() && !data.IsReachable.Equal(state.IsReachable) {
+        requestDataMap["isReachable"] = data.IsReachable.ValueBool()
+    }
     if !data.InterfacesTotal.IsUnknown() && !state.InterfacesTotal.IsUnknown() && !data.InterfacesTotal.Equal(state.InterfacesTotal) {
         requestDataMap["interfacesTotal"] = r.bigFloatToFloat64(data.InterfacesTotal.ValueBigFloat())
     }
@@ -4294,6 +4355,8 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "cdpNeighbors": true,
         "lldpNeighbors": true,
         "lastSeenAt": true,
+        "lastPolledAt": true,
+        "isReachable": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -5638,6 +5701,22 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.LastSeenAt = NewRFC3339Value(val)
     } else {
         data.LastSeenAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastPolledAt = NewRFC3339Value(val)
+        } else {
+            data.LastPolledAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastPolledAt"].(string); ok && val != "" {
+        data.LastPolledAt = NewRFC3339Value(val)
+    } else {
+        data.LastPolledAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["isReachable"].(bool); ok {
+        data.IsReachable = types.BoolValue(val)
+    } else {
+        data.IsReachable = types.BoolNull()
     }
     if val, ok := dataMap["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))

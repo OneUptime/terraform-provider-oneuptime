@@ -191,6 +191,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewRunbookCredentialDataSource,
         NewRunbookSecretDataSource,
         NewStatusPageSsoDataSource,
+        NewStatusPageOidcDataSource,
         NewStatusPageScimDataSource,
         NewMonitorProbeDataSource,
         NewMonitorTeamOwnerDataSource,
