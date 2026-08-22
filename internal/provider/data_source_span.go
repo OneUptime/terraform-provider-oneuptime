@@ -71,6 +71,7 @@ type SpanDataSourceModel struct {
     LlmOutputTokens types.Number `tfsdk:"llm_output_tokens"`
     LlmTotalTokens types.Number `tfsdk:"llm_total_tokens"`
     LlmCost types.Number `tfsdk:"llm_cost"`
+    LlmConversationId types.String `tfsdk:"llm_conversation_id"`
 }
 
 func (d *SpanDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -255,6 +256,10 @@ func (d *SpanDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "LLM Cost (USD)",
                 Computed: true,
             },
+            "llm_conversation_id": schema.StringAttribute{
+                MarkdownDescription: "LLM Conversation ID",
+                Computed: true,
+            },
         },
     }
 }
@@ -341,6 +346,7 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "llmOutputTokens": true,
         "llmTotalTokens": true,
         "llmCost": true,
+        "llmConversationId": true,
         "_id": true,
     }
 
@@ -1065,6 +1071,23 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         }
     } else {
         data.LlmCost = types.NumberNull()
+    }
+    if obj, ok := item["llmConversationId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmConversationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmConversationId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmConversationId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmConversationId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmConversationId = types.StringNull()
+        }
+    } else if val, ok := item["llmConversationId"].(string); ok {
+        data.LlmConversationId = types.StringValue(val)
+    } else {
+        data.LlmConversationId = types.StringNull()
     }
 
     // Write logs using the tflog package

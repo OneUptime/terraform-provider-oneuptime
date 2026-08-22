@@ -120,7 +120,6 @@ func (r *ScheduledMaintenanceStateTimelineResource) Schema(ctx context.Context, 
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -975,6 +974,9 @@ func (r *ScheduledMaintenanceStateTimelineResource) Update(ctx context.Context, 
 
     if !data.ScheduledMaintenanceStateId.IsUnknown() && !state.ScheduledMaintenanceStateId.IsUnknown() && !data.ScheduledMaintenanceStateId.Equal(state.ScheduledMaintenanceStateId) {
         requestDataMap["scheduledMaintenanceStateId"] = data.ScheduledMaintenanceStateId.ValueString()
+    }
+    if !data.StartsAt.IsUnknown() && !state.StartsAt.IsUnknown() && !data.StartsAt.Equal(state.StartsAt) {
+        requestDataMap["startsAt"] = data.StartsAt.ValueString()
     }
 
     // Only call the API when there are changed fields to send. An empty

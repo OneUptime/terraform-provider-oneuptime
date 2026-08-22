@@ -36,5 +36,6 @@ data "oneuptime_network_device_link_rule" "by_id" {
 - `is_enabled` (Bool) Whether this rule draws links. Disable to take its edges off the map without deleting the rule... Computed.
 - `child_device_labels` (Set) Devices carrying ALL of these labels each get one uplink drawn to the parent device. Empty matches nothing — a rule that linked every device in the project is never what anyone meant... Computed.
 - `parent_device_labels` (Set) The device carrying ALL of these labels is what the children uplink to. It has to identify exactly one device: match none and the rule draws nothing, match several and the rule is ambiguous and also draws nothing... Computed.
+- `scope` (String) How wide the 'exactly one parent device' question is asked. Project (the default) looks for one parent across the whole project. Site asks once per site, so the same rule can draw an uplink in every building. Rules created before this existed are Project... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

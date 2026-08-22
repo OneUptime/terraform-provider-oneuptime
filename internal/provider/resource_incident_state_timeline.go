@@ -133,7 +133,6 @@ func (r *IncidentStateTimelineResource) Schema(ctx context.Context, req resource
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -1140,6 +1139,9 @@ func (r *IncidentStateTimelineResource) Update(ctx context.Context, req resource
 
     if !data.IncidentStateId.IsUnknown() && !state.IncidentStateId.IsUnknown() && !data.IncidentStateId.Equal(state.IncidentStateId) {
         requestDataMap["incidentStateId"] = data.IncidentStateId.ValueString()
+    }
+    if !data.StartsAt.IsUnknown() && !state.StartsAt.IsUnknown() && !data.StartsAt.Equal(state.StartsAt) {
+        requestDataMap["startsAt"] = data.StartsAt.ValueString()
     }
 
     // Only call the API when there are changed fields to send. An empty

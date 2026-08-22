@@ -42,7 +42,7 @@ resource "oneuptime_monitor" "example" {
 ### Required
 
 - `name` (String) Any friendly name for this monitor..
-- `monitor_type` (String) What is the type of this monitor? Website? API? etc... Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
+- `monitor_type` (String) What is the type of this monitor? Website? API? etc... Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
 
 ### Optional
 

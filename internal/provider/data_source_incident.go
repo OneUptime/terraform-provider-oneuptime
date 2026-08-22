@@ -39,6 +39,7 @@ type IncidentDataSourceModel struct {
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
     DeclaredAt types.String `tfsdk:"declared_at"`
+    ImpactStartedAt types.String `tfsdk:"impact_started_at"`
     Slug types.String `tfsdk:"slug"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
@@ -141,6 +142,10 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "declared_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "impact_started_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
@@ -422,6 +427,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         "title": true,
         "description": true,
         "declaredAt": true,
+        "impactStartedAt": true,
         "slug": true,
         "createdByUserId": true,
         "monitors": true,
@@ -699,6 +705,23 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.DeclaredAt = types.StringValue(val)
     } else {
         data.DeclaredAt = types.StringNull()
+    }
+    if obj, ok := item["impactStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ImpactStartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ImpactStartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ImpactStartedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ImpactStartedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ImpactStartedAt = types.StringNull()
+        }
+    } else if val, ok := item["impactStartedAt"].(string); ok {
+        data.ImpactStartedAt = types.StringValue(val)
+    } else {
+        data.ImpactStartedAt = types.StringNull()
     }
     if obj, ok := item["slug"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

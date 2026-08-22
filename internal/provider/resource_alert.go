@@ -43,6 +43,7 @@ type AlertResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
+    ImpactStartedAt RFC3339Value `tfsdk:"impact_started_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
@@ -117,6 +118,15 @@ func (r *AlertResource) Schema(ctx context.Context, req resource.SchemaRequest, 
             },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Short description of this alert. This will be visible on the status page. This is in markdown..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "impact_started_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -484,6 +494,9 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.ImpactStartedAt.IsNull() && !data.ImpactStartedAt.IsUnknown() {
+        requestDataMap["impactStartedAt"] = data.ImpactStartedAt.ValueString()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -613,6 +626,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         "projectId": true,
         "title": true,
         "description": true,
+        "impactStartedAt": true,
         "createdByUserId": true,
         "monitorId": true,
         "onCallDutyPolicies": true,
@@ -772,6 +786,17 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["impactStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ImpactStartedAt = NewRFC3339Value(val)
+        } else {
+            data.ImpactStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["impactStartedAt"].(string); ok && val != "" {
+        data.ImpactStartedAt = NewRFC3339Value(val)
+    } else {
+        data.ImpactStartedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2019,6 +2044,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "projectId": true,
         "title": true,
         "description": true,
+        "impactStartedAt": true,
         "createdByUserId": true,
         "monitorId": true,
         "onCallDutyPolicies": true,
@@ -2179,6 +2205,17 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["impactStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ImpactStartedAt = NewRFC3339Value(val)
+        } else {
+            data.ImpactStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["impactStartedAt"].(string); ok && val != "" {
+        data.ImpactStartedAt = NewRFC3339Value(val)
+    } else {
+        data.ImpactStartedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -3437,6 +3474,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.ImpactStartedAt.IsUnknown() && !state.ImpactStartedAt.IsUnknown() && !data.ImpactStartedAt.Equal(state.ImpactStartedAt) {
+        requestDataMap["impactStartedAt"] = data.ImpactStartedAt.ValueString()
+    }
     if !data.MonitorId.IsUnknown() && !state.MonitorId.IsUnknown() && !data.MonitorId.Equal(state.MonitorId) {
         requestDataMap["monitorId"] = data.MonitorId.ValueString()
     }
@@ -3548,6 +3588,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "projectId": true,
         "title": true,
         "description": true,
+        "impactStartedAt": true,
         "createdByUserId": true,
         "monitorId": true,
         "onCallDutyPolicies": true,
@@ -3702,6 +3743,17 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["impactStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ImpactStartedAt = NewRFC3339Value(val)
+        } else {
+            data.ImpactStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["impactStartedAt"].(string); ok && val != "" {
+        data.ImpactStartedAt = NewRFC3339Value(val)
+    } else {
+        data.ImpactStartedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

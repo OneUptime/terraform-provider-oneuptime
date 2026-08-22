@@ -186,19 +186,19 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "header_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Header.",
+                MarkdownDescription: "Status Page Custom HTML Header. Served only from a verified custom domain..",
                 Computed: true,
             },
             "footer_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Footer.",
+                MarkdownDescription: "Status Page Custom HTML Footer. Served only from a verified custom domain..",
                 Computed: true,
             },
             "custom_css": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom CSS Header.",
+                MarkdownDescription: "Status Page Custom CSS. Served only from a verified custom domain..",
                 Computed: true,
             },
             "custom_java_script": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded..",
+                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain..",
                 Computed: true,
             },
             "is_public_status_page": schema.BoolAttribute{

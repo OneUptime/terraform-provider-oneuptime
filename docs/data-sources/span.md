@@ -67,3 +67,4 @@ data "oneuptime_span" "by_id" {
 - `llm_output_tokens` (Number) LLM Output Tokens. Computed.
 - `llm_total_tokens` (Number) LLM Total Tokens. Computed.
 - `llm_cost` (Number) LLM Cost (USD). Computed.
+- `llm_conversation_id` (String) LLM Conversation ID. Computed.

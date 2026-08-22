@@ -221,7 +221,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "header_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Header.",
+                MarkdownDescription: "Status Page Custom HTML Header. Served only from a verified custom domain..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -229,7 +229,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "footer_html": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom HTML Footer.",
+                MarkdownDescription: "Status Page Custom HTML Footer. Served only from a verified custom domain..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -237,7 +237,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_css": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom CSS Header.",
+                MarkdownDescription: "Status Page Custom CSS. Served only from a verified custom domain..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -245,7 +245,7 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "custom_java_script": schema.StringAttribute{
-                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded..",
+                MarkdownDescription: "Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

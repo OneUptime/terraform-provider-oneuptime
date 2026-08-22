@@ -34,6 +34,7 @@ data "oneuptime_alert" "by_id" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `title` (String) Title of this alert.. Computed.
 - `description` (String) Short description of this alert. This will be visible on the status page. This is in markdown... Computed.
+- `impact_started_at` (String) A date time object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `on_call_duty_policies` (Set) List of on-call duty policies affected by this alert... Computed.

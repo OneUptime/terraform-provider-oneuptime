@@ -33,6 +33,7 @@ This is **markdown** content"
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Short description of this incident. This is in markdown and will be visible on the status page...
 - `declared_at` (String) A date time object..
+- `impact_started_at` (String) A date time object..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `monitors` (Set) List of monitors affected by this incident..
 - `hosts` (Set) List of hosts affected by this incident...

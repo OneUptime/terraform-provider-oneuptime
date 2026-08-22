@@ -32,6 +32,7 @@ This is **markdown** content"
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Short description of this alert. This will be visible on the status page. This is in markdown...
+- `impact_started_at` (String) A date time object..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID..
 - `on_call_duty_policies` (Set) List of on-call duty policies affected by this alert...

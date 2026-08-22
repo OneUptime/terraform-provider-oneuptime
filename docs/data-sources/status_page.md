@@ -42,10 +42,10 @@ data "oneuptime_status_page" "by_id" {
 - `favicon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `logo_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `cover_image_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `header_html` (String) Status Page Custom HTML Header.. Computed.
-- `footer_html` (String) Status Page Custom HTML Footer.. Computed.
-- `custom_css` (String) Status Page Custom CSS Header.. Computed.
-- `custom_java_script` (String) Status Page Custom JavaScript. This runs when the status page is loaded... Computed.
+- `header_html` (String) Status Page Custom HTML Header. Served only from a verified custom domain... Computed.
+- `footer_html` (String) Status Page Custom HTML Footer. Served only from a verified custom domain... Computed.
+- `custom_css` (String) Status Page Custom CSS. Served only from a verified custom domain... Computed.
+- `custom_java_script` (String) Status Page Custom JavaScript. This runs when the status page is loaded from a verified custom domain... Computed.
 - `is_public_status_page` (Bool) Is this status page public?.. Computed.
 - `enable_mcp_server` (Bool) Can AI agents read this status page over the public OneUptime MCP server? This does not affect the status page website, its RSS feed, or its public JSON API... Computed.
 - `enable_master_password` (Bool) Require visitors to enter a master password before viewing a private status page... Computed.

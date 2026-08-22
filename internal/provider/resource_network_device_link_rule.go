@@ -44,6 +44,7 @@ type NetworkDeviceLinkRuleResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     ChildDeviceLabels types.Set `tfsdk:"child_device_labels"`
     ParentDeviceLabels types.Set `tfsdk:"parent_device_labels"`
+    Scope types.String `tfsdk:"scope"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -105,6 +106,14 @@ func (r *NetworkDeviceLinkRuleResource) Schema(ctx context.Context, req resource
                 MarkdownDescription: "The device carrying ALL of these labels is what the children uplink to. It has to identify exactly one device: match none and the rule draws nothing, match several and the rule is ambiguous and also draws nothing..",
                 Required: true,
                 ElementType: types.StringType,
+            },
+            "scope": schema.StringAttribute{
+                MarkdownDescription: "How wide the 'exactly one parent device' question is asked. Project (the default) looks for one parent across the whole project. Site asks once per site, so the same rule can draw an uplink in every building. Rules created before this existed are Project..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
@@ -198,6 +207,9 @@ func (r *NetworkDeviceLinkRuleResource) Create(ctx context.Context, req resource
     if !data.ParentDeviceLabels.IsNull() && !data.ParentDeviceLabels.IsUnknown() {
         requestDataMap["parentDeviceLabels"] = r.convertTerraformSetToInterface(data.ParentDeviceLabels)
     }
+    if !data.Scope.IsNull() && !data.Scope.IsUnknown() {
+        requestDataMap["scope"] = data.Scope.ValueString()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -252,6 +264,7 @@ func (r *NetworkDeviceLinkRuleResource) Create(ctx context.Context, req resource
         "isEnabled": true,
         "childDeviceLabels": true,
         "parentDeviceLabels": true,
+        "scope": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -442,6 +455,43 @@ func (r *NetworkDeviceLinkRuleResource) Create(ctx context.Context, req resource
         // For sets, always use empty set instead of null to match default values
         data.ParentDeviceLabels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -599,6 +649,7 @@ func (r *NetworkDeviceLinkRuleResource) Read(ctx context.Context, req resource.R
         "isEnabled": true,
         "childDeviceLabels": true,
         "parentDeviceLabels": true,
+        "scope": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -790,6 +841,43 @@ func (r *NetworkDeviceLinkRuleResource) Read(ctx context.Context, req resource.R
         // For sets, always use empty set instead of null to match default values
         data.ParentDeviceLabels = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -964,6 +1052,9 @@ func (r *NetworkDeviceLinkRuleResource) Update(ctx context.Context, req resource
     if !data.ParentDeviceLabels.IsUnknown() && !state.ParentDeviceLabels.IsUnknown() && !data.ParentDeviceLabels.Equal(state.ParentDeviceLabels) {
         requestDataMap["parentDeviceLabels"] = r.convertTerraformSetToInterface(data.ParentDeviceLabels)
     }
+    if !data.Scope.IsUnknown() && !state.Scope.IsUnknown() && !data.Scope.Equal(state.Scope) {
+        requestDataMap["scope"] = data.Scope.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -993,6 +1084,7 @@ func (r *NetworkDeviceLinkRuleResource) Update(ctx context.Context, req resource
         "isEnabled": true,
         "childDeviceLabels": true,
         "parentDeviceLabels": true,
+        "scope": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1177,6 +1269,43 @@ func (r *NetworkDeviceLinkRuleResource) Update(ctx context.Context, req resource
     } else {
         // For sets, always use empty set instead of null to match default values
         data.ParentDeviceLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = types.StringValue(string(jsonBytes))
+            } else {
+                data.Scope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

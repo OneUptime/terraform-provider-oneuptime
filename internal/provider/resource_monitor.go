@@ -167,7 +167,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                     stringplanmodifier.RequiresReplace(),
                 },
                 Validators: []validator.String{
-                    stringvalidator.OneOf("Manual", "Website", "API", "Ping", "Kubernetes", "Docker", "Host", "Podman", "Docker Swarm", "Proxmox", "Ceph", "IoT Device", "IP", "Incoming Request", "Incoming Email", "Port", "Server", "SSL Certificate", "SQL Query", "Synthetic Monitor", "Custom JavaScript Code", "Logs", "Metrics", "Traces", "Exceptions", "Profiles", "Network Device", "DNS", "DNSSEC", "Domain", "External Status Page"),
+                    stringvalidator.OneOf("Manual", "Website", "API", "Ping", "Kubernetes", "Docker", "Host", "Podman", "Docker Swarm", "Proxmox", "Ceph", "IoT Device", "IP", "Incoming Request", "Incoming Email", "Port", "Server", "SSL Certificate", "SQL Query", "Synthetic Monitor", "Custom JavaScript Code", "Logs", "Metrics", "Traces", "Exceptions", "Profiles", "Security Events", "Network Device", "DNS", "DNSSEC", "Domain", "External Status Page"),
                 },
             },
             "current_monitor_status_id": schema.StringAttribute{

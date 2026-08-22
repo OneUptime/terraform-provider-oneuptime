@@ -37,6 +37,7 @@ resource "oneuptime_network_device_link_rule" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Description of this rule..
 - `is_enabled` (Bool) Whether this rule draws links. Disable to take its edges off the map without deleting the rule...
+- `scope` (String) How wide the 'exactly one parent device' question is asked. Project (the default) looks for one parent across the whole project. Site asks once per site, so the same rule can draw an uplink in every building. Rules created before this existed are Project...
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only

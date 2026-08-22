@@ -44,6 +44,7 @@ type IncidentResourceModel struct {
     Title types.String `tfsdk:"title"`
     Description types.String `tfsdk:"description"`
     DeclaredAt RFC3339Value `tfsdk:"declared_at"`
+    ImpactStartedAt RFC3339Value `tfsdk:"impact_started_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
     Hosts types.Set `tfsdk:"hosts"`
@@ -138,6 +139,15 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "declared_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "impact_started_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
                 Optional: true,
@@ -597,6 +607,9 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if !data.DeclaredAt.IsNull() && !data.DeclaredAt.IsUnknown() {
         requestDataMap["declaredAt"] = data.DeclaredAt.ValueString()
     }
+    if !data.ImpactStartedAt.IsNull() && !data.ImpactStartedAt.IsUnknown() {
+        requestDataMap["impactStartedAt"] = data.ImpactStartedAt.ValueString()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -748,6 +761,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "title": true,
         "description": true,
         "declaredAt": true,
+        "impactStartedAt": true,
         "createdByUserId": true,
         "monitors": true,
         "hosts": true,
@@ -931,6 +945,17 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         data.DeclaredAt = NewRFC3339Value(val)
     } else {
         data.DeclaredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["impactStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ImpactStartedAt = NewRFC3339Value(val)
+        } else {
+            data.ImpactStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["impactStartedAt"].(string); ok && val != "" {
+        data.ImpactStartedAt = NewRFC3339Value(val)
+    } else {
+        data.ImpactStartedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2488,6 +2513,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "title": true,
         "description": true,
         "declaredAt": true,
+        "impactStartedAt": true,
         "createdByUserId": true,
         "monitors": true,
         "hosts": true,
@@ -2672,6 +2698,17 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         data.DeclaredAt = NewRFC3339Value(val)
     } else {
         data.DeclaredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["impactStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ImpactStartedAt = NewRFC3339Value(val)
+        } else {
+            data.ImpactStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["impactStartedAt"].(string); ok && val != "" {
+        data.ImpactStartedAt = NewRFC3339Value(val)
+    } else {
+        data.ImpactStartedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4242,6 +4279,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.DeclaredAt.IsUnknown() && !state.DeclaredAt.IsUnknown() && !data.DeclaredAt.Equal(state.DeclaredAt) {
         requestDataMap["declaredAt"] = data.DeclaredAt.ValueString()
     }
+    if !data.ImpactStartedAt.IsUnknown() && !state.ImpactStartedAt.IsUnknown() && !data.ImpactStartedAt.Equal(state.ImpactStartedAt) {
+        requestDataMap["impactStartedAt"] = data.ImpactStartedAt.ValueString()
+    }
     if !data.Monitors.IsUnknown() && !state.Monitors.IsUnknown() && !data.Monitors.Equal(state.Monitors) {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
     }
@@ -4375,6 +4415,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "title": true,
         "description": true,
         "declaredAt": true,
+        "impactStartedAt": true,
         "createdByUserId": true,
         "monitors": true,
         "hosts": true,
@@ -4553,6 +4594,17 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         data.DeclaredAt = NewRFC3339Value(val)
     } else {
         data.DeclaredAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["impactStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ImpactStartedAt = NewRFC3339Value(val)
+        } else {
+            data.ImpactStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["impactStartedAt"].(string); ok && val != "" {
+        data.ImpactStartedAt = NewRFC3339Value(val)
+    } else {
+        data.ImpactStartedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

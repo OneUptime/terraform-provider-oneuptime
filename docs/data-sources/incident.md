@@ -35,6 +35,7 @@ data "oneuptime_incident" "by_id" {
 - `title` (String) Title of this incident.. Computed.
 - `description` (String) Short description of this incident. This is in markdown and will be visible on the status page... Computed.
 - `declared_at` (String) A date time object.. Computed.
+- `impact_started_at` (String) A date time object.. Computed.
 - `slug` (String) Friendly globally unique name for your object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitors` (Set) List of monitors affected by this incident.. Computed.

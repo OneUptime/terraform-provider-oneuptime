@@ -40,6 +40,7 @@ type NetworkDeviceLinkRuleDataSourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     ChildDeviceLabels types.Set `tfsdk:"child_device_labels"`
     ParentDeviceLabels types.Set `tfsdk:"parent_device_labels"`
+    Scope types.String `tfsdk:"scope"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -100,6 +101,10 @@ func (d *NetworkDeviceLinkRuleDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "The device carrying ALL of these labels is what the children uplink to. It has to identify exactly one device: match none and the rule draws nothing, match several and the rule is ambiguous and also draws nothing..",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "scope": schema.StringAttribute{
+                MarkdownDescription: "How wide the 'exactly one parent device' question is asked. Project (the default) looks for one parent across the whole project. Site asks once per site, so the same rule can draw an uplink in every building. Rules created before this existed are Project..",
+                Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
@@ -164,6 +169,7 @@ func (d *NetworkDeviceLinkRuleDataSource) Read(ctx context.Context, req datasour
         "isEnabled": true,
         "childDeviceLabels": true,
         "parentDeviceLabels": true,
+        "scope": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -410,6 +416,23 @@ func (d *NetworkDeviceLinkRuleDataSource) Read(ctx context.Context, req datasour
         data.ParentDeviceLabels = types.SetValueMust(types.StringType, setItems)
     } else {
         data.ParentDeviceLabels = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["scope"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := item["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

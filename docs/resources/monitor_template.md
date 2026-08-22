@@ -45,7 +45,7 @@ resource "oneuptime_monitor_template" "example" {
 - `template_name` (String) Name of the Monitor Template..
 - `template_description` (String) Description of the Monitor Template..
 - `monitor_name` (String) Default name applied to monitors created from this template. Users can override on creation...
-- `monitor_type` (String) What is the type of monitor created from this template?.. Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
+- `monitor_type` (String) What is the type of monitor created from this template?.. Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
 
 ### Optional
 
