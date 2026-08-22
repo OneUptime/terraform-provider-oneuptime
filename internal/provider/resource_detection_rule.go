@@ -48,7 +48,9 @@ type DetectionRuleResourceModel struct {
     GroupByField types.String `tfsdk:"group_by_field"`
     ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
+    ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
+    IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
@@ -147,7 +149,24 @@ func (r *DetectionRuleResource) Schema(ctx context.Context, req resource.SchemaR
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "should_create_incident": schema.BoolAttribute{
+                MarkdownDescription: "Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "alert_severity_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
                 Computed: true,
@@ -265,8 +284,14 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if !data.ShouldWriteDetectionFinding.IsNull() && !data.ShouldWriteDetectionFinding.IsUnknown() {
         requestDataMap["shouldWriteDetectionFinding"] = data.ShouldWriteDetectionFinding.ValueBool()
     }
+    if !data.ShouldCreateIncident.IsNull() && !data.ShouldCreateIncident.IsUnknown() {
+        requestDataMap["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
+    }
+    if !data.IncidentSeverityId.IsNull() && !data.IncidentSeverityId.IsUnknown() {
+        requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
     }
 
     // Make API call
@@ -322,7 +347,9 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         "groupByField": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
+        "incidentSeverityId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -549,6 +576,9 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if val, ok := dataMap["shouldWriteDetectionFinding"].(bool); ok {
         data.ShouldWriteDetectionFinding = types.BoolValue(val)
     }
+    if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -585,6 +615,43 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         data.AlertSeverityId = types.StringValue(val)
     } else {
         data.AlertSeverityId = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -805,7 +872,9 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         "groupByField": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
+        "incidentSeverityId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1033,6 +1102,9 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
     if val, ok := dataMap["shouldWriteDetectionFinding"].(bool); ok {
         data.ShouldWriteDetectionFinding = types.BoolValue(val)
     }
+    if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1069,6 +1141,43 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         data.AlertSeverityId = types.StringValue(val)
     } else {
         data.AlertSeverityId = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1317,8 +1426,14 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if !data.ShouldWriteDetectionFinding.IsUnknown() && !state.ShouldWriteDetectionFinding.IsUnknown() && !data.ShouldWriteDetectionFinding.Equal(state.ShouldWriteDetectionFinding) {
         requestDataMap["shouldWriteDetectionFinding"] = data.ShouldWriteDetectionFinding.ValueBool()
     }
+    if !data.ShouldCreateIncident.IsUnknown() && !state.ShouldCreateIncident.IsUnknown() && !data.ShouldCreateIncident.Equal(state.ShouldCreateIncident) {
+        requestDataMap["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
+    }
     if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
+    }
+    if !data.IncidentSeverityId.IsUnknown() && !state.IncidentSeverityId.IsUnknown() && !data.IncidentSeverityId.Equal(state.IncidentSeverityId) {
+        requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
     }
 
     // Only call the API when there are changed fields to send. An empty
@@ -1352,7 +1467,9 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         "groupByField": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
+        "incidentSeverityId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1574,6 +1691,9 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if val, ok := dataMap["shouldWriteDetectionFinding"].(bool); ok {
         data.ShouldWriteDetectionFinding = types.BoolValue(val)
     }
+    if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1610,6 +1730,43 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         data.AlertSeverityId = types.StringValue(val)
     } else {
         data.AlertSeverityId = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

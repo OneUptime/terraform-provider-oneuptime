@@ -39,7 +39,9 @@ data "oneuptime_detection_rule" "by_id" {
 - `group_by_field` (String) Optional security-event field (e.g. principalHost, principalUser) to group matches by. One alert is opened per distinct value; empty groups all matches into one alert... Computed.
 - `should_create_alert` (Bool) Whether matches open OneUptime alerts... Computed.
 - `should_write_detection_finding` (Bool) Whether matches also write a Detection Finding security event back into the events table... Computed.
+- `should_create_incident` (Bool) Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule... Computed.
 - `alert_severity_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `incident_severity_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `last_evaluated_at` (String) A date time object.. Computed.
 - `last_match_at` (String) A date time object.. Computed.
 - `last_error` (String) The most recent evaluation error, if any. Cleared on the next successful evaluation... Computed.

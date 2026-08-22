@@ -41,7 +41,9 @@ type DetectionRuleDataSourceModel struct {
     GroupByField types.String `tfsdk:"group_by_field"`
     ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
+    ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
+    IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     LastEvaluatedAt types.String `tfsdk:"last_evaluated_at"`
     LastMatchAt types.String `tfsdk:"last_match_at"`
     LastError types.String `tfsdk:"last_error"`
@@ -116,7 +118,15 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "Whether matches also write a Detection Finding security event back into the events table..",
                 Computed: true,
             },
+            "should_create_incident": schema.BoolAttribute{
+                MarkdownDescription: "Whether matches also open OneUptime incidents. Off by default: incidents drive on-call, SLAs and status pages, so opt in per rule..",
+                Computed: true,
+            },
             "alert_severity_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -198,7 +208,9 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         "groupByField": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
+        "incidentSeverityId": true,
         "lastEvaluatedAt": true,
         "lastMatchAt": true,
         "lastError": true,
@@ -456,6 +468,11 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.ShouldWriteDetectionFinding = types.BoolNull()
     }
+    if val, ok := item["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    } else {
+        data.ShouldCreateIncident = types.BoolNull()
+    }
     if obj, ok := item["alertSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AlertSeverityId = types.StringValue(val)
@@ -472,6 +489,23 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         data.AlertSeverityId = types.StringValue(val)
     } else {
         data.AlertSeverityId = types.StringNull()
+    }
+    if obj, ok := item["incidentSeverityId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := item["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
     }
     if obj, ok := item["lastEvaluatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
