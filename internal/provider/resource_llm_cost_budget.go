@@ -15,14 +15,9 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberdefault"
-    "github.com/hashicorp/terraform-plugin-framework/attr"
-    "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
@@ -47,20 +42,15 @@ type LlmCostBudgetResourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     DailyBudgetInUsd types.Number `tfsdk:"daily_budget_in_usd"`
-    WarningThresholdPercent types.Number `tfsdk:"warning_threshold_percent"`
     ServiceId types.String `tfsdk:"service_id"`
     LlmSystem types.String `tfsdk:"llm_system"`
     LlmModel types.String `tfsdk:"llm_model"`
-    AlertSeverityId types.String `tfsdk:"alert_severity_id"`
-    OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     CurrentDaySpendInUsd types.Number `tfsdk:"current_day_spend_in_usd"`
     SpendLastEvaluatedAt RFC3339Value `tfsdk:"spend_last_evaluated_at"`
-    LastWarningAlertCreatedAt RFC3339Value `tfsdk:"last_warning_alert_created_at"`
-    LastBreachAlertCreatedAt RFC3339Value `tfsdk:"last_breach_alert_created_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -71,7 +61,7 @@ func (r *LlmCostBudgetResource) Metadata(ctx context.Context, req resource.Metad
 
 func (r *LlmCostBudgetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Daily USD spend budgets for LLM / GenAI telemetry. A worker sums the day's LLM span cost and raises alerts when spend crosses the warning and breach thresholds.",
+        MarkdownDescription: "Daily USD spend budgets for LLM / GenAI telemetry. A worker sums the day's LLM span cost and publishes it as the oneuptime.llm.budget.* metrics, so Metrics monitors, dashboards and anomaly detection can act on spend.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -114,17 +104,8 @@ func (r *LlmCostBudgetResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "daily_budget_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Daily LLM spend budget in USD, evaluated over the UTC day. Alerts fire at the warning threshold and at 100%..",
+                MarkdownDescription: "Daily LLM spend budget in USD, evaluated over the UTC day. Spend and percent-used are published as metrics for monitors to alert on..",
                 Required: true,
-            },
-            "warning_threshold_percent": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of the daily budget at which a warning alert is raised (1-99). A breach alert always fires at 100%..",
-                Optional: true,
-                Computed: true,
-                Default: numberdefault.StaticBigFloat(big.NewFloat(80)),
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
             },
             "service_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
@@ -148,23 +129,6 @@ func (r *LlmCostBudgetResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when this budget raises an alert..",
-                Optional: true,
-                Computed: true,
-                ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -191,16 +155,6 @@ func (r *LlmCostBudgetResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
             },
             "spend_last_evaluated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "last_warning_alert_created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Computed: true,
-            },
-            "last_breach_alert_created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
                 Computed: true,
@@ -270,9 +224,6 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
     if !data.DailyBudgetInUsd.IsNull() && !data.DailyBudgetInUsd.IsUnknown() {
         requestDataMap["dailyBudgetInUSD"] = r.bigFloatToFloat64(data.DailyBudgetInUsd.ValueBigFloat())
     }
-    if !data.WarningThresholdPercent.IsNull() && !data.WarningThresholdPercent.IsUnknown() {
-        requestDataMap["warningThresholdPercent"] = r.bigFloatToFloat64(data.WarningThresholdPercent.ValueBigFloat())
-    }
     if !data.ServiceId.IsNull() && !data.ServiceId.IsUnknown() {
         requestDataMap["serviceId"] = data.ServiceId.ValueString()
     }
@@ -281,12 +232,6 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
     }
     if !data.LlmModel.IsNull() && !data.LlmModel.IsUnknown() {
         requestDataMap["llmModel"] = data.LlmModel.ValueString()
-    }
-    if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
-        requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
-    }
-    if !data.OnCallDutyPolicies.IsNull() && !data.OnCallDutyPolicies.IsUnknown() {
-        requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
 
     // Make API call
@@ -338,20 +283,15 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
         "description": true,
         "isEnabled": true,
         "dailyBudgetInUSD": true,
-        "warningThresholdPercent": true,
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
-        "alertSeverityId": true,
-        "onCallDutyPolicies": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "currentDaySpendInUSD": true,
         "spendLastEvaluatedAt": true,
-        "lastWarningAlertCreatedAt": true,
-        "lastBreachAlertCreatedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -491,23 +431,6 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DailyBudgetInUsd = types.NumberNull()
     }
-    if val, ok := dataMap["warningThresholdPercent"].(float64); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["warningThresholdPercent"].(int); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["warningThresholdPercent"].(int64); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["warningThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WarningThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WarningThresholdPercent = types.NumberNull()
-    }
     if obj, ok := dataMap["serviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -619,75 +542,6 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.LlmModel = types.StringNull()
     }
-    if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AlertSeverityId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AlertSeverityId = types.StringNull()
-        }
-    } else if val, ok := dataMap["alertSeverityId"].(string); ok {
-        data.AlertSeverityId = types.StringValue(val)
-    } else {
-        data.AlertSeverityId = types.StringNull()
-    }
-    if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.OnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -765,28 +619,6 @@ func (r *LlmCostBudgetResource) Create(ctx context.Context, req resource.CreateR
         data.SpendLastEvaluatedAt = NewRFC3339Value(val)
     } else {
         data.SpendLastEvaluatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["lastWarningAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastWarningAlertCreatedAt = NewRFC3339Value(val)
-        } else {
-            data.LastWarningAlertCreatedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastWarningAlertCreatedAt"].(string); ok && val != "" {
-        data.LastWarningAlertCreatedAt = NewRFC3339Value(val)
-    } else {
-        data.LastWarningAlertCreatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["lastBreachAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastBreachAlertCreatedAt = NewRFC3339Value(val)
-        } else {
-            data.LastBreachAlertCreatedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastBreachAlertCreatedAt"].(string); ok && val != "" {
-        data.LastBreachAlertCreatedAt = NewRFC3339Value(val)
-    } else {
-        data.LastBreachAlertCreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -894,20 +726,15 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
         "description": true,
         "isEnabled": true,
         "dailyBudgetInUSD": true,
-        "warningThresholdPercent": true,
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
-        "alertSeverityId": true,
-        "onCallDutyPolicies": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "currentDaySpendInUSD": true,
         "spendLastEvaluatedAt": true,
-        "lastWarningAlertCreatedAt": true,
-        "lastBreachAlertCreatedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -1048,23 +875,6 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DailyBudgetInUsd = types.NumberNull()
     }
-    if val, ok := dataMap["warningThresholdPercent"].(float64); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["warningThresholdPercent"].(int); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["warningThresholdPercent"].(int64); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["warningThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WarningThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WarningThresholdPercent = types.NumberNull()
-    }
     if obj, ok := dataMap["serviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1176,75 +986,6 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.LlmModel = types.StringNull()
     }
-    if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AlertSeverityId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AlertSeverityId = types.StringNull()
-        }
-    } else if val, ok := dataMap["alertSeverityId"].(string); ok {
-        data.AlertSeverityId = types.StringValue(val)
-    } else {
-        data.AlertSeverityId = types.StringNull()
-    }
-    if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.OnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1322,28 +1063,6 @@ func (r *LlmCostBudgetResource) Read(ctx context.Context, req resource.ReadReque
         data.SpendLastEvaluatedAt = NewRFC3339Value(val)
     } else {
         data.SpendLastEvaluatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["lastWarningAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastWarningAlertCreatedAt = NewRFC3339Value(val)
-        } else {
-            data.LastWarningAlertCreatedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastWarningAlertCreatedAt"].(string); ok && val != "" {
-        data.LastWarningAlertCreatedAt = NewRFC3339Value(val)
-    } else {
-        data.LastWarningAlertCreatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["lastBreachAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastBreachAlertCreatedAt = NewRFC3339Value(val)
-        } else {
-            data.LastBreachAlertCreatedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastBreachAlertCreatedAt"].(string); ok && val != "" {
-        data.LastBreachAlertCreatedAt = NewRFC3339Value(val)
-    } else {
-        data.LastBreachAlertCreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1471,9 +1190,6 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
     if !data.DailyBudgetInUsd.IsUnknown() && !state.DailyBudgetInUsd.IsUnknown() && !data.DailyBudgetInUsd.Equal(state.DailyBudgetInUsd) {
         requestDataMap["dailyBudgetInUSD"] = r.bigFloatToFloat64(data.DailyBudgetInUsd.ValueBigFloat())
     }
-    if !data.WarningThresholdPercent.IsUnknown() && !state.WarningThresholdPercent.IsUnknown() && !data.WarningThresholdPercent.Equal(state.WarningThresholdPercent) {
-        requestDataMap["warningThresholdPercent"] = r.bigFloatToFloat64(data.WarningThresholdPercent.ValueBigFloat())
-    }
     if !data.ServiceId.IsUnknown() && !state.ServiceId.IsUnknown() && !data.ServiceId.Equal(state.ServiceId) {
         requestDataMap["serviceId"] = data.ServiceId.ValueString()
     }
@@ -1482,12 +1198,6 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
     }
     if !data.LlmModel.IsUnknown() && !state.LlmModel.IsUnknown() && !data.LlmModel.Equal(state.LlmModel) {
         requestDataMap["llmModel"] = data.LlmModel.ValueString()
-    }
-    if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
-        requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
-    }
-    if !data.OnCallDutyPolicies.IsUnknown() && !state.OnCallDutyPolicies.IsUnknown() && !data.OnCallDutyPolicies.Equal(state.OnCallDutyPolicies) {
-        requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
 
     // Only call the API when there are changed fields to send. An empty
@@ -1517,20 +1227,15 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
         "description": true,
         "isEnabled": true,
         "dailyBudgetInUSD": true,
-        "warningThresholdPercent": true,
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
-        "alertSeverityId": true,
-        "onCallDutyPolicies": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "currentDaySpendInUSD": true,
         "spendLastEvaluatedAt": true,
-        "lastWarningAlertCreatedAt": true,
-        "lastBreachAlertCreatedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -1665,23 +1370,6 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.DailyBudgetInUsd = types.NumberNull()
     }
-    if val, ok := dataMap["warningThresholdPercent"].(float64); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["warningThresholdPercent"].(int); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["warningThresholdPercent"].(int64); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["warningThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WarningThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.WarningThresholdPercent = types.NumberNull()
-    }
     if obj, ok := dataMap["serviceId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1793,75 +1481,6 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.LlmModel = types.StringNull()
     }
-    if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
-            } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AlertSeverityId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AlertSeverityId = types.StringNull()
-        }
-    } else if val, ok := dataMap["alertSeverityId"].(string); ok {
-        data.AlertSeverityId = types.StringValue(val)
-    } else {
-        data.AlertSeverityId = types.StringNull()
-    }
-    if val, ok := dataMap["onCallDutyPolicies"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.OnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1939,28 +1558,6 @@ func (r *LlmCostBudgetResource) Update(ctx context.Context, req resource.UpdateR
         data.SpendLastEvaluatedAt = NewRFC3339Value(val)
     } else {
         data.SpendLastEvaluatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["lastWarningAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastWarningAlertCreatedAt = NewRFC3339Value(val)
-        } else {
-            data.LastWarningAlertCreatedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastWarningAlertCreatedAt"].(string); ok && val != "" {
-        data.LastWarningAlertCreatedAt = NewRFC3339Value(val)
-    } else {
-        data.LastWarningAlertCreatedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["lastBreachAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastBreachAlertCreatedAt = NewRFC3339Value(val)
-        } else {
-            data.LastBreachAlertCreatedAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastBreachAlertCreatedAt"].(string); ok && val != "" {
-        data.LastBreachAlertCreatedAt = NewRFC3339Value(val)
-    } else {
-        data.LastBreachAlertCreatedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

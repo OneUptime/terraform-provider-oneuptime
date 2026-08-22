@@ -6,8 +6,6 @@ import (
     "fmt"
     "net/http"
     "math/big"
-    "github.com/hashicorp/terraform-plugin-framework/attr"
-    "sort"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -39,16 +37,11 @@ type LlmCostBudgetDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     DailyBudgetInUsd types.Number `tfsdk:"daily_budget_in_usd"`
-    WarningThresholdPercent types.Number `tfsdk:"warning_threshold_percent"`
     ServiceId types.String `tfsdk:"service_id"`
     LlmSystem types.String `tfsdk:"llm_system"`
     LlmModel types.String `tfsdk:"llm_model"`
-    AlertSeverityId types.String `tfsdk:"alert_severity_id"`
-    OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     CurrentDaySpendInUsd types.Number `tfsdk:"current_day_spend_in_usd"`
     SpendLastEvaluatedAt types.String `tfsdk:"spend_last_evaluated_at"`
-    LastWarningAlertCreatedAt types.String `tfsdk:"last_warning_alert_created_at"`
-    LastBreachAlertCreatedAt types.String `tfsdk:"last_breach_alert_created_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -59,7 +52,7 @@ func (d *LlmCostBudgetDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *LlmCostBudgetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Daily USD spend budgets for LLM / GenAI telemetry. A worker sums the day's LLM span cost and raises alerts when spend crosses the warning and breach thresholds. Look up an existing llm_cost_budget by `id` or by `name`.",
+        MarkdownDescription: "Daily USD spend budgets for LLM / GenAI telemetry. A worker sums the day's LLM span cost and publishes it as the oneuptime.llm.budget.* metrics, so Metrics monitors, dashboards and anomaly detection can act on spend. Look up an existing llm_cost_budget by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -101,11 +94,7 @@ func (d *LlmCostBudgetDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "daily_budget_in_usd": schema.NumberAttribute{
-                MarkdownDescription: "Daily LLM spend budget in USD, evaluated over the UTC day. Alerts fire at the warning threshold and at 100%..",
-                Computed: true,
-            },
-            "warning_threshold_percent": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of the daily budget at which a warning alert is raised (1-99). A breach alert always fires at 100%..",
+                MarkdownDescription: "Daily LLM spend budget in USD, evaluated over the UTC day. Spend and percent-used are published as metrics for monitors to alert on..",
                 Computed: true,
             },
             "service_id": schema.StringAttribute{
@@ -120,28 +109,11 @@ func (d *LlmCostBudgetDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "Optional model filter, e.g. gpt-4o (matches the span's requested model exactly). Leave empty to count every model..",
                 Computed: true,
             },
-            "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies to execute when this budget raises an alert..",
-                Computed: true,
-                ElementType: types.StringType,
-            },
             "current_day_spend_in_usd": schema.NumberAttribute{
                 MarkdownDescription: "LLM spend accrued so far in the current UTC day, in USD. Computed by the worker..",
                 Computed: true,
             },
             "spend_last_evaluated_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "last_warning_alert_created_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "last_breach_alert_created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
@@ -207,16 +179,11 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
         "description": true,
         "isEnabled": true,
         "dailyBudgetInUSD": true,
-        "warningThresholdPercent": true,
         "serviceId": true,
         "llmSystem": true,
         "llmModel": true,
-        "alertSeverityId": true,
-        "onCallDutyPolicies": true,
         "currentDaySpendInUSD": true,
         "spendLastEvaluatedAt": true,
-        "lastWarningAlertCreatedAt": true,
-        "lastBreachAlertCreatedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -427,17 +394,6 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.DailyBudgetInUsd = types.NumberNull()
     }
-    if val, ok := item["warningThresholdPercent"].(float64); ok {
-        data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["warningThresholdPercent"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.WarningThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.WarningThresholdPercent = types.NumberNull()
-        }
-    } else {
-        data.WarningThresholdPercent = types.NumberNull()
-    }
     if obj, ok := item["serviceId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ServiceId = types.StringValue(val)
@@ -489,47 +445,6 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.LlmModel = types.StringNull()
     }
-    if obj, ok := item["alertSeverityId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.AlertSeverityId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AlertSeverityId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AlertSeverityId = types.StringNull()
-        }
-    } else if val, ok := item["alertSeverityId"].(string); ok {
-        data.AlertSeverityId = types.StringValue(val)
-    } else {
-        data.AlertSeverityId = types.StringNull()
-    }
-    if val, ok := item["onCallDutyPolicies"].([]interface{}); ok {
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                }
-            } else if str, ok := item.(string); ok {
-                setItems = append(setItems, types.StringValue(str))
-            } else {
-                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
-            }
-        }
-        sort.Slice(setItems, func(i, j int) bool {
-            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
-        })
-        data.OnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
-    } else {
-        data.OnCallDutyPolicies = types.SetNull(types.StringType)
-    }
     if val, ok := item["currentDaySpendInUSD"].(float64); ok {
         data.CurrentDaySpendInUsd = types.NumberValue(big.NewFloat(val))
     } else if obj, ok := item["currentDaySpendInUSD"].(map[string]interface{}); ok {
@@ -557,40 +472,6 @@ func (d *LlmCostBudgetDataSource) Read(ctx context.Context, req datasource.ReadR
         data.SpendLastEvaluatedAt = types.StringValue(val)
     } else {
         data.SpendLastEvaluatedAt = types.StringNull()
-    }
-    if obj, ok := item["lastWarningAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastWarningAlertCreatedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LastWarningAlertCreatedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LastWarningAlertCreatedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastWarningAlertCreatedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.LastWarningAlertCreatedAt = types.StringNull()
-        }
-    } else if val, ok := item["lastWarningAlertCreatedAt"].(string); ok {
-        data.LastWarningAlertCreatedAt = types.StringValue(val)
-    } else {
-        data.LastWarningAlertCreatedAt = types.StringNull()
-    }
-    if obj, ok := item["lastBreachAlertCreatedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastBreachAlertCreatedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LastBreachAlertCreatedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LastBreachAlertCreatedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastBreachAlertCreatedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.LastBreachAlertCreatedAt = types.StringNull()
-        }
-    } else if val, ok := item["lastBreachAlertCreatedAt"].(string); ok {
-        data.LastBreachAlertCreatedAt = types.StringValue(val)
-    } else {
-        data.LastBreachAlertCreatedAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
