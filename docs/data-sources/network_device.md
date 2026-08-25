@@ -56,6 +56,7 @@ data "oneuptime_network_device" "by_id" {
 - `walk_interfaces` (Bool) Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph... Computed.
 - `collect_endpoints` (Bool) Also walk the device's ARP cache and bridge forwarding database on each poll to discover endpoints (laptops, printers, POS terminals) attached to it. Strictly opt-in: costs extra SNMP table walks per poll. Only meaningful when Walk Interfaces is on... Computed.
 - `snmp_oids` (String) SNMP OIDs (CPU, memory, temperature, or any custom OID) collected on each poll. Values are recorded as metrics and can be alerted on through monitor criteria... Computed.
+- `auto_apply_vendor_health_template` (Bool) When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list... Computed.
 - `next_poll_at` (String) A date time object.. Computed.
 - `last_walk_log` (String) The previous poll's raw walk response. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls. Managed by the server... Computed.
 - `sys_descr` (String) System description (sysDescr) enriched from SNMP walks of this device.. Computed.

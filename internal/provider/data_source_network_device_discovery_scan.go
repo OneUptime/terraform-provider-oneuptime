@@ -55,6 +55,7 @@ type NetworkDeviceDiscoveryScanDataSourceModel struct {
     IsRecurring types.Bool `tfsdk:"is_recurring"`
     RescanIntervalInMinutes types.Number `tfsdk:"rescan_interval_in_minutes"`
     NextScanAt types.String `tfsdk:"next_scan_at"`
+    AutoImportProcessedAt types.String `tfsdk:"auto_import_processed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -182,6 +183,10 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
+            "auto_import_processed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -262,6 +267,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         "isRecurring": true,
         "rescanIntervalInMinutes": true,
         "nextScanAt": true,
+        "autoImportProcessedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -759,6 +765,23 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         data.NextScanAt = types.StringValue(val)
     } else {
         data.NextScanAt = types.StringNull()
+    }
+    if obj, ok := item["autoImportProcessedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AutoImportProcessedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AutoImportProcessedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AutoImportProcessedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AutoImportProcessedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoImportProcessedAt = types.StringNull()
+        }
+    } else if val, ok := item["autoImportProcessedAt"].(string); ok {
+        data.AutoImportProcessedAt = types.StringValue(val)
+    } else {
+        data.AutoImportProcessedAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

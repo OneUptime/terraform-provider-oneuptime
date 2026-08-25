@@ -65,6 +65,7 @@ type NetworkDeviceResourceModel struct {
     WalkInterfaces types.Bool `tfsdk:"walk_interfaces"`
     CollectEndpoints types.Bool `tfsdk:"collect_endpoints"`
     SnmpOids JSONSubsetValue `tfsdk:"snmp_oids"`
+    AutoApplyVendorHealthTemplate types.Bool `tfsdk:"auto_apply_vendor_health_template"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     Labels types.Set `tfsdk:"labels"`
@@ -308,6 +309,15 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
+                },
+            },
+            "auto_apply_vendor_health_template": schema.BoolAttribute{
+                MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_by_user_id": schema.StringAttribute{
@@ -672,6 +682,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if parsedSnmpOids := r.parseJSONField(data.SnmpOids); parsedSnmpOids != nil {
         requestDataMap["snmpOids"] = parsedSnmpOids
     }
+    if !data.AutoApplyVendorHealthTemplate.IsNull() && !data.AutoApplyVendorHealthTemplate.IsUnknown() {
+        requestDataMap["autoApplyVendorHealthTemplate"] = data.AutoApplyVendorHealthTemplate.ValueBool()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -750,6 +763,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "autoApplyVendorHealthTemplate": true,
         "createdByUserId": true,
         "isArchived": true,
         "labels": true,
@@ -1534,6 +1548,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.SnmpOids = NewJSONSubsetValue(val)
     } else {
         data.SnmpOids = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["autoApplyVendorHealthTemplate"].(bool); ok {
+        data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2448,6 +2465,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "autoApplyVendorHealthTemplate": true,
         "createdByUserId": true,
         "isArchived": true,
         "labels": true,
@@ -3233,6 +3251,9 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.SnmpOids = NewJSONSubsetValue(val)
     } else {
         data.SnmpOids = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["autoApplyVendorHealthTemplate"].(bool); ok {
+        data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4213,6 +4234,9 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
             requestDataMap["snmpOids"] = data.SnmpOids.ValueString()
         }
     }
+    if !data.AutoApplyVendorHealthTemplate.IsUnknown() && !state.AutoApplyVendorHealthTemplate.IsUnknown() && !data.AutoApplyVendorHealthTemplate.Equal(state.AutoApplyVendorHealthTemplate) {
+        requestDataMap["autoApplyVendorHealthTemplate"] = data.AutoApplyVendorHealthTemplate.ValueBool()
+    }
     if !data.NextPollAt.IsUnknown() && !state.NextPollAt.IsUnknown() && !data.NextPollAt.Equal(state.NextPollAt) {
         requestDataMap["nextPollAt"] = data.NextPollAt.ValueString()
     }
@@ -4336,6 +4360,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "autoApplyVendorHealthTemplate": true,
         "createdByUserId": true,
         "isArchived": true,
         "labels": true,
@@ -5115,6 +5140,9 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.SnmpOids = NewJSONSubsetValue(val)
     } else {
         data.SnmpOids = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["autoApplyVendorHealthTemplate"].(bool); ok {
+        data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

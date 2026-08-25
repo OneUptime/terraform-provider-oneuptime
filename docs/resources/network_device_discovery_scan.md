@@ -56,6 +56,7 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 - `started_at` (String) A date time object..
 - `completed_at` (String) A date time object..
 - `next_scan_at` (String) A date time object..
+- `auto_import_processed_at` (String) A date time object..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

@@ -60,6 +60,7 @@ type NetworkDeviceDataSourceModel struct {
     WalkInterfaces types.Bool `tfsdk:"walk_interfaces"`
     CollectEndpoints types.Bool `tfsdk:"collect_endpoints"`
     SnmpOids types.String `tfsdk:"snmp_oids"`
+    AutoApplyVendorHealthTemplate types.Bool `tfsdk:"auto_apply_vendor_health_template"`
     NextPollAt types.String `tfsdk:"next_poll_at"`
     LastWalkLog types.String `tfsdk:"last_walk_log"`
     SysDescr types.String `tfsdk:"sys_descr"`
@@ -222,6 +223,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "snmp_oids": schema.StringAttribute{
                 MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected on each poll. Values are recorded as metrics and can be alerted on through monitor criteria..",
+                Computed: true,
+            },
+            "auto_apply_vendor_health_template": schema.BoolAttribute{
+                MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list..",
                 Computed: true,
             },
             "next_poll_at": schema.StringAttribute{
@@ -408,6 +413,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "autoApplyVendorHealthTemplate": true,
         "nextPollAt": true,
         "lastWalkLog": true,
         "sysDescr": true,
@@ -969,6 +975,11 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.SnmpOids = types.StringValue(val)
     } else {
         data.SnmpOids = types.StringNull()
+    }
+    if val, ok := item["autoApplyVendorHealthTemplate"].(bool); ok {
+        data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
+    } else {
+        data.AutoApplyVendorHealthTemplate = types.BoolNull()
     }
     if obj, ok := item["nextPollAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

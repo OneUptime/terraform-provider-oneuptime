@@ -53,5 +53,6 @@ data "oneuptime_network_device_discovery_scan" "by_id" {
 - `is_recurring` (Bool) Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous... Computed.
 - `rescan_interval_in_minutes` (Number) How often a recurring scan re-runs, in minutes. Ignored unless Is Recurring is on... Computed.
 - `next_scan_at` (String) A date time object.. Computed.
+- `auto_import_processed_at` (String) A date time object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

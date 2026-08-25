@@ -64,6 +64,7 @@ type NetworkDeviceDiscoveryScanResourceModel struct {
     StartedAt RFC3339Value `tfsdk:"started_at"`
     CompletedAt RFC3339Value `tfsdk:"completed_at"`
     NextScanAt RFC3339Value `tfsdk:"next_scan_at"`
+    AutoImportProcessedAt RFC3339Value `tfsdk:"auto_import_processed_at"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -266,6 +267,11 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
+            "auto_import_processed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
             "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -429,6 +435,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         "startedAt": true,
         "completedAt": true,
         "nextScanAt": true,
+        "autoImportProcessedAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1145,6 +1152,17 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     } else {
         data.NextScanAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["autoImportProcessedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AutoImportProcessedAt = NewRFC3339Value(val)
+        } else {
+            data.AutoImportProcessedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["autoImportProcessedAt"].(string); ok && val != "" {
+        data.AutoImportProcessedAt = NewRFC3339Value(val)
+    } else {
+        data.AutoImportProcessedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1236,6 +1254,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         "startedAt": true,
         "completedAt": true,
         "nextScanAt": true,
+        "autoImportProcessedAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1953,6 +1972,17 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
     } else {
         data.NextScanAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["autoImportProcessedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AutoImportProcessedAt = NewRFC3339Value(val)
+        } else {
+            data.AutoImportProcessedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["autoImportProcessedAt"].(string); ok && val != "" {
+        data.AutoImportProcessedAt = NewRFC3339Value(val)
+    } else {
+        data.AutoImportProcessedAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2081,6 +2111,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         "startedAt": true,
         "completedAt": true,
         "nextScanAt": true,
+        "autoImportProcessedAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -2791,6 +2822,17 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         data.NextScanAt = NewRFC3339Value(val)
     } else {
         data.NextScanAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["autoImportProcessedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.AutoImportProcessedAt = NewRFC3339Value(val)
+        } else {
+            data.AutoImportProcessedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["autoImportProcessedAt"].(string); ok && val != "" {
+        data.AutoImportProcessedAt = NewRFC3339Value(val)
+    } else {
+        data.AutoImportProcessedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
