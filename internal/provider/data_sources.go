@@ -353,5 +353,6 @@ func GetDataSources() []func() datasource.DataSource {
         NewProfileSampleDataSource,
         NewAuditLogDataSource,
         NewSecurityEventDataSource,
+        NewChangeEventDataSource,
     }
 }
