@@ -68,3 +68,6 @@ data "oneuptime_span" "by_id" {
 - `llm_total_tokens` (Number) LLM Total Tokens. Computed.
 - `llm_cost` (Number) LLM Cost (USD). Computed.
 - `llm_conversation_id` (String) LLM Conversation ID. Computed.
+- `llm_user_id` (String) LLM User ID. Computed.
+- `llm_user_email` (String) LLM User Email. Computed.
+- `llm_team` (String) LLM Team. Computed.

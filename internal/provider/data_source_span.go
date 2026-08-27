@@ -72,6 +72,9 @@ type SpanDataSourceModel struct {
     LlmTotalTokens types.Number `tfsdk:"llm_total_tokens"`
     LlmCost types.Number `tfsdk:"llm_cost"`
     LlmConversationId types.String `tfsdk:"llm_conversation_id"`
+    LlmUserId types.String `tfsdk:"llm_user_id"`
+    LlmUserEmail types.String `tfsdk:"llm_user_email"`
+    LlmTeam types.String `tfsdk:"llm_team"`
 }
 
 func (d *SpanDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -260,6 +263,18 @@ func (d *SpanDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "LLM Conversation ID",
                 Computed: true,
             },
+            "llm_user_id": schema.StringAttribute{
+                MarkdownDescription: "LLM User ID",
+                Computed: true,
+            },
+            "llm_user_email": schema.StringAttribute{
+                MarkdownDescription: "LLM User Email",
+                Computed: true,
+            },
+            "llm_team": schema.StringAttribute{
+                MarkdownDescription: "LLM Team",
+                Computed: true,
+            },
         },
     }
 }
@@ -347,6 +362,9 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "llmTotalTokens": true,
         "llmCost": true,
         "llmConversationId": true,
+        "llmUserId": true,
+        "llmUserEmail": true,
+        "llmTeam": true,
         "_id": true,
     }
 
@@ -1088,6 +1106,57 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.LlmConversationId = types.StringValue(val)
     } else {
         data.LlmConversationId = types.StringNull()
+    }
+    if obj, ok := item["llmUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmUserId = types.StringNull()
+        }
+    } else if val, ok := item["llmUserId"].(string); ok {
+        data.LlmUserId = types.StringValue(val)
+    } else {
+        data.LlmUserId = types.StringNull()
+    }
+    if obj, ok := item["llmUserEmail"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmUserEmail = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmUserEmail = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmUserEmail = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmUserEmail = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmUserEmail = types.StringNull()
+        }
+    } else if val, ok := item["llmUserEmail"].(string); ok {
+        data.LlmUserEmail = types.StringValue(val)
+    } else {
+        data.LlmUserEmail = types.StringNull()
+    }
+    if obj, ok := item["llmTeam"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LlmTeam = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LlmTeam = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LlmTeam = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LlmTeam = types.StringValue(string(jsonBytes))
+        } else {
+            data.LlmTeam = types.StringNull()
+        }
+    } else if val, ok := item["llmTeam"].(string); ok {
+        data.LlmTeam = types.StringValue(val)
+    } else {
+        data.LlmTeam = types.StringNull()
     }
 
     // Write logs using the tflog package
