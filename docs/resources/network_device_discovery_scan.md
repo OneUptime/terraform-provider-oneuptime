@@ -15,6 +15,7 @@ Network discovery scans that sweep an address space — a CIDR subnet or an octe
 resource "oneuptime_network_device_discovery_scan" "example" {
   probe_id = "123e4567-e89b-12d3-a456-426614174000"
   cidr = "Example short text"
+  name = "Example short text"
 }
 ```
 
@@ -28,6 +29,7 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
+- `name` (String) Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty...
 - `snmp_version` (String) SNMP version tried against every host in the subnet (V1, V2c, V3)..
 - `snmp_community_string` (String) Community string tried against every host in the subnet (SNMP v1/v2c)..
 - `snmp_port` (Number) UDP port tried against every host in the subnet..

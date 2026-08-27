@@ -39,6 +39,8 @@ type DetectionRuleDataSourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     EvaluationIntervalInMinutes types.Number `tfsdk:"evaluation_interval_in_minutes"`
     GroupByField types.String `tfsdk:"group_by_field"`
+    DistinctCountField types.String `tfsdk:"distinct_count_field"`
+    MatchCountThreshold types.Number `tfsdk:"match_count_threshold"`
     ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
@@ -108,6 +110,14 @@ func (d *DetectionRuleDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "group_by_field": schema.StringAttribute{
                 MarkdownDescription: "Optional security-event field (e.g. principalHost, principalUser) to group matches by. One alert is opened per distinct value; empty groups all matches into one alert..",
+                Computed: true,
+            },
+            "distinct_count_field": schema.StringAttribute{
+                MarkdownDescription: "Optional security-event field (e.g. principalUser, principalIp) whose distinct values are counted instead of raw matching events. The match count threshold then applies to that distinct count. Empty values are not counted. Names that are not typed event columns are looked up in the event's attributes map..",
+                Computed: true,
+            },
+            "match_count_threshold": schema.NumberAttribute{
+                MarkdownDescription: "Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match..",
                 Computed: true,
             },
             "should_create_alert": schema.BoolAttribute{
@@ -206,6 +216,8 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
         "groupByField": true,
+        "distinctCountField": true,
+        "matchCountThreshold": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
@@ -457,6 +469,34 @@ func (d *DetectionRuleDataSource) Read(ctx context.Context, req datasource.ReadR
         data.GroupByField = types.StringValue(val)
     } else {
         data.GroupByField = types.StringNull()
+    }
+    if obj, ok := item["distinctCountField"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DistinctCountField = types.StringValue(string(jsonBytes))
+        } else {
+            data.DistinctCountField = types.StringNull()
+        }
+    } else if val, ok := item["distinctCountField"].(string); ok {
+        data.DistinctCountField = types.StringValue(val)
+    } else {
+        data.DistinctCountField = types.StringNull()
+    }
+    if val, ok := item["matchCountThreshold"].(float64); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["matchCountThreshold"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.MatchCountThreshold = types.NumberNull()
+        }
+    } else {
+        data.MatchCountThreshold = types.NumberNull()
     }
     if val, ok := item["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)

@@ -46,6 +46,8 @@ type DetectionRuleResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     EvaluationIntervalInMinutes types.Number `tfsdk:"evaluation_interval_in_minutes"`
     GroupByField types.String `tfsdk:"group_by_field"`
+    DistinctCountField types.String `tfsdk:"distinct_count_field"`
+    MatchCountThreshold types.Number `tfsdk:"match_count_threshold"`
     ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
     ShouldWriteDetectionFinding types.Bool `tfsdk:"should_write_detection_finding"`
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
@@ -129,6 +131,23 @@ func (r *DetectionRuleResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "distinct_count_field": schema.StringAttribute{
+                MarkdownDescription: "Optional security-event field (e.g. principalUser, principalIp) whose distinct values are counted instead of raw matching events. The match count threshold then applies to that distinct count. Empty values are not counted. Names that are not typed event columns are looked up in the event's attributes map..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "match_count_threshold": schema.NumberAttribute{
+                MarkdownDescription: "Fire only when a group's count — distinct values when a distinct count field is set, matching events otherwise — reaches this number within one evaluation window. 1 fires on any match..",
+                Optional: true,
+                Computed: true,
+                Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
                 },
             },
             "should_create_alert": schema.BoolAttribute{
@@ -278,6 +297,12 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
     if !data.GroupByField.IsNull() && !data.GroupByField.IsUnknown() {
         requestDataMap["groupByField"] = data.GroupByField.ValueString()
     }
+    if !data.DistinctCountField.IsNull() && !data.DistinctCountField.IsUnknown() {
+        requestDataMap["distinctCountField"] = data.DistinctCountField.ValueString()
+    }
+    if !data.MatchCountThreshold.IsNull() && !data.MatchCountThreshold.IsUnknown() {
+        requestDataMap["matchCountThreshold"] = r.bigFloatToFloat64(data.MatchCountThreshold.ValueBigFloat())
+    }
     if !data.ShouldCreateAlert.IsNull() && !data.ShouldCreateAlert.IsUnknown() {
         requestDataMap["shouldCreateAlert"] = data.ShouldCreateAlert.ValueBool()
     }
@@ -345,6 +370,8 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
         "groupByField": true,
+        "distinctCountField": true,
+        "matchCountThreshold": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
@@ -569,6 +596,60 @@ func (r *DetectionRuleResource) Create(ctx context.Context, req resource.CreateR
         data.GroupByField = types.StringValue(val)
     } else {
         data.GroupByField = types.StringNull()
+    }
+    if obj, ok := dataMap["distinctCountField"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DistinctCountField = types.StringValue(string(jsonBytes))
+            } else {
+                data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DistinctCountField = types.StringValue(string(jsonBytes))
+            } else {
+                data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DistinctCountField = types.StringValue(string(jsonBytes))
+        } else {
+            data.DistinctCountField = types.StringNull()
+        }
+    } else if val, ok := dataMap["distinctCountField"].(string); ok {
+        data.DistinctCountField = types.StringValue(val)
+    } else {
+        data.DistinctCountField = types.StringNull()
+    }
+    if val, ok := dataMap["matchCountThreshold"].(float64); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["matchCountThreshold"].(int); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["matchCountThreshold"].(int64); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["matchCountThreshold"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.MatchCountThreshold = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.MatchCountThreshold = types.NumberNull()
     }
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
@@ -870,6 +951,8 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
         "groupByField": true,
+        "distinctCountField": true,
+        "matchCountThreshold": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
@@ -1095,6 +1178,60 @@ func (r *DetectionRuleResource) Read(ctx context.Context, req resource.ReadReque
         data.GroupByField = types.StringValue(val)
     } else {
         data.GroupByField = types.StringNull()
+    }
+    if obj, ok := dataMap["distinctCountField"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DistinctCountField = types.StringValue(string(jsonBytes))
+            } else {
+                data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DistinctCountField = types.StringValue(string(jsonBytes))
+            } else {
+                data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DistinctCountField = types.StringValue(string(jsonBytes))
+        } else {
+            data.DistinctCountField = types.StringNull()
+        }
+    } else if val, ok := dataMap["distinctCountField"].(string); ok {
+        data.DistinctCountField = types.StringValue(val)
+    } else {
+        data.DistinctCountField = types.StringNull()
+    }
+    if val, ok := dataMap["matchCountThreshold"].(float64); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["matchCountThreshold"].(int); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["matchCountThreshold"].(int64); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["matchCountThreshold"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.MatchCountThreshold = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.MatchCountThreshold = types.NumberNull()
     }
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
@@ -1420,6 +1557,12 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
     if !data.GroupByField.IsUnknown() && !state.GroupByField.IsUnknown() && !data.GroupByField.Equal(state.GroupByField) {
         requestDataMap["groupByField"] = data.GroupByField.ValueString()
     }
+    if !data.DistinctCountField.IsUnknown() && !state.DistinctCountField.IsUnknown() && !data.DistinctCountField.Equal(state.DistinctCountField) {
+        requestDataMap["distinctCountField"] = data.DistinctCountField.ValueString()
+    }
+    if !data.MatchCountThreshold.IsUnknown() && !state.MatchCountThreshold.IsUnknown() && !data.MatchCountThreshold.Equal(state.MatchCountThreshold) {
+        requestDataMap["matchCountThreshold"] = r.bigFloatToFloat64(data.MatchCountThreshold.ValueBigFloat())
+    }
     if !data.ShouldCreateAlert.IsUnknown() && !state.ShouldCreateAlert.IsUnknown() && !data.ShouldCreateAlert.Equal(state.ShouldCreateAlert) {
         requestDataMap["shouldCreateAlert"] = data.ShouldCreateAlert.ValueBool()
     }
@@ -1465,6 +1608,8 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         "isEnabled": true,
         "evaluationIntervalInMinutes": true,
         "groupByField": true,
+        "distinctCountField": true,
+        "matchCountThreshold": true,
         "shouldCreateAlert": true,
         "shouldWriteDetectionFinding": true,
         "shouldCreateIncident": true,
@@ -1684,6 +1829,60 @@ func (r *DetectionRuleResource) Update(ctx context.Context, req resource.UpdateR
         data.GroupByField = types.StringValue(val)
     } else {
         data.GroupByField = types.StringNull()
+    }
+    if obj, ok := dataMap["distinctCountField"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DistinctCountField = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DistinctCountField = types.StringValue(string(jsonBytes))
+            } else {
+                data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DistinctCountField = types.StringValue(string(jsonBytes))
+            } else {
+                data.DistinctCountField = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DistinctCountField = types.StringValue(string(jsonBytes))
+        } else {
+            data.DistinctCountField = types.StringNull()
+        }
+    } else if val, ok := dataMap["distinctCountField"].(string); ok {
+        data.DistinctCountField = types.StringValue(val)
+    } else {
+        data.DistinctCountField = types.StringNull()
+    }
+    if val, ok := dataMap["matchCountThreshold"].(float64); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["matchCountThreshold"].(int); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["matchCountThreshold"].(int64); ok {
+        data.MatchCountThreshold = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["matchCountThreshold"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.MatchCountThreshold = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.MatchCountThreshold = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.MatchCountThreshold = types.NumberNull()
     }
     if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
         data.ShouldCreateAlert = types.BoolValue(val)
