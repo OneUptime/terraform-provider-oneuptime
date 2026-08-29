@@ -45,6 +45,8 @@ type NetworkSiteResourceModel struct {
     Address types.String `tfsdk:"address"`
     Latitude types.Number `tfsdk:"latitude"`
     Longitude types.Number `tfsdk:"longitude"`
+    HealthRollupPolicy types.String `tfsdk:"health_rollup_policy"`
+    OfflineThresholdPercent types.Number `tfsdk:"offline_threshold_percent"`
     ShouldAlertWhenUnhealthy types.Bool `tfsdk:"should_alert_when_unhealthy"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -138,6 +140,22 @@ func (r *NetworkSiteResource) Schema(ctx context.Context, req resource.SchemaReq
             },
             "longitude": schema.NumberAttribute{
                 MarkdownDescription: "Longitude of this site, for US and world map views.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "health_rollup_policy": schema.StringAttribute{
+                MarkdownDescription: "How this site's status is derived from the devices beneath it: WorstStatus (any device offline makes the site offline) or PercentThreshold (the share of devices that are down decides)..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "offline_threshold_percent": schema.NumberAttribute{
+                MarkdownDescription: "With the PercentThreshold rollup policy: the share of reporting devices beneath this site that must be non-operational before the site itself is marked offline. Below it (but above zero) the site is degraded..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
@@ -302,6 +320,12 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     if !data.Longitude.IsNull() && !data.Longitude.IsUnknown() {
         requestDataMap["longitude"] = r.bigFloatToFloat64(data.Longitude.ValueBigFloat())
     }
+    if !data.HealthRollupPolicy.IsNull() && !data.HealthRollupPolicy.IsUnknown() {
+        requestDataMap["healthRollupPolicy"] = data.HealthRollupPolicy.ValueString()
+    }
+    if !data.OfflineThresholdPercent.IsNull() && !data.OfflineThresholdPercent.IsUnknown() {
+        requestDataMap["offlineThresholdPercent"] = r.bigFloatToFloat64(data.OfflineThresholdPercent.ValueBigFloat())
+    }
     if !data.ShouldAlertWhenUnhealthy.IsNull() && !data.ShouldAlertWhenUnhealthy.IsUnknown() {
         requestDataMap["shouldAlertWhenUnhealthy"] = data.ShouldAlertWhenUnhealthy.ValueBool()
     }
@@ -365,6 +389,8 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
         "address": true,
         "latitude": true,
         "longitude": true,
+        "healthRollupPolicy": true,
+        "offlineThresholdPercent": true,
         "shouldAlertWhenUnhealthy": true,
         "alertSeverityId": true,
         "createdByUserId": true,
@@ -677,6 +703,60 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Longitude = types.NumberNull()
+    }
+    if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.HealthRollupPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["healthRollupPolicy"].(string); ok {
+        data.HealthRollupPolicy = types.StringValue(val)
+    } else {
+        data.HealthRollupPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.OfflineThresholdPercent = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.OfflineThresholdPercent = types.NumberNull()
     }
     if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
@@ -1056,6 +1136,8 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
         "address": true,
         "latitude": true,
         "longitude": true,
+        "healthRollupPolicy": true,
+        "offlineThresholdPercent": true,
         "shouldAlertWhenUnhealthy": true,
         "alertSeverityId": true,
         "createdByUserId": true,
@@ -1369,6 +1451,60 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Longitude = types.NumberNull()
+    }
+    if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.HealthRollupPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["healthRollupPolicy"].(string); ok {
+        data.HealthRollupPolicy = types.StringValue(val)
+    } else {
+        data.HealthRollupPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.OfflineThresholdPercent = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.OfflineThresholdPercent = types.NumberNull()
     }
     if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
@@ -1783,6 +1919,12 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     if !data.LastRollupAt.IsUnknown() && !state.LastRollupAt.IsUnknown() && !data.LastRollupAt.Equal(state.LastRollupAt) {
         requestDataMap["lastRollupAt"] = data.LastRollupAt.ValueString()
     }
+    if !data.HealthRollupPolicy.IsUnknown() && !state.HealthRollupPolicy.IsUnknown() && !data.HealthRollupPolicy.Equal(state.HealthRollupPolicy) {
+        requestDataMap["healthRollupPolicy"] = data.HealthRollupPolicy.ValueString()
+    }
+    if !data.OfflineThresholdPercent.IsUnknown() && !state.OfflineThresholdPercent.IsUnknown() && !data.OfflineThresholdPercent.Equal(state.OfflineThresholdPercent) {
+        requestDataMap["offlineThresholdPercent"] = r.bigFloatToFloat64(data.OfflineThresholdPercent.ValueBigFloat())
+    }
     if !data.ShouldAlertWhenUnhealthy.IsUnknown() && !state.ShouldAlertWhenUnhealthy.IsUnknown() && !data.ShouldAlertWhenUnhealthy.Equal(state.ShouldAlertWhenUnhealthy) {
         requestDataMap["shouldAlertWhenUnhealthy"] = data.ShouldAlertWhenUnhealthy.ValueBool()
     }
@@ -1821,6 +1963,8 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
         "address": true,
         "latitude": true,
         "longitude": true,
+        "healthRollupPolicy": true,
+        "offlineThresholdPercent": true,
         "shouldAlertWhenUnhealthy": true,
         "alertSeverityId": true,
         "createdByUserId": true,
@@ -2128,6 +2272,60 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Longitude = types.NumberNull()
+    }
+    if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            } else {
+                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.HealthRollupPolicy = types.StringNull()
+        }
+    } else if val, ok := dataMap["healthRollupPolicy"].(string); ok {
+        data.HealthRollupPolicy = types.StringValue(val)
+    } else {
+        data.HealthRollupPolicy = types.StringNull()
+    }
+    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.OfflineThresholdPercent = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.OfflineThresholdPercent = types.NumberNull()
     }
     if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)

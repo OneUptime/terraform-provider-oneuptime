@@ -268,7 +268,7 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/inventory-item/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/inventory-item/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list inventory_item, got error: %s", err))
             return

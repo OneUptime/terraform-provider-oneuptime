@@ -190,7 +190,7 @@ func (d *HostUserOwnerDataSource) Read(ctx context.Context, req datasource.ReadR
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/host-owner-user/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/host-owner-user/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list host_user_owner, got error: %s", err))
             return

@@ -110,7 +110,7 @@ func (d *TotpAuthDataSource) Read(ctx context.Context, req datasource.ReadReques
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/user-totp-auth/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/user-totp-auth/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list totp_auth, got error: %s", err))
             return

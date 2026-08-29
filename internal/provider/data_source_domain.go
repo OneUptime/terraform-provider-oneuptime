@@ -196,7 +196,7 @@ func (d *DomainDataSource) Read(ctx context.Context, req datasource.ReadRequest,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/domain/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/domain/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list domain, got error: %s", err))
             return

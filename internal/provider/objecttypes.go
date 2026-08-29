@@ -47,6 +47,8 @@ var validOneUptimeObjectTypes = map[string]bool{
         "StartsWith": true,
         "EndsWith": true,
         "NotContains": true,
+        "Wildcard": true,
+        "NotWildcard": true,
         "DashboardComponent": true,
         "DashboardViewConfig": true,
 }

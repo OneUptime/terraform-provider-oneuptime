@@ -298,7 +298,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/auto-remediation-suggestion/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/auto-remediation-suggestion/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list auto_remediation_suggestion, got error: %s", err))
             return

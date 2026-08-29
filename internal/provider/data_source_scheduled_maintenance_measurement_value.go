@@ -220,7 +220,7 @@ func (d *ScheduledMaintenanceMeasurementValueDataSource) Read(ctx context.Contex
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/scheduled-maintenance-measurement-value/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/scheduled-maintenance-measurement-value/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list scheduled_maintenance_measurement_value, got error: %s", err))
             return

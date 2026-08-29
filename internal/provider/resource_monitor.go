@@ -68,6 +68,7 @@ type MonitorResourceModel struct {
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
+    AutoProvisionedNetworkDeviceId types.String `tfsdk:"auto_provisioned_network_device_id"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
     DisableActiveMonitoringBecauseOfScheduledMaintenanceEvent types.Bool `tfsdk:"disable_active_monitoring_because_of_scheduled_maintenance_event"`
     DisableActiveMonitoringBecauseOfManualIncident types.Bool `tfsdk:"disable_active_monitoring_because_of_manual_incident"`
@@ -305,6 +306,10 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
             },
+            "auto_provisioned_network_device_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of when this resource is created?.",
                 Computed: true,
@@ -533,6 +538,7 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "autoProvisionedNetworkDeviceId": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "disableActiveMonitoringBecauseOfScheduledMaintenanceEvent": true,
         "disableActiveMonitoringBecauseOfManualIncident": true,
@@ -1209,6 +1215,43 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["autoProvisionedNetworkDeviceId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
+    } else if val, ok := dataMap["autoProvisionedNetworkDeviceId"].(string); ok {
+        data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+    } else {
+        data.AutoProvisionedNetworkDeviceId = types.StringNull()
+    }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
@@ -1447,6 +1490,7 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "autoProvisionedNetworkDeviceId": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "disableActiveMonitoringBecauseOfScheduledMaintenanceEvent": true,
         "disableActiveMonitoringBecauseOfManualIncident": true,
@@ -2124,6 +2168,43 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["autoProvisionedNetworkDeviceId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
+    } else if val, ok := dataMap["autoProvisionedNetworkDeviceId"].(string); ok {
+        data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+    } else {
+        data.AutoProvisionedNetworkDeviceId = types.StringNull()
+    }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
@@ -2439,6 +2520,7 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "autoProvisionedNetworkDeviceId": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "disableActiveMonitoringBecauseOfScheduledMaintenanceEvent": true,
         "disableActiveMonitoringBecauseOfManualIncident": true,
@@ -3109,6 +3191,43 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["autoProvisionedNetworkDeviceId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+            } else {
+                data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
+    } else if val, ok := dataMap["autoProvisionedNetworkDeviceId"].(string); ok {
+        data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+    } else {
+        data.AutoProvisionedNetworkDeviceId = types.StringNull()
     }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)

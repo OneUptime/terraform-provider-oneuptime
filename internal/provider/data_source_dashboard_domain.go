@@ -223,7 +223,7 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/dashboard-domain/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/dashboard-domain/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list dashboard_domain, got error: %s", err))
             return

@@ -340,7 +340,7 @@ func (d *AiRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/ai-run/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ai-run/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_run, got error: %s", err))
             return

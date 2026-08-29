@@ -214,7 +214,7 @@ func (d *TableViewDataSource) Read(ctx context.Context, req datasource.ReadReque
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/table-view/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/table-view/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list table_view, got error: %s", err))
             return

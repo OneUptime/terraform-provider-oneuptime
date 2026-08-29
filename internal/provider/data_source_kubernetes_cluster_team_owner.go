@@ -190,7 +190,7 @@ func (d *KubernetesClusterTeamOwnerDataSource) Read(ctx context.Context, req dat
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/kubernetes-cluster-owner-team/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/kubernetes-cluster-owner-team/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list kubernetes_cluster_team_owner, got error: %s", err))
             return

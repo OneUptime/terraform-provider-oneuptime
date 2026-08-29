@@ -19,6 +19,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -41,6 +42,8 @@ type NetworkDeviceDiscoveryScanResourceModel struct {
     ProbeId types.String `tfsdk:"probe_id"`
     Name types.String `tfsdk:"name"`
     Cidr types.String `tfsdk:"cidr"`
+    SnmpConfigs JSONSubsetValue `tfsdk:"snmp_configs"`
+    IsSnmpEnabled types.Bool `tfsdk:"is_snmp_enabled"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
@@ -75,7 +78,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Metadata(ctx context.Context, req r
 
 func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Network discovery scans that sweep an address space — a CIDR subnet or an octet range — via SNMP from a probe and report devices found, so they can be imported as Network Devices.",
+        MarkdownDescription: "Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; scans with Check SNMP on also query each live host over SNMP.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -95,9 +98,6 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
             "probe_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
             },
             "name": schema.StringAttribute{
                 MarkdownDescription: "Optional name for this scan, so it can be told apart from other scans at a glance. Falls back to the scan target when empty..",
@@ -110,89 +110,98 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
             "cidr": schema.StringAttribute{
                 MarkdownDescription: "Address space to scan, either in CIDR notation (192.168.1.0/24) or octet-range notation where any octet may be an inclusive low-high range (10.16-22.0-255.51-66).",
                 Required: true,
+            },
+            "snmp_configs": schema.StringAttribute{
+                MarkdownDescription: "Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
                 PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "is_snmp_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "snmp_version": schema.StringAttribute{
-                MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3).",
+                MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_community_string": schema.StringAttribute{
-                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c).",
+                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_port": schema.NumberAttribute{
-                MarkdownDescription: "UDP port tried against every host in the subnet.",
+                MarkdownDescription: "UDP port tried against every host in the subnet. Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
-                    numberplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_v3_security_level": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv.",
+                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_v3_username": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 security name (username) tried against every host.",
+                MarkdownDescription: "SNMP v3 security name (username) tried against every host. Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_v3_auth_protocol": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.",
+                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_v3_auth_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host.",
+                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "snmp_v3_priv_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored when Check SNMP is off..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "is_recurring": schema.BoolAttribute{
@@ -258,7 +267,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                 Computed: true,
             },
             "responded_host_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of hosts that responded to SNMP during the sweep. Managed by the scanning probe..",
+                MarkdownDescription: "Number of hosts that answered the check this scan performed: SNMP responders on a scan with Check SNMP on, hosts that answered the ping sweep on an ICMP-only one. Managed by the scanning probe..",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -338,6 +347,12 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     }
     if !data.Cidr.IsNull() && !data.Cidr.IsUnknown() {
         requestDataMap["cidr"] = data.Cidr.ValueString()
+    }
+    if parsedSnmpConfigs := r.parseJSONField(data.SnmpConfigs); parsedSnmpConfigs != nil {
+        requestDataMap["snmpConfigs"] = parsedSnmpConfigs
+    }
+    if !data.IsSnmpEnabled.IsNull() && !data.IsSnmpEnabled.IsUnknown() {
+        requestDataMap["isSnmpEnabled"] = data.IsSnmpEnabled.ValueBool()
     }
     if !data.SnmpVersion.IsNull() && !data.SnmpVersion.IsUnknown() {
         requestDataMap["snmpVersion"] = data.SnmpVersion.ValueString()
@@ -424,6 +439,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         "probeId": true,
         "name": true,
         "cidr": true,
+        "snmpConfigs": true,
+        "isSnmpEnabled": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -603,6 +620,46 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         data.Cidr = types.StringValue(val)
     } else {
         data.Cidr = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpConfigs"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpConfigs = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpConfigs = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpConfigs = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpConfigs"].(string); ok {
+        data.SnmpConfigs = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpConfigs = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isSnmpEnabled"].(bool); ok {
+        data.IsSnmpEnabled = types.BoolValue(val)
     }
     if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1281,6 +1338,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         "probeId": true,
         "name": true,
         "cidr": true,
+        "snmpConfigs": true,
+        "isSnmpEnabled": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -1461,6 +1520,46 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         data.Cidr = types.StringValue(val)
     } else {
         data.Cidr = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpConfigs"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpConfigs = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpConfigs = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpConfigs = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpConfigs"].(string); ok {
+        data.SnmpConfigs = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpConfigs = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isSnmpEnabled"].(bool); ok {
+        data.IsSnmpEnabled = types.BoolValue(val)
     }
     if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2143,8 +2242,52 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     }
     requestDataMap := networkDeviceDiscoveryScanRequest["data"].(map[string]interface{})
 
+    if !data.ProbeId.IsUnknown() && !state.ProbeId.IsUnknown() && !data.ProbeId.Equal(state.ProbeId) {
+        requestDataMap["probeId"] = data.ProbeId.ValueString()
+    }
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
+    }
+    if !data.Cidr.IsUnknown() && !state.Cidr.IsUnknown() && !data.Cidr.Equal(state.Cidr) {
+        requestDataMap["cidr"] = data.Cidr.ValueString()
+    }
+    if !data.SnmpConfigs.IsUnknown() && !state.SnmpConfigs.IsUnknown() && !data.SnmpConfigs.Equal(state.SnmpConfigs) {
+        var snmpconfigsData interface{}
+        if err := json.Unmarshal([]byte(data.SnmpConfigs.ValueString()), &snmpconfigsData); err == nil {
+            requestDataMap["snmpConfigs"] = snmpconfigsData
+        } else {
+            requestDataMap["snmpConfigs"] = data.SnmpConfigs.ValueString()
+        }
+    }
+    if !data.IsSnmpEnabled.IsUnknown() && !state.IsSnmpEnabled.IsUnknown() && !data.IsSnmpEnabled.Equal(state.IsSnmpEnabled) {
+        requestDataMap["isSnmpEnabled"] = data.IsSnmpEnabled.ValueBool()
+    }
+    if !data.SnmpVersion.IsUnknown() && !state.SnmpVersion.IsUnknown() && !data.SnmpVersion.Equal(state.SnmpVersion) {
+        requestDataMap["snmpVersion"] = data.SnmpVersion.ValueString()
+    }
+    if !data.SnmpCommunityString.IsUnknown() && !state.SnmpCommunityString.IsUnknown() && !data.SnmpCommunityString.Equal(state.SnmpCommunityString) {
+        requestDataMap["snmpCommunityString"] = data.SnmpCommunityString.ValueString()
+    }
+    if !data.SnmpPort.IsUnknown() && !state.SnmpPort.IsUnknown() && !data.SnmpPort.Equal(state.SnmpPort) {
+        requestDataMap["snmpPort"] = r.bigFloatToFloat64(data.SnmpPort.ValueBigFloat())
+    }
+    if !data.SnmpV3SecurityLevel.IsUnknown() && !state.SnmpV3SecurityLevel.IsUnknown() && !data.SnmpV3SecurityLevel.Equal(state.SnmpV3SecurityLevel) {
+        requestDataMap["snmpV3SecurityLevel"] = data.SnmpV3SecurityLevel.ValueString()
+    }
+    if !data.SnmpV3Username.IsUnknown() && !state.SnmpV3Username.IsUnknown() && !data.SnmpV3Username.Equal(state.SnmpV3Username) {
+        requestDataMap["snmpV3Username"] = data.SnmpV3Username.ValueString()
+    }
+    if !data.SnmpV3AuthProtocol.IsUnknown() && !state.SnmpV3AuthProtocol.IsUnknown() && !data.SnmpV3AuthProtocol.Equal(state.SnmpV3AuthProtocol) {
+        requestDataMap["snmpV3AuthProtocol"] = data.SnmpV3AuthProtocol.ValueString()
+    }
+    if !data.SnmpV3AuthKey.IsUnknown() && !state.SnmpV3AuthKey.IsUnknown() && !data.SnmpV3AuthKey.Equal(state.SnmpV3AuthKey) {
+        requestDataMap["snmpV3AuthKey"] = data.SnmpV3AuthKey.ValueString()
+    }
+    if !data.SnmpV3PrivProtocol.IsUnknown() && !state.SnmpV3PrivProtocol.IsUnknown() && !data.SnmpV3PrivProtocol.Equal(state.SnmpV3PrivProtocol) {
+        requestDataMap["snmpV3PrivProtocol"] = data.SnmpV3PrivProtocol.ValueString()
+    }
+    if !data.SnmpV3PrivKey.IsUnknown() && !state.SnmpV3PrivKey.IsUnknown() && !data.SnmpV3PrivKey.Equal(state.SnmpV3PrivKey) {
+        requestDataMap["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
     }
     if !data.IsRecurring.IsUnknown() && !state.IsRecurring.IsUnknown() && !data.IsRecurring.Equal(state.IsRecurring) {
         requestDataMap["isRecurring"] = data.IsRecurring.ValueBool()
@@ -2179,6 +2322,8 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         "probeId": true,
         "name": true,
         "cidr": true,
+        "snmpConfigs": true,
+        "isSnmpEnabled": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -2353,6 +2498,46 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         data.Cidr = types.StringValue(val)
     } else {
         data.Cidr = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpConfigs"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpConfigs = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpConfigs = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpConfigs = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpConfigs = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpConfigs = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpConfigs"].(string); ok {
+        data.SnmpConfigs = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpConfigs = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["isSnmpEnabled"].(bool); ok {
+        data.IsSnmpEnabled = types.BoolValue(val)
     }
     if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

@@ -268,7 +268,7 @@ func (d *WhatsAppLogDataSource) Read(ctx context.Context, req datasource.ReadReq
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/whatsapp-log/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/whatsapp-log/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list whats_app_log, got error: %s", err))
             return

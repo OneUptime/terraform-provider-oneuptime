@@ -196,7 +196,7 @@ func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req data
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-site-assignment-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-site-assignment-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_site_assignment_rule, got error: %s", err))
             return

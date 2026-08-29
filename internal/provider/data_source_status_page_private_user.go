@@ -191,7 +191,7 @@ func (d *StatusPagePrivateUserDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/status-page-private-user/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/status-page-private-user/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list status_page_private_user, got error: %s", err))
             return

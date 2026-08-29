@@ -225,7 +225,7 @@ func (d *IncidentStateTimelineDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incident-state-timeline/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-state-timeline/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_state_timeline, got error: %s", err))
             return

@@ -43,6 +43,7 @@ type MonitorDataSourceModel struct {
     DependsOnMonitors types.Set `tfsdk:"depends_on_monitors"`
     SuppressAlertsWhenParentMonitorStatuses types.Set `tfsdk:"suppress_alerts_when_parent_monitor_statuses"`
     MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
+    AutoProvisionedNetworkDeviceId types.String `tfsdk:"auto_provisioned_network_device_id"`
     MonitorType types.String `tfsdk:"monitor_type"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitorSteps types.String `tfsdk:"monitor_steps"`
@@ -136,6 +137,10 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 ElementType: types.StringType,
             },
             "monitor_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "auto_provisioned_network_device_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -293,6 +298,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "dependsOnMonitors": true,
         "suppressAlertsWhenParentMonitorStatuses": true,
         "monitorTemplateId": true,
+        "autoProvisionedNetworkDeviceId": true,
         "monitorType": true,
         "currentMonitorStatusId": true,
         "monitorSteps": true,
@@ -351,7 +357,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/monitor/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/monitor/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list monitor, got error: %s", err))
             return
@@ -631,6 +637,23 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.MonitorTemplateId = types.StringValue(val)
     } else {
         data.MonitorTemplateId = types.StringNull()
+    }
+    if obj, ok := item["autoProvisionedNetworkDeviceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AutoProvisionedNetworkDeviceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoProvisionedNetworkDeviceId = types.StringNull()
+        }
+    } else if val, ok := item["autoProvisionedNetworkDeviceId"].(string); ok {
+        data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
+    } else {
+        data.AutoProvisionedNetworkDeviceId = types.StringNull()
     }
     if obj, ok := item["monitorType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

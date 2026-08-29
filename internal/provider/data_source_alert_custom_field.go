@@ -190,7 +190,7 @@ func (d *AlertCustomFieldDataSource) Read(ctx context.Context, req datasource.Re
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/alert-custom-field/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/alert-custom-field/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list alert_custom_field, got error: %s", err))
             return

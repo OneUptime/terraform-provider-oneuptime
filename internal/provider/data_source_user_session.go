@@ -110,7 +110,7 @@ func (d *UserSessionDataSource) Read(ctx context.Context, req datasource.ReadReq
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/user-session/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/user-session/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list user_session, got error: %s", err))
             return

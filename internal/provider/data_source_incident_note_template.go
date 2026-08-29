@@ -184,7 +184,7 @@ func (d *IncidentNoteTemplateDataSource) Read(ctx context.Context, req datasourc
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incident-note-template/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-note-template/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_note_template, got error: %s", err))
             return

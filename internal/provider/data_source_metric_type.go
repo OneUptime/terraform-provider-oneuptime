@@ -205,7 +205,7 @@ func (d *MetricTypeDataSource) Read(ctx context.Context, req datasource.ReadRequ
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/metric-type/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/metric-type/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list metric_type, got error: %s", err))
             return

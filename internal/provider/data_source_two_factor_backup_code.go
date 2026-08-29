@@ -110,7 +110,7 @@ func (d *TwoFactorBackupCodeDataSource) Read(ctx context.Context, req datasource
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/user-two-factor-backup-code/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/user-two-factor-backup-code/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list two_factor_backup_code, got error: %s", err))
             return

@@ -261,7 +261,7 @@ func (d *OnCallDutyExecutionLogTimelineDataSource) Read(ctx context.Context, req
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/on-call-duty-policy-execution-log-timeline/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/on-call-duty-policy-execution-log-timeline/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list on_call_duty_execution_log_timeline, got error: %s", err))
             return

@@ -208,7 +208,7 @@ func (d *OnCallDutyPolicyFeedDataSource) Read(ctx context.Context, req datasourc
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/on-call-duty-policy-feed/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/on-call-duty-policy-feed/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list on_call_duty_policy_feed, got error: %s", err))
             return

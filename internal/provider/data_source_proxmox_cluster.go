@@ -283,7 +283,7 @@ func (d *ProxmoxClusterDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/proxmox-cluster/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/proxmox-cluster/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list proxmox_cluster, got error: %s", err))
             return

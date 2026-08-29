@@ -262,7 +262,7 @@ func (d *CallLogDataSource) Read(ctx context.Context, req datasource.ReadRequest
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/call-log/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/call-log/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list call_log, got error: %s", err))
             return

@@ -36,6 +36,8 @@ type NetworkDeviceDiscoveryScanDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     ProbeId types.String `tfsdk:"probe_id"`
     Cidr types.String `tfsdk:"cidr"`
+    SnmpConfigs types.String `tfsdk:"snmp_configs"`
+    IsSnmpEnabled types.Bool `tfsdk:"is_snmp_enabled"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
@@ -66,7 +68,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Metadata(ctx context.Context, req
 
 func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Network discovery scans that sweep an address space — a CIDR subnet or an octet range — via SNMP from a probe and report devices found, so they can be imported as Network Devices. Look up an existing network_device_discovery_scan by `id` or by `name`.",
+        MarkdownDescription: "Network discovery scans that sweep an address space — a CIDR subnet or an octet range — from a probe and report the hosts found, so they can be imported as Network Devices. Every sweep pings; scans with Check SNMP on also query each live host over SNMP. Look up an existing network_device_discovery_scan by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -107,40 +109,48 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "Address space to scan, either in CIDR notation (192.168.1.0/24) or octet-range notation where any octet may be an inclusive low-high range (10.16-22.0-255.51-66).",
                 Computed: true,
             },
+            "snmp_configs": schema.StringAttribute{
+                MarkdownDescription: "Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row..",
+                Computed: true,
+            },
+            "is_snmp_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them..",
+                Computed: true,
+            },
             "snmp_version": schema.StringAttribute{
-                MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3).",
+                MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_community_string": schema.StringAttribute{
-                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c).",
+                MarkdownDescription: "Community string tried against every host in the subnet (SNMP v1/v2c). Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_port": schema.NumberAttribute{
-                MarkdownDescription: "UDP port tried against every host in the subnet.",
+                MarkdownDescription: "UDP port tried against every host in the subnet. Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_v3_security_level": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv.",
+                MarkdownDescription: "SNMP v3 security level tried against every host: noAuthNoPriv, authNoPriv, or authPriv. Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_v3_username": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 security name (username) tried against every host.",
+                MarkdownDescription: "SNMP v3 security name (username) tried against every host. Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_v3_auth_protocol": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.",
+                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512. Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_v3_auth_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host.",
+                MarkdownDescription: "SNMP v3 authentication passphrase tried against every host. Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_v3_priv_protocol": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256. Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "snmp_v3_priv_key": schema.StringAttribute{
-                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host.",
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase tried against every host. Ignored when Check SNMP is off..",
                 Computed: true,
             },
             "status": schema.StringAttribute{
@@ -160,7 +170,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 Computed: true,
             },
             "responded_host_count": schema.NumberAttribute{
-                MarkdownDescription: "Number of hosts that responded to SNMP during the sweep. Managed by the scanning probe..",
+                MarkdownDescription: "Number of hosts that answered the check this scan performed: SNMP responders on a scan with Check SNMP on, hosts that answered the ping sweep on an ICMP-only one. Managed by the scanning probe..",
                 Computed: true,
             },
             "started_at": schema.StringAttribute{
@@ -248,6 +258,8 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         "projectId": true,
         "probeId": true,
         "cidr": true,
+        "snmpConfigs": true,
+        "isSnmpEnabled": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -304,7 +316,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-device-discovery-scan/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-discovery-scan/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_device_discovery_scan, got error: %s", err))
             return
@@ -478,6 +490,28 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         data.Cidr = types.StringValue(val)
     } else {
         data.Cidr = types.StringNull()
+    }
+    if obj, ok := item["snmpConfigs"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpConfigs = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpConfigs = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpConfigs = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpConfigs = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpConfigs = types.StringNull()
+        }
+    } else if val, ok := item["snmpConfigs"].(string); ok {
+        data.SnmpConfigs = types.StringValue(val)
+    } else {
+        data.SnmpConfigs = types.StringNull()
+    }
+    if val, ok := item["isSnmpEnabled"].(bool); ok {
+        data.IsSnmpEnabled = types.BoolValue(val)
+    } else {
+        data.IsSnmpEnabled = types.BoolNull()
     }
     if obj, ok := item["snmpVersion"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

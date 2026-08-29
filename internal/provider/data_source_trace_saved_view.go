@@ -184,7 +184,7 @@ func (d *TraceSavedViewDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/trace-saved-view/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/trace-saved-view/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list trace_saved_view, got error: %s", err))
             return

@@ -178,7 +178,7 @@ func (d *SubscriberNotificationTemplateDataSource) Read(ctx context.Context, req
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/status-page-subscriber-notification-template-status-page/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/status-page-subscriber-notification-template-status-page/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list subscriber_notification_template, got error: %s", err))
             return

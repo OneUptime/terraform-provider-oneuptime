@@ -178,7 +178,7 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/telemetry-ingestion-key/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/telemetry-ingestion-key/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list telemetry_ingestion_key, got error: %s", err))
             return

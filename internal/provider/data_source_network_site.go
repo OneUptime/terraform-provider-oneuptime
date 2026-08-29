@@ -46,6 +46,8 @@ type NetworkSiteDataSourceModel struct {
     Longitude types.Number `tfsdk:"longitude"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     LastRollupAt types.String `tfsdk:"last_rollup_at"`
+    HealthRollupPolicy types.String `tfsdk:"health_rollup_policy"`
+    OfflineThresholdPercent types.Number `tfsdk:"offline_threshold_percent"`
     ShouldAlertWhenUnhealthy types.Bool `tfsdk:"should_alert_when_unhealthy"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     CurrentActiveAlertId types.String `tfsdk:"current_active_alert_id"`
@@ -140,6 +142,14 @@ func (d *NetworkSiteDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
+            "health_rollup_policy": schema.StringAttribute{
+                MarkdownDescription: "How this site's status is derived from the devices beneath it: WorstStatus (any device offline makes the site offline) or PercentThreshold (the share of devices that are down decides)..",
+                Computed: true,
+            },
+            "offline_threshold_percent": schema.NumberAttribute{
+                MarkdownDescription: "With the PercentThreshold rollup policy: the share of reporting devices beneath this site that must be non-operational before the site itself is marked offline. Below it (but above zero) the site is degraded..",
+                Computed: true,
+            },
             "should_alert_when_unhealthy": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, an alert opens when this site's health rollup turns non-operational and auto-resolves when it recovers..",
                 Computed: true,
@@ -223,6 +233,8 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
         "longitude": true,
         "currentMonitorStatusId": true,
         "lastRollupAt": true,
+        "healthRollupPolicy": true,
+        "offlineThresholdPercent": true,
         "shouldAlertWhenUnhealthy": true,
         "alertSeverityId": true,
         "currentActiveAlertId": true,
@@ -262,7 +274,7 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-site/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-site/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_site, got error: %s", err))
             return
@@ -588,6 +600,34 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.LastRollupAt = types.StringValue(val)
     } else {
         data.LastRollupAt = types.StringNull()
+    }
+    if obj, ok := item["healthRollupPolicy"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.HealthRollupPolicy = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+        } else {
+            data.HealthRollupPolicy = types.StringNull()
+        }
+    } else if val, ok := item["healthRollupPolicy"].(string); ok {
+        data.HealthRollupPolicy = types.StringValue(val)
+    } else {
+        data.HealthRollupPolicy = types.StringNull()
+    }
+    if val, ok := item["offlineThresholdPercent"].(float64); ok {
+        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["offlineThresholdPercent"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.OfflineThresholdPercent = types.NumberNull()
+        }
+    } else {
+        data.OfflineThresholdPercent = types.NumberNull()
     }
     if val, ok := item["shouldAlertWhenUnhealthy"].(bool); ok {
         data.ShouldAlertWhenUnhealthy = types.BoolValue(val)

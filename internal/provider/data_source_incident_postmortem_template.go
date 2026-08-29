@@ -184,7 +184,7 @@ func (d *IncidentPostmortemTemplateDataSource) Read(ctx context.Context, req dat
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incident-postmortem-template/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-postmortem-template/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_postmortem_template, got error: %s", err))
             return

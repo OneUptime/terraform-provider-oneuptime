@@ -39,6 +39,7 @@ data "oneuptime_monitor" "by_id" {
 - `depends_on_monitors` (Set) Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates... Computed.
 - `suppress_alerts_when_parent_monitor_statuses` (Set) Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set... Computed.
 - `monitor_template_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `auto_provisioned_network_device_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_type` (String) What is the type of this monitor? Website? API? etc... Computed.
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_steps` (Monitor_steps) MonitorSteps object. Computed.

@@ -206,7 +206,7 @@ func (d *CloudResourceLabelRuleDataSource) Read(ctx context.Context, req datasou
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/cloud-resource-label-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/cloud-resource-label-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list cloud_resource_label_rule, got error: %s", err))
             return

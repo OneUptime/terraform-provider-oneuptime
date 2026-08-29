@@ -47,6 +47,7 @@ type ScheduledMaintenanceEventDataSourceModel struct {
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
+    NetworkSites types.Set `tfsdk:"network_sites"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
     Services types.Set `tfsdk:"services"`
@@ -160,6 +161,11 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
             },
             "iot_fleets": schema.SetAttribute{
                 MarkdownDescription: "List of IoT fleets affected by this event..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "network_sites": schema.SetAttribute{
+                MarkdownDescription: "List of network sites affected by this event. Their descendants are covered too..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -326,6 +332,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         "podmanHosts": true,
         "proxmoxClusters": true,
         "iotFleets": true,
+        "networkSites": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
         "services": true,
@@ -384,7 +391,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/scheduled-maintenance/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/scheduled-maintenance/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list scheduled_maintenance_event, got error: %s", err))
             return
@@ -760,6 +767,30 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         data.IotFleets = types.SetValueMust(types.StringType, setItems)
     } else {
         data.IotFleets = types.SetNull(types.StringType)
+    }
+    if val, ok := item["networkSites"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.NetworkSites = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.NetworkSites = types.SetNull(types.StringType)
     }
     if val, ok := item["dockerSwarmClusters"].([]interface{}); ok {
         var setItems []attr.Value

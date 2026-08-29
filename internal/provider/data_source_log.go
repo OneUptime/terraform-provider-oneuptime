@@ -272,7 +272,7 @@ func (d *LogDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/logs/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/logs/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list log, got error: %s", err))
             return

@@ -74,6 +74,7 @@ resource "oneuptime_monitor" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `auto_provisioned_network_device_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?..
 - `disable_active_monitoring_because_of_scheduled_maintenance_event` (Bool) Disable Monitoring because of Ongoing Scheduled Maintenance Event..
 - `disable_active_monitoring_because_of_manual_incident` (Bool) Disable Monitoring because of Incident which is creeated manually by user...

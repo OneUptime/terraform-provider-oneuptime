@@ -46,6 +46,7 @@ type NetworkDeviceAutoImportRuleResourceModel struct {
     SysObjectIdPattern types.String `tfsdk:"sys_object_id_pattern"`
     IncludePingOnlyHosts types.Bool `tfsdk:"include_ping_only_hosts"`
     IsExclusion types.Bool `tfsdk:"is_exclusion"`
+    MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -59,7 +60,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Metadata(ctx context.Context, req 
 
 func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Automatically import matching hosts from network device discovery scan results as Network Devices, with no manual review step",
+        MarkdownDescription: "Automatically import matching hosts from network device discovery scan results as Network Devices and optionally provision a monitor from a template",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -145,6 +146,14 @@ func (r *NetworkDeviceAutoImportRuleResource) Schema(ctx context.Context, req re
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "monitor_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_by_user_id": schema.StringAttribute{
@@ -247,6 +256,9 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
     if !data.IsExclusion.IsNull() && !data.IsExclusion.IsUnknown() {
         requestDataMap["isExclusion"] = data.IsExclusion.ValueBool()
     }
+    if !data.MonitorTemplateId.IsNull() && !data.MonitorTemplateId.IsUnknown() {
+        requestDataMap["monitorTemplateId"] = data.MonitorTemplateId.ValueString()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -305,6 +317,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
         "isExclusion": true,
+        "monitorTemplateId": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -584,6 +597,43 @@ func (r *NetworkDeviceAutoImportRuleResource) Create(ctx context.Context, req re
     if val, ok := dataMap["isExclusion"].(bool); ok {
         data.IsExclusion = types.BoolValue(val)
     }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
+    } else {
+        data.MonitorTemplateId = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -708,6 +758,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
         "isExclusion": true,
+        "monitorTemplateId": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -988,6 +1039,43 @@ func (r *NetworkDeviceAutoImportRuleResource) Read(ctx context.Context, req reso
     if val, ok := dataMap["isExclusion"].(bool); ok {
         data.IsExclusion = types.BoolValue(val)
     }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
+    } else {
+        data.MonitorTemplateId = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1137,6 +1225,9 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
     if !data.IsExclusion.IsUnknown() && !state.IsExclusion.IsUnknown() && !data.IsExclusion.Equal(state.IsExclusion) {
         requestDataMap["isExclusion"] = data.IsExclusion.ValueBool()
     }
+    if !data.MonitorTemplateId.IsUnknown() && !state.MonitorTemplateId.IsUnknown() && !data.MonitorTemplateId.Equal(state.MonitorTemplateId) {
+        requestDataMap["monitorTemplateId"] = data.MonitorTemplateId.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1170,6 +1261,7 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
         "isExclusion": true,
+        "monitorTemplateId": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1443,6 +1535,43 @@ func (r *NetworkDeviceAutoImportRuleResource) Update(ctx context.Context, req re
     }
     if val, ok := dataMap["isExclusion"].(bool); ok {
         data.IsExclusion = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
+    } else {
+        data.MonitorTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

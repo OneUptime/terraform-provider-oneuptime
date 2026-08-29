@@ -226,7 +226,7 @@ func (d *AiConversationMessageDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/ai-conversation-message/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ai-conversation-message/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_conversation_message, got error: %s", err))
             return

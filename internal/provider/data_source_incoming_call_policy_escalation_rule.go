@@ -202,7 +202,7 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Read(ctx context.Context, r
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incoming-call-policy-escalation-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incoming-call-policy-escalation-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incoming_call_policy_escalation_rule, got error: %s", err))
             return

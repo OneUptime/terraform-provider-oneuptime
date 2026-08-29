@@ -190,7 +190,7 @@ func (d *NetworkTopologySuppressionDataSource) Read(ctx context.Context, req dat
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-topology-suppression/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-topology-suppression/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_topology_suppression, got error: %s", err))
             return

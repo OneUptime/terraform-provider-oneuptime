@@ -42,6 +42,7 @@ type NetworkDeviceAutoImportRuleDataSourceModel struct {
     SysObjectIdPattern types.String `tfsdk:"sys_object_id_pattern"`
     IncludePingOnlyHosts types.Bool `tfsdk:"include_ping_only_hosts"`
     IsExclusion types.Bool `tfsdk:"is_exclusion"`
+    MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -51,7 +52,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Metadata(ctx context.Context, re
 
 func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Automatically import matching hosts from network device discovery scan results as Network Devices, with no manual review step Look up an existing network_device_auto_import_rule by `id` or by `name`.",
+        MarkdownDescription: "Automatically import matching hosts from network device discovery scan results as Network Devices and optionally provision a monitor from a template Look up an existing network_device_auto_import_rule by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -114,6 +115,10 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req 
             },
             "is_exclusion": schema.BoolAttribute{
                 MarkdownDescription: "Invert this rule: matching hosts are NEVER auto-imported, even when another rule matches them. Use it to carve printers, phones, or other unwanted hosts out of a broader rule..",
+                Computed: true,
+            },
+            "monitor_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -179,6 +184,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         "sysObjectIdPattern": true,
         "includePingOnlyHosts": true,
         "isExclusion": true,
+        "monitorTemplateId": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -214,7 +220,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-device-auto-import-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-auto-import-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_device_auto_import_rule, got error: %s", err))
             return
@@ -454,6 +460,23 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         data.IsExclusion = types.BoolValue(val)
     } else {
         data.IsExclusion = types.BoolNull()
+    }
+    if obj, ok := item["monitorTemplateId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitorTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorTemplateId = types.StringNull()
+        }
+    } else if val, ok := item["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
+    } else {
+        data.MonitorTemplateId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -44,6 +44,8 @@ data "oneuptime_network_site" "by_id" {
 - `longitude` (Number) Longitude of this site, for US and world map views.. Computed.
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `last_rollup_at` (String) A date time object.. Computed.
+- `health_rollup_policy` (String) How this site's status is derived from the devices beneath it: WorstStatus (any device offline makes the site offline) or PercentThreshold (the share of devices that are down decides)... Computed.
+- `offline_threshold_percent` (Number) With the PercentThreshold rollup policy: the share of reporting devices beneath this site that must be non-operational before the site itself is marked offline. Below it (but above zero) the site is degraded... Computed.
 - `should_alert_when_unhealthy` (Bool) When enabled, an alert opens when this site's health rollup turns non-operational and auto-resolves when it recovers... Computed.
 - `alert_severity_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `current_active_alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

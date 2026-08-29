@@ -190,7 +190,7 @@ func (d *MonitorGroupTeamOwnerDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/monitor-group-owner-team/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/monitor-group-owner-team/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list monitor_group_team_owner, got error: %s", err))
             return

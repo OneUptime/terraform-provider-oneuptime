@@ -196,7 +196,7 @@ func (d *WorkspaceNotificationRuleDataSource) Read(ctx context.Context, req data
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/workspace-notification-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/workspace-notification-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list workspace_notification_rule, got error: %s", err))
             return

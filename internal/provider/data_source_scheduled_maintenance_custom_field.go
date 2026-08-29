@@ -190,7 +190,7 @@ func (d *ScheduledMaintenanceCustomFieldDataSource) Read(ctx context.Context, re
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/scheduled-maintenance-custom-field/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/scheduled-maintenance-custom-field/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list scheduled_maintenance_custom_field, got error: %s", err))
             return

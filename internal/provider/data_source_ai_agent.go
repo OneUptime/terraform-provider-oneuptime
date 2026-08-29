@@ -221,7 +221,7 @@ func (d *AiAgentDataSource) Read(ctx context.Context, req datasource.ReadRequest
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/ai-agent/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ai-agent/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_agent, got error: %s", err))
             return

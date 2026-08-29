@@ -214,7 +214,7 @@ func (d *AlertFeedDataSource) Read(ctx context.Context, req datasource.ReadReque
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/alert-feed/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/alert-feed/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list alert_feed, got error: %s", err))
             return

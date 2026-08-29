@@ -277,7 +277,7 @@ func (d *PodmanHostDataSource) Read(ctx context.Context, req datasource.ReadRequ
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/podman-host/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/podman-host/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list podman_host, got error: %s", err))
             return

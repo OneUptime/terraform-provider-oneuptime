@@ -190,7 +190,7 @@ func (d *DockerSwarmClusterUserOwnerDataSource) Read(ctx context.Context, req da
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/docker-swarm-cluster-owner-user/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/docker-swarm-cluster-owner-user/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list docker_swarm_cluster_user_owner, got error: %s", err))
             return

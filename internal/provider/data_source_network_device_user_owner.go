@@ -190,7 +190,7 @@ func (d *NetworkDeviceUserOwnerDataSource) Read(ctx context.Context, req datasou
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-device-owner-user/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-owner-user/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_device_user_owner, got error: %s", err))
             return

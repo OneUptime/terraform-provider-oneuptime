@@ -399,7 +399,7 @@ func (d *IncidentGroupingRuleDataSource) Read(ctx context.Context, req datasourc
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incident-grouping-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-grouping-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_grouping_rule, got error: %s", err))
             return

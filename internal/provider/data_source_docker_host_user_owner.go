@@ -190,7 +190,7 @@ func (d *DockerHostUserOwnerDataSource) Read(ctx context.Context, req datasource
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/docker-host-owner-user/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/docker-host-owner-user/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list docker_host_user_owner, got error: %s", err))
             return

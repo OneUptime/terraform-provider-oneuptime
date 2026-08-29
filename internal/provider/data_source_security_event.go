@@ -328,7 +328,7 @@ func (d *SecurityEventDataSource) Read(ctx context.Context, req datasource.ReadR
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/security-events/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/security-events/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list security_event, got error: %s", err))
             return

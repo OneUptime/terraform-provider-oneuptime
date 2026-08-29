@@ -567,7 +567,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/status-page/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/status-page/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list status_page, got error: %s", err))
             return

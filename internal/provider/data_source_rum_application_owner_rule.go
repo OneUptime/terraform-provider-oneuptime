@@ -219,7 +219,7 @@ func (d *RumApplicationOwnerRuleDataSource) Read(ctx context.Context, req dataso
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/rum-application-owner-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/rum-application-owner-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list rum_application_owner_rule, got error: %s", err))
             return

@@ -208,7 +208,7 @@ func (d *AlertStateDataSource) Read(ctx context.Context, req datasource.ReadRequ
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/alert-state/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/alert-state/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list alert_state, got error: %s", err))
             return

@@ -199,7 +199,7 @@ func (d *AlertEpisodeInternalNoteDataSource) Read(ctx context.Context, req datas
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/alert-episode-internal-note/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/alert-episode-internal-note/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list alert_episode_internal_note, got error: %s", err))
             return

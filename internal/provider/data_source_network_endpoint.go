@@ -238,7 +238,7 @@ func (d *NetworkEndpointDataSource) Read(ctx context.Context, req datasource.Rea
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-endpoint/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-endpoint/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_endpoint, got error: %s", err))
             return

@@ -214,7 +214,7 @@ func (d *TraceScrubRuleDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/trace-scrub-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/trace-scrub-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list trace_scrub_rule, got error: %s", err))
             return

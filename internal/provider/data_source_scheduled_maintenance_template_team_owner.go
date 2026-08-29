@@ -184,7 +184,7 @@ func (d *ScheduledMaintenanceTemplateTeamOwnerDataSource) Read(ctx context.Conte
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/scheduled-maintenance-template-owner-team/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/scheduled-maintenance-template-owner-team/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list scheduled_maintenance_template_team_owner, got error: %s", err))
             return

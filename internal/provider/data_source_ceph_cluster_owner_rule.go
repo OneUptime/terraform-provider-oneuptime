@@ -219,7 +219,7 @@ func (d *CephClusterOwnerRuleDataSource) Read(ctx context.Context, req datasourc
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/ceph-cluster-owner-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ceph-cluster-owner-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ceph_cluster_owner_rule, got error: %s", err))
             return

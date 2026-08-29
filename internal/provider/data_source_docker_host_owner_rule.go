@@ -219,7 +219,7 @@ func (d *DockerHostOwnerRuleDataSource) Read(ctx context.Context, req datasource
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/docker-host-owner-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/docker-host-owner-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list docker_host_owner_rule, got error: %s", err))
             return

@@ -190,7 +190,7 @@ func (d *NetworkSiteStatusEventDataSource) Read(ctx context.Context, req datasou
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/network-site-status-timeline/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-site-status-timeline/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_site_status_event, got error: %s", err))
             return

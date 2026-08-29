@@ -206,7 +206,7 @@ func (d *IncomingCallPolicyLabelRuleDataSource) Read(ctx context.Context, req da
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incoming-call-policy-label-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incoming-call-policy-label-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incoming_call_policy_label_rule, got error: %s", err))
             return

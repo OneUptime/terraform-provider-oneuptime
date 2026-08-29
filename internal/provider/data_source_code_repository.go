@@ -259,7 +259,7 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/code-repository/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/code-repository/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list code_repository, got error: %s", err))
             return

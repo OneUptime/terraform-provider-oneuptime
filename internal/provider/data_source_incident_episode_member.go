@@ -214,7 +214,7 @@ func (d *IncidentEpisodeMemberDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incident-episode-member/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-episode-member/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_episode_member, got error: %s", err))
             return

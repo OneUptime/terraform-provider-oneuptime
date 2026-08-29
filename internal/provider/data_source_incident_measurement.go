@@ -286,7 +286,7 @@ func (d *IncidentMeasurementDataSource) Read(ctx context.Context, req datasource
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/incident-measurement/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-measurement/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_measurement, got error: %s", err))
             return

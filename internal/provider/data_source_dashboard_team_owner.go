@@ -190,7 +190,7 @@ func (d *DashboardTeamOwnerDataSource) Read(ctx context.Context, req datasource.
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/dashboard-owner-team/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/dashboard-owner-team/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list dashboard_team_owner, got error: %s", err))
             return

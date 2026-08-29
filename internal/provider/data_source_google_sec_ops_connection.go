@@ -214,7 +214,7 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/google-secops-connection/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/google-secops-connection/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list google_sec_ops_connection, got error: %s", err))
             return

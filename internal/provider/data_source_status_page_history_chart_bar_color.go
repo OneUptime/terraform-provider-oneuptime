@@ -190,7 +190,7 @@ func (d *StatusPageHistoryChartBarColorDataSource) Read(ctx context.Context, req
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/status-page-history-chart-bar-color-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/status-page-history-chart-bar-color-rule/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list status_page_history_chart_bar_color, got error: %s", err))
             return

@@ -214,7 +214,7 @@ func (d *ScheduledMaintenanceStateTimelineDataSource) Read(ctx context.Context, 
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/scheduled-maintenance-state-timeline/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/scheduled-maintenance-state-timeline/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list scheduled_maintenance_state_timeline, got error: %s", err))
             return

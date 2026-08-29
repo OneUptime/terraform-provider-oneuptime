@@ -274,7 +274,7 @@ func (d *SmsLogDataSource) Read(ctx context.Context, req datasource.ReadRequest,
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/sms-log/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/sms-log/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list sms_log, got error: %s", err))
             return

@@ -190,7 +190,7 @@ func (d *StatusPageHeaderLinkDataSource) Read(ctx context.Context, req datasourc
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/status-page-header-link/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/status-page-header-link/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list status_page_header_link, got error: %s", err))
             return

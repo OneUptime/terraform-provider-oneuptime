@@ -196,7 +196,7 @@ func (d *TracePipelineProcessorDataSource) Read(ctx context.Context, req datasou
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/trace-pipeline-processor/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/trace-pipeline-processor/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list trace_pipeline_processor, got error: %s", err))
             return

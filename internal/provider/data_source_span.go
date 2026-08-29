@@ -399,7 +399,7 @@ func (d *SpanDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.Post(ctx, "/span/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/span/get-list", listBody)
         if err != nil {
             resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list span, got error: %s", err))
             return
