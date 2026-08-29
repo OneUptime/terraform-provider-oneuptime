@@ -46,6 +46,7 @@ type RumApplicationResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    AppIdentifier types.String `tfsdk:"app_identifier"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
@@ -74,7 +75,6 @@ type RumApplicationResourceModel struct {
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
-    AppIdentifier types.String `tfsdk:"app_identifier"`
     ClientType types.String `tfsdk:"client_type"`
     SdkLanguage types.String `tfsdk:"sdk_language"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
@@ -120,6 +120,13 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "app_identifier": schema.StringAttribute{
+                MarkdownDescription: "Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application..",
+                Required: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "labels": schema.SetAttribute{
@@ -284,7 +291,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_capture_user_identity": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the raw end-user reference supplied by the host page is stored alongside the recording, so a support engineer can find the session a named customer is complaining about. When off, only a one-way per-project HMAC of it is stored. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one..",
+                MarkdownDescription: "When enabled, the end-user reference supplied by the host page is stored alongside the recording - as a one-way per-project HMAC for lookup and erasure, plus the raw reference behind its own narrower column ACL - so a support engineer can find the session a named customer is complaining about. When off, the reference is never attached to a recording and neither column is stored. (It is still sent once on the policy request, which is how targeted capture matches a named user; it is not persisted.) The reference must be supplied at load time - identify() called later reaches the server only on the session's final chunk, which the header is not rebuilt from. On by default. Narrower create/update ACL than the other replay settings: this is the switch that turns a pseudonymous recording into an identified one..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -366,10 +373,6 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
-                Computed: true,
-            },
-            "app_identifier": schema.StringAttribute{
-                MarkdownDescription: "Stable identifier for this application from the service.name OpenTelemetry resource attribute. Identity key for this RUM application..",
                 Computed: true,
             },
             "client_type": schema.StringAttribute{
@@ -466,6 +469,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     }
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
+    }
+    if !data.AppIdentifier.IsNull() && !data.AppIdentifier.IsUnknown() {
+        requestDataMap["appIdentifier"] = data.AppIdentifier.ValueString()
     }
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
@@ -584,6 +590,7 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "projectId": true,
         "name": true,
         "description": true,
+        "appIdentifier": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -612,7 +619,6 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "appIdentifier": true,
         "clientType": true,
         "sdkLanguage": true,
         "otelCollectorStatus": true,
@@ -739,6 +745,43 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["appIdentifier"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AppIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AppIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AppIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AppIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AppIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.AppIdentifier = types.StringNull()
+        }
+    } else if val, ok := dataMap["appIdentifier"].(string); ok {
+        data.AppIdentifier = types.StringValue(val)
+    } else {
+        data.AppIdentifier = types.StringNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1362,43 +1405,6 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["appIdentifier"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AppIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AppIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AppIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AppIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AppIdentifier = types.StringValue(string(jsonBytes))
-        } else {
-            data.AppIdentifier = types.StringNull()
-        }
-    } else if val, ok := dataMap["appIdentifier"].(string); ok {
-        data.AppIdentifier = types.StringValue(val)
-    } else {
-        data.AppIdentifier = types.StringNull()
     }
     if obj, ok := dataMap["clientType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1696,6 +1702,7 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "projectId": true,
         "name": true,
         "description": true,
+        "appIdentifier": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -1724,7 +1731,6 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "appIdentifier": true,
         "clientType": true,
         "sdkLanguage": true,
         "otelCollectorStatus": true,
@@ -1852,6 +1858,43 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["appIdentifier"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AppIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AppIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AppIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AppIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AppIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.AppIdentifier = types.StringNull()
+        }
+    } else if val, ok := dataMap["appIdentifier"].(string); ok {
+        data.AppIdentifier = types.StringValue(val)
+    } else {
+        data.AppIdentifier = types.StringNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2475,43 +2518,6 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["appIdentifier"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AppIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AppIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AppIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AppIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AppIdentifier = types.StringValue(string(jsonBytes))
-        } else {
-            data.AppIdentifier = types.StringNull()
-        }
-    } else if val, ok := dataMap["appIdentifier"].(string); ok {
-        data.AppIdentifier = types.StringValue(val)
-    } else {
-        data.AppIdentifier = types.StringNull()
     }
     if obj, ok := dataMap["clientType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2942,6 +2948,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "projectId": true,
         "name": true,
         "description": true,
+        "appIdentifier": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -2970,7 +2977,6 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "appIdentifier": true,
         "clientType": true,
         "sdkLanguage": true,
         "otelCollectorStatus": true,
@@ -3092,6 +3098,43 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["appIdentifier"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AppIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AppIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AppIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AppIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AppIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.AppIdentifier = types.StringNull()
+        }
+    } else if val, ok := dataMap["appIdentifier"].(string); ok {
+        data.AppIdentifier = types.StringValue(val)
+    } else {
+        data.AppIdentifier = types.StringNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -3715,43 +3758,6 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["appIdentifier"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AppIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AppIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AppIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AppIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.AppIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.AppIdentifier = types.StringValue(string(jsonBytes))
-        } else {
-            data.AppIdentifier = types.StringNull()
-        }
-    } else if val, ok := dataMap["appIdentifier"].(string); ok {
-        data.AppIdentifier = types.StringValue(val)
-    } else {
-        data.AppIdentifier = types.StringNull()
     }
     if obj, ok := dataMap["clientType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

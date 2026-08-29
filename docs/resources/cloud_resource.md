@@ -14,6 +14,7 @@ Managed cloud compute auto-discovered from OpenTelemetry cloud.platform (e.g. AW
 ```terraform
 resource "oneuptime_cloud_resource" "example" {
   name = "Example short text"
+  resource_identifier = "Example short text"
   description = "This is an example of longer text content that might be stored in this field."
 }
 ```
@@ -23,6 +24,7 @@ resource "oneuptime_cloud_resource" "example" {
 ### Required
 
 - `name` (String) Friendly name for this cloud resource..
+- `resource_identifier` (String) Stable identifier for this managed-compute workload (service.name, falling back to host.name). Identity key for this resource...
 
 ### Optional
 
@@ -42,7 +44,6 @@ resource "oneuptime_cloud_resource" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
-- `resource_identifier` (String) Stable identifier for this managed-compute workload (service.name, falling back to host.name). Identity key for this resource...
 - `cloud_platform` (String) Last-seen cloud.platform OpenTelemetry resource attribute, e.g. aws_ecs, gcp_cloud_run, azure_container_apps...
 - `cloud_provider` (String) Last-seen cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure...
 - `cloud_region` (String) Last-seen cloud.region OpenTelemetry resource attribute, e.g. us-east-1...

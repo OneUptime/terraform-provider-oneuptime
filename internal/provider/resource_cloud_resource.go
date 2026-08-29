@@ -44,6 +44,7 @@ type CloudResourceResourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
+    ResourceIdentifier types.String `tfsdk:"resource_identifier"`
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig JSONSubsetValue `tfsdk:"telemetry_retention_config"`
@@ -54,7 +55,6 @@ type CloudResourceResourceModel struct {
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
-    ResourceIdentifier types.String `tfsdk:"resource_identifier"`
     CloudPlatform types.String `tfsdk:"cloud_platform"`
     CloudProvider types.String `tfsdk:"cloud_provider"`
     CloudRegion types.String `tfsdk:"cloud_region"`
@@ -102,6 +102,13 @@ func (r *CloudResourceResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "resource_identifier": schema.StringAttribute{
+                MarkdownDescription: "Stable identifier for this managed-compute workload (service.name, falling back to host.name). Identity key for this resource..",
+                Required: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "labels": schema.SetAttribute{
@@ -172,10 +179,6 @@ func (r *CloudResourceResource) Schema(ctx context.Context, req resource.SchemaR
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
-                Computed: true,
-            },
-            "resource_identifier": schema.StringAttribute{
-                MarkdownDescription: "Stable identifier for this managed-compute workload (service.name, falling back to host.name). Identity key for this resource..",
                 Computed: true,
             },
             "cloud_platform": schema.StringAttribute{
@@ -279,6 +282,9 @@ func (r *CloudResourceResource) Create(ctx context.Context, req resource.CreateR
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.ResourceIdentifier.IsNull() && !data.ResourceIdentifier.IsUnknown() {
+        requestDataMap["resourceIdentifier"] = data.ResourceIdentifier.ValueString()
+    }
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -342,6 +348,7 @@ func (r *CloudResourceResource) Create(ctx context.Context, req resource.CreateR
         "projectId": true,
         "name": true,
         "description": true,
+        "resourceIdentifier": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -352,7 +359,6 @@ func (r *CloudResourceResource) Create(ctx context.Context, req resource.CreateR
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "resourceIdentifier": true,
         "cloudPlatform": true,
         "cloudProvider": true,
         "cloudRegion": true,
@@ -481,6 +487,43 @@ func (r *CloudResourceResource) Create(ctx context.Context, req resource.CreateR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["resourceIdentifier"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResourceIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResourceIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceIdentifier = types.StringNull()
+        }
+    } else if val, ok := dataMap["resourceIdentifier"].(string); ok {
+        data.ResourceIdentifier = types.StringValue(val)
+    } else {
+        data.ResourceIdentifier = types.StringNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -694,43 +737,6 @@ func (r *CloudResourceResource) Create(ctx context.Context, req resource.CreateR
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["resourceIdentifier"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResourceIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResourceIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResourceIdentifier = types.StringNull()
-        }
-    } else if val, ok := dataMap["resourceIdentifier"].(string); ok {
-        data.ResourceIdentifier = types.StringValue(val)
-    } else {
-        data.ResourceIdentifier = types.StringNull()
     }
     if obj, ok := dataMap["cloudPlatform"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1154,6 +1160,7 @@ func (r *CloudResourceResource) Read(ctx context.Context, req resource.ReadReque
         "projectId": true,
         "name": true,
         "description": true,
+        "resourceIdentifier": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -1164,7 +1171,6 @@ func (r *CloudResourceResource) Read(ctx context.Context, req resource.ReadReque
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "resourceIdentifier": true,
         "cloudPlatform": true,
         "cloudProvider": true,
         "cloudRegion": true,
@@ -1294,6 +1300,43 @@ func (r *CloudResourceResource) Read(ctx context.Context, req resource.ReadReque
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["resourceIdentifier"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResourceIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResourceIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceIdentifier = types.StringNull()
+        }
+    } else if val, ok := dataMap["resourceIdentifier"].(string); ok {
+        data.ResourceIdentifier = types.StringValue(val)
+    } else {
+        data.ResourceIdentifier = types.StringNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1507,43 +1550,6 @@ func (r *CloudResourceResource) Read(ctx context.Context, req resource.ReadReque
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["resourceIdentifier"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResourceIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResourceIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResourceIdentifier = types.StringNull()
-        }
-    } else if val, ok := dataMap["resourceIdentifier"].(string); ok {
-        data.ResourceIdentifier = types.StringValue(val)
-    } else {
-        data.ResourceIdentifier = types.StringNull()
     }
     if obj, ok := dataMap["cloudPlatform"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2021,6 +2027,7 @@ func (r *CloudResourceResource) Update(ctx context.Context, req resource.UpdateR
         "projectId": true,
         "name": true,
         "description": true,
+        "resourceIdentifier": true,
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
@@ -2031,7 +2038,6 @@ func (r *CloudResourceResource) Update(ctx context.Context, req resource.UpdateR
         "deletedAt": true,
         "version": true,
         "slug": true,
-        "resourceIdentifier": true,
         "cloudPlatform": true,
         "cloudProvider": true,
         "cloudRegion": true,
@@ -2155,6 +2161,43 @@ func (r *CloudResourceResource) Update(ctx context.Context, req resource.UpdateR
         data.Description = types.StringValue(val)
     } else {
         data.Description = types.StringNull()
+    }
+    if obj, ok := dataMap["resourceIdentifier"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResourceIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ResourceIdentifier = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+            } else {
+                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ResourceIdentifier = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceIdentifier = types.StringNull()
+        }
+    } else if val, ok := dataMap["resourceIdentifier"].(string); ok {
+        data.ResourceIdentifier = types.StringValue(val)
+    } else {
+        data.ResourceIdentifier = types.StringNull()
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2368,43 +2411,6 @@ func (r *CloudResourceResource) Update(ctx context.Context, req resource.UpdateR
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["resourceIdentifier"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ResourceIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ResourceIdentifier = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-            } else {
-                data.ResourceIdentifier = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ResourceIdentifier = types.StringValue(string(jsonBytes))
-        } else {
-            data.ResourceIdentifier = types.StringNull()
-        }
-    } else if val, ok := dataMap["resourceIdentifier"].(string); ok {
-        data.ResourceIdentifier = types.StringValue(val)
-    } else {
-        data.ResourceIdentifier = types.StringNull()
     }
     if obj, ok := dataMap["cloudPlatform"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
