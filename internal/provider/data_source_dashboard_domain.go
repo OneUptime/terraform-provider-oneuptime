@@ -45,6 +45,7 @@ type DashboardDomainDataSourceModel struct {
     CustomCertificate types.String `tfsdk:"custom_certificate"`
     CustomCertificateKey types.String `tfsdk:"custom_certificate_key"`
     IsCustomCertificate types.Bool `tfsdk:"is_custom_certificate"`
+    CertificateReissueRequestedAt types.String `tfsdk:"certificate_reissue_requested_at"`
 }
 
 func (d *DashboardDomainDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -127,6 +128,10 @@ func (d *DashboardDomainDataSource) Schema(ctx context.Context, req datasource.S
             "is_custom_certificate": schema.BoolAttribute{
                 Computed: true,
             },
+            "certificate_reissue_requested_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
         },
     }
 }
@@ -189,6 +194,7 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         "customCertificate": true,
         "customCertificateKey": true,
         "isCustomCertificate": true,
+        "certificateReissueRequestedAt": true,
         "_id": true,
     }
 
@@ -502,6 +508,23 @@ func (d *DashboardDomainDataSource) Read(ctx context.Context, req datasource.Rea
         data.IsCustomCertificate = types.BoolValue(val)
     } else {
         data.IsCustomCertificate = types.BoolNull()
+    }
+    if obj, ok := item["certificateReissueRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CertificateReissueRequestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CertificateReissueRequestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CertificateReissueRequestedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CertificateReissueRequestedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CertificateReissueRequestedAt = types.StringNull()
+        }
+    } else if val, ok := item["certificateReissueRequestedAt"].(string); ok {
+        data.CertificateReissueRequestedAt = types.StringValue(val)
+    } else {
+        data.CertificateReissueRequestedAt = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -35,7 +35,7 @@ data "oneuptime_monitor_template" "by_id" {
 - `template_name` (String) Name of the Monitor Template.. Computed.
 - `template_description` (String) Description of the Monitor Template.. Computed.
 - `slug` (String) Friendly globally unique name for your object.. Computed.
-- `monitor_name` (String) Default name applied to monitors created from this template. Users can override on creation... Computed.
+- `monitor_name` (String) Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches... Computed.
 - `monitor_description` (String) Default description applied to monitors created from this template... Computed.
 - `monitor_type` (String) What is the type of monitor created from this template?.. Computed.
 - `monitor_steps` (Monitor_steps) MonitorSteps object. Computed.

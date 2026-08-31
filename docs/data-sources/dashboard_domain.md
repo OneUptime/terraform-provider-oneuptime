@@ -43,3 +43,4 @@ data "oneuptime_dashboard_domain" "by_id" {
 - `custom_certificate` (String) Dashboard domain custom_certificate. Computed.
 - `custom_certificate_key` (String) Dashboard domain custom_certificate_key. Computed.
 - `is_custom_certificate` (Bool) Dashboard domain is_custom_certificate. Computed.
+- `certificate_reissue_requested_at` (String) A date time object.. Computed.

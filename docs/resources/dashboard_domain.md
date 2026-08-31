@@ -45,6 +45,7 @@ resource "oneuptime_dashboard_domain" "example" {
 - `is_cname_verified` (Bool) Is CNAME Verified?..
 - `is_ssl_ordered` (Bool) Is SSL ordered?..
 - `is_ssl_provisioned` (Bool) Is SSL provisioned?..
+- `certificate_reissue_requested_at` (String) A date time object..
 
 ## Import
 

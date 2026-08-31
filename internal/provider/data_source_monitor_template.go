@@ -102,7 +102,7 @@ func (d *MonitorTemplateDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "monitor_name": schema.StringAttribute{
-                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation..",
+                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches..",
                 Computed: true,
             },
             "monitor_description": schema.StringAttribute{

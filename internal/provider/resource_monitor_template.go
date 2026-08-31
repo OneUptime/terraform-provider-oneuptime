@@ -91,8 +91,12 @@ func (r *MonitorTemplateResource) Schema(ctx context.Context, req resource.Schem
                 Required: true,
             },
             "monitor_name": schema.StringAttribute{
-                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation..",
-                Required: true,
+                MarkdownDescription: "Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "monitor_description": schema.StringAttribute{
                 MarkdownDescription: "Default description applied to monitors created from this template..",

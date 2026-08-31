@@ -15,7 +15,6 @@ Reusable monitor template. Use it to create new monitors with the same configura
 resource "oneuptime_monitor_template" "example" {
   template_name = "Example short text"
   template_description = "This is an example of longer text content that might be stored in this field."
-  monitor_name = "Example short text"
   monitor_type = "Manual"
   monitor_steps = [
     {
@@ -44,12 +43,12 @@ resource "oneuptime_monitor_template" "example" {
 
 - `template_name` (String) Name of the Monitor Template..
 - `template_description` (String) Description of the Monitor Template..
-- `monitor_name` (String) Default name applied to monitors created from this template. Users can override on creation...
 - `monitor_type` (String) What is the type of monitor created from this template?.. Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
 
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
+- `monitor_name` (String) Default name applied to monitors created from this template. Users can override on creation. Leave it blank to name each monitor after the resource it watches...
 - `monitor_description` (String) Default description applied to monitors created from this template...
 - `monitor_steps` (Block List) MonitorSteps object.
 - `monitoring_interval` (String) Default monitoring interval for monitors created from this template..

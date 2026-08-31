@@ -51,6 +51,7 @@ type StatusPageDomainResourceModel struct {
     IsCnameVerified types.Bool `tfsdk:"is_cname_verified"`
     IsSslOrdered types.Bool `tfsdk:"is_ssl_ordered"`
     IsSslProvisioned types.Bool `tfsdk:"is_ssl_provisioned"`
+    CertificateReissueRequestedAt RFC3339Value `tfsdk:"certificate_reissue_requested_at"`
 }
 
 func (r *StatusPageDomainResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -161,6 +162,11 @@ func (r *StatusPageDomainResource) Schema(ctx context.Context, req resource.Sche
             },
             "is_ssl_provisioned": schema.BoolAttribute{
                 MarkdownDescription: "Is SSL provisioned?.",
+                Computed: true,
+            },
+            "certificate_reissue_requested_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
         },
@@ -290,6 +296,7 @@ func (r *StatusPageDomainResource) Create(ctx context.Context, req resource.Crea
         "isCnameVerified": true,
         "isSslOrdered": true,
         "isSslProvisioned": true,
+        "certificateReissueRequestedAt": true,
         "_id": true,
     }
 
@@ -656,6 +663,17 @@ func (r *StatusPageDomainResource) Create(ctx context.Context, req resource.Crea
     if val, ok := dataMap["isSslProvisioned"].(bool); ok {
         data.IsSslProvisioned = types.BoolValue(val)
     }
+    if obj, ok := dataMap["certificateReissueRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CertificateReissueRequestedAt = NewRFC3339Value(val)
+        } else {
+            data.CertificateReissueRequestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["certificateReissueRequestedAt"].(string); ok && val != "" {
+        data.CertificateReissueRequestedAt = NewRFC3339Value(val)
+    } else {
+        data.CertificateReissueRequestedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -699,6 +717,7 @@ func (r *StatusPageDomainResource) Read(ctx context.Context, req resource.ReadRe
         "isCnameVerified": true,
         "isSslOrdered": true,
         "isSslProvisioned": true,
+        "certificateReissueRequestedAt": true,
         "_id": true,
     }
 
@@ -1066,6 +1085,17 @@ func (r *StatusPageDomainResource) Read(ctx context.Context, req resource.ReadRe
     if val, ok := dataMap["isSslProvisioned"].(bool); ok {
         data.IsSslProvisioned = types.BoolValue(val)
     }
+    if obj, ok := dataMap["certificateReissueRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CertificateReissueRequestedAt = NewRFC3339Value(val)
+        } else {
+            data.CertificateReissueRequestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["certificateReissueRequestedAt"].(string); ok && val != "" {
+        data.CertificateReissueRequestedAt = NewRFC3339Value(val)
+    } else {
+        data.CertificateReissueRequestedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1152,6 +1182,7 @@ func (r *StatusPageDomainResource) Update(ctx context.Context, req resource.Upda
         "isCnameVerified": true,
         "isSslOrdered": true,
         "isSslProvisioned": true,
+        "certificateReissueRequestedAt": true,
         "_id": true,
     }
 
@@ -1512,6 +1543,17 @@ func (r *StatusPageDomainResource) Update(ctx context.Context, req resource.Upda
     }
     if val, ok := dataMap["isSslProvisioned"].(bool); ok {
         data.IsSslProvisioned = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["certificateReissueRequestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.CertificateReissueRequestedAt = NewRFC3339Value(val)
+        } else {
+            data.CertificateReissueRequestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["certificateReissueRequestedAt"].(string); ok && val != "" {
+        data.CertificateReissueRequestedAt = NewRFC3339Value(val)
+    } else {
+        data.CertificateReissueRequestedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
