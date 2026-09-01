@@ -54,6 +54,7 @@ type OnCallPolicyScheduleResourceModel struct {
     RosterNextHandoffAt RFC3339Value `tfsdk:"roster_next_handoff_at"`
     RosterNextStartAt RFC3339Value `tfsdk:"roster_next_start_at"`
     RosterStartAt RFC3339Value `tfsdk:"roster_start_at"`
+    ShiftConfigVersion types.Number `tfsdk:"shift_config_version"`
 }
 
 func (r *OnCallPolicyScheduleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -166,6 +167,10 @@ func (r *OnCallPolicyScheduleResource) Schema(ctx context.Context, req resource.
             "roster_start_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "shift_config_version": schema.NumberAttribute{
+                MarkdownDescription: "Incremented whenever the schedule's layers, members, overrides or policy attachments change. Used as the calendar feed SEQUENCE..",
                 Computed: true,
             },
         },
@@ -290,6 +295,7 @@ func (r *OnCallPolicyScheduleResource) Create(ctx context.Context, req resource.
         "rosterNextHandoffAt": true,
         "rosterNextStartAt": true,
         "rosterStartAt": true,
+        "shiftConfigVersion": true,
         "_id": true,
     }
 
@@ -718,6 +724,23 @@ func (r *OnCallPolicyScheduleResource) Create(ctx context.Context, req resource.
     } else {
         data.RosterStartAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["shiftConfigVersion"].(float64); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["shiftConfigVersion"].(int); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["shiftConfigVersion"].(int64); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["shiftConfigVersion"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ShiftConfigVersion = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.ShiftConfigVersion = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -762,6 +785,7 @@ func (r *OnCallPolicyScheduleResource) Read(ctx context.Context, req resource.Re
         "rosterNextHandoffAt": true,
         "rosterNextStartAt": true,
         "rosterStartAt": true,
+        "shiftConfigVersion": true,
         "_id": true,
     }
 
@@ -1191,6 +1215,23 @@ func (r *OnCallPolicyScheduleResource) Read(ctx context.Context, req resource.Re
     } else {
         data.RosterStartAt = NewRFC3339Null()
     }
+    if val, ok := dataMap["shiftConfigVersion"].(float64); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["shiftConfigVersion"].(int); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["shiftConfigVersion"].(int64); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["shiftConfigVersion"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ShiftConfigVersion = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.ShiftConfigVersion = types.NumberNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1278,6 +1319,7 @@ func (r *OnCallPolicyScheduleResource) Update(ctx context.Context, req resource.
         "rosterNextHandoffAt": true,
         "rosterNextStartAt": true,
         "rosterStartAt": true,
+        "shiftConfigVersion": true,
         "_id": true,
     }
 
@@ -1700,6 +1742,23 @@ func (r *OnCallPolicyScheduleResource) Update(ctx context.Context, req resource.
         data.RosterStartAt = NewRFC3339Value(val)
     } else {
         data.RosterStartAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["shiftConfigVersion"].(float64); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["shiftConfigVersion"].(int); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["shiftConfigVersion"].(int64); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["shiftConfigVersion"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ShiftConfigVersion = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.ShiftConfigVersion = types.NumberNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

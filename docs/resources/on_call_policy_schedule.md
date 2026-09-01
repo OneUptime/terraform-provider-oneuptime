@@ -46,6 +46,7 @@ resource "oneuptime_on_call_policy_schedule" "example" {
 - `roster_next_handoff_at` (String) A date time object..
 - `roster_next_start_at` (String) A date time object..
 - `roster_start_at` (String) A date time object..
+- `shift_config_version` (Number) Incremented whenever the schedule's layers, members, overrides or policy attachments change. Used as the calendar feed SEQUENCE...
 
 ## Import
 

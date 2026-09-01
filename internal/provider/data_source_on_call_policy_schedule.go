@@ -47,6 +47,7 @@ type OnCallPolicyScheduleDataSourceModel struct {
     RosterNextHandoffAt types.String `tfsdk:"roster_next_handoff_at"`
     RosterNextStartAt types.String `tfsdk:"roster_next_start_at"`
     RosterStartAt types.String `tfsdk:"roster_start_at"`
+    ShiftConfigVersion types.Number `tfsdk:"shift_config_version"`
 }
 
 func (d *OnCallPolicyScheduleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -133,6 +134,10 @@ func (d *OnCallPolicyScheduleDataSource) Schema(ctx context.Context, req datasou
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
+            "shift_config_version": schema.NumberAttribute{
+                MarkdownDescription: "Incremented whenever the schedule's layers, members, overrides or policy attachments change. Used as the calendar feed SEQUENCE..",
+                Computed: true,
+            },
         },
     }
 }
@@ -195,6 +200,7 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
         "rosterNextHandoffAt": true,
         "rosterNextStartAt": true,
         "rosterStartAt": true,
+        "shiftConfigVersion": true,
         "_id": true,
     }
 
@@ -563,6 +569,17 @@ func (d *OnCallPolicyScheduleDataSource) Read(ctx context.Context, req datasourc
         data.RosterStartAt = types.StringValue(val)
     } else {
         data.RosterStartAt = types.StringNull()
+    }
+    if val, ok := item["shiftConfigVersion"].(float64); ok {
+        data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["shiftConfigVersion"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.ShiftConfigVersion = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.ShiftConfigVersion = types.NumberNull()
+        }
+    } else {
+        data.ShiftConfigVersion = types.NumberNull()
     }
 
     // Write logs using the tflog package
