@@ -47,6 +47,7 @@ type NetworkDeviceResourceModel struct {
     Hostname types.String `tfsdk:"hostname"`
     ProbeId types.String `tfsdk:"probe_id"`
     SiteId types.String `tfsdk:"site_id"`
+    OidTemplateId types.String `tfsdk:"oid_template_id"`
     MonitoringMethod types.String `tfsdk:"monitoring_method"`
     DeviceRole types.String `tfsdk:"device_role"`
     MonitorId types.String `tfsdk:"monitor_id"`
@@ -149,6 +150,14 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "site_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "oid_template_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
                 Computed: true,
@@ -300,7 +309,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "snmp_oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected on each poll. Values are recorded as metrics and can be alerted on through monitor criteria..",
+                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -551,7 +560,7 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 Computed: true,
             },
             "last_walk_log": schema.StringAttribute{
-                MarkdownDescription: "The previous poll's raw walk response. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls. Managed by the server..",
+                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server..",
                 CustomType: JSONSubsetType{},
                 Computed: true,
             },
@@ -627,6 +636,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     }
     if !data.SiteId.IsNull() && !data.SiteId.IsUnknown() {
         requestDataMap["siteId"] = data.SiteId.ValueString()
+    }
+    if !data.OidTemplateId.IsNull() && !data.OidTemplateId.IsUnknown() {
+        requestDataMap["oidTemplateId"] = data.OidTemplateId.ValueString()
     }
     if !data.MonitoringMethod.IsNull() && !data.MonitoringMethod.IsUnknown() {
         requestDataMap["monitoringMethod"] = data.MonitoringMethod.ValueString()
@@ -745,6 +757,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "hostname": true,
         "probeId": true,
         "siteId": true,
+        "oidTemplateId": true,
         "monitoringMethod": true,
         "deviceRole": true,
         "monitorId": true,
@@ -1024,6 +1037,43 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.SiteId = types.StringValue(val)
     } else {
         data.SiteId = types.StringNull()
+    }
+    if obj, ok := dataMap["oidTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OidTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OidTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["oidTemplateId"].(string); ok {
+        data.OidTemplateId = types.StringValue(val)
+    } else {
+        data.OidTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["monitoringMethod"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2447,6 +2497,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "hostname": true,
         "probeId": true,
         "siteId": true,
+        "oidTemplateId": true,
         "monitoringMethod": true,
         "deviceRole": true,
         "monitorId": true,
@@ -2727,6 +2778,43 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.SiteId = types.StringValue(val)
     } else {
         data.SiteId = types.StringNull()
+    }
+    if obj, ok := dataMap["oidTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OidTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OidTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["oidTemplateId"].(string); ok {
+        data.OidTemplateId = types.StringValue(val)
+    } else {
+        data.OidTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["monitoringMethod"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4167,6 +4255,9 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     if !data.SiteId.IsUnknown() && !state.SiteId.IsUnknown() && !data.SiteId.Equal(state.SiteId) {
         requestDataMap["siteId"] = data.SiteId.ValueString()
     }
+    if !data.OidTemplateId.IsUnknown() && !state.OidTemplateId.IsUnknown() && !data.OidTemplateId.Equal(state.OidTemplateId) {
+        requestDataMap["oidTemplateId"] = data.OidTemplateId.ValueString()
+    }
     if !data.CurrentMonitorStatusId.IsUnknown() && !state.CurrentMonitorStatusId.IsUnknown() && !data.CurrentMonitorStatusId.Equal(state.CurrentMonitorStatusId) {
         requestDataMap["currentMonitorStatusId"] = data.CurrentMonitorStatusId.ValueString()
     }
@@ -4342,6 +4433,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "hostname": true,
         "probeId": true,
         "siteId": true,
+        "oidTemplateId": true,
         "monitoringMethod": true,
         "deviceRole": true,
         "monitorId": true,
@@ -4616,6 +4708,43 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.SiteId = types.StringValue(val)
     } else {
         data.SiteId = types.StringNull()
+    }
+    if obj, ok := dataMap["oidTemplateId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OidTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OidTemplateId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
+    } else if val, ok := dataMap["oidTemplateId"].(string); ok {
+        data.OidTemplateId = types.StringValue(val)
+    } else {
+        data.OidTemplateId = types.StringNull()
     }
     if obj, ok := dataMap["monitoringMethod"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

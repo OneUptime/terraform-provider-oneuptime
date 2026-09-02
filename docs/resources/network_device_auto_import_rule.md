@@ -36,6 +36,7 @@ resource "oneuptime_network_device_auto_import_rule" "example" {
 - `include_ping_only_hosts` (Bool) Also import hosts that answered ping but not SNMP. Off by default: a wrong SNMP credential makes every host on a subnet report as ping-only, and this rule would then import all of them as half-identified devices...
 - `is_exclusion` (Bool) Invert this rule: matching hosts are NEVER auto-imported, even when another rule matches them. Use it to carve printers, phones, or other unwanted hosts out of a broader rule...
 - `monitor_template_id` (String) A unique identifier for an object, represented as a UUID..
+- `oid_template_id` (String) A unique identifier for an object, represented as a UUID..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only

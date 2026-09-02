@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &NetworkDeviceAutoImportRuleDataSource{}
+var _ datasource.DataSource = &OidCollectionTemplateDataSource{}
 
-func NewNetworkDeviceAutoImportRuleDataSource() datasource.DataSource {
-    return &NetworkDeviceAutoImportRuleDataSource{}
+func NewOidCollectionTemplateDataSource() datasource.DataSource {
+    return &OidCollectionTemplateDataSource{}
 }
 
-// NetworkDeviceAutoImportRuleDataSource defines the data source implementation.
-type NetworkDeviceAutoImportRuleDataSource struct {
+// OidCollectionTemplateDataSource defines the data source implementation.
+type OidCollectionTemplateDataSource struct {
     client *Client
 }
 
-// NetworkDeviceAutoImportRuleDataSourceModel describes the data source data model.
-type NetworkDeviceAutoImportRuleDataSourceModel struct {
+// OidCollectionTemplateDataSourceModel describes the data source data model.
+type OidCollectionTemplateDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,26 +34,20 @@ type NetworkDeviceAutoImportRuleDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
+    Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
-    IsEnabled types.Bool `tfsdk:"is_enabled"`
-    IpMatchTarget types.String `tfsdk:"ip_match_target"`
-    SysNamePattern types.String `tfsdk:"sys_name_pattern"`
-    SysDescrPattern types.String `tfsdk:"sys_descr_pattern"`
-    SysObjectIdPattern types.String `tfsdk:"sys_object_id_pattern"`
-    IncludePingOnlyHosts types.Bool `tfsdk:"include_ping_only_hosts"`
-    IsExclusion types.Bool `tfsdk:"is_exclusion"`
-    MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
-    OidTemplateId types.String `tfsdk:"oid_template_id"`
+    Oids types.String `tfsdk:"oids"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *NetworkDeviceAutoImportRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_network_device_auto_import_rule"
+func (d *OidCollectionTemplateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_oid_collection_template"
 }
 
-func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *OidCollectionTemplateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Automatically import matching hosts from network device discovery scan results as Network Devices and optionally provision a monitor from a template Look up an existing network_device_auto_import_rule by `id` or by `name`.",
+        MarkdownDescription: "A reusable set of SNMP health OIDs. Every network device linked to a template collects its OIDs, and editing the template changes what every linked device collects on its next poll. Look up an existing oid_collection_template by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -86,47 +80,23 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req 
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "slug": schema.StringAttribute{
+                MarkdownDescription: "Friendly globally unique name for your object.",
+                Computed: true,
+            },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this network device auto import rule.",
+                MarkdownDescription: "Friendly description that will help you remember.",
                 Computed: true,
             },
-            "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled.",
-                Computed: true,
-            },
-            "ip_match_target": schema.StringAttribute{
-                MarkdownDescription: "Only trigger for discovered hosts whose IP is inside this CIDR (192.168.1.0/24) or octet range (10.16-22.0-255.51-66) — the same notations a scan target takes. Leave empty to match any address..",
-                Computed: true,
-            },
-            "sys_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysName. Leave empty to match any name..",
-                Computed: true,
-            },
-            "sys_descr_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex or * wildcard pattern (case-insensitive) matched against the discovered host's SNMP sysDescr. Leave empty to match any description..",
-                Computed: true,
-            },
-            "sys_object_id_pattern": schema.StringAttribute{
-                MarkdownDescription: "An OID prefix (1.3.6.1.4.1.9) or a '*' wildcard OID pattern with literal dots (1.3.6.1.4.1.9.* for Cisco) matched against the discovered host's SNMP sysObjectID — the vendor's registered enterprise OID. Not regex: dots match dots, so 1.3.6.1.4.1.9.* can never match enterprise 94. Leave empty to match any vendor. Only hosts reported by probes new enough to carry sysObjectID can match..",
-                Computed: true,
-            },
-            "include_ping_only_hosts": schema.BoolAttribute{
-                MarkdownDescription: "Also import hosts that answered ping but not SNMP. Off by default: a wrong SNMP credential makes every host on a subnet report as ping-only, and this rule would then import all of them as half-identified devices..",
-                Computed: true,
-            },
-            "is_exclusion": schema.BoolAttribute{
-                MarkdownDescription: "Invert this rule: matching hosts are NEVER auto-imported, even when another rule matches them. Use it to carve printers, phones, or other unwanted hosts out of a broader rule..",
-                Computed: true,
-            },
-            "monitor_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "oid_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "oids": schema.StringAttribute{
+                MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected by every device linked to this template. You do not need OIDs for interfaces - bits in/out, errors, utilization and up/down are walked for every port automatically..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -134,7 +104,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Schema(ctx context.Context, req 
     }
 }
 
-func (d *NetworkDeviceAutoImportRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *OidCollectionTemplateDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -154,8 +124,8 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Configure(ctx context.Context, r
     d.client = client
 }
 
-func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data NetworkDeviceAutoImportRuleDataSourceModel
+func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data OidCollectionTemplateDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -169,7 +139,7 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_device_auto_import_rule.",
+            "Exactly one of `id` or `name` must be set to look up a oid_collection_template.",
         )
         return
     }
@@ -181,35 +151,29 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         "deletedAt": true,
         "version": true,
         "projectId": true,
+        "slug": true,
         "description": true,
-        "isEnabled": true,
-        "ipMatchTarget": true,
-        "sysNamePattern": true,
-        "sysDescrPattern": true,
-        "sysObjectIdPattern": true,
-        "includePingOnlyHosts": true,
-        "isExclusion": true,
-        "monitorTemplateId": true,
-        "oidTemplateId": true,
+        "oids": true,
         "createdByUserId": true,
+        "deletedByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/network-device-auto-import-rule/" + data.Id.ValueString() + "/get-item"
+        readPath := "/network-device-oid-template/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_device_auto_import_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read oid_collection_template, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_auto_import_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No oid_collection_template found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_device_auto_import_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read oid_collection_template: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -226,28 +190,28 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-auto-import-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-oid-template/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_device_auto_import_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list oid_collection_template, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_device_auto_import_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list oid_collection_template: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_auto_import_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No oid_collection_template found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_device_auto_import_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one oid_collection_template matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_device_auto_import_rule.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for oid_collection_template.")
             return
         }
         item = first
@@ -367,6 +331,23 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
     } else {
         data.ProjectId = types.StringNull()
     }
+    if obj, ok := item["slug"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Slug = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Slug = types.StringValue(string(jsonBytes))
+        } else {
+            data.Slug = types.StringNull()
+        }
+    } else if val, ok := item["slug"].(string); ok {
+        data.Slug = types.StringValue(val)
+    } else {
+        data.Slug = types.StringNull()
+    }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Description = types.StringValue(val)
@@ -384,122 +365,22 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
     } else {
         data.Description = types.StringNull()
     }
-    if val, ok := item["isEnabled"].(bool); ok {
-        data.IsEnabled = types.BoolValue(val)
-    } else {
-        data.IsEnabled = types.BoolNull()
-    }
-    if obj, ok := item["ipMatchTarget"].(map[string]interface{}); ok {
+    if obj, ok := item["oids"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IpMatchTarget = types.StringValue(val)
+            data.Oids = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.IpMatchTarget = types.StringValue(val)
+            data.Oids = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.IpMatchTarget = types.StringValue(fmt.Sprintf("%v", val))
+            data.Oids = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.IpMatchTarget = types.StringValue(string(jsonBytes))
+            data.Oids = types.StringValue(string(jsonBytes))
         } else {
-            data.IpMatchTarget = types.StringNull()
+            data.Oids = types.StringNull()
         }
-    } else if val, ok := item["ipMatchTarget"].(string); ok {
-        data.IpMatchTarget = types.StringValue(val)
+    } else if val, ok := item["oids"].(string); ok {
+        data.Oids = types.StringValue(val)
     } else {
-        data.IpMatchTarget = types.StringNull()
-    }
-    if obj, ok := item["sysNamePattern"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SysNamePattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.SysNamePattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.SysNamePattern = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SysNamePattern = types.StringValue(string(jsonBytes))
-        } else {
-            data.SysNamePattern = types.StringNull()
-        }
-    } else if val, ok := item["sysNamePattern"].(string); ok {
-        data.SysNamePattern = types.StringValue(val)
-    } else {
-        data.SysNamePattern = types.StringNull()
-    }
-    if obj, ok := item["sysDescrPattern"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SysDescrPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.SysDescrPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.SysDescrPattern = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SysDescrPattern = types.StringValue(string(jsonBytes))
-        } else {
-            data.SysDescrPattern = types.StringNull()
-        }
-    } else if val, ok := item["sysDescrPattern"].(string); ok {
-        data.SysDescrPattern = types.StringValue(val)
-    } else {
-        data.SysDescrPattern = types.StringNull()
-    }
-    if obj, ok := item["sysObjectIdPattern"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SysObjectIdPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.SysObjectIdPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.SysObjectIdPattern = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SysObjectIdPattern = types.StringValue(string(jsonBytes))
-        } else {
-            data.SysObjectIdPattern = types.StringNull()
-        }
-    } else if val, ok := item["sysObjectIdPattern"].(string); ok {
-        data.SysObjectIdPattern = types.StringValue(val)
-    } else {
-        data.SysObjectIdPattern = types.StringNull()
-    }
-    if val, ok := item["includePingOnlyHosts"].(bool); ok {
-        data.IncludePingOnlyHosts = types.BoolValue(val)
-    } else {
-        data.IncludePingOnlyHosts = types.BoolNull()
-    }
-    if val, ok := item["isExclusion"].(bool); ok {
-        data.IsExclusion = types.BoolValue(val)
-    } else {
-        data.IsExclusion = types.BoolNull()
-    }
-    if obj, ok := item["monitorTemplateId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.MonitorTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
-        } else {
-            data.MonitorTemplateId = types.StringNull()
-        }
-    } else if val, ok := item["monitorTemplateId"].(string); ok {
-        data.MonitorTemplateId = types.StringValue(val)
-    } else {
-        data.MonitorTemplateId = types.StringNull()
-    }
-    if obj, ok := item["oidTemplateId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.OidTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.OidTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.OidTemplateId = types.StringValue(string(jsonBytes))
-        } else {
-            data.OidTemplateId = types.StringNull()
-        }
-    } else if val, ok := item["oidTemplateId"].(string); ok {
-        data.OidTemplateId = types.StringValue(val)
-    } else {
-        data.OidTemplateId = types.StringNull()
+        data.Oids = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -517,6 +398,23 @@ func (d *NetworkDeviceAutoImportRuleDataSource) Read(ctx context.Context, req da
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeletedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeletedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeletedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["deletedByUserId"].(string); ok {
+        data.DeletedByUserId = types.StringValue(val)
+    } else {
+        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

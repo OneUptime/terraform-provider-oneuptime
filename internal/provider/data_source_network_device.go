@@ -41,6 +41,7 @@ type NetworkDeviceDataSourceModel struct {
     Hostname types.String `tfsdk:"hostname"`
     ProbeId types.String `tfsdk:"probe_id"`
     SiteId types.String `tfsdk:"site_id"`
+    OidTemplateId types.String `tfsdk:"oid_template_id"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitoringMethod types.String `tfsdk:"monitoring_method"`
     DeviceRole types.String `tfsdk:"device_role"`
@@ -149,6 +150,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "oid_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "current_monitor_status_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -222,7 +227,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "snmp_oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected on each poll. Values are recorded as metrics and can be alerted on through monitor criteria..",
+                MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead..",
                 Computed: true,
             },
             "auto_apply_vendor_health_template": schema.BoolAttribute{
@@ -234,7 +239,7 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "last_walk_log": schema.StringAttribute{
-                MarkdownDescription: "The previous poll's raw walk response. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls. Managed by the server..",
+                MarkdownDescription: "The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server..",
                 Computed: true,
             },
             "sys_descr": schema.StringAttribute{
@@ -394,6 +399,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "hostname": true,
         "probeId": true,
         "siteId": true,
+        "oidTemplateId": true,
         "currentMonitorStatusId": true,
         "monitoringMethod": true,
         "deviceRole": true,
@@ -700,6 +706,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.SiteId = types.StringValue(val)
     } else {
         data.SiteId = types.StringNull()
+    }
+    if obj, ok := item["oidTemplateId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OidTemplateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OidTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OidTemplateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OidTemplateId = types.StringNull()
+        }
+    } else if val, ok := item["oidTemplateId"].(string); ok {
+        data.OidTemplateId = types.StringValue(val)
+    } else {
+        data.OidTemplateId = types.StringNull()
     }
     if obj, ok := item["currentMonitorStatusId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

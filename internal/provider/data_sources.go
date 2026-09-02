@@ -307,6 +307,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewNetworkDeviceOwnerRuleDataSource,
         NewNetworkDeviceLabelRuleDataSource,
         NewNetworkDeviceAutoImportRuleDataSource,
+        NewOidCollectionTemplateDataSource,
         NewNetworkDeviceDiscoveryScanDataSource,
         NewNetworkInterfaceDataSource,
         NewNetworkSiteDataSource,

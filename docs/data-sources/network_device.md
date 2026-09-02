@@ -37,6 +37,7 @@ data "oneuptime_network_device" "by_id" {
 - `hostname` (String) IP address or hostname the probe polls; also matches SNMP trap sources.. Computed.
 - `probe_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `site_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `oid_template_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitoring_method` (String) How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP... Computed.
 - `device_role` (String) What this device does on the network — router, switch, access point and so on. Left empty, the role is worked out from the device's own SNMP identity. Set it when there is no SNMP to read: a ping-only device has no identity to classify, and the role decides both the shape it is drawn with and where it sits in the topology hierarchy... Computed.
@@ -55,10 +56,10 @@ data "oneuptime_network_device" "by_id" {
 - `polling_interval_in_minutes` (Number) How often, in minutes, the assigned probe polls this device via SNMP.. Computed.
 - `walk_interfaces` (Bool) Walk the IF-MIB interface tables on each poll to inventory interfaces, bandwidth, and errors. Also collects LLDP/CDP neighbors for the topology graph... Computed.
 - `collect_endpoints` (Bool) Also walk the device's ARP cache and bridge forwarding database on each poll to discover endpoints (laptops, printers, POS terminals) attached to it. Strictly opt-in: costs extra SNMP table walks per poll. Only meaningful when Walk Interfaces is on... Computed.
-- `snmp_oids` (String) SNMP OIDs (CPU, memory, temperature, or any custom OID) collected on each poll. Values are recorded as metrics and can be alerted on through monitor criteria... Computed.
+- `snmp_oids` (String) SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead... Computed.
 - `auto_apply_vendor_health_template` (Bool) When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list... Computed.
 - `next_poll_at` (String) A date time object.. Computed.
-- `last_walk_log` (String) The previous poll's raw walk response. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls. Managed by the server... Computed.
+- `last_walk_log` (String) The previous poll's interface counters. Kept so interface rates (bandwidth, utilization, errors/sec) can be computed as counter deltas between polls, and stores nothing else - the rest of the walk response has no reader and this column is rewritten on every poll of every device. Managed by the server... Computed.
 - `sys_descr` (String) System description (sysDescr) enriched from SNMP walks of this device.. Computed.
 - `sys_name` (String) System name (sysName) enriched from SNMP walks of this device.. Computed.
 - `sys_object_id` (String) sysObjectID — the vendor's registered OID for this device model, enriched from SNMP walks. Used to fingerprint the vendor and suggest an OID template... Computed.
