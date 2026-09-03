@@ -279,6 +279,7 @@ func GetResources() []func() resource.Resource {
         NewNetworkDeviceLabelRuleResource,
         NewNetworkDeviceAutoImportRuleResource,
         NewOidCollectionTemplateResource,
+        NewNetworkDeviceRoleResource,
         NewNetworkDeviceDiscoveryScanResource,
         NewNetworkSiteResource,
         NewNetworkSiteTypeResource,

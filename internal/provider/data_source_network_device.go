@@ -45,6 +45,7 @@ type NetworkDeviceDataSourceModel struct {
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitoringMethod types.String `tfsdk:"monitoring_method"`
     DeviceRole types.String `tfsdk:"device_role"`
+    NetworkDeviceRoleId types.String `tfsdk:"network_device_role_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
@@ -163,7 +164,11 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "device_role": schema.StringAttribute{
-                MarkdownDescription: "What this device does on the network — router, switch, access point and so on. Left empty, the role is worked out from the device's own SNMP identity. Set it when there is no SNMP to read: a ping-only device has no identity to classify, and the role decides both the shape it is drawn with and where it sits in the topology hierarchy..",
+                MarkdownDescription: "Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed..",
+                Computed: true,
+            },
+            "network_device_role_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "monitor_id": schema.StringAttribute{
@@ -403,6 +408,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "currentMonitorStatusId": true,
         "monitoringMethod": true,
         "deviceRole": true,
+        "networkDeviceRoleId": true,
         "monitorId": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
@@ -774,6 +780,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.DeviceRole = types.StringValue(val)
     } else {
         data.DeviceRole = types.StringNull()
+    }
+    if obj, ok := item["networkDeviceRoleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkDeviceRoleId = types.StringNull()
+        }
+    } else if val, ok := item["networkDeviceRoleId"].(string); ok {
+        data.NetworkDeviceRoleId = types.StringValue(val)
+    } else {
+        data.NetworkDeviceRoleId = types.StringNull()
     }
     if obj, ok := item["monitorId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

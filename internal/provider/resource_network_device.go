@@ -50,6 +50,7 @@ type NetworkDeviceResourceModel struct {
     OidTemplateId types.String `tfsdk:"oid_template_id"`
     MonitoringMethod types.String `tfsdk:"monitoring_method"`
     DeviceRole types.String `tfsdk:"device_role"`
+    NetworkDeviceRoleId types.String `tfsdk:"network_device_role_id"`
     MonitorId types.String `tfsdk:"monitor_id"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
@@ -174,7 +175,15 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "device_role": schema.StringAttribute{
-                MarkdownDescription: "What this device does on the network — router, switch, access point and so on. Left empty, the role is worked out from the device's own SNMP identity. Set it when there is no SNMP to read: a ping-only device has no identity to classify, and the role decides both the shape it is drawn with and where it sits in the topology hierarchy..",
+                MarkdownDescription: "Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "network_device_role_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -646,6 +655,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if !data.DeviceRole.IsNull() && !data.DeviceRole.IsUnknown() {
         requestDataMap["deviceRole"] = data.DeviceRole.ValueString()
     }
+    if !data.NetworkDeviceRoleId.IsNull() && !data.NetworkDeviceRoleId.IsUnknown() {
+        requestDataMap["networkDeviceRoleId"] = data.NetworkDeviceRoleId.ValueString()
+    }
     if !data.MonitorId.IsNull() && !data.MonitorId.IsUnknown() {
         requestDataMap["monitorId"] = data.MonitorId.ValueString()
     }
@@ -760,6 +772,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "oidTemplateId": true,
         "monitoringMethod": true,
         "deviceRole": true,
+        "networkDeviceRoleId": true,
         "monitorId": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
@@ -1148,6 +1161,43 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.DeviceRole = types.StringValue(val)
     } else {
         data.DeviceRole = types.StringNull()
+    }
+    if obj, ok := dataMap["networkDeviceRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkDeviceRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["networkDeviceRoleId"].(string); ok {
+        data.NetworkDeviceRoleId = types.StringValue(val)
+    } else {
+        data.NetworkDeviceRoleId = types.StringNull()
     }
     if obj, ok := dataMap["monitorId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2500,6 +2550,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "oidTemplateId": true,
         "monitoringMethod": true,
         "deviceRole": true,
+        "networkDeviceRoleId": true,
         "monitorId": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
@@ -2889,6 +2940,43 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.DeviceRole = types.StringValue(val)
     } else {
         data.DeviceRole = types.StringNull()
+    }
+    if obj, ok := dataMap["networkDeviceRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkDeviceRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["networkDeviceRoleId"].(string); ok {
+        data.NetworkDeviceRoleId = types.StringValue(val)
+    } else {
+        data.NetworkDeviceRoleId = types.StringNull()
     }
     if obj, ok := dataMap["monitorId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4267,6 +4355,9 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     if !data.DeviceRole.IsUnknown() && !state.DeviceRole.IsUnknown() && !data.DeviceRole.Equal(state.DeviceRole) {
         requestDataMap["deviceRole"] = data.DeviceRole.ValueString()
     }
+    if !data.NetworkDeviceRoleId.IsUnknown() && !state.NetworkDeviceRoleId.IsUnknown() && !data.NetworkDeviceRoleId.Equal(state.NetworkDeviceRoleId) {
+        requestDataMap["networkDeviceRoleId"] = data.NetworkDeviceRoleId.ValueString()
+    }
     if !data.MonitorId.IsUnknown() && !state.MonitorId.IsUnknown() && !data.MonitorId.Equal(state.MonitorId) {
         requestDataMap["monitorId"] = data.MonitorId.ValueString()
     }
@@ -4436,6 +4527,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "oidTemplateId": true,
         "monitoringMethod": true,
         "deviceRole": true,
+        "networkDeviceRoleId": true,
         "monitorId": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
@@ -4819,6 +4911,43 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.DeviceRole = types.StringValue(val)
     } else {
         data.DeviceRole = types.StringNull()
+    }
+    if obj, ok := dataMap["networkDeviceRoleId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.NetworkDeviceRoleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+            } else {
+                data.NetworkDeviceRoleId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.NetworkDeviceRoleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkDeviceRoleId = types.StringNull()
+        }
+    } else if val, ok := dataMap["networkDeviceRoleId"].(string); ok {
+        data.NetworkDeviceRoleId = types.StringValue(val)
+    } else {
+        data.NetworkDeviceRoleId = types.StringNull()
     }
     if obj, ok := dataMap["monitorId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
