@@ -36,6 +36,8 @@ data "oneuptime_network_site" "by_id" {
 - `description` (String) Friendly description for this network site.. Computed.
 - `site_type` (String) Deprecated legacy site type string. Use the Network Site Type relation instead; this column exists only for the backfill migration and will be removed... Computed.
 - `network_site_type_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `probe_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `snmp_credential_profile_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `parent_site_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `materialized_path` (String) Slash-separated ancestor IDs of this site (e.g. '/rootId/childId/'). Managed by the server on parent changes; used for subtree queries and rollups... Computed.
 - `depth` (Number) Number of ancestors above this site (0 for root sites). Managed by the server on parent changes... Computed.

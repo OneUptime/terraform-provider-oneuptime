@@ -42,6 +42,7 @@ type NetworkDeviceDataSourceModel struct {
     ProbeId types.String `tfsdk:"probe_id"`
     SiteId types.String `tfsdk:"site_id"`
     OidTemplateId types.String `tfsdk:"oid_template_id"`
+    SnmpCredentialProfileId types.String `tfsdk:"snmp_credential_profile_id"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitoringMethod types.String `tfsdk:"monitoring_method"`
     DeviceRole types.String `tfsdk:"device_role"`
@@ -81,6 +82,8 @@ type NetworkDeviceDataSourceModel struct {
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     LastPolledAt types.String `tfsdk:"last_polled_at"`
     IsReachable types.Bool `tfsdk:"is_reachable"`
+    IsSnmpReachable types.Bool `tfsdk:"is_snmp_reachable"`
+    LastSnmpSeenAt types.String `tfsdk:"last_snmp_seen_at"`
     InterfacesTotal types.Number `tfsdk:"interfaces_total"`
     InterfacesUp types.Number `tfsdk:"interfaces_up"`
     InterfacesDown types.Number `tfsdk:"interfaces_down"`
@@ -152,6 +155,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "oid_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "snmp_credential_profile_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -311,6 +318,14 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe..",
                 Computed: true,
             },
+            "is_snmp_reachable": schema.BoolAttribute{
+                MarkdownDescription: "Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe..",
+                Computed: true,
+            },
+            "last_snmp_seen_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
             "interfaces_total": schema.NumberAttribute{
                 MarkdownDescription: "Cached total count of interfaces on this device.",
                 Computed: true,
@@ -405,6 +420,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "probeId": true,
         "siteId": true,
         "oidTemplateId": true,
+        "snmpCredentialProfileId": true,
         "currentMonitorStatusId": true,
         "monitoringMethod": true,
         "deviceRole": true,
@@ -444,6 +460,8 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
+        "isSnmpReachable": true,
+        "lastSnmpSeenAt": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -729,6 +747,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.OidTemplateId = types.StringValue(val)
     } else {
         data.OidTemplateId = types.StringNull()
+    }
+    if obj, ok := item["snmpCredentialProfileId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCredentialProfileId = types.StringNull()
+        }
+    } else if val, ok := item["snmpCredentialProfileId"].(string); ok {
+        data.SnmpCredentialProfileId = types.StringValue(val)
+    } else {
+        data.SnmpCredentialProfileId = types.StringNull()
     }
     if obj, ok := item["currentMonitorStatusId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1320,6 +1355,28 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.IsReachable = types.BoolValue(val)
     } else {
         data.IsReachable = types.BoolNull()
+    }
+    if val, ok := item["isSnmpReachable"].(bool); ok {
+        data.IsSnmpReachable = types.BoolValue(val)
+    } else {
+        data.IsSnmpReachable = types.BoolNull()
+    }
+    if obj, ok := item["lastSnmpSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSnmpSeenAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSnmpSeenAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSnmpSeenAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSnmpSeenAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSnmpSeenAt = types.StringNull()
+        }
+    } else if val, ok := item["lastSnmpSeenAt"].(string); ok {
+        data.LastSnmpSeenAt = types.StringValue(val)
+    } else {
+        data.LastSnmpSeenAt = types.StringNull()
     }
     if val, ok := item["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))

@@ -57,6 +57,8 @@ resource "oneuptime_exception" "example" {
 - `version` (Number) Object version.
 - `unhandled` (Bool) True when at least one occurrence of this exception escaped its span scope (was unhandled, per OTel exception.escaped)..
 - `ai_classification` (String) AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure)..
+- `error_class` (String) Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list...
+- `error_class_source` (String) Where the error class came from: default (unclassified), declared (by the emitting code), ai (triage verdict) or manual (a human)..
 - `ai_fix_declined_at` (String) A date time object..
 
 ## Import

@@ -58,6 +58,8 @@ type ExceptionDataSourceModel struct {
     Environment types.String `tfsdk:"environment"`
     Unhandled types.Bool `tfsdk:"unhandled"`
     AiClassification types.String `tfsdk:"ai_classification"`
+    ErrorClass types.String `tfsdk:"error_class"`
+    ErrorClassSource types.String `tfsdk:"error_class_source"`
     AiFixDeclinedAt types.String `tfsdk:"ai_fix_declined_at"`
 }
 
@@ -196,6 +198,14 @@ func (d *ExceptionDataSource) Schema(ctx context.Context, req datasource.SchemaR
                 MarkdownDescription: "AI triage verdict for this exception group (code-fault, user-error, expected-denial, infrastructure).",
                 Computed: true,
             },
+            "error_class": schema.StringAttribute{
+                MarkdownDescription: "Fault domain of this exception group (code-fault, user-error, expected-denial, infrastructure, unknown). Non-actionable classes are excluded from the Issues list..",
+                Computed: true,
+            },
+            "error_class_source": schema.StringAttribute{
+                MarkdownDescription: "Where the error class came from: default (unclassified), declared (by the emitting code), ai (triage verdict) or manual (a human).",
+                Computed: true,
+            },
             "ai_fix_declined_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
@@ -275,6 +285,8 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         "environment": true,
         "unhandled": true,
         "aiClassification": true,
+        "errorClass": true,
+        "errorClassSource": true,
         "aiFixDeclinedAt": true,
         "_id": true,
     }
@@ -816,6 +828,40 @@ func (d *ExceptionDataSource) Read(ctx context.Context, req datasource.ReadReque
         data.AiClassification = types.StringValue(val)
     } else {
         data.AiClassification = types.StringNull()
+    }
+    if obj, ok := item["errorClass"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ErrorClass = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ErrorClass = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ErrorClass = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ErrorClass = types.StringValue(string(jsonBytes))
+        } else {
+            data.ErrorClass = types.StringNull()
+        }
+    } else if val, ok := item["errorClass"].(string); ok {
+        data.ErrorClass = types.StringValue(val)
+    } else {
+        data.ErrorClass = types.StringNull()
+    }
+    if obj, ok := item["errorClassSource"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ErrorClassSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ErrorClassSource = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ErrorClassSource = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ErrorClassSource = types.StringValue(string(jsonBytes))
+        } else {
+            data.ErrorClassSource = types.StringNull()
+        }
+    } else if val, ok := item["errorClassSource"].(string); ok {
+        data.ErrorClassSource = types.StringValue(val)
+    } else {
+        data.ErrorClassSource = types.StringNull()
     }
     if obj, ok := item["aiFixDeclinedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

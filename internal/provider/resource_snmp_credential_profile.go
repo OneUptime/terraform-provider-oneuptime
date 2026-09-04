@@ -16,62 +16,52 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &NetworkSiteResource{}
-var _ resource.ResourceWithImportState = &NetworkSiteResource{}
+var _ resource.Resource = &SnmpCredentialProfileResource{}
+var _ resource.ResourceWithImportState = &SnmpCredentialProfileResource{}
 
-func NewNetworkSiteResource() resource.Resource {
-    return &NetworkSiteResource{}
+func NewSnmpCredentialProfileResource() resource.Resource {
+    return &SnmpCredentialProfileResource{}
 }
 
-// NetworkSiteResource defines the resource implementation.
-type NetworkSiteResource struct {
+// SnmpCredentialProfileResource defines the resource implementation.
+type SnmpCredentialProfileResource struct {
     client *Client
 }
 
-// NetworkSiteResourceModel describes the resource data model.
-type NetworkSiteResourceModel struct {
+// SnmpCredentialProfileResourceModel describes the resource data model.
+type SnmpCredentialProfileResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
-    SiteType types.String `tfsdk:"site_type"`
-    NetworkSiteTypeId types.String `tfsdk:"network_site_type_id"`
-    ProbeId types.String `tfsdk:"probe_id"`
-    SnmpCredentialProfileId types.String `tfsdk:"snmp_credential_profile_id"`
-    ParentSiteId types.String `tfsdk:"parent_site_id"`
-    Address types.String `tfsdk:"address"`
-    Latitude types.Number `tfsdk:"latitude"`
-    Longitude types.Number `tfsdk:"longitude"`
-    HealthRollupPolicy types.String `tfsdk:"health_rollup_policy"`
-    OfflineThresholdPercent types.Number `tfsdk:"offline_threshold_percent"`
-    ShouldAlertWhenUnhealthy types.Bool `tfsdk:"should_alert_when_unhealthy"`
-    AlertSeverityId types.String `tfsdk:"alert_severity_id"`
+    SnmpVersion types.String `tfsdk:"snmp_version"`
+    SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
+    SnmpPort types.Number `tfsdk:"snmp_port"`
+    SnmpV3SecurityLevel types.String `tfsdk:"snmp_v3_security_level"`
+    SnmpV3Username types.String `tfsdk:"snmp_v3_username"`
+    SnmpV3AuthProtocol types.String `tfsdk:"snmp_v3_auth_protocol"`
+    SnmpV3AuthKey types.String `tfsdk:"snmp_v3_auth_key"`
+    SnmpV3PrivProtocol types.String `tfsdk:"snmp_v3_priv_protocol"`
+    SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    MaterializedPath types.String `tfsdk:"materialized_path"`
-    Depth types.Number `tfsdk:"depth"`
-    CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
-    LastRollupAt RFC3339Value `tfsdk:"last_rollup_at"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
-    Slug types.String `tfsdk:"slug"`
-    CurrentActiveAlertId types.String `tfsdk:"current_active_alert_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (r *NetworkSiteResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_network_site"
+func (r *SnmpCredentialProfileResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_snmp_credential_profile"
 }
 
-func (r *NetworkSiteResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *SnmpCredentialProfileResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Self-nesting sites (Account Type -> Region / Franchisee -> Market -> Unit) that group Network Devices into a drill-down hierarchy with a persisted health rollup.",
+        MarkdownDescription: "A reusable set of SNMP credentials. Attach a profile to a device or to a site and every device it covers is walked over SNMP with these credentials instead of carrying its own.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -89,107 +79,83 @@ func (r *NetworkSiteResource) Schema(ctx context.Context, req resource.SchemaReq
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Friendly name for this network site.",
+                MarkdownDescription: "Any friendly name of this object.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description for this network site.",
+                MarkdownDescription: "Friendly description that will help you remember.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "site_type": schema.StringAttribute{
-                MarkdownDescription: "Deprecated legacy site type string. Use the Network Site Type relation instead; this column exists only for the backfill migration and will be removed..",
+            "snmp_version": schema.StringAttribute{
+                MarkdownDescription: "SNMP version devices using this profile are polled with (V1, V2c, V3).",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "network_site_type_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "snmp_community_string": schema.StringAttribute{
+                MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "probe_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "snmp_credential_profile_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "parent_site_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "address": schema.StringAttribute{
-                MarkdownDescription: "Street address of this site, shown on map views.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "latitude": schema.NumberAttribute{
-                MarkdownDescription: "Latitude of this site, for US and world map views.",
+            "snmp_port": schema.NumberAttribute{
+                MarkdownDescription: "UDP port used for SNMP polling.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
-            "longitude": schema.NumberAttribute{
-                MarkdownDescription: "Longitude of this site, for US and world map views.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "health_rollup_policy": schema.StringAttribute{
-                MarkdownDescription: "How this site's status is derived from the devices beneath it: WorstStatus (any device offline makes the site offline) or PercentThreshold (the share of devices that are down decides)..",
+            "snmp_v3_security_level": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 security level: noAuthNoPriv, authNoPriv, or authPriv.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "offline_threshold_percent": schema.NumberAttribute{
-                MarkdownDescription: "With the PercentThreshold rollup policy: the share of reporting devices beneath this site that must be non-operational before the site itself is marked offline. Below it (but above zero) the site is degraded..",
+            "snmp_v3_username": schema.StringAttribute{
+                MarkdownDescription: "Security name (username) used for SNMP v3 polling.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "should_alert_when_unhealthy": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert opens when this site's health rollup turns non-operational and auto-resolves when it recovers..",
+            "snmp_v3_auth_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.",
                 Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "alert_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "snmp_v3_auth_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication passphrase.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_priv_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_v3_priv_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -203,39 +169,6 @@ func (r *NetworkSiteResource) Schema(ctx context.Context, req resource.SchemaReq
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "materialized_path": schema.StringAttribute{
-                MarkdownDescription: "Slash-separated ancestor IDs of this site (e.g. '/rootId/childId/'). Managed by the server on parent changes; used for subtree queries and rollups..",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "depth": schema.NumberAttribute{
-                MarkdownDescription: "Number of ancestors above this site (0 for root sites). Managed by the server on parent changes..",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "current_monitor_status_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "last_rollup_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                CustomType: RFC3339Type{},
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -257,14 +190,6 @@ func (r *NetworkSiteResource) Schema(ctx context.Context, req resource.SchemaReq
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object.",
-                Computed: true,
-            },
-            "current_active_alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
             "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -273,7 +198,7 @@ func (r *NetworkSiteResource) Schema(ctx context.Context, req resource.SchemaReq
     }
 }
 
-func (r *NetworkSiteResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *SnmpCredentialProfileResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -294,8 +219,8 @@ func (r *NetworkSiteResource) Configure(ctx context.Context, req resource.Config
 }
 
 
-func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data NetworkSiteResourceModel
+func (r *SnmpCredentialProfileResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data SnmpCredentialProfileResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -309,10 +234,10 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    networkSiteRequest := map[string]interface{}{
+    snmpCredentialProfileRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := networkSiteRequest["data"].(map[string]interface{})
+    requestDataMap := snmpCredentialProfileRequest["data"].(map[string]interface{})
 
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
@@ -320,71 +245,62 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
-    if !data.SiteType.IsNull() && !data.SiteType.IsUnknown() {
-        requestDataMap["siteType"] = data.SiteType.ValueString()
+    if !data.SnmpVersion.IsNull() && !data.SnmpVersion.IsUnknown() {
+        requestDataMap["snmpVersion"] = data.SnmpVersion.ValueString()
     }
-    if !data.NetworkSiteTypeId.IsNull() && !data.NetworkSiteTypeId.IsUnknown() {
-        requestDataMap["networkSiteTypeId"] = data.NetworkSiteTypeId.ValueString()
+    if !data.SnmpCommunityString.IsNull() && !data.SnmpCommunityString.IsUnknown() {
+        requestDataMap["snmpCommunityString"] = data.SnmpCommunityString.ValueString()
     }
-    if !data.ProbeId.IsNull() && !data.ProbeId.IsUnknown() {
-        requestDataMap["probeId"] = data.ProbeId.ValueString()
+    if !data.SnmpPort.IsNull() && !data.SnmpPort.IsUnknown() {
+        requestDataMap["snmpPort"] = r.bigFloatToFloat64(data.SnmpPort.ValueBigFloat())
     }
-    if !data.SnmpCredentialProfileId.IsNull() && !data.SnmpCredentialProfileId.IsUnknown() {
-        requestDataMap["snmpCredentialProfileId"] = data.SnmpCredentialProfileId.ValueString()
+    if !data.SnmpV3SecurityLevel.IsNull() && !data.SnmpV3SecurityLevel.IsUnknown() {
+        requestDataMap["snmpV3SecurityLevel"] = data.SnmpV3SecurityLevel.ValueString()
     }
-    if !data.ParentSiteId.IsNull() && !data.ParentSiteId.IsUnknown() {
-        requestDataMap["parentSiteId"] = data.ParentSiteId.ValueString()
+    if !data.SnmpV3Username.IsNull() && !data.SnmpV3Username.IsUnknown() {
+        requestDataMap["snmpV3Username"] = data.SnmpV3Username.ValueString()
     }
-    if !data.Address.IsNull() && !data.Address.IsUnknown() {
-        requestDataMap["address"] = data.Address.ValueString()
+    if !data.SnmpV3AuthProtocol.IsNull() && !data.SnmpV3AuthProtocol.IsUnknown() {
+        requestDataMap["snmpV3AuthProtocol"] = data.SnmpV3AuthProtocol.ValueString()
     }
-    if !data.Latitude.IsNull() && !data.Latitude.IsUnknown() {
-        requestDataMap["latitude"] = r.bigFloatToFloat64(data.Latitude.ValueBigFloat())
+    if !data.SnmpV3AuthKey.IsNull() && !data.SnmpV3AuthKey.IsUnknown() {
+        requestDataMap["snmpV3AuthKey"] = data.SnmpV3AuthKey.ValueString()
     }
-    if !data.Longitude.IsNull() && !data.Longitude.IsUnknown() {
-        requestDataMap["longitude"] = r.bigFloatToFloat64(data.Longitude.ValueBigFloat())
+    if !data.SnmpV3PrivProtocol.IsNull() && !data.SnmpV3PrivProtocol.IsUnknown() {
+        requestDataMap["snmpV3PrivProtocol"] = data.SnmpV3PrivProtocol.ValueString()
     }
-    if !data.HealthRollupPolicy.IsNull() && !data.HealthRollupPolicy.IsUnknown() {
-        requestDataMap["healthRollupPolicy"] = data.HealthRollupPolicy.ValueString()
-    }
-    if !data.OfflineThresholdPercent.IsNull() && !data.OfflineThresholdPercent.IsUnknown() {
-        requestDataMap["offlineThresholdPercent"] = r.bigFloatToFloat64(data.OfflineThresholdPercent.ValueBigFloat())
-    }
-    if !data.ShouldAlertWhenUnhealthy.IsNull() && !data.ShouldAlertWhenUnhealthy.IsUnknown() {
-        requestDataMap["shouldAlertWhenUnhealthy"] = data.ShouldAlertWhenUnhealthy.ValueBool()
-    }
-    if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
-        requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
+    if !data.SnmpV3PrivKey.IsNull() && !data.SnmpV3PrivKey.IsUnknown() {
+        requestDataMap["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/network-site", networkSiteRequest)
+    httpResp, err := r.client.Post(ctx, "/network-snmp-credential-profile", snmpCredentialProfileRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create network_site, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create snmp_credential_profile, got error: %s", err))
         return
     }
 
-    var networkSiteResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &networkSiteResponse)
+    var snmpCredentialProfileResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &snmpCredentialProfileResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create network_site: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create snmp_credential_profile: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := networkSiteResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := snmpCredentialProfileResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := networkSiteResponse["_id"].(string); ok {
+    } else if val, ok := snmpCredentialProfileResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for network_site did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for snmp_credential_profile did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -393,7 +309,7 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * network_site is orphaned server-side — never refreshed, never
+     * snmp_credential_profile is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -407,48 +323,39 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
         "projectId": true,
         "name": true,
         "description": true,
-        "siteType": true,
-        "networkSiteTypeId": true,
-        "probeId": true,
-        "snmpCredentialProfileId": true,
-        "parentSiteId": true,
-        "address": true,
-        "latitude": true,
-        "longitude": true,
-        "healthRollupPolicy": true,
-        "offlineThresholdPercent": true,
-        "shouldAlertWhenUnhealthy": true,
-        "alertSeverityId": true,
+        "snmpVersion": true,
+        "snmpCommunityString": true,
+        "snmpPort": true,
+        "snmpV3SecurityLevel": true,
+        "snmpV3Username": true,
+        "snmpV3AuthProtocol": true,
+        "snmpV3AuthKey": true,
+        "snmpV3PrivProtocol": true,
+        "snmpV3PrivKey": true,
         "createdByUserId": true,
-        "materializedPath": true,
-        "depth": true,
-        "currentMonitorStatusId": true,
-        "lastRollupAt": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
-        "currentActiveAlertId": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/network-site/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/network-snmp-credential-profile/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created network_site but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created snmp_credential_profile but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created network_site but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created snmp_credential_profile but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -548,357 +455,318 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["siteType"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SiteType = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SiteType = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.SiteType = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SiteType = types.StringValue(string(jsonBytes))
+                data.SnmpVersion = types.StringValue(string(jsonBytes))
             } else {
-                data.SiteType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SiteType = types.StringValue(string(jsonBytes))
+                data.SnmpVersion = types.StringValue(string(jsonBytes))
             } else {
-                data.SiteType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.SiteType = types.StringValue(string(jsonBytes))
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
         } else {
-            data.SiteType = types.StringNull()
+            data.SnmpVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["siteType"].(string); ok {
-        data.SiteType = types.StringValue(val)
+    } else if val, ok := dataMap["snmpVersion"].(string); ok {
+        data.SnmpVersion = types.StringValue(val)
     } else {
-        data.SiteType = types.StringNull()
+        data.SnmpVersion = types.StringNull()
     }
-    if obj, ok := dataMap["networkSiteTypeId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpCommunityString"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NetworkSiteTypeId = types.StringValue(val)
+            data.SnmpCommunityString = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NetworkSiteTypeId = types.StringValue(val)
+            data.SnmpCommunityString = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.SnmpCommunityString = types.StringValue(string(jsonBytes))
             } else {
-                data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.SnmpCommunityString = types.StringValue(string(jsonBytes))
             } else {
-                data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
         } else {
-            data.NetworkSiteTypeId = types.StringNull()
+            data.SnmpCommunityString = types.StringNull()
         }
-    } else if val, ok := dataMap["networkSiteTypeId"].(string); ok {
-        data.NetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := dataMap["snmpCommunityString"].(string); ok {
+        data.SnmpCommunityString = types.StringValue(val)
     } else {
-        data.NetworkSiteTypeId = types.StringNull()
+        data.SnmpCommunityString = types.StringNull()
     }
-    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ProbeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ProbeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ProbeId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ProbeId = types.StringNull()
-        }
-    } else if val, ok := dataMap["probeId"].(string); ok {
-        data.ProbeId = types.StringValue(val)
-    } else {
-        data.ProbeId = types.StringNull()
-    }
-    if obj, ok := dataMap["snmpCredentialProfileId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SnmpCredentialProfileId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SnmpCredentialProfileId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-            } else {
-                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-            } else {
-                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-        } else {
-            data.SnmpCredentialProfileId = types.StringNull()
-        }
-    } else if val, ok := dataMap["snmpCredentialProfileId"].(string); ok {
-        data.SnmpCredentialProfileId = types.StringValue(val)
-    } else {
-        data.SnmpCredentialProfileId = types.StringNull()
-    }
-    if obj, ok := dataMap["parentSiteId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentSiteId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ParentSiteId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ParentSiteId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ParentSiteId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ParentSiteId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ParentSiteId = types.StringNull()
-        }
-    } else if val, ok := dataMap["parentSiteId"].(string); ok {
-        data.ParentSiteId = types.StringValue(val)
-    } else {
-        data.ParentSiteId = types.StringNull()
-    }
-    if obj, ok := dataMap["address"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Address = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Address = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Address = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Address = types.StringValue(string(jsonBytes))
-            } else {
-                data.Address = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Address = types.StringValue(string(jsonBytes))
-            } else {
-                data.Address = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Address = types.StringValue(string(jsonBytes))
-        } else {
-            data.Address = types.StringNull()
-        }
-    } else if val, ok := dataMap["address"].(string); ok {
-        data.Address = types.StringValue(val)
-    } else {
-        data.Address = types.StringNull()
-    }
-    if val, ok := dataMap["latitude"].(float64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["latitude"].(int); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["latitude"].(int64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["latitude"].(map[string]interface{}); ok {
+    if val, ok := dataMap["snmpPort"].(float64); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["snmpPort"].(int); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["snmpPort"].(int64); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
         // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
         if val, ok := obj["value"].(float64); ok {
-            data.Latitude = types.NumberValue(big.NewFloat(val))
+            data.SnmpPort = types.NumberValue(big.NewFloat(val))
         } else {
-            data.Latitude = types.NumberNull()
+            data.SnmpPort = types.NumberNull()
         }
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Latitude = types.NumberNull()
+        data.SnmpPort = types.NumberNull()
     }
-    if val, ok := dataMap["longitude"].(float64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longitude"].(int); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longitude"].(int64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Longitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Longitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Longitude = types.NumberNull()
-    }
-    if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.HealthRollupPolicy = types.StringValue(val)
+            data.SnmpV3SecurityLevel = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.HealthRollupPolicy = types.StringValue(val)
+            data.SnmpV3SecurityLevel = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
             } else {
-                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
             } else {
-                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
         } else {
-            data.HealthRollupPolicy = types.StringNull()
+            data.SnmpV3SecurityLevel = types.StringNull()
         }
-    } else if val, ok := dataMap["healthRollupPolicy"].(string); ok {
-        data.HealthRollupPolicy = types.StringValue(val)
+    } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
-        data.HealthRollupPolicy = types.StringNull()
+        data.SnmpV3SecurityLevel = types.StringNull()
     }
-    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OfflineThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OfflineThresholdPercent = types.NumberNull()
-    }
-    if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
-        data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
-    } else {
-        data.ShouldAlertWhenUnhealthy = types.BoolNull()
-    }
-    if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpV3Username"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertSeverityId = types.StringValue(val)
+            data.SnmpV3Username = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertSeverityId = types.StringValue(val)
+            data.SnmpV3Username = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
         } else {
-            data.AlertSeverityId = types.StringNull()
+            data.SnmpV3Username = types.StringNull()
         }
-    } else if val, ok := dataMap["alertSeverityId"].(string); ok {
-        data.AlertSeverityId = types.StringValue(val)
+    } else if val, ok := dataMap["snmpV3Username"].(string); ok {
+        data.SnmpV3Username = types.StringValue(val)
     } else {
-        data.AlertSeverityId = types.StringNull()
+        data.SnmpV3Username = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthKey"].(string); ok {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthKey = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivKey"].(string); ok {
+        data.SnmpV3PrivKey = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivKey = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -936,108 +804,6 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["materializedPath"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MaterializedPath = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MaterializedPath = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MaterializedPath = types.StringValue(string(jsonBytes))
-            } else {
-                data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MaterializedPath = types.StringValue(string(jsonBytes))
-            } else {
-                data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MaterializedPath = types.StringValue(string(jsonBytes))
-        } else {
-            data.MaterializedPath = types.StringNull()
-        }
-    } else if val, ok := dataMap["materializedPath"].(string); ok {
-        data.MaterializedPath = types.StringValue(val)
-    } else {
-        data.MaterializedPath = types.StringNull()
-    }
-    if val, ok := dataMap["depth"].(float64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["depth"].(int); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["depth"].(int64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["depth"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Depth = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Depth = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Depth = types.NumberNull()
-    }
-    if obj, ok := dataMap["currentMonitorStatusId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CurrentMonitorStatusId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CurrentMonitorStatusId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CurrentMonitorStatusId = types.StringNull()
-        }
-    } else if val, ok := dataMap["currentMonitorStatusId"].(string); ok {
-        data.CurrentMonitorStatusId = types.StringValue(val)
-    } else {
-        data.CurrentMonitorStatusId = types.StringNull()
-    }
-    if obj, ok := dataMap["lastRollupAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastRollupAt = NewRFC3339Value(val)
-        } else {
-            data.LastRollupAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastRollupAt"].(string); ok && val != "" {
-        data.LastRollupAt = NewRFC3339Value(val)
-    } else {
-        data.LastRollupAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1088,80 +854,6 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
-    }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
-            } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
-            } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["currentActiveAlertId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CurrentActiveAlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CurrentActiveAlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CurrentActiveAlertId = types.StringNull()
-        }
-    } else if val, ok := dataMap["currentActiveAlertId"].(string); ok {
-        data.CurrentActiveAlertId = types.StringValue(val)
-    } else {
-        data.CurrentActiveAlertId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1215,8 +907,8 @@ func (r *NetworkSiteResource) Create(ctx context.Context, req resource.CreateReq
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data NetworkSiteResourceModel
+func (r *SnmpCredentialProfileResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data SnmpCredentialProfileResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1230,37 +922,28 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
         "projectId": true,
         "name": true,
         "description": true,
-        "siteType": true,
-        "networkSiteTypeId": true,
-        "probeId": true,
-        "snmpCredentialProfileId": true,
-        "parentSiteId": true,
-        "address": true,
-        "latitude": true,
-        "longitude": true,
-        "healthRollupPolicy": true,
-        "offlineThresholdPercent": true,
-        "shouldAlertWhenUnhealthy": true,
-        "alertSeverityId": true,
+        "snmpVersion": true,
+        "snmpCommunityString": true,
+        "snmpPort": true,
+        "snmpV3SecurityLevel": true,
+        "snmpV3Username": true,
+        "snmpV3AuthProtocol": true,
+        "snmpV3AuthKey": true,
+        "snmpV3PrivProtocol": true,
+        "snmpV3PrivKey": true,
         "createdByUserId": true,
-        "materializedPath": true,
-        "depth": true,
-        "currentMonitorStatusId": true,
-        "lastRollupAt": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
-        "currentActiveAlertId": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/network-site/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/network-snmp-credential-profile/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_site, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read snmp_credential_profile, got error: %s", err))
         return
     }
 
@@ -1269,22 +952,22 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
         return
     }
 
-    var networkSiteResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &networkSiteResponse)
+    var snmpCredentialProfileResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &snmpCredentialProfileResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse network_site response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse snmp_credential_profile response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := networkSiteResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := snmpCredentialProfileResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = networkSiteResponse
+        dataMap = snmpCredentialProfileResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -1372,357 +1055,318 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["siteType"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SiteType = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SiteType = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.SiteType = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SiteType = types.StringValue(string(jsonBytes))
+                data.SnmpVersion = types.StringValue(string(jsonBytes))
             } else {
-                data.SiteType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SiteType = types.StringValue(string(jsonBytes))
+                data.SnmpVersion = types.StringValue(string(jsonBytes))
             } else {
-                data.SiteType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.SiteType = types.StringValue(string(jsonBytes))
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
         } else {
-            data.SiteType = types.StringNull()
+            data.SnmpVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["siteType"].(string); ok {
-        data.SiteType = types.StringValue(val)
+    } else if val, ok := dataMap["snmpVersion"].(string); ok {
+        data.SnmpVersion = types.StringValue(val)
     } else {
-        data.SiteType = types.StringNull()
+        data.SnmpVersion = types.StringNull()
     }
-    if obj, ok := dataMap["networkSiteTypeId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpCommunityString"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NetworkSiteTypeId = types.StringValue(val)
+            data.SnmpCommunityString = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NetworkSiteTypeId = types.StringValue(val)
+            data.SnmpCommunityString = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.SnmpCommunityString = types.StringValue(string(jsonBytes))
             } else {
-                data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.SnmpCommunityString = types.StringValue(string(jsonBytes))
             } else {
-                data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
         } else {
-            data.NetworkSiteTypeId = types.StringNull()
+            data.SnmpCommunityString = types.StringNull()
         }
-    } else if val, ok := dataMap["networkSiteTypeId"].(string); ok {
-        data.NetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := dataMap["snmpCommunityString"].(string); ok {
+        data.SnmpCommunityString = types.StringValue(val)
     } else {
-        data.NetworkSiteTypeId = types.StringNull()
+        data.SnmpCommunityString = types.StringNull()
     }
-    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ProbeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ProbeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ProbeId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ProbeId = types.StringNull()
-        }
-    } else if val, ok := dataMap["probeId"].(string); ok {
-        data.ProbeId = types.StringValue(val)
-    } else {
-        data.ProbeId = types.StringNull()
-    }
-    if obj, ok := dataMap["snmpCredentialProfileId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SnmpCredentialProfileId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SnmpCredentialProfileId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-            } else {
-                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-            } else {
-                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-        } else {
-            data.SnmpCredentialProfileId = types.StringNull()
-        }
-    } else if val, ok := dataMap["snmpCredentialProfileId"].(string); ok {
-        data.SnmpCredentialProfileId = types.StringValue(val)
-    } else {
-        data.SnmpCredentialProfileId = types.StringNull()
-    }
-    if obj, ok := dataMap["parentSiteId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentSiteId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ParentSiteId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ParentSiteId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ParentSiteId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ParentSiteId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ParentSiteId = types.StringNull()
-        }
-    } else if val, ok := dataMap["parentSiteId"].(string); ok {
-        data.ParentSiteId = types.StringValue(val)
-    } else {
-        data.ParentSiteId = types.StringNull()
-    }
-    if obj, ok := dataMap["address"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Address = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Address = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Address = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Address = types.StringValue(string(jsonBytes))
-            } else {
-                data.Address = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Address = types.StringValue(string(jsonBytes))
-            } else {
-                data.Address = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Address = types.StringValue(string(jsonBytes))
-        } else {
-            data.Address = types.StringNull()
-        }
-    } else if val, ok := dataMap["address"].(string); ok {
-        data.Address = types.StringValue(val)
-    } else {
-        data.Address = types.StringNull()
-    }
-    if val, ok := dataMap["latitude"].(float64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["latitude"].(int); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["latitude"].(int64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["latitude"].(map[string]interface{}); ok {
+    if val, ok := dataMap["snmpPort"].(float64); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["snmpPort"].(int); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["snmpPort"].(int64); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
         // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
         if val, ok := obj["value"].(float64); ok {
-            data.Latitude = types.NumberValue(big.NewFloat(val))
+            data.SnmpPort = types.NumberValue(big.NewFloat(val))
         } else {
-            data.Latitude = types.NumberNull()
+            data.SnmpPort = types.NumberNull()
         }
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Latitude = types.NumberNull()
+        data.SnmpPort = types.NumberNull()
     }
-    if val, ok := dataMap["longitude"].(float64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longitude"].(int); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longitude"].(int64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Longitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Longitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Longitude = types.NumberNull()
-    }
-    if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.HealthRollupPolicy = types.StringValue(val)
+            data.SnmpV3SecurityLevel = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.HealthRollupPolicy = types.StringValue(val)
+            data.SnmpV3SecurityLevel = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
             } else {
-                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
             } else {
-                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
         } else {
-            data.HealthRollupPolicy = types.StringNull()
+            data.SnmpV3SecurityLevel = types.StringNull()
         }
-    } else if val, ok := dataMap["healthRollupPolicy"].(string); ok {
-        data.HealthRollupPolicy = types.StringValue(val)
+    } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
-        data.HealthRollupPolicy = types.StringNull()
+        data.SnmpV3SecurityLevel = types.StringNull()
     }
-    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OfflineThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OfflineThresholdPercent = types.NumberNull()
-    }
-    if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
-        data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
-    } else {
-        data.ShouldAlertWhenUnhealthy = types.BoolNull()
-    }
-    if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpV3Username"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertSeverityId = types.StringValue(val)
+            data.SnmpV3Username = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertSeverityId = types.StringValue(val)
+            data.SnmpV3Username = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
         } else {
-            data.AlertSeverityId = types.StringNull()
+            data.SnmpV3Username = types.StringNull()
         }
-    } else if val, ok := dataMap["alertSeverityId"].(string); ok {
-        data.AlertSeverityId = types.StringValue(val)
+    } else if val, ok := dataMap["snmpV3Username"].(string); ok {
+        data.SnmpV3Username = types.StringValue(val)
     } else {
-        data.AlertSeverityId = types.StringNull()
+        data.SnmpV3Username = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthKey"].(string); ok {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthKey = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivKey"].(string); ok {
+        data.SnmpV3PrivKey = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivKey = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1760,108 +1404,6 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["materializedPath"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MaterializedPath = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MaterializedPath = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MaterializedPath = types.StringValue(string(jsonBytes))
-            } else {
-                data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MaterializedPath = types.StringValue(string(jsonBytes))
-            } else {
-                data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MaterializedPath = types.StringValue(string(jsonBytes))
-        } else {
-            data.MaterializedPath = types.StringNull()
-        }
-    } else if val, ok := dataMap["materializedPath"].(string); ok {
-        data.MaterializedPath = types.StringValue(val)
-    } else {
-        data.MaterializedPath = types.StringNull()
-    }
-    if val, ok := dataMap["depth"].(float64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["depth"].(int); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["depth"].(int64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["depth"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Depth = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Depth = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Depth = types.NumberNull()
-    }
-    if obj, ok := dataMap["currentMonitorStatusId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CurrentMonitorStatusId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CurrentMonitorStatusId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CurrentMonitorStatusId = types.StringNull()
-        }
-    } else if val, ok := dataMap["currentMonitorStatusId"].(string); ok {
-        data.CurrentMonitorStatusId = types.StringValue(val)
-    } else {
-        data.CurrentMonitorStatusId = types.StringNull()
-    }
-    if obj, ok := dataMap["lastRollupAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastRollupAt = NewRFC3339Value(val)
-        } else {
-            data.LastRollupAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastRollupAt"].(string); ok && val != "" {
-        data.LastRollupAt = NewRFC3339Value(val)
-    } else {
-        data.LastRollupAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1913,80 +1455,6 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
-            } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
-            } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["currentActiveAlertId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CurrentActiveAlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CurrentActiveAlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CurrentActiveAlertId = types.StringNull()
-        }
-    } else if val, ok := dataMap["currentActiveAlertId"].(string); ok {
-        data.CurrentActiveAlertId = types.StringValue(val)
-    } else {
-        data.CurrentActiveAlertId = types.StringNull()
-    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2034,9 +1502,9 @@ func (r *NetworkSiteResource) Read(ctx context.Context, req resource.ReadRequest
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data NetworkSiteResourceModel
-    var state NetworkSiteResourceModel
+func (r *SnmpCredentialProfileResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data SnmpCredentialProfileResourceModel
+    var state SnmpCredentialProfileResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -2054,10 +1522,10 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     data.Id = state.Id
 
     // Create API request body
-    networkSiteRequest := map[string]interface{}{
+    snmpCredentialProfileRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := networkSiteRequest["data"].(map[string]interface{})
+    requestDataMap := snmpCredentialProfileRequest["data"].(map[string]interface{})
 
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
@@ -2065,73 +1533,52 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
-    if !data.SiteType.IsUnknown() && !state.SiteType.IsUnknown() && !data.SiteType.Equal(state.SiteType) {
-        requestDataMap["siteType"] = data.SiteType.ValueString()
+    if !data.SnmpVersion.IsUnknown() && !state.SnmpVersion.IsUnknown() && !data.SnmpVersion.Equal(state.SnmpVersion) {
+        requestDataMap["snmpVersion"] = data.SnmpVersion.ValueString()
     }
-    if !data.NetworkSiteTypeId.IsUnknown() && !state.NetworkSiteTypeId.IsUnknown() && !data.NetworkSiteTypeId.Equal(state.NetworkSiteTypeId) {
-        requestDataMap["networkSiteTypeId"] = data.NetworkSiteTypeId.ValueString()
+    if !data.SnmpCommunityString.IsUnknown() && !state.SnmpCommunityString.IsUnknown() && !data.SnmpCommunityString.Equal(state.SnmpCommunityString) {
+        requestDataMap["snmpCommunityString"] = data.SnmpCommunityString.ValueString()
     }
-    if !data.ProbeId.IsUnknown() && !state.ProbeId.IsUnknown() && !data.ProbeId.Equal(state.ProbeId) {
-        requestDataMap["probeId"] = data.ProbeId.ValueString()
+    if !data.SnmpPort.IsUnknown() && !state.SnmpPort.IsUnknown() && !data.SnmpPort.Equal(state.SnmpPort) {
+        requestDataMap["snmpPort"] = r.bigFloatToFloat64(data.SnmpPort.ValueBigFloat())
     }
-    if !data.SnmpCredentialProfileId.IsUnknown() && !state.SnmpCredentialProfileId.IsUnknown() && !data.SnmpCredentialProfileId.Equal(state.SnmpCredentialProfileId) {
-        requestDataMap["snmpCredentialProfileId"] = data.SnmpCredentialProfileId.ValueString()
+    if !data.SnmpV3SecurityLevel.IsUnknown() && !state.SnmpV3SecurityLevel.IsUnknown() && !data.SnmpV3SecurityLevel.Equal(state.SnmpV3SecurityLevel) {
+        requestDataMap["snmpV3SecurityLevel"] = data.SnmpV3SecurityLevel.ValueString()
     }
-    if !data.ParentSiteId.IsUnknown() && !state.ParentSiteId.IsUnknown() && !data.ParentSiteId.Equal(state.ParentSiteId) {
-        requestDataMap["parentSiteId"] = data.ParentSiteId.ValueString()
+    if !data.SnmpV3Username.IsUnknown() && !state.SnmpV3Username.IsUnknown() && !data.SnmpV3Username.Equal(state.SnmpV3Username) {
+        requestDataMap["snmpV3Username"] = data.SnmpV3Username.ValueString()
     }
-    if !data.MaterializedPath.IsUnknown() && !state.MaterializedPath.IsUnknown() && !data.MaterializedPath.Equal(state.MaterializedPath) {
-        requestDataMap["materializedPath"] = data.MaterializedPath.ValueString()
+    if !data.SnmpV3AuthProtocol.IsUnknown() && !state.SnmpV3AuthProtocol.IsUnknown() && !data.SnmpV3AuthProtocol.Equal(state.SnmpV3AuthProtocol) {
+        requestDataMap["snmpV3AuthProtocol"] = data.SnmpV3AuthProtocol.ValueString()
     }
-    if !data.Depth.IsUnknown() && !state.Depth.IsUnknown() && !data.Depth.Equal(state.Depth) {
-        requestDataMap["depth"] = r.bigFloatToFloat64(data.Depth.ValueBigFloat())
+    if !data.SnmpV3AuthKey.IsUnknown() && !state.SnmpV3AuthKey.IsUnknown() && !data.SnmpV3AuthKey.Equal(state.SnmpV3AuthKey) {
+        requestDataMap["snmpV3AuthKey"] = data.SnmpV3AuthKey.ValueString()
     }
-    if !data.Address.IsUnknown() && !state.Address.IsUnknown() && !data.Address.Equal(state.Address) {
-        requestDataMap["address"] = data.Address.ValueString()
+    if !data.SnmpV3PrivProtocol.IsUnknown() && !state.SnmpV3PrivProtocol.IsUnknown() && !data.SnmpV3PrivProtocol.Equal(state.SnmpV3PrivProtocol) {
+        requestDataMap["snmpV3PrivProtocol"] = data.SnmpV3PrivProtocol.ValueString()
     }
-    if !data.Latitude.IsUnknown() && !state.Latitude.IsUnknown() && !data.Latitude.Equal(state.Latitude) {
-        requestDataMap["latitude"] = r.bigFloatToFloat64(data.Latitude.ValueBigFloat())
-    }
-    if !data.Longitude.IsUnknown() && !state.Longitude.IsUnknown() && !data.Longitude.Equal(state.Longitude) {
-        requestDataMap["longitude"] = r.bigFloatToFloat64(data.Longitude.ValueBigFloat())
-    }
-    if !data.CurrentMonitorStatusId.IsUnknown() && !state.CurrentMonitorStatusId.IsUnknown() && !data.CurrentMonitorStatusId.Equal(state.CurrentMonitorStatusId) {
-        requestDataMap["currentMonitorStatusId"] = data.CurrentMonitorStatusId.ValueString()
-    }
-    if !data.LastRollupAt.IsUnknown() && !state.LastRollupAt.IsUnknown() && !data.LastRollupAt.Equal(state.LastRollupAt) {
-        requestDataMap["lastRollupAt"] = data.LastRollupAt.ValueString()
-    }
-    if !data.HealthRollupPolicy.IsUnknown() && !state.HealthRollupPolicy.IsUnknown() && !data.HealthRollupPolicy.Equal(state.HealthRollupPolicy) {
-        requestDataMap["healthRollupPolicy"] = data.HealthRollupPolicy.ValueString()
-    }
-    if !data.OfflineThresholdPercent.IsUnknown() && !state.OfflineThresholdPercent.IsUnknown() && !data.OfflineThresholdPercent.Equal(state.OfflineThresholdPercent) {
-        requestDataMap["offlineThresholdPercent"] = r.bigFloatToFloat64(data.OfflineThresholdPercent.ValueBigFloat())
-    }
-    if !data.ShouldAlertWhenUnhealthy.IsUnknown() && !state.ShouldAlertWhenUnhealthy.IsUnknown() && !data.ShouldAlertWhenUnhealthy.Equal(state.ShouldAlertWhenUnhealthy) {
-        requestDataMap["shouldAlertWhenUnhealthy"] = data.ShouldAlertWhenUnhealthy.ValueBool()
-    }
-    if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
-        requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
+    if !data.SnmpV3PrivKey.IsUnknown() && !state.SnmpV3PrivKey.IsUnknown() && !data.SnmpV3PrivKey.Equal(state.SnmpV3PrivKey) {
+        requestDataMap["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
     }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(networkSiteRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/network-site/" + data.Id.ValueString() + "", networkSiteRequest)
+    if len(snmpCredentialProfileRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/network-snmp-credential-profile/" + data.Id.ValueString() + "", snmpCredentialProfileRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update network_site, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update snmp_credential_profile, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var networkSiteResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &networkSiteResponse)
+        var snmpCredentialProfileResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &snmpCredentialProfileResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update network_site: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update snmp_credential_profile: %s", err))
             return
         }
-        _ = networkSiteResponse
+        _ = snmpCredentialProfileResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -2139,43 +1586,34 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
         "projectId": true,
         "name": true,
         "description": true,
-        "siteType": true,
-        "networkSiteTypeId": true,
-        "probeId": true,
-        "snmpCredentialProfileId": true,
-        "parentSiteId": true,
-        "address": true,
-        "latitude": true,
-        "longitude": true,
-        "healthRollupPolicy": true,
-        "offlineThresholdPercent": true,
-        "shouldAlertWhenUnhealthy": true,
-        "alertSeverityId": true,
+        "snmpVersion": true,
+        "snmpCommunityString": true,
+        "snmpPort": true,
+        "snmpV3SecurityLevel": true,
+        "snmpV3Username": true,
+        "snmpV3AuthProtocol": true,
+        "snmpV3AuthKey": true,
+        "snmpV3PrivProtocol": true,
+        "snmpV3PrivKey": true,
         "createdByUserId": true,
-        "materializedPath": true,
-        "depth": true,
-        "currentMonitorStatusId": true,
-        "lastRollupAt": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
-        "currentActiveAlertId": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/network-site/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/network-snmp-credential-profile/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_site after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read snmp_credential_profile after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_site after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read snmp_credential_profile after update: %s", err))
         return
     }
 
@@ -2275,357 +1713,318 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["siteType"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SiteType = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SiteType = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.SiteType = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SiteType = types.StringValue(string(jsonBytes))
+                data.SnmpVersion = types.StringValue(string(jsonBytes))
             } else {
-                data.SiteType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SiteType = types.StringValue(string(jsonBytes))
+                data.SnmpVersion = types.StringValue(string(jsonBytes))
             } else {
-                data.SiteType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.SiteType = types.StringValue(string(jsonBytes))
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
         } else {
-            data.SiteType = types.StringNull()
+            data.SnmpVersion = types.StringNull()
         }
-    } else if val, ok := dataMap["siteType"].(string); ok {
-        data.SiteType = types.StringValue(val)
+    } else if val, ok := dataMap["snmpVersion"].(string); ok {
+        data.SnmpVersion = types.StringValue(val)
     } else {
-        data.SiteType = types.StringNull()
+        data.SnmpVersion = types.StringNull()
     }
-    if obj, ok := dataMap["networkSiteTypeId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpCommunityString"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NetworkSiteTypeId = types.StringValue(val)
+            data.SnmpCommunityString = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.NetworkSiteTypeId = types.StringValue(val)
+            data.SnmpCommunityString = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.SnmpCommunityString = types.StringValue(string(jsonBytes))
             } else {
-                data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.SnmpCommunityString = types.StringValue(string(jsonBytes))
             } else {
-                data.NetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.NetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
         } else {
-            data.NetworkSiteTypeId = types.StringNull()
+            data.SnmpCommunityString = types.StringNull()
         }
-    } else if val, ok := dataMap["networkSiteTypeId"].(string); ok {
-        data.NetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := dataMap["snmpCommunityString"].(string); ok {
+        data.SnmpCommunityString = types.StringValue(val)
     } else {
-        data.NetworkSiteTypeId = types.StringNull()
+        data.SnmpCommunityString = types.StringNull()
     }
-    if obj, ok := dataMap["probeId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ProbeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ProbeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ProbeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ProbeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ProbeId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ProbeId = types.StringNull()
-        }
-    } else if val, ok := dataMap["probeId"].(string); ok {
-        data.ProbeId = types.StringValue(val)
-    } else {
-        data.ProbeId = types.StringNull()
-    }
-    if obj, ok := dataMap["snmpCredentialProfileId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SnmpCredentialProfileId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.SnmpCredentialProfileId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-            } else {
-                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-            } else {
-                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
-        } else {
-            data.SnmpCredentialProfileId = types.StringNull()
-        }
-    } else if val, ok := dataMap["snmpCredentialProfileId"].(string); ok {
-        data.SnmpCredentialProfileId = types.StringValue(val)
-    } else {
-        data.SnmpCredentialProfileId = types.StringNull()
-    }
-    if obj, ok := dataMap["parentSiteId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentSiteId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ParentSiteId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ParentSiteId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ParentSiteId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ParentSiteId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ParentSiteId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ParentSiteId = types.StringNull()
-        }
-    } else if val, ok := dataMap["parentSiteId"].(string); ok {
-        data.ParentSiteId = types.StringValue(val)
-    } else {
-        data.ParentSiteId = types.StringNull()
-    }
-    if obj, ok := dataMap["address"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Address = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Address = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Address = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Address = types.StringValue(string(jsonBytes))
-            } else {
-                data.Address = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Address = types.StringValue(string(jsonBytes))
-            } else {
-                data.Address = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Address = types.StringValue(string(jsonBytes))
-        } else {
-            data.Address = types.StringNull()
-        }
-    } else if val, ok := dataMap["address"].(string); ok {
-        data.Address = types.StringValue(val)
-    } else {
-        data.Address = types.StringNull()
-    }
-    if val, ok := dataMap["latitude"].(float64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["latitude"].(int); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["latitude"].(int64); ok {
-        data.Latitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["latitude"].(map[string]interface{}); ok {
+    if val, ok := dataMap["snmpPort"].(float64); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["snmpPort"].(int); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["snmpPort"].(int64); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["snmpPort"].(map[string]interface{}); ok {
         // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
         if val, ok := obj["value"].(float64); ok {
-            data.Latitude = types.NumberValue(big.NewFloat(val))
+            data.SnmpPort = types.NumberValue(big.NewFloat(val))
         } else {
-            data.Latitude = types.NumberNull()
+            data.SnmpPort = types.NumberNull()
         }
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Latitude = types.NumberNull()
+        data.SnmpPort = types.NumberNull()
     }
-    if val, ok := dataMap["longitude"].(float64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["longitude"].(int); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["longitude"].(int64); ok {
-        data.Longitude = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["longitude"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Longitude = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Longitude = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Longitude = types.NumberNull()
-    }
-    if obj, ok := dataMap["healthRollupPolicy"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpV3SecurityLevel"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.HealthRollupPolicy = types.StringValue(val)
+            data.SnmpV3SecurityLevel = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.HealthRollupPolicy = types.StringValue(val)
+            data.SnmpV3SecurityLevel = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
             } else {
-                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+                data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
             } else {
-                data.HealthRollupPolicy = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.HealthRollupPolicy = types.StringValue(string(jsonBytes))
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
         } else {
-            data.HealthRollupPolicy = types.StringNull()
+            data.SnmpV3SecurityLevel = types.StringNull()
         }
-    } else if val, ok := dataMap["healthRollupPolicy"].(string); ok {
-        data.HealthRollupPolicy = types.StringValue(val)
+    } else if val, ok := dataMap["snmpV3SecurityLevel"].(string); ok {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
-        data.HealthRollupPolicy = types.StringNull()
+        data.SnmpV3SecurityLevel = types.StringNull()
     }
-    if val, ok := dataMap["offlineThresholdPercent"].(float64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["offlineThresholdPercent"].(int64); ok {
-        data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["offlineThresholdPercent"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.OfflineThresholdPercent = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.OfflineThresholdPercent = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.OfflineThresholdPercent = types.NumberNull()
-    }
-    if val, ok := dataMap["shouldAlertWhenUnhealthy"].(bool); ok {
-        data.ShouldAlertWhenUnhealthy = types.BoolValue(val)
-    } else {
-        data.ShouldAlertWhenUnhealthy = types.BoolNull()
-    }
-    if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["snmpV3Username"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertSeverityId = types.StringValue(val)
+            data.SnmpV3Username = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.AlertSeverityId = types.StringValue(val)
+            data.SnmpV3Username = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.AlertSeverityId = types.StringValue(string(jsonBytes))
+                data.SnmpV3Username = types.StringValue(string(jsonBytes))
             } else {
-                data.AlertSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.AlertSeverityId = types.StringValue(string(jsonBytes))
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
         } else {
-            data.AlertSeverityId = types.StringNull()
+            data.SnmpV3Username = types.StringNull()
         }
-    } else if val, ok := dataMap["alertSeverityId"].(string); ok {
-        data.AlertSeverityId = types.StringValue(val)
+    } else if val, ok := dataMap["snmpV3Username"].(string); ok {
+        data.SnmpV3Username = types.StringValue(val)
     } else {
-        data.AlertSeverityId = types.StringNull()
+        data.SnmpV3Username = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthProtocol"].(string); ok {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3AuthKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3AuthKey"].(string); ok {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthKey = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivProtocol"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivProtocol"].(string); ok {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivProtocol = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpV3PrivKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpV3PrivKey"].(string); ok {
+        data.SnmpV3PrivKey = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivKey = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2663,108 +2062,6 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := dataMap["materializedPath"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MaterializedPath = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MaterializedPath = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MaterializedPath = types.StringValue(string(jsonBytes))
-            } else {
-                data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MaterializedPath = types.StringValue(string(jsonBytes))
-            } else {
-                data.MaterializedPath = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MaterializedPath = types.StringValue(string(jsonBytes))
-        } else {
-            data.MaterializedPath = types.StringNull()
-        }
-    } else if val, ok := dataMap["materializedPath"].(string); ok {
-        data.MaterializedPath = types.StringValue(val)
-    } else {
-        data.MaterializedPath = types.StringNull()
-    }
-    if val, ok := dataMap["depth"].(float64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["depth"].(int); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["depth"].(int64); ok {
-        data.Depth = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["depth"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Depth = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.Depth = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Depth = types.NumberNull()
-    }
-    if obj, ok := dataMap["currentMonitorStatusId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CurrentMonitorStatusId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CurrentMonitorStatusId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentMonitorStatusId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CurrentMonitorStatusId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CurrentMonitorStatusId = types.StringNull()
-        }
-    } else if val, ok := dataMap["currentMonitorStatusId"].(string); ok {
-        data.CurrentMonitorStatusId = types.StringValue(val)
-    } else {
-        data.CurrentMonitorStatusId = types.StringNull()
-    }
-    if obj, ok := dataMap["lastRollupAt"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(string); ok && val != "" {
-            data.LastRollupAt = NewRFC3339Value(val)
-        } else {
-            data.LastRollupAt = NewRFC3339Null()
-        }
-    } else if val, ok := dataMap["lastRollupAt"].(string); ok && val != "" {
-        data.LastRollupAt = NewRFC3339Value(val)
-    } else {
-        data.LastRollupAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -2816,80 +2113,6 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
-            } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
-            } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
-    }
-    if obj, ok := dataMap["currentActiveAlertId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CurrentActiveAlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CurrentActiveAlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CurrentActiveAlertId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CurrentActiveAlertId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CurrentActiveAlertId = types.StringNull()
-        }
-    } else if val, ok := dataMap["currentActiveAlertId"].(string); ok {
-        data.CurrentActiveAlertId = types.StringValue(val)
-    } else {
-        data.CurrentActiveAlertId = types.StringNull()
-    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2938,8 +2161,8 @@ func (r *NetworkSiteResource) Update(ctx context.Context, req resource.UpdateReq
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *NetworkSiteResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data NetworkSiteResourceModel
+func (r *SnmpCredentialProfileResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data SnmpCredentialProfileResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -2949,9 +2172,9 @@ func (r *NetworkSiteResource) Delete(ctx context.Context, req resource.DeleteReq
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/network-site/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/network-snmp-credential-profile/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete network_site, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete snmp_credential_profile, got error: %s", err))
         return
     }
 
@@ -2959,7 +2182,7 @@ func (r *NetworkSiteResource) Delete(ctx context.Context, req resource.DeleteReq
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete network_site: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete snmp_credential_profile: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -2968,12 +2191,12 @@ func (r *NetworkSiteResource) Delete(ctx context.Context, req resource.DeleteReq
 }
 
 
-func (r *NetworkSiteResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *SnmpCredentialProfileResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *NetworkSiteResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *SnmpCredentialProfileResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -2991,7 +2214,7 @@ func (r *NetworkSiteResource) convertTerraformMapToInterface(terraformMap types.
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *NetworkSiteResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *SnmpCredentialProfileResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -3012,7 +2235,7 @@ func (r *NetworkSiteResource) convertTerraformListToInterface(terraformList type
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *NetworkSiteResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *SnmpCredentialProfileResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -3034,7 +2257,7 @@ func (r *NetworkSiteResource) convertTerraformSetToInterface(terraformSet types.
 
 
 // Helper method to parse JSON field for complex objects
-func (r *NetworkSiteResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *SnmpCredentialProfileResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -3050,7 +2273,7 @@ func (r *NetworkSiteResource) parseJSONField(terraformString basetypes.StringVal
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *NetworkSiteResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *SnmpCredentialProfileResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -3072,7 +2295,7 @@ func (r *NetworkSiteResource) normalizeURLWrappers(value interface{}) interface{
     }
 }
 
-func (r *NetworkSiteResource) normalizeURLString(value string) string {
+func (r *SnmpCredentialProfileResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -3084,7 +2307,7 @@ func (r *NetworkSiteResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *NetworkSiteResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *SnmpCredentialProfileResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -3094,6 +2317,6 @@ func (r *NetworkSiteResource) bigFloatToFloat64(bf *big.Float) interface{} {
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *NetworkSiteResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *SnmpCredentialProfileResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

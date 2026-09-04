@@ -48,6 +48,7 @@ type NetworkDeviceResourceModel struct {
     ProbeId types.String `tfsdk:"probe_id"`
     SiteId types.String `tfsdk:"site_id"`
     OidTemplateId types.String `tfsdk:"oid_template_id"`
+    SnmpCredentialProfileId types.String `tfsdk:"snmp_credential_profile_id"`
     MonitoringMethod types.String `tfsdk:"monitoring_method"`
     DeviceRole types.String `tfsdk:"device_role"`
     NetworkDeviceRoleId types.String `tfsdk:"network_device_role_id"`
@@ -89,6 +90,8 @@ type NetworkDeviceResourceModel struct {
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
     LastPolledAt RFC3339Value `tfsdk:"last_polled_at"`
     IsReachable types.Bool `tfsdk:"is_reachable"`
+    IsSnmpReachable types.Bool `tfsdk:"is_snmp_reachable"`
+    LastSnmpSeenAt RFC3339Value `tfsdk:"last_snmp_seen_at"`
     InterfacesTotal types.Number `tfsdk:"interfaces_total"`
     InterfacesUp types.Number `tfsdk:"interfaces_up"`
     InterfacesDown types.Number `tfsdk:"interfaces_down"`
@@ -159,6 +162,14 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "oid_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "snmp_credential_profile_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
                 Computed: true,
@@ -521,6 +532,23 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_snmp_reachable": schema.BoolAttribute{
+                MarkdownDescription: "Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "last_snmp_seen_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "interfaces_total": schema.NumberAttribute{
                 MarkdownDescription: "Cached total count of interfaces on this device.",
                 Optional: true,
@@ -649,6 +677,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if !data.OidTemplateId.IsNull() && !data.OidTemplateId.IsUnknown() {
         requestDataMap["oidTemplateId"] = data.OidTemplateId.ValueString()
     }
+    if !data.SnmpCredentialProfileId.IsNull() && !data.SnmpCredentialProfileId.IsUnknown() {
+        requestDataMap["snmpCredentialProfileId"] = data.SnmpCredentialProfileId.ValueString()
+    }
     if !data.MonitoringMethod.IsNull() && !data.MonitoringMethod.IsUnknown() {
         requestDataMap["monitoringMethod"] = data.MonitoringMethod.ValueString()
     }
@@ -770,6 +801,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "probeId": true,
         "siteId": true,
         "oidTemplateId": true,
+        "snmpCredentialProfileId": true,
         "monitoringMethod": true,
         "deviceRole": true,
         "networkDeviceRoleId": true,
@@ -811,6 +843,8 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
+        "isSnmpReachable": true,
+        "lastSnmpSeenAt": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -1087,6 +1121,43 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.OidTemplateId = types.StringValue(val)
     } else {
         data.OidTemplateId = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpCredentialProfileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCredentialProfileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpCredentialProfileId"].(string); ok {
+        data.SnmpCredentialProfileId = types.StringValue(val)
+    } else {
+        data.SnmpCredentialProfileId = types.StringNull()
     }
     if obj, ok := dataMap["monitoringMethod"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2253,6 +2324,22 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         data.IsReachable = types.BoolValue(val)
     } else {
         data.IsReachable = types.BoolNull()
+    }
+    if val, ok := dataMap["isSnmpReachable"].(bool); ok {
+        data.IsSnmpReachable = types.BoolValue(val)
+    } else {
+        data.IsSnmpReachable = types.BoolNull()
+    }
+    if obj, ok := dataMap["lastSnmpSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSnmpSeenAt = NewRFC3339Value(val)
+        } else {
+            data.LastSnmpSeenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSnmpSeenAt"].(string); ok && val != "" {
+        data.LastSnmpSeenAt = NewRFC3339Value(val)
+    } else {
+        data.LastSnmpSeenAt = NewRFC3339Null()
     }
     if val, ok := dataMap["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
@@ -2548,6 +2635,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "probeId": true,
         "siteId": true,
         "oidTemplateId": true,
+        "snmpCredentialProfileId": true,
         "monitoringMethod": true,
         "deviceRole": true,
         "networkDeviceRoleId": true,
@@ -2589,6 +2677,8 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
+        "isSnmpReachable": true,
+        "lastSnmpSeenAt": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -2866,6 +2956,43 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.OidTemplateId = types.StringValue(val)
     } else {
         data.OidTemplateId = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpCredentialProfileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCredentialProfileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpCredentialProfileId"].(string); ok {
+        data.SnmpCredentialProfileId = types.StringValue(val)
+    } else {
+        data.SnmpCredentialProfileId = types.StringNull()
     }
     if obj, ok := dataMap["monitoringMethod"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4032,6 +4159,22 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         data.IsReachable = types.BoolValue(val)
     } else {
         data.IsReachable = types.BoolNull()
+    }
+    if val, ok := dataMap["isSnmpReachable"].(bool); ok {
+        data.IsSnmpReachable = types.BoolValue(val)
+    } else {
+        data.IsSnmpReachable = types.BoolNull()
+    }
+    if obj, ok := dataMap["lastSnmpSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSnmpSeenAt = NewRFC3339Value(val)
+        } else {
+            data.LastSnmpSeenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSnmpSeenAt"].(string); ok && val != "" {
+        data.LastSnmpSeenAt = NewRFC3339Value(val)
+    } else {
+        data.LastSnmpSeenAt = NewRFC3339Null()
     }
     if val, ok := dataMap["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))
@@ -4346,6 +4489,9 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     if !data.OidTemplateId.IsUnknown() && !state.OidTemplateId.IsUnknown() && !data.OidTemplateId.Equal(state.OidTemplateId) {
         requestDataMap["oidTemplateId"] = data.OidTemplateId.ValueString()
     }
+    if !data.SnmpCredentialProfileId.IsUnknown() && !state.SnmpCredentialProfileId.IsUnknown() && !data.SnmpCredentialProfileId.Equal(state.SnmpCredentialProfileId) {
+        requestDataMap["snmpCredentialProfileId"] = data.SnmpCredentialProfileId.ValueString()
+    }
     if !data.CurrentMonitorStatusId.IsUnknown() && !state.CurrentMonitorStatusId.IsUnknown() && !data.CurrentMonitorStatusId.Equal(state.CurrentMonitorStatusId) {
         requestDataMap["currentMonitorStatusId"] = data.CurrentMonitorStatusId.ValueString()
     }
@@ -4480,6 +4626,12 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     if !data.IsReachable.IsUnknown() && !state.IsReachable.IsUnknown() && !data.IsReachable.Equal(state.IsReachable) {
         requestDataMap["isReachable"] = data.IsReachable.ValueBool()
     }
+    if !data.IsSnmpReachable.IsUnknown() && !state.IsSnmpReachable.IsUnknown() && !data.IsSnmpReachable.Equal(state.IsSnmpReachable) {
+        requestDataMap["isSnmpReachable"] = data.IsSnmpReachable.ValueBool()
+    }
+    if !data.LastSnmpSeenAt.IsUnknown() && !state.LastSnmpSeenAt.IsUnknown() && !data.LastSnmpSeenAt.Equal(state.LastSnmpSeenAt) {
+        requestDataMap["lastSnmpSeenAt"] = data.LastSnmpSeenAt.ValueString()
+    }
     if !data.InterfacesTotal.IsUnknown() && !state.InterfacesTotal.IsUnknown() && !data.InterfacesTotal.Equal(state.InterfacesTotal) {
         requestDataMap["interfacesTotal"] = r.bigFloatToFloat64(data.InterfacesTotal.ValueBigFloat())
     }
@@ -4525,6 +4677,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "probeId": true,
         "siteId": true,
         "oidTemplateId": true,
+        "snmpCredentialProfileId": true,
         "monitoringMethod": true,
         "deviceRole": true,
         "networkDeviceRoleId": true,
@@ -4566,6 +4719,8 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
+        "isSnmpReachable": true,
+        "lastSnmpSeenAt": true,
         "interfacesTotal": true,
         "interfacesUp": true,
         "interfacesDown": true,
@@ -4837,6 +4992,43 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.OidTemplateId = types.StringValue(val)
     } else {
         data.OidTemplateId = types.StringNull()
+    }
+    if obj, ok := dataMap["snmpCredentialProfileId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+            } else {
+                data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCredentialProfileId = types.StringNull()
+        }
+    } else if val, ok := dataMap["snmpCredentialProfileId"].(string); ok {
+        data.SnmpCredentialProfileId = types.StringValue(val)
+    } else {
+        data.SnmpCredentialProfileId = types.StringNull()
     }
     if obj, ok := dataMap["monitoringMethod"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -6003,6 +6195,22 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.IsReachable = types.BoolValue(val)
     } else {
         data.IsReachable = types.BoolNull()
+    }
+    if val, ok := dataMap["isSnmpReachable"].(bool); ok {
+        data.IsSnmpReachable = types.BoolValue(val)
+    } else {
+        data.IsSnmpReachable = types.BoolNull()
+    }
+    if obj, ok := dataMap["lastSnmpSeenAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSnmpSeenAt = NewRFC3339Value(val)
+        } else {
+            data.LastSnmpSeenAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSnmpSeenAt"].(string); ok && val != "" {
+        data.LastSnmpSeenAt = NewRFC3339Value(val)
+    } else {
+        data.LastSnmpSeenAt = NewRFC3339Null()
     }
     if val, ok := dataMap["interfacesTotal"].(float64); ok {
         data.InterfacesTotal = types.NumberValue(big.NewFloat(val))

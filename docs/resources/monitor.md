@@ -42,7 +42,7 @@ resource "oneuptime_monitor" "example" {
 ### Required
 
 - `name` (String) Any friendly name for this monitor..
-- `monitor_type` (String) What is the type of this monitor? Website? API? etc... Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
+- `monitor_type` (String) What is the type of this monitor? Website? API? etc... Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Database`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
 
 ### Optional
 
@@ -75,6 +75,7 @@ resource "oneuptime_monitor" "example" {
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
 - `auto_provisioned_network_device_id` (String) A unique identifier for an object, represented as a UUID..
+- `network_alert_policy_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?..
 - `disable_active_monitoring_because_of_scheduled_maintenance_event` (Bool) Disable Monitoring because of Ongoing Scheduled Maintenance Event..
 - `disable_active_monitoring_because_of_manual_incident` (Bool) Disable Monitoring because of Incident which is creeated manually by user...

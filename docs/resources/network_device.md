@@ -33,6 +33,7 @@ resource "oneuptime_network_device" "example" {
 - `probe_id` (String) A unique identifier for an object, represented as a UUID..
 - `site_id` (String) A unique identifier for an object, represented as a UUID..
 - `oid_template_id` (String) A unique identifier for an object, represented as a UUID..
+- `snmp_credential_profile_id` (String) A unique identifier for an object, represented as a UUID..
 - `monitoring_method` (String) How this device's health is established: SNMP (an assigned probe walks it on a schedule) or Monitor (no polling — the linked monitor's status is the device's status). Devices created before this existed are SNMP...
 - `device_role` (String) Deprecated legacy device role key. Use the Network Device Role relation instead; this column exists only for the backfill migration and will be removed...
 - `network_device_role_id` (String) A unique identifier for an object, represented as a UUID..
@@ -74,6 +75,8 @@ resource "oneuptime_network_device" "example" {
 - `last_seen_at` (String) A date time object..
 - `last_polled_at` (String) A date time object..
 - `is_reachable` (Bool) Whether the most recent SNMP walk reached this device. NULL means it has never been polled. This — not the age of lastSeenAt — is what the device list, the topology graph and the site rollup read, so a device whose last poll succeeded is never shown as down just because the probe is behind schedule. Managed by the probe...
+- `is_snmp_reachable` (Bool) Whether the most recent SNMP walk of this device succeeded. Separate from isReachable, which is the ping verdict: a device that answers ping but not SNMP is Up with a failing SNMP walk, which almost always means wrong credentials or SNMP disabled on the device. NULL means no walk was attempted — the device has no usable SNMP credentials (it is pinged only) or has never been polled. Managed by the probe...
+- `last_snmp_seen_at` (String) A date time object..
 - `interfaces_total` (Number) Cached total count of interfaces on this device..
 - `interfaces_up` (Number) Cached count of operationally up interfaces on this device..
 - `interfaces_down` (Number) Cached count of operationally down interfaces on this device..

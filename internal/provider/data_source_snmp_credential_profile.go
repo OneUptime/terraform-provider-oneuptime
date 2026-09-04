@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &NetworkSiteTypeDataSource{}
+var _ datasource.DataSource = &SnmpCredentialProfileDataSource{}
 
-func NewNetworkSiteTypeDataSource() datasource.DataSource {
-    return &NetworkSiteTypeDataSource{}
+func NewSnmpCredentialProfileDataSource() datasource.DataSource {
+    return &SnmpCredentialProfileDataSource{}
 }
 
-// NetworkSiteTypeDataSource defines the data source implementation.
-type NetworkSiteTypeDataSource struct {
+// SnmpCredentialProfileDataSource defines the data source implementation.
+type SnmpCredentialProfileDataSource struct {
     client *Client
 }
 
-// NetworkSiteTypeDataSourceModel describes the data source data model.
-type NetworkSiteTypeDataSourceModel struct {
+// SnmpCredentialProfileDataSourceModel describes the data source data model.
+type SnmpCredentialProfileDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,22 +34,27 @@ type NetworkSiteTypeDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
-    ParentNetworkSiteTypeId types.String `tfsdk:"parent_network_site_type_id"`
-    Order types.Number `tfsdk:"order"`
-    IsUnitLevel types.Bool `tfsdk:"is_unit_level"`
+    SnmpVersion types.String `tfsdk:"snmp_version"`
+    SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
+    SnmpPort types.Number `tfsdk:"snmp_port"`
+    SnmpV3SecurityLevel types.String `tfsdk:"snmp_v3_security_level"`
+    SnmpV3Username types.String `tfsdk:"snmp_v3_username"`
+    SnmpV3AuthProtocol types.String `tfsdk:"snmp_v3_auth_protocol"`
+    SnmpV3AuthKey types.String `tfsdk:"snmp_v3_auth_key"`
+    SnmpV3PrivProtocol types.String `tfsdk:"snmp_v3_priv_protocol"`
+    SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *NetworkSiteTypeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_network_site_type"
+func (d *SnmpCredentialProfileDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_snmp_credential_profile"
 }
 
-func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *SnmpCredentialProfileDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Choose each type's parent, rename it, or add your own. Look up an existing network_site_type by `id` or by `name`.",
+        MarkdownDescription: "A reusable set of SNMP credentials. Attach a profile to a device or to a site and every device it covers is walked over SNMP with these credentials instead of carrying its own. Look up an existing snmp_credential_profile by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -82,24 +87,44 @@ func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object.",
-                Computed: true,
-            },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
                 Computed: true,
             },
-            "parent_network_site_type_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "snmp_version": schema.StringAttribute{
+                MarkdownDescription: "SNMP version devices using this profile are polled with (V1, V2c, V3).",
                 Computed: true,
             },
-            "order": schema.NumberAttribute{
-                MarkdownDescription: "Display order among site types that have the same parent..",
+            "snmp_community_string": schema.StringAttribute{
+                MarkdownDescription: "Community string used for SNMP v1/v2c polling.",
                 Computed: true,
             },
-            "is_unit_level": schema.BoolAttribute{
-                MarkdownDescription: "Sites of this type are the leaf level - the network map opens their device topology, and the health rollup counts them as units..",
+            "snmp_port": schema.NumberAttribute{
+                MarkdownDescription: "UDP port used for SNMP polling.",
+                Computed: true,
+            },
+            "snmp_v3_security_level": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 security level: noAuthNoPriv, authNoPriv, or authPriv.",
+                Computed: true,
+            },
+            "snmp_v3_username": schema.StringAttribute{
+                MarkdownDescription: "Security name (username) used for SNMP v3 polling.",
+                Computed: true,
+            },
+            "snmp_v3_auth_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication protocol: MD5, SHA, SHA256, or SHA512.",
+                Computed: true,
+            },
+            "snmp_v3_auth_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 authentication passphrase.",
+                Computed: true,
+            },
+            "snmp_v3_priv_protocol": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) protocol: DES, AES, or AES256.",
+                Computed: true,
+            },
+            "snmp_v3_priv_key": schema.StringAttribute{
+                MarkdownDescription: "SNMP v3 privacy (encryption) passphrase.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -114,7 +139,7 @@ func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.S
     }
 }
 
-func (d *NetworkSiteTypeDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *SnmpCredentialProfileDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -134,8 +159,8 @@ func (d *NetworkSiteTypeDataSource) Configure(ctx context.Context, req datasourc
     d.client = client
 }
 
-func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data NetworkSiteTypeDataSourceModel
+func (d *SnmpCredentialProfileDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data SnmpCredentialProfileDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -149,7 +174,7 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_site_type.",
+            "Exactly one of `id` or `name` must be set to look up a snmp_credential_profile.",
         )
         return
     }
@@ -161,11 +186,16 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "slug": true,
         "description": true,
-        "parentNetworkSiteTypeId": true,
-        "order": true,
-        "isUnitLevel": true,
+        "snmpVersion": true,
+        "snmpCommunityString": true,
+        "snmpPort": true,
+        "snmpV3SecurityLevel": true,
+        "snmpV3Username": true,
+        "snmpV3AuthProtocol": true,
+        "snmpV3AuthKey": true,
+        "snmpV3PrivProtocol": true,
+        "snmpV3PrivKey": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -173,19 +203,19 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/network-site-type/" + data.Id.ValueString() + "/get-item"
+        readPath := "/network-snmp-credential-profile/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_site_type, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read snmp_credential_profile, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_site_type found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No snmp_credential_profile found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_site_type: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read snmp_credential_profile: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -202,28 +232,28 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-site-type/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-snmp-credential-profile/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_site_type, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list snmp_credential_profile, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_site_type: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list snmp_credential_profile: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_site_type found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No snmp_credential_profile found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_site_type matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one snmp_credential_profile matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_site_type.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for snmp_credential_profile.")
             return
         }
         item = first
@@ -343,23 +373,6 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["slug"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Slug = types.StringValue(string(jsonBytes))
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := item["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
-    }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Description = types.StringValue(val)
@@ -377,38 +390,152 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := item["parentNetworkSiteTypeId"].(map[string]interface{}); ok {
+    if obj, ok := item["snmpVersion"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.SnmpVersion = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.SnmpVersion = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.SnmpVersion = types.StringValue(string(jsonBytes))
         } else {
-            data.ParentNetworkSiteTypeId = types.StringNull()
+            data.SnmpVersion = types.StringNull()
         }
-    } else if val, ok := item["parentNetworkSiteTypeId"].(string); ok {
-        data.ParentNetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := item["snmpVersion"].(string); ok {
+        data.SnmpVersion = types.StringValue(val)
     } else {
-        data.ParentNetworkSiteTypeId = types.StringNull()
+        data.SnmpVersion = types.StringNull()
     }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
+    if obj, ok := item["snmpCommunityString"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpCommunityString = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpCommunityString = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpCommunityString = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpCommunityString = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCommunityString = types.StringNull()
+        }
+    } else if val, ok := item["snmpCommunityString"].(string); ok {
+        data.SnmpCommunityString = types.StringValue(val)
+    } else {
+        data.SnmpCommunityString = types.StringNull()
+    }
+    if val, ok := item["snmpPort"].(float64); ok {
+        data.SnmpPort = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["snmpPort"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
+            data.SnmpPort = types.NumberValue(big.NewFloat(val))
         } else {
-            data.Order = types.NumberNull()
+            data.SnmpPort = types.NumberNull()
         }
     } else {
-        data.Order = types.NumberNull()
+        data.SnmpPort = types.NumberNull()
     }
-    if val, ok := item["isUnitLevel"].(bool); ok {
-        data.IsUnitLevel = types.BoolValue(val)
+    if obj, ok := item["snmpV3SecurityLevel"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpV3SecurityLevel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpV3SecurityLevel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3SecurityLevel = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3SecurityLevel = types.StringNull()
+        }
+    } else if val, ok := item["snmpV3SecurityLevel"].(string); ok {
+        data.SnmpV3SecurityLevel = types.StringValue(val)
     } else {
-        data.IsUnitLevel = types.BoolNull()
+        data.SnmpV3SecurityLevel = types.StringNull()
+    }
+    if obj, ok := item["snmpV3Username"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpV3Username = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpV3Username = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3Username = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3Username = types.StringNull()
+        }
+    } else if val, ok := item["snmpV3Username"].(string); ok {
+        data.SnmpV3Username = types.StringValue(val)
+    } else {
+        data.SnmpV3Username = types.StringNull()
+    }
+    if obj, ok := item["snmpV3AuthProtocol"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpV3AuthProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpV3AuthProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3AuthProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthProtocol = types.StringNull()
+        }
+    } else if val, ok := item["snmpV3AuthProtocol"].(string); ok {
+        data.SnmpV3AuthProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthProtocol = types.StringNull()
+    }
+    if obj, ok := item["snmpV3AuthKey"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpV3AuthKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpV3AuthKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3AuthKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3AuthKey = types.StringNull()
+        }
+    } else if val, ok := item["snmpV3AuthKey"].(string); ok {
+        data.SnmpV3AuthKey = types.StringValue(val)
+    } else {
+        data.SnmpV3AuthKey = types.StringNull()
+    }
+    if obj, ok := item["snmpV3PrivProtocol"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpV3PrivProtocol = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpV3PrivProtocol = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3PrivProtocol = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivProtocol = types.StringNull()
+        }
+    } else if val, ok := item["snmpV3PrivProtocol"].(string); ok {
+        data.SnmpV3PrivProtocol = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivProtocol = types.StringNull()
+    }
+    if obj, ok := item["snmpV3PrivKey"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpV3PrivKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpV3PrivKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpV3PrivKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpV3PrivKey = types.StringNull()
+        }
+    } else if val, ok := item["snmpV3PrivKey"].(string); ok {
+        data.SnmpV3PrivKey = types.StringValue(val)
+    } else {
+        data.SnmpV3PrivKey = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

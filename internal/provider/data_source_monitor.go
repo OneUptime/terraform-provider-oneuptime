@@ -44,6 +44,7 @@ type MonitorDataSourceModel struct {
     SuppressAlertsWhenParentMonitorStatuses types.Set `tfsdk:"suppress_alerts_when_parent_monitor_statuses"`
     MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     AutoProvisionedNetworkDeviceId types.String `tfsdk:"auto_provisioned_network_device_id"`
+    NetworkAlertPolicyId types.String `tfsdk:"network_alert_policy_id"`
     MonitorType types.String `tfsdk:"monitor_type"`
     CurrentMonitorStatusId types.String `tfsdk:"current_monitor_status_id"`
     MonitorSteps types.String `tfsdk:"monitor_steps"`
@@ -141,6 +142,10 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "auto_provisioned_network_device_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "network_alert_policy_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -299,6 +304,7 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "suppressAlertsWhenParentMonitorStatuses": true,
         "monitorTemplateId": true,
         "autoProvisionedNetworkDeviceId": true,
+        "networkAlertPolicyId": true,
         "monitorType": true,
         "currentMonitorStatusId": true,
         "monitorSteps": true,
@@ -654,6 +660,23 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.AutoProvisionedNetworkDeviceId = types.StringValue(val)
     } else {
         data.AutoProvisionedNetworkDeviceId = types.StringNull()
+    }
+    if obj, ok := item["networkAlertPolicyId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NetworkAlertPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NetworkAlertPolicyId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NetworkAlertPolicyId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NetworkAlertPolicyId = types.StringValue(string(jsonBytes))
+        } else {
+            data.NetworkAlertPolicyId = types.StringNull()
+        }
+    } else if val, ok := item["networkAlertPolicyId"].(string); ok {
+        data.NetworkAlertPolicyId = types.StringValue(val)
+    } else {
+        data.NetworkAlertPolicyId = types.StringNull()
     }
     if obj, ok := item["monitorType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

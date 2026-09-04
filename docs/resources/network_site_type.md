@@ -2,12 +2,12 @@
 page_title: "oneuptime_network_site_type Resource - oneuptime"
 subcategory: "Other"
 description: |-
-  Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Rename them, reorder them, or add your own.
+  Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Choose each type's parent, rename it, or add your own.
 ---
 
 # oneuptime_network_site_type (Resource)
 
-Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Rename them, reorder them, or add your own.
+Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Choose each type's parent, rename it, or add your own.
 
 ## Example Usage
 
@@ -28,7 +28,8 @@ resource "oneuptime_network_site_type" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `order` (Number) Where this type sits in the site hierarchy. Lower numbers are higher up: Region is 2 and Unit is 5, for example...
+- `parent_network_site_type_id` (String) A unique identifier for an object, represented as a UUID..
+- `order` (Number) Display order among site types that have the same parent...
 - `is_unit_level` (Bool) Sites of this type are the leaf level - the network map opens their device topology, and the health rollup counts them as units...
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 

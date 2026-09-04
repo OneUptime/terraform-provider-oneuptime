@@ -15,50 +15,54 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &NetworkSiteTypeResource{}
-var _ resource.ResourceWithImportState = &NetworkSiteTypeResource{}
+var _ resource.Resource = &NetworkAlertPolicyResource{}
+var _ resource.ResourceWithImportState = &NetworkAlertPolicyResource{}
 
-func NewNetworkSiteTypeResource() resource.Resource {
-    return &NetworkSiteTypeResource{}
+func NewNetworkAlertPolicyResource() resource.Resource {
+    return &NetworkAlertPolicyResource{}
 }
 
-// NetworkSiteTypeResource defines the resource implementation.
-type NetworkSiteTypeResource struct {
+// NetworkAlertPolicyResource defines the resource implementation.
+type NetworkAlertPolicyResource struct {
     client *Client
 }
 
-// NetworkSiteTypeResourceModel describes the resource data model.
-type NetworkSiteTypeResourceModel struct {
+// NetworkAlertPolicyResourceModel describes the resource data model.
+type NetworkAlertPolicyResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
-    ParentNetworkSiteTypeId types.String `tfsdk:"parent_network_site_type_id"`
-    Order types.Number `tfsdk:"order"`
-    IsUnitLevel types.Bool `tfsdk:"is_unit_level"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
+    Scope JSONSubsetValue `tfsdk:"scope"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
-    Slug types.String `tfsdk:"slug"`
+    LastSyncAt RFC3339Value `tfsdk:"last_sync_at"`
+    LastSyncError types.String `tfsdk:"last_sync_error"`
+    CoveredDeviceCount types.Number `tfsdk:"covered_device_count"`
+    TemplateSyncedAt RFC3339Value `tfsdk:"template_synced_at"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (r *NetworkSiteTypeResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_network_site_type"
+func (r *NetworkAlertPolicyResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_network_alert_policy"
 }
 
-func (r *NetworkSiteTypeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *NetworkAlertPolicyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Choose each type's parent, rename it, or add your own.",
+        MarkdownDescription: "Alert on a set of network devices at once: every device matching the policy's sites, roles and labels gets a Network Device monitor provisioned from the policy's monitor template, and kept as devices come and go.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -87,29 +91,30 @@ func (r *NetworkSiteTypeResource) Schema(ctx context.Context, req resource.Schem
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "parent_network_site_type_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this policy is active. Disable it to stop provisioning monitors for matching devices without deleting the policy..",
                 Optional: true,
                 Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "monitor_template_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Required: true,
+            },
+            "scope": schema.StringAttribute{
+                MarkdownDescription: "Which devices this policy covers: site ids, device role ids and label ids. A device must match every kind that is listed (AND) and any id within a kind (OR); a kind left empty matches every device. Empty altogether means every device in the project..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("[object Object]"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
-            },
-            "order": schema.NumberAttribute{
-                MarkdownDescription: "Display order among site types that have the same parent..",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "is_unit_level": schema.BoolAttribute{
-                MarkdownDescription: "Sites of this type are the leaf level - the network map opens their device topology, and the health rollup counts them as units..",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "created_by_user_id": schema.StringAttribute{
@@ -140,8 +145,22 @@ func (r *NetworkSiteTypeResource) Schema(ctx context.Context, req resource.Schem
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object.",
+            "last_sync_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_sync_error": schema.StringAttribute{
+                MarkdownDescription: "Why the engine's last reconciliation of this policy failed, if it did. Cleared by the next successful pass. Managed by the engine..",
+                Computed: true,
+            },
+            "covered_device_count": schema.NumberAttribute{
+                MarkdownDescription: "How many devices matched this policy's scope at the engine's last reconciliation. Managed by the engine..",
+                Computed: true,
+            },
+            "template_synced_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -152,7 +171,7 @@ func (r *NetworkSiteTypeResource) Schema(ctx context.Context, req resource.Schem
     }
 }
 
-func (r *NetworkSiteTypeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *NetworkAlertPolicyResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -173,8 +192,8 @@ func (r *NetworkSiteTypeResource) Configure(ctx context.Context, req resource.Co
 }
 
 
-func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data NetworkSiteTypeResourceModel
+func (r *NetworkAlertPolicyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data NetworkAlertPolicyResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -188,10 +207,10 @@ func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.Creat
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    networkSiteTypeRequest := map[string]interface{}{
+    networkAlertPolicyRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := networkSiteTypeRequest["data"].(map[string]interface{})
+    requestDataMap := networkAlertPolicyRequest["data"].(map[string]interface{})
 
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
@@ -199,44 +218,44 @@ func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.Creat
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
-    if !data.ParentNetworkSiteTypeId.IsNull() && !data.ParentNetworkSiteTypeId.IsUnknown() {
-        requestDataMap["parentNetworkSiteTypeId"] = data.ParentNetworkSiteTypeId.ValueString()
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
-    if !data.Order.IsNull() && !data.Order.IsUnknown() {
-        requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
+    if !data.MonitorTemplateId.IsNull() && !data.MonitorTemplateId.IsUnknown() {
+        requestDataMap["monitorTemplateId"] = data.MonitorTemplateId.ValueString()
     }
-    if !data.IsUnitLevel.IsNull() && !data.IsUnitLevel.IsUnknown() {
-        requestDataMap["isUnitLevel"] = data.IsUnitLevel.ValueBool()
+    if parsedScope := r.parseJSONField(data.Scope); parsedScope != nil {
+        requestDataMap["scope"] = parsedScope
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/network-site-type", networkSiteTypeRequest)
+    httpResp, err := r.client.Post(ctx, "/network-alert-policy", networkAlertPolicyRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create network_site_type, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create network_alert_policy, got error: %s", err))
         return
     }
 
-    var networkSiteTypeResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &networkSiteTypeResponse)
+    var networkAlertPolicyResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &networkAlertPolicyResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create network_site_type: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create network_alert_policy: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := networkSiteTypeResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := networkAlertPolicyResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := networkSiteTypeResponse["_id"].(string); ok {
+    } else if val, ok := networkAlertPolicyResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for network_site_type did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for network_alert_policy did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -245,7 +264,7 @@ func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.Creat
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * network_site_type is orphaned server-side — never refreshed, never
+     * network_alert_policy is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -259,34 +278,37 @@ func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.Creat
         "projectId": true,
         "name": true,
         "description": true,
-        "parentNetworkSiteTypeId": true,
-        "order": true,
-        "isUnitLevel": true,
+        "isEnabled": true,
+        "monitorTemplateId": true,
+        "scope": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
+        "lastSyncAt": true,
+        "lastSyncError": true,
+        "coveredDeviceCount": true,
+        "templateSyncedAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/network-site-type/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/network-alert-policy/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created network_site_type but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created network_alert_policy but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created network_site_type but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created network_alert_policy but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -386,62 +408,82 @@ func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["parentNetworkSiteTypeId"].(map[string]interface{}); ok {
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
         } else {
-            data.ParentNetworkSiteTypeId = types.StringNull()
+            data.MonitorTemplateId = types.StringNull()
         }
-    } else if val, ok := dataMap["parentNetworkSiteTypeId"].(string); ok {
-        data.ParentNetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
     } else {
-        data.ParentNetworkSiteTypeId = types.StringNull()
+        data.MonitorTemplateId = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Order = types.NumberNull()
+            data.Scope = NewJSONSubsetNull()
         }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = NewJSONSubsetValue(val)
     } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
-    if val, ok := dataMap["isUnitLevel"].(bool); ok {
-        data.IsUnitLevel = types.BoolValue(val)
+        data.Scope = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -530,42 +572,81 @@ func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.Creat
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["lastSyncAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSyncAt = NewRFC3339Value(val)
+        } else {
+            data.LastSyncAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSyncAt"].(string); ok && val != "" {
+        data.LastSyncAt = NewRFC3339Value(val)
+    } else {
+        data.LastSyncAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastSyncError"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
+            data.LastSyncError = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
+            data.LastSyncError = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+            data.LastSyncError = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastSyncError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LastSyncError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastSyncError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LastSyncError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
+            data.LastSyncError = types.StringValue(string(jsonBytes))
         } else {
-            data.Slug = types.StringNull()
+            data.LastSyncError = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
+    } else if val, ok := dataMap["lastSyncError"].(string); ok {
+        data.LastSyncError = types.StringValue(val)
     } else {
-        data.Slug = types.StringNull()
+        data.LastSyncError = types.StringNull()
+    }
+    if val, ok := dataMap["coveredDeviceCount"].(float64); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["coveredDeviceCount"].(int); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["coveredDeviceCount"].(int64); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["coveredDeviceCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CoveredDeviceCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CoveredDeviceCount = types.NumberNull()
+    }
+    if obj, ok := dataMap["templateSyncedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TemplateSyncedAt = NewRFC3339Value(val)
+        } else {
+            data.TemplateSyncedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["templateSyncedAt"].(string); ok && val != "" {
+        data.TemplateSyncedAt = NewRFC3339Value(val)
+    } else {
+        data.TemplateSyncedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -619,8 +700,8 @@ func (r *NetworkSiteTypeResource) Create(ctx context.Context, req resource.Creat
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *NetworkSiteTypeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data NetworkSiteTypeResourceModel
+func (r *NetworkAlertPolicyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data NetworkAlertPolicyResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -634,23 +715,26 @@ func (r *NetworkSiteTypeResource) Read(ctx context.Context, req resource.ReadReq
         "projectId": true,
         "name": true,
         "description": true,
-        "parentNetworkSiteTypeId": true,
-        "order": true,
-        "isUnitLevel": true,
+        "isEnabled": true,
+        "monitorTemplateId": true,
+        "scope": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
+        "lastSyncAt": true,
+        "lastSyncError": true,
+        "coveredDeviceCount": true,
+        "templateSyncedAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/network-site-type/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/network-alert-policy/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_site_type, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_alert_policy, got error: %s", err))
         return
     }
 
@@ -659,22 +743,22 @@ func (r *NetworkSiteTypeResource) Read(ctx context.Context, req resource.ReadReq
         return
     }
 
-    var networkSiteTypeResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &networkSiteTypeResponse)
+    var networkAlertPolicyResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &networkAlertPolicyResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse network_site_type response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse network_alert_policy response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := networkSiteTypeResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := networkAlertPolicyResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = networkSiteTypeResponse
+        dataMap = networkAlertPolicyResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -762,62 +846,82 @@ func (r *NetworkSiteTypeResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["parentNetworkSiteTypeId"].(map[string]interface{}); ok {
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
         } else {
-            data.ParentNetworkSiteTypeId = types.StringNull()
+            data.MonitorTemplateId = types.StringNull()
         }
-    } else if val, ok := dataMap["parentNetworkSiteTypeId"].(string); ok {
-        data.ParentNetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
     } else {
-        data.ParentNetworkSiteTypeId = types.StringNull()
+        data.MonitorTemplateId = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Order = types.NumberNull()
+            data.Scope = NewJSONSubsetNull()
         }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = NewJSONSubsetValue(val)
     } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
-    if val, ok := dataMap["isUnitLevel"].(bool); ok {
-        data.IsUnitLevel = types.BoolValue(val)
+        data.Scope = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -906,42 +1010,81 @@ func (r *NetworkSiteTypeResource) Read(ctx context.Context, req resource.ReadReq
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["lastSyncAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSyncAt = NewRFC3339Value(val)
+        } else {
+            data.LastSyncAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSyncAt"].(string); ok && val != "" {
+        data.LastSyncAt = NewRFC3339Value(val)
+    } else {
+        data.LastSyncAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastSyncError"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
+            data.LastSyncError = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
+            data.LastSyncError = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+            data.LastSyncError = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastSyncError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LastSyncError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastSyncError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LastSyncError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
+            data.LastSyncError = types.StringValue(string(jsonBytes))
         } else {
-            data.Slug = types.StringNull()
+            data.LastSyncError = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
+    } else if val, ok := dataMap["lastSyncError"].(string); ok {
+        data.LastSyncError = types.StringValue(val)
     } else {
-        data.Slug = types.StringNull()
+        data.LastSyncError = types.StringNull()
+    }
+    if val, ok := dataMap["coveredDeviceCount"].(float64); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["coveredDeviceCount"].(int); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["coveredDeviceCount"].(int64); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["coveredDeviceCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CoveredDeviceCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CoveredDeviceCount = types.NumberNull()
+    }
+    if obj, ok := dataMap["templateSyncedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TemplateSyncedAt = NewRFC3339Value(val)
+        } else {
+            data.TemplateSyncedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["templateSyncedAt"].(string); ok && val != "" {
+        data.TemplateSyncedAt = NewRFC3339Value(val)
+    } else {
+        data.TemplateSyncedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -990,9 +1133,9 @@ func (r *NetworkSiteTypeResource) Read(ctx context.Context, req resource.ReadReq
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *NetworkSiteTypeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data NetworkSiteTypeResourceModel
-    var state NetworkSiteTypeResourceModel
+func (r *NetworkAlertPolicyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data NetworkAlertPolicyResourceModel
+    var state NetworkAlertPolicyResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -1010,10 +1153,10 @@ func (r *NetworkSiteTypeResource) Update(ctx context.Context, req resource.Updat
     data.Id = state.Id
 
     // Create API request body
-    networkSiteTypeRequest := map[string]interface{}{
+    networkAlertPolicyRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := networkSiteTypeRequest["data"].(map[string]interface{})
+    requestDataMap := networkAlertPolicyRequest["data"].(map[string]interface{})
 
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
@@ -1021,34 +1164,39 @@ func (r *NetworkSiteTypeResource) Update(ctx context.Context, req resource.Updat
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
-    if !data.ParentNetworkSiteTypeId.IsUnknown() && !state.ParentNetworkSiteTypeId.IsUnknown() && !data.ParentNetworkSiteTypeId.Equal(state.ParentNetworkSiteTypeId) {
-        requestDataMap["parentNetworkSiteTypeId"] = data.ParentNetworkSiteTypeId.ValueString()
+    if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
-    if !data.Order.IsUnknown() && !state.Order.IsUnknown() && !data.Order.Equal(state.Order) {
-        requestDataMap["order"] = r.bigFloatToFloat64(data.Order.ValueBigFloat())
+    if !data.MonitorTemplateId.IsUnknown() && !state.MonitorTemplateId.IsUnknown() && !data.MonitorTemplateId.Equal(state.MonitorTemplateId) {
+        requestDataMap["monitorTemplateId"] = data.MonitorTemplateId.ValueString()
     }
-    if !data.IsUnitLevel.IsUnknown() && !state.IsUnitLevel.IsUnknown() && !data.IsUnitLevel.Equal(state.IsUnitLevel) {
-        requestDataMap["isUnitLevel"] = data.IsUnitLevel.ValueBool()
+    if !data.Scope.IsUnknown() && !state.Scope.IsUnknown() && !data.Scope.Equal(state.Scope) {
+        var scopeData interface{}
+        if err := json.Unmarshal([]byte(data.Scope.ValueString()), &scopeData); err == nil {
+            requestDataMap["scope"] = scopeData
+        } else {
+            requestDataMap["scope"] = data.Scope.ValueString()
+        }
     }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(networkSiteTypeRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/network-site-type/" + data.Id.ValueString() + "", networkSiteTypeRequest)
+    if len(networkAlertPolicyRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/network-alert-policy/" + data.Id.ValueString() + "", networkAlertPolicyRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update network_site_type, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update network_alert_policy, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var networkSiteTypeResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &networkSiteTypeResponse)
+        var networkAlertPolicyResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &networkAlertPolicyResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update network_site_type: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update network_alert_policy: %s", err))
             return
         }
-        _ = networkSiteTypeResponse
+        _ = networkAlertPolicyResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -1056,29 +1204,32 @@ func (r *NetworkSiteTypeResource) Update(ctx context.Context, req resource.Updat
         "projectId": true,
         "name": true,
         "description": true,
-        "parentNetworkSiteTypeId": true,
-        "order": true,
-        "isUnitLevel": true,
+        "isEnabled": true,
+        "monitorTemplateId": true,
+        "scope": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
+        "lastSyncAt": true,
+        "lastSyncError": true,
+        "coveredDeviceCount": true,
+        "templateSyncedAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/network-site-type/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/network-alert-policy/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_site_type after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_alert_policy after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_site_type after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_alert_policy after update: %s", err))
         return
     }
 
@@ -1178,62 +1329,82 @@ func (r *NetworkSiteTypeResource) Update(ctx context.Context, req resource.Updat
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["parentNetworkSiteTypeId"].(map[string]interface{}); ok {
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["monitorTemplateId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+                data.MonitorTemplateId = types.StringValue(string(jsonBytes))
             } else {
-                data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
         } else {
-            data.ParentNetworkSiteTypeId = types.StringNull()
+            data.MonitorTemplateId = types.StringNull()
         }
-    } else if val, ok := dataMap["parentNetworkSiteTypeId"].(string); ok {
-        data.ParentNetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := dataMap["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
     } else {
-        data.ParentNetworkSiteTypeId = types.StringNull()
+        data.MonitorTemplateId = types.StringNull()
     }
-    if val, ok := dataMap["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["order"].(int); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["order"].(int64); ok {
-        data.Order = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["order"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
+    if obj, ok := dataMap["scope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Scope = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Scope = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Scope = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Scope = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Scope = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Order = types.NumberNull()
+            data.Scope = NewJSONSubsetNull()
         }
+    } else if val, ok := dataMap["scope"].(string); ok {
+        data.Scope = NewJSONSubsetValue(val)
     } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.Order = types.NumberNull()
-    }
-    if val, ok := dataMap["isUnitLevel"].(bool); ok {
-        data.IsUnitLevel = types.BoolValue(val)
+        data.Scope = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1322,42 +1493,81 @@ func (r *NetworkSiteTypeResource) Update(ctx context.Context, req resource.Updat
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["lastSyncAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSyncAt = NewRFC3339Value(val)
+        } else {
+            data.LastSyncAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSyncAt"].(string); ok && val != "" {
+        data.LastSyncAt = NewRFC3339Value(val)
+    } else {
+        data.LastSyncAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastSyncError"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
+            data.LastSyncError = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
+            data.LastSyncError = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+            data.LastSyncError = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastSyncError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LastSyncError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastSyncError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LastSyncError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
+            data.LastSyncError = types.StringValue(string(jsonBytes))
         } else {
-            data.Slug = types.StringNull()
+            data.LastSyncError = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
+    } else if val, ok := dataMap["lastSyncError"].(string); ok {
+        data.LastSyncError = types.StringValue(val)
     } else {
-        data.Slug = types.StringNull()
+        data.LastSyncError = types.StringNull()
+    }
+    if val, ok := dataMap["coveredDeviceCount"].(float64); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["coveredDeviceCount"].(int); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["coveredDeviceCount"].(int64); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["coveredDeviceCount"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.CoveredDeviceCount = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.CoveredDeviceCount = types.NumberNull()
+    }
+    if obj, ok := dataMap["templateSyncedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.TemplateSyncedAt = NewRFC3339Value(val)
+        } else {
+            data.TemplateSyncedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["templateSyncedAt"].(string); ok && val != "" {
+        data.TemplateSyncedAt = NewRFC3339Value(val)
+    } else {
+        data.TemplateSyncedAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1407,8 +1617,8 @@ func (r *NetworkSiteTypeResource) Update(ctx context.Context, req resource.Updat
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *NetworkSiteTypeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data NetworkSiteTypeResourceModel
+func (r *NetworkAlertPolicyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data NetworkAlertPolicyResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1418,9 +1628,9 @@ func (r *NetworkSiteTypeResource) Delete(ctx context.Context, req resource.Delet
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/network-site-type/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/network-alert-policy/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete network_site_type, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete network_alert_policy, got error: %s", err))
         return
     }
 
@@ -1428,7 +1638,7 @@ func (r *NetworkSiteTypeResource) Delete(ctx context.Context, req resource.Delet
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete network_site_type: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete network_alert_policy: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -1437,12 +1647,12 @@ func (r *NetworkSiteTypeResource) Delete(ctx context.Context, req resource.Delet
 }
 
 
-func (r *NetworkSiteTypeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *NetworkAlertPolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *NetworkSiteTypeResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *NetworkAlertPolicyResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1460,7 +1670,7 @@ func (r *NetworkSiteTypeResource) convertTerraformMapToInterface(terraformMap ty
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *NetworkSiteTypeResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *NetworkAlertPolicyResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -1481,7 +1691,7 @@ func (r *NetworkSiteTypeResource) convertTerraformListToInterface(terraformList 
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *NetworkSiteTypeResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *NetworkAlertPolicyResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -1503,7 +1713,7 @@ func (r *NetworkSiteTypeResource) convertTerraformSetToInterface(terraformSet ty
 
 
 // Helper method to parse JSON field for complex objects
-func (r *NetworkSiteTypeResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *NetworkAlertPolicyResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -1519,7 +1729,7 @@ func (r *NetworkSiteTypeResource) parseJSONField(terraformString basetypes.Strin
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *NetworkSiteTypeResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *NetworkAlertPolicyResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -1541,7 +1751,7 @@ func (r *NetworkSiteTypeResource) normalizeURLWrappers(value interface{}) interf
     }
 }
 
-func (r *NetworkSiteTypeResource) normalizeURLString(value string) string {
+func (r *NetworkAlertPolicyResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1553,7 +1763,7 @@ func (r *NetworkSiteTypeResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *NetworkSiteTypeResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *NetworkAlertPolicyResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1563,6 +1773,6 @@ func (r *NetworkSiteTypeResource) bigFloatToFloat64(bf *big.Float) interface{} {
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *NetworkSiteTypeResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *NetworkAlertPolicyResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

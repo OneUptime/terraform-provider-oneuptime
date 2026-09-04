@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &NetworkSiteTypeDataSource{}
+var _ datasource.DataSource = &NetworkAlertPolicyDataSource{}
 
-func NewNetworkSiteTypeDataSource() datasource.DataSource {
-    return &NetworkSiteTypeDataSource{}
+func NewNetworkAlertPolicyDataSource() datasource.DataSource {
+    return &NetworkAlertPolicyDataSource{}
 }
 
-// NetworkSiteTypeDataSource defines the data source implementation.
-type NetworkSiteTypeDataSource struct {
+// NetworkAlertPolicyDataSource defines the data source implementation.
+type NetworkAlertPolicyDataSource struct {
     client *Client
 }
 
-// NetworkSiteTypeDataSourceModel describes the data source data model.
-type NetworkSiteTypeDataSourceModel struct {
+// NetworkAlertPolicyDataSourceModel describes the data source data model.
+type NetworkAlertPolicyDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,22 +34,25 @@ type NetworkSiteTypeDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
-    ParentNetworkSiteTypeId types.String `tfsdk:"parent_network_site_type_id"`
-    Order types.Number `tfsdk:"order"`
-    IsUnitLevel types.Bool `tfsdk:"is_unit_level"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
+    Scope types.String `tfsdk:"scope"`
+    LastSyncAt types.String `tfsdk:"last_sync_at"`
+    LastSyncError types.String `tfsdk:"last_sync_error"`
+    CoveredDeviceCount types.Number `tfsdk:"covered_device_count"`
+    TemplateSyncedAt types.String `tfsdk:"template_synced_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *NetworkSiteTypeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_network_site_type"
+func (d *NetworkAlertPolicyDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_network_alert_policy"
 }
 
-func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *NetworkAlertPolicyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure the levels of your network site hierarchy (Region, Market, Unit and so on). Choose each type's parent, rename it, or add your own. Look up an existing network_site_type by `id` or by `name`.",
+        MarkdownDescription: "Alert on a set of network devices at once: every device matching the policy's sites, roles and labels gets a Network Device monitor provisioned from the policy's monitor template, and kept as devices come and go. Look up an existing network_alert_policy by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -82,24 +85,36 @@ func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object.",
-                Computed: true,
-            },
             "description": schema.StringAttribute{
                 MarkdownDescription: "Friendly description that will help you remember.",
                 Computed: true,
             },
-            "parent_network_site_type_id": schema.StringAttribute{
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this policy is active. Disable it to stop provisioning monitors for matching devices without deleting the policy..",
+                Computed: true,
+            },
+            "monitor_template_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "order": schema.NumberAttribute{
-                MarkdownDescription: "Display order among site types that have the same parent..",
+            "scope": schema.StringAttribute{
+                MarkdownDescription: "Which devices this policy covers: site ids, device role ids and label ids. A device must match every kind that is listed (AND) and any id within a kind (OR); a kind left empty matches every device. Empty altogether means every device in the project..",
                 Computed: true,
             },
-            "is_unit_level": schema.BoolAttribute{
-                MarkdownDescription: "Sites of this type are the leaf level - the network map opens their device topology, and the health rollup counts them as units..",
+            "last_sync_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_sync_error": schema.StringAttribute{
+                MarkdownDescription: "Why the engine's last reconciliation of this policy failed, if it did. Cleared by the next successful pass. Managed by the engine..",
+                Computed: true,
+            },
+            "covered_device_count": schema.NumberAttribute{
+                MarkdownDescription: "How many devices matched this policy's scope at the engine's last reconciliation. Managed by the engine..",
+                Computed: true,
+            },
+            "template_synced_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -114,7 +129,7 @@ func (d *NetworkSiteTypeDataSource) Schema(ctx context.Context, req datasource.S
     }
 }
 
-func (d *NetworkSiteTypeDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *NetworkAlertPolicyDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -134,8 +149,8 @@ func (d *NetworkSiteTypeDataSource) Configure(ctx context.Context, req datasourc
     d.client = client
 }
 
-func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data NetworkSiteTypeDataSourceModel
+func (d *NetworkAlertPolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data NetworkAlertPolicyDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -149,7 +164,7 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_site_type.",
+            "Exactly one of `id` or `name` must be set to look up a network_alert_policy.",
         )
         return
     }
@@ -161,11 +176,14 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "slug": true,
         "description": true,
-        "parentNetworkSiteTypeId": true,
-        "order": true,
-        "isUnitLevel": true,
+        "isEnabled": true,
+        "monitorTemplateId": true,
+        "scope": true,
+        "lastSyncAt": true,
+        "lastSyncError": true,
+        "coveredDeviceCount": true,
+        "templateSyncedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -173,19 +191,19 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/network-site-type/" + data.Id.ValueString() + "/get-item"
+        readPath := "/network-alert-policy/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_site_type, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_alert_policy, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_site_type found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_alert_policy found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_site_type: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_alert_policy: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -202,28 +220,28 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-site-type/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-alert-policy/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_site_type, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_alert_policy, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_site_type: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_alert_policy: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_site_type found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_alert_policy found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_site_type matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_alert_policy matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_site_type.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_alert_policy.")
             return
         }
         item = first
@@ -343,23 +361,6 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["slug"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Slug = types.StringValue(string(jsonBytes))
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := item["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
-    }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Description = types.StringValue(val)
@@ -377,38 +378,106 @@ func (d *NetworkSiteTypeDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := item["parentNetworkSiteTypeId"].(map[string]interface{}); ok {
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    } else {
+        data.IsEnabled = types.BoolNull()
+    }
+    if obj, ok := item["monitorTemplateId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.ParentNetworkSiteTypeId = types.StringValue(val)
+            data.MonitorTemplateId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.ParentNetworkSiteTypeId = types.StringValue(fmt.Sprintf("%v", val))
+            data.MonitorTemplateId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ParentNetworkSiteTypeId = types.StringValue(string(jsonBytes))
+            data.MonitorTemplateId = types.StringValue(string(jsonBytes))
         } else {
-            data.ParentNetworkSiteTypeId = types.StringNull()
+            data.MonitorTemplateId = types.StringNull()
         }
-    } else if val, ok := item["parentNetworkSiteTypeId"].(string); ok {
-        data.ParentNetworkSiteTypeId = types.StringValue(val)
+    } else if val, ok := item["monitorTemplateId"].(string); ok {
+        data.MonitorTemplateId = types.StringValue(val)
     } else {
-        data.ParentNetworkSiteTypeId = types.StringNull()
+        data.MonitorTemplateId = types.StringNull()
     }
-    if val, ok := item["order"].(float64); ok {
-        data.Order = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["order"].(map[string]interface{}); ok {
+    if obj, ok := item["scope"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Scope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Scope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Scope = types.StringValue(string(jsonBytes))
+        } else {
+            data.Scope = types.StringNull()
+        }
+    } else if val, ok := item["scope"].(string); ok {
+        data.Scope = types.StringValue(val)
+    } else {
+        data.Scope = types.StringNull()
+    }
+    if obj, ok := item["lastSyncAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSyncAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSyncAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSyncAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSyncAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncAt = types.StringNull()
+        }
+    } else if val, ok := item["lastSyncAt"].(string); ok {
+        data.LastSyncAt = types.StringValue(val)
+    } else {
+        data.LastSyncAt = types.StringNull()
+    }
+    if obj, ok := item["lastSyncError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSyncError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSyncError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSyncError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSyncError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSyncError = types.StringNull()
+        }
+    } else if val, ok := item["lastSyncError"].(string); ok {
+        data.LastSyncError = types.StringValue(val)
+    } else {
+        data.LastSyncError = types.StringNull()
+    }
+    if val, ok := item["coveredDeviceCount"].(float64); ok {
+        data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["coveredDeviceCount"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(float64); ok {
-            data.Order = types.NumberValue(big.NewFloat(val))
+            data.CoveredDeviceCount = types.NumberValue(big.NewFloat(val))
         } else {
-            data.Order = types.NumberNull()
+            data.CoveredDeviceCount = types.NumberNull()
         }
     } else {
-        data.Order = types.NumberNull()
+        data.CoveredDeviceCount = types.NumberNull()
     }
-    if val, ok := item["isUnitLevel"].(bool); ok {
-        data.IsUnitLevel = types.BoolValue(val)
+    if obj, ok := item["templateSyncedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TemplateSyncedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TemplateSyncedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TemplateSyncedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TemplateSyncedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.TemplateSyncedAt = types.StringNull()
+        }
+    } else if val, ok := item["templateSyncedAt"].(string); ok {
+        data.TemplateSyncedAt = types.StringValue(val)
     } else {
-        data.IsUnitLevel = types.BoolNull()
+        data.TemplateSyncedAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

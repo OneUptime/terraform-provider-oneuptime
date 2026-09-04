@@ -30,6 +30,8 @@ resource "oneuptime_network_site" "example" {
 - `description` (String) Friendly description for this network site..
 - `site_type` (String) Deprecated legacy site type string. Use the Network Site Type relation instead; this column exists only for the backfill migration and will be removed...
 - `network_site_type_id` (String) A unique identifier for an object, represented as a UUID..
+- `probe_id` (String) A unique identifier for an object, represented as a UUID..
+- `snmp_credential_profile_id` (String) A unique identifier for an object, represented as a UUID..
 - `parent_site_id` (String) A unique identifier for an object, represented as a UUID..
 - `address` (String) Street address of this site, shown on map views..
 - `latitude` (Number) Latitude of this site, for US and world map views..

@@ -38,6 +38,8 @@ type NetworkSiteDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     SiteType types.String `tfsdk:"site_type"`
     NetworkSiteTypeId types.String `tfsdk:"network_site_type_id"`
+    ProbeId types.String `tfsdk:"probe_id"`
+    SnmpCredentialProfileId types.String `tfsdk:"snmp_credential_profile_id"`
     ParentSiteId types.String `tfsdk:"parent_site_id"`
     MaterializedPath types.String `tfsdk:"materialized_path"`
     Depth types.Number `tfsdk:"depth"`
@@ -107,6 +109,14 @@ func (d *NetworkSiteDataSource) Schema(ctx context.Context, req datasource.Schem
                 Computed: true,
             },
             "network_site_type_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "probe_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "snmp_credential_profile_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -225,6 +235,8 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
         "description": true,
         "siteType": true,
         "networkSiteTypeId": true,
+        "probeId": true,
+        "snmpCredentialProfileId": true,
         "parentSiteId": true,
         "materializedPath": true,
         "depth": true,
@@ -482,6 +494,40 @@ func (d *NetworkSiteDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.NetworkSiteTypeId = types.StringValue(val)
     } else {
         data.NetworkSiteTypeId = types.StringNull()
+    }
+    if obj, ok := item["probeId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProbeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProbeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProbeId = types.StringNull()
+        }
+    } else if val, ok := item["probeId"].(string); ok {
+        data.ProbeId = types.StringValue(val)
+    } else {
+        data.ProbeId = types.StringNull()
+    }
+    if obj, ok := item["snmpCredentialProfileId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpCredentialProfileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpCredentialProfileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpCredentialProfileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpCredentialProfileId = types.StringNull()
+        }
+    } else if val, ok := item["snmpCredentialProfileId"].(string); ok {
+        data.SnmpCredentialProfileId = types.StringValue(val)
+    } else {
+        data.SnmpCredentialProfileId = types.StringNull()
     }
     if obj, ok := item["parentSiteId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
