@@ -37,6 +37,8 @@ type TeamMemberCustomFieldDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     CustomFieldType types.String `tfsdk:"custom_field_type"`
     DropdownOptions types.String `tfsdk:"dropdown_options"`
+    MapFromResourceType types.String `tfsdk:"map_from_resource_type"`
+    MapFromCustomFieldName types.String `tfsdk:"map_from_custom_field_name"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -90,6 +92,14 @@ func (d *TeamMemberCustomFieldDataSource) Schema(ctx context.Context, req dataso
             },
             "dropdown_options": schema.StringAttribute{
                 MarkdownDescription: "Options and optional colors for dropdown fields. Plain one-per-line values remain supported..",
+                Computed: true,
+            },
+            "map_from_resource_type": schema.StringAttribute{
+                MarkdownDescription: "Related resource this field copies its value from. Empty means values are entered by hand..",
+                Computed: true,
+            },
+            "map_from_custom_field_name": schema.StringAttribute{
+                MarkdownDescription: "Name of the custom field on the related resource this field copies its value from..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -154,6 +164,8 @@ func (d *TeamMemberCustomFieldDataSource) Read(ctx context.Context, req datasour
         "description": true,
         "customFieldType": true,
         "dropdownOptions": true,
+        "mapFromResourceType": true,
+        "mapFromCustomFieldName": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -381,6 +393,40 @@ func (d *TeamMemberCustomFieldDataSource) Read(ctx context.Context, req datasour
         data.DropdownOptions = types.StringValue(val)
     } else {
         data.DropdownOptions = types.StringNull()
+    }
+    if obj, ok := item["mapFromResourceType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MapFromResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromResourceType = types.StringNull()
+        }
+    } else if val, ok := item["mapFromResourceType"].(string); ok {
+        data.MapFromResourceType = types.StringValue(val)
+    } else {
+        data.MapFromResourceType = types.StringNull()
+    }
+    if obj, ok := item["mapFromCustomFieldName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromCustomFieldName = types.StringNull()
+        }
+    } else if val, ok := item["mapFromCustomFieldName"].(string); ok {
+        data.MapFromCustomFieldName = types.StringValue(val)
+    } else {
+        data.MapFromCustomFieldName = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

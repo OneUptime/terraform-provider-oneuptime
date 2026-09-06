@@ -14,8 +14,13 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -38,11 +43,18 @@ type TelemetryIngestionKeyResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    KeyType types.String `tfsdk:"key_type"`
+    AllowedOrigins JSONSubsetValue `tfsdk:"allowed_origins"`
+    PinnedServiceName types.String `tfsdk:"pinned_service_name"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    ExpiresAt RFC3339Value `tfsdk:"expires_at"`
+    RequestsPerMinuteLimit types.Number `tfsdk:"requests_per_minute_limit"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     SecretKey types.String `tfsdk:"secret_key"`
+    LastUsedAt RFC3339Value `tfsdk:"last_used_at"`
 }
 
 func (r *TelemetryIngestionKeyResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -89,6 +101,62 @@ func (r *TelemetryIngestionKeyResource) Schema(ctx context.Context, req resource
                     stringplanmodifier.RequiresReplace(),
                 },
             },
+            "key_type": schema.StringAttribute{
+                MarkdownDescription: "Server keys are for backend services and OpenTelemetry collectors: full ingest, no origin checks. Browser keys are meant to be published in a web page, so they are write-only, restricted to trace / log / metric / session replay ingest, and are only accepted from the origins you list below. This cannot be changed after the key is created - create a new key instead..",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Server"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "allowed_origins": schema.StringAttribute{
+                MarkdownDescription: "Browser origins (scheme + host + port, for example https://app.example.com, or https://*.example.com for one level of subdomain) that may use this key. Required and strictly enforced on a Browser key: a request from an unlisted origin, or with no Origin header at all, is refused. Ignored entirely on a Server key..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "pinned_service_name": schema.StringAttribute{
+                MarkdownDescription: "When set, every OpenTelemetry resource ingested with this key has its service.name REPLACED with this value. This is what stops data written with a scraped key from masquerading as another service: forged spans land in one service you can see and mute, instead of poisoning your backend services' dashboards and alerts..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Turn this off to immediately stop accepting telemetry written with this key, without deleting it. Turn it back on to resume..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "expires_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "requests_per_minute_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum ingest requests per minute accepted with this key. Leave empty to use the shipped default for a Browser key, and to leave a Server key unlimited. The limit is per key, across every client using it, so it has to clear your whole fleet - see DEFAULT_BROWSER_KEY_REQUESTS_PER_MINUTE for the default and the reasoning behind its size..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
@@ -110,6 +178,11 @@ func (r *TelemetryIngestionKeyResource) Schema(ctx context.Context, req resource
             },
             "secret_key": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "last_used_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
         },
@@ -166,6 +239,24 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
+    if !data.KeyType.IsNull() && !data.KeyType.IsUnknown() {
+        requestDataMap["keyType"] = data.KeyType.ValueString()
+    }
+    if parsedAllowedOrigins := r.parseJSONField(data.AllowedOrigins); parsedAllowedOrigins != nil {
+        requestDataMap["allowedOrigins"] = parsedAllowedOrigins
+    }
+    if !data.PinnedServiceName.IsNull() && !data.PinnedServiceName.IsUnknown() {
+        requestDataMap["pinnedServiceName"] = data.PinnedServiceName.ValueString()
+    }
+    if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
+    }
+    if !data.ExpiresAt.IsNull() && !data.ExpiresAt.IsUnknown() {
+        requestDataMap["expiresAt"] = data.ExpiresAt.ValueString()
+    }
+    if !data.RequestsPerMinuteLimit.IsNull() && !data.RequestsPerMinuteLimit.IsUnknown() {
+        requestDataMap["requestsPerMinuteLimit"] = r.bigFloatToFloat64(data.RequestsPerMinuteLimit.ValueBigFloat())
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/telemetry-ingestion-key", telemetryIngestionKeyRequest)
@@ -215,11 +306,18 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
         "name": true,
         "description": true,
         "createdByUserId": true,
+        "keyType": true,
+        "allowedOrigins": true,
+        "pinnedServiceName": true,
+        "isEnabled": true,
+        "expiresAt": true,
+        "requestsPerMinuteLimit": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "secretKey": true,
+        "lastUsedAt": true,
         "_id": true,
     }
 
@@ -374,6 +472,148 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["keyType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.KeyType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.KeyType = types.StringValue(string(jsonBytes))
+            } else {
+                data.KeyType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.KeyType = types.StringValue(string(jsonBytes))
+            } else {
+                data.KeyType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
+    } else if val, ok := dataMap["keyType"].(string); ok {
+        data.KeyType = types.StringValue(val)
+    } else {
+        data.KeyType = types.StringNull()
+    }
+    if obj, ok := dataMap["allowedOrigins"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedOrigins = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AllowedOrigins = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["allowedOrigins"].(string); ok {
+        data.AllowedOrigins = NewJSONSubsetValue(val)
+    } else {
+        data.AllowedOrigins = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["pinnedServiceName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PinnedServiceName = types.StringValue(string(jsonBytes))
+            } else {
+                data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PinnedServiceName = types.StringValue(string(jsonBytes))
+            } else {
+                data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
+    } else if val, ok := dataMap["pinnedServiceName"].(string); ok {
+        data.PinnedServiceName = types.StringValue(val)
+    } else {
+        data.PinnedServiceName = types.StringNull()
+    }
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.ExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["expiresAt"].(string); ok && val != "" {
+        data.ExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.ExpiresAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["requestsPerMinuteLimit"].(float64); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int64); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["requestsPerMinuteLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.RequestsPerMinuteLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.RequestsPerMinuteLimit = types.NumberNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -461,6 +701,17 @@ func (r *TelemetryIngestionKeyResource) Create(ctx context.Context, req resource
     } else {
         data.SecretKey = types.StringNull()
     }
+    if obj, ok := dataMap["lastUsedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastUsedAt = NewRFC3339Value(val)
+        } else {
+            data.LastUsedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastUsedAt"].(string); ok && val != "" {
+        data.LastUsedAt = NewRFC3339Value(val)
+    } else {
+        data.LastUsedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -492,11 +743,18 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
         "name": true,
         "description": true,
         "createdByUserId": true,
+        "keyType": true,
+        "allowedOrigins": true,
+        "pinnedServiceName": true,
+        "isEnabled": true,
+        "expiresAt": true,
+        "requestsPerMinuteLimit": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "secretKey": true,
+        "lastUsedAt": true,
         "_id": true,
     }
 
@@ -652,6 +910,148 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["keyType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.KeyType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.KeyType = types.StringValue(string(jsonBytes))
+            } else {
+                data.KeyType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.KeyType = types.StringValue(string(jsonBytes))
+            } else {
+                data.KeyType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
+    } else if val, ok := dataMap["keyType"].(string); ok {
+        data.KeyType = types.StringValue(val)
+    } else {
+        data.KeyType = types.StringNull()
+    }
+    if obj, ok := dataMap["allowedOrigins"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedOrigins = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AllowedOrigins = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["allowedOrigins"].(string); ok {
+        data.AllowedOrigins = NewJSONSubsetValue(val)
+    } else {
+        data.AllowedOrigins = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["pinnedServiceName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PinnedServiceName = types.StringValue(string(jsonBytes))
+            } else {
+                data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PinnedServiceName = types.StringValue(string(jsonBytes))
+            } else {
+                data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
+    } else if val, ok := dataMap["pinnedServiceName"].(string); ok {
+        data.PinnedServiceName = types.StringValue(val)
+    } else {
+        data.PinnedServiceName = types.StringNull()
+    }
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.ExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["expiresAt"].(string); ok && val != "" {
+        data.ExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.ExpiresAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["requestsPerMinuteLimit"].(float64); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int64); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["requestsPerMinuteLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.RequestsPerMinuteLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.RequestsPerMinuteLimit = types.NumberNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -739,6 +1139,17 @@ func (r *TelemetryIngestionKeyResource) Read(ctx context.Context, req resource.R
     } else {
         data.SecretKey = types.StringNull()
     }
+    if obj, ok := dataMap["lastUsedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastUsedAt = NewRFC3339Value(val)
+        } else {
+            data.LastUsedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastUsedAt"].(string); ok && val != "" {
+        data.LastUsedAt = NewRFC3339Value(val)
+    } else {
+        data.LastUsedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -780,6 +1191,26 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
+    if !data.AllowedOrigins.IsUnknown() && !state.AllowedOrigins.IsUnknown() && !data.AllowedOrigins.Equal(state.AllowedOrigins) {
+        var allowedoriginsData interface{}
+        if err := json.Unmarshal([]byte(data.AllowedOrigins.ValueString()), &allowedoriginsData); err == nil {
+            requestDataMap["allowedOrigins"] = allowedoriginsData
+        } else {
+            requestDataMap["allowedOrigins"] = data.AllowedOrigins.ValueString()
+        }
+    }
+    if !data.PinnedServiceName.IsUnknown() && !state.PinnedServiceName.IsUnknown() && !data.PinnedServiceName.Equal(state.PinnedServiceName) {
+        requestDataMap["pinnedServiceName"] = data.PinnedServiceName.ValueString()
+    }
+    if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
+        requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
+    }
+    if !data.ExpiresAt.IsUnknown() && !state.ExpiresAt.IsUnknown() && !data.ExpiresAt.Equal(state.ExpiresAt) {
+        requestDataMap["expiresAt"] = data.ExpiresAt.ValueString()
+    }
+    if !data.RequestsPerMinuteLimit.IsUnknown() && !state.RequestsPerMinuteLimit.IsUnknown() && !data.RequestsPerMinuteLimit.Equal(state.RequestsPerMinuteLimit) {
+        requestDataMap["requestsPerMinuteLimit"] = r.bigFloatToFloat64(data.RequestsPerMinuteLimit.ValueBigFloat())
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -807,11 +1238,18 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         "name": true,
         "description": true,
         "createdByUserId": true,
+        "keyType": true,
+        "allowedOrigins": true,
+        "pinnedServiceName": true,
+        "isEnabled": true,
+        "expiresAt": true,
+        "requestsPerMinuteLimit": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "secretKey": true,
+        "lastUsedAt": true,
         "_id": true,
     }
 
@@ -961,6 +1399,148 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if obj, ok := dataMap["keyType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.KeyType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.KeyType = types.StringValue(string(jsonBytes))
+            } else {
+                data.KeyType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.KeyType = types.StringValue(string(jsonBytes))
+            } else {
+                data.KeyType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
+    } else if val, ok := dataMap["keyType"].(string); ok {
+        data.KeyType = types.StringValue(val)
+    } else {
+        data.KeyType = types.StringNull()
+    }
+    if obj, ok := dataMap["allowedOrigins"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedOrigins = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AllowedOrigins = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.AllowedOrigins = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AllowedOrigins = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["allowedOrigins"].(string); ok {
+        data.AllowedOrigins = NewJSONSubsetValue(val)
+    } else {
+        data.AllowedOrigins = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["pinnedServiceName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.PinnedServiceName = types.StringValue(string(jsonBytes))
+            } else {
+                data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.PinnedServiceName = types.StringValue(string(jsonBytes))
+            } else {
+                data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
+    } else if val, ok := dataMap["pinnedServiceName"].(string); ok {
+        data.PinnedServiceName = types.StringValue(val)
+    } else {
+        data.PinnedServiceName = types.StringNull()
+    }
+    if val, ok := dataMap["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.ExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["expiresAt"].(string); ok && val != "" {
+        data.ExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.ExpiresAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["requestsPerMinuteLimit"].(float64); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["requestsPerMinuteLimit"].(int64); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["requestsPerMinuteLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.RequestsPerMinuteLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.RequestsPerMinuteLimit = types.NumberNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1047,6 +1627,17 @@ func (r *TelemetryIngestionKeyResource) Update(ctx context.Context, req resource
         data.SecretKey = types.StringValue(val)
     } else {
         data.SecretKey = types.StringNull()
+    }
+    if obj, ok := dataMap["lastUsedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastUsedAt = NewRFC3339Value(val)
+        } else {
+            data.LastUsedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastUsedAt"].(string); ok && val != "" {
+        data.LastUsedAt = NewRFC3339Value(val)
+    } else {
+        data.LastUsedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

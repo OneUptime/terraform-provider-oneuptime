@@ -35,5 +35,7 @@ data "oneuptime_inventory_item_custom_field" "by_id" {
 - `description` (String) Friendly description of this custom field that will help you remember.. Computed.
 - `custom_field_type` (String) Is this field Text, Number or Boolean?.. Computed.
 - `dropdown_options` (String) Options and optional colors for dropdown fields. Plain one-per-line values remain supported... Computed.
+- `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand... Computed.
+- `map_from_custom_field_name` (String) Name of the custom field on the related resource this field copies its value from... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

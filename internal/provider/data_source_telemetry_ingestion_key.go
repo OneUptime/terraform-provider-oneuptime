@@ -37,6 +37,13 @@ type TelemetryIngestionKeyDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SecretKey types.String `tfsdk:"secret_key"`
+    KeyType types.String `tfsdk:"key_type"`
+    AllowedOrigins types.String `tfsdk:"allowed_origins"`
+    PinnedServiceName types.String `tfsdk:"pinned_service_name"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    ExpiresAt types.String `tfsdk:"expires_at"`
+    LastUsedAt types.String `tfsdk:"last_used_at"`
+    RequestsPerMinuteLimit types.Number `tfsdk:"requests_per_minute_limit"`
 }
 
 func (d *TelemetryIngestionKeyDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -88,6 +95,34 @@ func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req dataso
             },
             "secret_key": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "key_type": schema.StringAttribute{
+                MarkdownDescription: "Server keys are for backend services and OpenTelemetry collectors: full ingest, no origin checks. Browser keys are meant to be published in a web page, so they are write-only, restricted to trace / log / metric / session replay ingest, and are only accepted from the origins you list below. This cannot be changed after the key is created - create a new key instead..",
+                Computed: true,
+            },
+            "allowed_origins": schema.StringAttribute{
+                MarkdownDescription: "Browser origins (scheme + host + port, for example https://app.example.com, or https://*.example.com for one level of subdomain) that may use this key. Required and strictly enforced on a Browser key: a request from an unlisted origin, or with no Origin header at all, is refused. Ignored entirely on a Server key..",
+                Computed: true,
+            },
+            "pinned_service_name": schema.StringAttribute{
+                MarkdownDescription: "When set, every OpenTelemetry resource ingested with this key has its service.name REPLACED with this value. This is what stops data written with a scraped key from masquerading as another service: forged spans land in one service you can see and mute, instead of poisoning your backend services' dashboards and alerts..",
+                Computed: true,
+            },
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Turn this off to immediately stop accepting telemetry written with this key, without deleting it. Turn it back on to resume..",
+                Computed: true,
+            },
+            "expires_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_used_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "requests_per_minute_limit": schema.NumberAttribute{
+                MarkdownDescription: "Maximum ingest requests per minute accepted with this key. Leave empty to use the shipped default for a Browser key, and to leave a Server key unlimited. The limit is per key, across every client using it, so it has to clear your whole fleet - see DEFAULT_BROWSER_KEY_REQUESTS_PER_MINUTE for the default and the reasoning behind its size..",
                 Computed: true,
             },
         },
@@ -144,6 +179,13 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         "description": true,
         "createdByUserId": true,
         "secretKey": true,
+        "keyType": true,
+        "allowedOrigins": true,
+        "pinnedServiceName": true,
+        "isEnabled": true,
+        "expiresAt": true,
+        "lastUsedAt": true,
+        "requestsPerMinuteLimit": true,
         "_id": true,
     }
 
@@ -369,6 +411,107 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         data.SecretKey = types.StringValue(val)
     } else {
         data.SecretKey = types.StringNull()
+    }
+    if obj, ok := item["keyType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.KeyType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.KeyType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.KeyType = types.StringValue(string(jsonBytes))
+        } else {
+            data.KeyType = types.StringNull()
+        }
+    } else if val, ok := item["keyType"].(string); ok {
+        data.KeyType = types.StringValue(val)
+    } else {
+        data.KeyType = types.StringNull()
+    }
+    if obj, ok := item["allowedOrigins"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AllowedOrigins = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AllowedOrigins = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AllowedOrigins = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AllowedOrigins = types.StringValue(string(jsonBytes))
+        } else {
+            data.AllowedOrigins = types.StringNull()
+        }
+    } else if val, ok := item["allowedOrigins"].(string); ok {
+        data.AllowedOrigins = types.StringValue(val)
+    } else {
+        data.AllowedOrigins = types.StringNull()
+    }
+    if obj, ok := item["pinnedServiceName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PinnedServiceName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+        } else {
+            data.PinnedServiceName = types.StringNull()
+        }
+    } else if val, ok := item["pinnedServiceName"].(string); ok {
+        data.PinnedServiceName = types.StringValue(val)
+    } else {
+        data.PinnedServiceName = types.StringNull()
+    }
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    } else {
+        data.IsEnabled = types.BoolNull()
+    }
+    if obj, ok := item["expiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ExpiresAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExpiresAt = types.StringNull()
+        }
+    } else if val, ok := item["expiresAt"].(string); ok {
+        data.ExpiresAt = types.StringValue(val)
+    } else {
+        data.ExpiresAt = types.StringNull()
+    }
+    if obj, ok := item["lastUsedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastUsedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastUsedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastUsedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastUsedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastUsedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastUsedAt"].(string); ok {
+        data.LastUsedAt = types.StringValue(val)
+    } else {
+        data.LastUsedAt = types.StringNull()
+    }
+    if val, ok := item["requestsPerMinuteLimit"].(float64); ok {
+        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["requestsPerMinuteLimit"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.RequestsPerMinuteLimit = types.NumberNull()
+        }
+    } else {
+        data.RequestsPerMinuteLimit = types.NumberNull()
     }
 
     // Write logs using the tflog package

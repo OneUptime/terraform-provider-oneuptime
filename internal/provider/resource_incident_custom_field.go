@@ -40,6 +40,8 @@ type IncidentCustomFieldResourceModel struct {
     Description types.String `tfsdk:"description"`
     CustomFieldType JSONSubsetValue `tfsdk:"custom_field_type"`
     DropdownOptions types.String `tfsdk:"dropdown_options"`
+    MapFromResourceType types.String `tfsdk:"map_from_resource_type"`
+    MapFromCustomFieldName types.String `tfsdk:"map_from_custom_field_name"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -98,6 +100,22 @@ func (r *IncidentCustomFieldResource) Schema(ctx context.Context, req resource.S
             },
             "dropdown_options": schema.StringAttribute{
                 MarkdownDescription: "Options and optional colors for dropdown fields. Plain one-per-line values remain supported..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "map_from_resource_type": schema.StringAttribute{
+                MarkdownDescription: "Related resource this field copies its value from. Empty means values are entered by hand..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "map_from_custom_field_name": schema.StringAttribute{
+                MarkdownDescription: "Name of the custom field on the related resource this field copies its value from..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -193,6 +211,12 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
     if !data.DropdownOptions.IsNull() && !data.DropdownOptions.IsUnknown() {
         requestDataMap["dropdownOptions"] = data.DropdownOptions.ValueString()
     }
+    if !data.MapFromResourceType.IsNull() && !data.MapFromResourceType.IsUnknown() {
+        requestDataMap["mapFromResourceType"] = data.MapFromResourceType.ValueString()
+    }
+    if !data.MapFromCustomFieldName.IsNull() && !data.MapFromCustomFieldName.IsUnknown() {
+        requestDataMap["mapFromCustomFieldName"] = data.MapFromCustomFieldName.ValueString()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -246,6 +270,8 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
         "description": true,
         "customFieldType": true,
         "dropdownOptions": true,
+        "mapFromResourceType": true,
+        "mapFromCustomFieldName": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -443,6 +469,80 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
     } else {
         data.DropdownOptions = types.StringNull()
     }
+    if obj, ok := dataMap["mapFromResourceType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MapFromResourceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MapFromResourceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MapFromResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromResourceType = types.StringNull()
+        }
+    } else if val, ok := dataMap["mapFromResourceType"].(string); ok {
+        data.MapFromResourceType = types.StringValue(val)
+    } else {
+        data.MapFromResourceType = types.StringNull()
+    }
+    if obj, ok := dataMap["mapFromCustomFieldName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromCustomFieldName = types.StringNull()
+        }
+    } else if val, ok := dataMap["mapFromCustomFieldName"].(string); ok {
+        data.MapFromCustomFieldName = types.StringValue(val)
+    } else {
+        data.MapFromCustomFieldName = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -599,6 +699,8 @@ func (r *IncidentCustomFieldResource) Read(ctx context.Context, req resource.Rea
         "description": true,
         "customFieldType": true,
         "dropdownOptions": true,
+        "mapFromResourceType": true,
+        "mapFromCustomFieldName": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -797,6 +899,80 @@ func (r *IncidentCustomFieldResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.DropdownOptions = types.StringNull()
     }
+    if obj, ok := dataMap["mapFromResourceType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MapFromResourceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MapFromResourceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MapFromResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromResourceType = types.StringNull()
+        }
+    } else if val, ok := dataMap["mapFromResourceType"].(string); ok {
+        data.MapFromResourceType = types.StringValue(val)
+    } else {
+        data.MapFromResourceType = types.StringNull()
+    }
+    if obj, ok := dataMap["mapFromCustomFieldName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromCustomFieldName = types.StringNull()
+        }
+    } else if val, ok := dataMap["mapFromCustomFieldName"].(string); ok {
+        data.MapFromCustomFieldName = types.StringValue(val)
+    } else {
+        data.MapFromCustomFieldName = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -965,6 +1141,12 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
     if !data.DropdownOptions.IsUnknown() && !state.DropdownOptions.IsUnknown() && !data.DropdownOptions.Equal(state.DropdownOptions) {
         requestDataMap["dropdownOptions"] = data.DropdownOptions.ValueString()
     }
+    if !data.MapFromResourceType.IsUnknown() && !state.MapFromResourceType.IsUnknown() && !data.MapFromResourceType.Equal(state.MapFromResourceType) {
+        requestDataMap["mapFromResourceType"] = data.MapFromResourceType.ValueString()
+    }
+    if !data.MapFromCustomFieldName.IsUnknown() && !state.MapFromCustomFieldName.IsUnknown() && !data.MapFromCustomFieldName.Equal(state.MapFromCustomFieldName) {
+        requestDataMap["mapFromCustomFieldName"] = data.MapFromCustomFieldName.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -993,6 +1175,8 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
         "description": true,
         "customFieldType": true,
         "dropdownOptions": true,
+        "mapFromResourceType": true,
+        "mapFromCustomFieldName": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1184,6 +1368,80 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
         data.DropdownOptions = types.StringValue(val)
     } else {
         data.DropdownOptions = types.StringNull()
+    }
+    if obj, ok := dataMap["mapFromResourceType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MapFromResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MapFromResourceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MapFromResourceType = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromResourceType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MapFromResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromResourceType = types.StringNull()
+        }
+    } else if val, ok := dataMap["mapFromResourceType"].(string); ok {
+        data.MapFromResourceType = types.StringValue(val)
+    } else {
+        data.MapFromResourceType = types.StringNull()
+    }
+    if obj, ok := dataMap["mapFromCustomFieldName"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MapFromCustomFieldName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+            } else {
+                data.MapFromCustomFieldName = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MapFromCustomFieldName = types.StringValue(string(jsonBytes))
+        } else {
+            data.MapFromCustomFieldName = types.StringNull()
+        }
+    } else if val, ok := dataMap["mapFromCustomFieldName"].(string); ok {
+        data.MapFromCustomFieldName = types.StringValue(val)
+    } else {
+        data.MapFromCustomFieldName = types.StringNull()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

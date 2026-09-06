@@ -273,19 +273,19 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_capture_trigger": schema.StringAttribute{
-                MarkdownDescription: "OnErrorOrFrustration (default) keeps a rolling in-memory buffer and uploads only when something actually went wrong. Always uploads every sampled session from its first event, which costs materially more and stores materially more end-user data..",
+                MarkdownDescription: "Always (default) uploads every sampled session from its first event, so an ordinary session is just as watchable as a broken one. OnErrorOrFrustration keeps a rolling in-memory buffer and uploads only when something actually went wrong, which costs roughly 15x less and stores far less end-user data..",
                 Optional: true,
                 Computed: true,
-                Default: stringdefault.StaticString("OnErrorOrFrustration"),
+                Default: stringdefault.StaticString("Always"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "session_replay_sample_percentage": schema.NumberAttribute{
-                MarkdownDescription: "Percentage of sessions (0 to 100) recorded regardless of whether anything went wrong. 0 by default, so with the default trigger only failing sessions are recorded..",
+                MarkdownDescription: "Percentage of sessions (0 to 100) eligible for recording. 100 by default, so with the default Always trigger every session is recorded. Lower it to cut storage and end-user data at rest; the decision is made once per session from a hash of the session id, so a session is never half-recorded..",
                 Optional: true,
                 Computed: true,
-                Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
+                Default: numberdefault.StaticBigFloat(big.NewFloat(100)),
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
                 },

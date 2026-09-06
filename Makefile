@@ -4,7 +4,7 @@ HOSTNAME=registry.terraform.io
 NAMESPACE=oneuptime
 NAME=oneuptime
 BINARY=terraform-provider-${NAME}
-VERSION=12.0.33
+VERSION=12.0.34
 OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: install
