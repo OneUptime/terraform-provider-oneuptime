@@ -44,6 +44,7 @@ data "oneuptime_inventory_item" "by_id" {
 - `resource_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `first_seen_at` (String) A date time object.. Computed.
 - `last_seen_at` (String) A date time object.. Computed.
+- `inventory_status` (String) Current heartbeat status: live, recent, stale, never seen, or not tracked... Computed.
 - `is_archived` (Bool) Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry... Computed.
 - `archived_at` (String) A date time object.. Computed.
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

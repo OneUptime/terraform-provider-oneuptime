@@ -58,6 +58,7 @@ type InventoryItemResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    InventoryStatus types.String `tfsdk:"inventory_status"`
     ArchivedAt RFC3339Value `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
 }
@@ -249,6 +250,10 @@ func (r *InventoryItemResource) Schema(ctx context.Context, req resource.SchemaR
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
+            "inventory_status": schema.StringAttribute{
+                MarkdownDescription: "Current heartbeat status: live, recent, stale, never seen, or not tracked..",
+                Computed: true,
+            },
             "archived_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
@@ -417,6 +422,7 @@ func (r *InventoryItemResource) Create(ctx context.Context, req resource.CreateR
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "inventoryStatus": true,
         "archivedAt": true,
         "archivedByUserId": true,
         "_id": true,
@@ -1018,6 +1024,43 @@ func (r *InventoryItemResource) Create(ctx context.Context, req resource.CreateR
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["inventoryStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.InventoryStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.InventoryStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.InventoryStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.InventoryStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["inventoryStatus"].(string); ok {
+        data.InventoryStatus = types.StringValue(val)
+    } else {
+        data.InventoryStatus = types.StringNull()
+    }
     if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.ArchivedAt = NewRFC3339Value(val)
@@ -1114,6 +1157,7 @@ func (r *InventoryItemResource) Read(ctx context.Context, req resource.ReadReque
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "inventoryStatus": true,
         "archivedAt": true,
         "archivedByUserId": true,
         "_id": true,
@@ -1716,6 +1760,43 @@ func (r *InventoryItemResource) Read(ctx context.Context, req resource.ReadReque
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["inventoryStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.InventoryStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.InventoryStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.InventoryStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.InventoryStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["inventoryStatus"].(string); ok {
+        data.InventoryStatus = types.StringValue(val)
+    } else {
+        data.InventoryStatus = types.StringNull()
+    }
     if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.ArchivedAt = NewRFC3339Value(val)
@@ -1899,6 +1980,7 @@ func (r *InventoryItemResource) Update(ctx context.Context, req resource.UpdateR
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "inventoryStatus": true,
         "archivedAt": true,
         "archivedByUserId": true,
         "_id": true,
@@ -2494,6 +2576,43 @@ func (r *InventoryItemResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["inventoryStatus"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.InventoryStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.InventoryStatus = types.StringValue(string(jsonBytes))
+            } else {
+                data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.InventoryStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.InventoryStatus = types.StringNull()
+        }
+    } else if val, ok := dataMap["inventoryStatus"].(string); ok {
+        data.InventoryStatus = types.StringValue(val)
+    } else {
+        data.InventoryStatus = types.StringNull()
     }
     if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

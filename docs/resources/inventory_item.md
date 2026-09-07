@@ -52,6 +52,7 @@ resource "oneuptime_inventory_item" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `inventory_status` (String) Current heartbeat status: live, recent, stale, never seen, or not tracked...
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 

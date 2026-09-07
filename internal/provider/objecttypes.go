@@ -43,6 +43,7 @@ var validOneUptimeObjectTypes = map[string]bool{
         "IsNull": true,
         "Includes": true,
         "IncludesAll": true,
+        "IncludesAnyOfGroups": true,
         "IncludesNone": true,
         "StartsWith": true,
         "EndsWith": true,

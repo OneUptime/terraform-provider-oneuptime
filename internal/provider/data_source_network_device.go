@@ -39,6 +39,8 @@ type NetworkDeviceDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     Hostname types.String `tfsdk:"hostname"`
+    MacAddress types.String `tfsdk:"mac_address"`
+    IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
     ProbeId types.String `tfsdk:"probe_id"`
     SiteId types.String `tfsdk:"site_id"`
     OidTemplateId types.String `tfsdk:"oid_template_id"`
@@ -144,6 +146,14 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "hostname": schema.StringAttribute{
                 MarkdownDescription: "IP address or hostname the probe polls; also matches SNMP trap sources.",
+                Computed: true,
+            },
+            "mac_address": schema.StringAttribute{
+                MarkdownDescription: "MAC address of this device. Lets the topology map find the switch port it is plugged into from the forwarding tables of walked switches, for a device that speaks neither LLDP nor CDP (one monitored by ping alone). Optional: a device whose hostname is an IP address that a walked router's ARP table resolves is matched by address, and the MAC learned that way is stored here..",
+                Computed: true,
+            },
+            "is_mac_address_learned": schema.BoolAttribute{
+                MarkdownDescription: "True when the MAC Address was filled in from a walked device's ARP table rather than typed. A learned MAC is corrected when a later walk binds the device's address to a different MAC; a typed one is never touched..",
                 Computed: true,
             },
             "probe_id": schema.StringAttribute{
@@ -417,6 +427,8 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "slug": true,
         "description": true,
         "hostname": true,
+        "macAddress": true,
+        "isMacAddressLearned": true,
         "probeId": true,
         "siteId": true,
         "oidTemplateId": true,
@@ -696,6 +708,28 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Hostname = types.StringValue(val)
     } else {
         data.Hostname = types.StringNull()
+    }
+    if obj, ok := item["macAddress"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MacAddress = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MacAddress = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MacAddress = types.StringValue(string(jsonBytes))
+        } else {
+            data.MacAddress = types.StringNull()
+        }
+    } else if val, ok := item["macAddress"].(string); ok {
+        data.MacAddress = types.StringValue(val)
+    } else {
+        data.MacAddress = types.StringNull()
+    }
+    if val, ok := item["isMacAddressLearned"].(bool); ok {
+        data.IsMacAddressLearned = types.BoolValue(val)
+    } else {
+        data.IsMacAddressLearned = types.BoolNull()
     }
     if obj, ok := item["probeId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

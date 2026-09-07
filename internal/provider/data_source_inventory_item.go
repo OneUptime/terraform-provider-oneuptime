@@ -46,6 +46,7 @@ type InventoryItemDataSourceModel struct {
     ResourceId types.String `tfsdk:"resource_id"`
     FirstSeenAt types.String `tfsdk:"first_seen_at"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
+    InventoryStatus types.String `tfsdk:"inventory_status"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
@@ -141,6 +142,10 @@ func (d *InventoryItemDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
+            "inventory_status": schema.StringAttribute{
+                MarkdownDescription: "Current heartbeat status: live, recent, stale, never seen, or not tracked..",
+                Computed: true,
+            },
             "is_archived": schema.BoolAttribute{
                 MarkdownDescription: "Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry..",
                 Computed: true,
@@ -228,6 +233,7 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         "resourceId": true,
         "firstSeenAt": true,
         "lastSeenAt": true,
+        "inventoryStatus": true,
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
@@ -612,6 +618,23 @@ func (d *InventoryItemDataSource) Read(ctx context.Context, req datasource.ReadR
         data.LastSeenAt = types.StringValue(val)
     } else {
         data.LastSeenAt = types.StringNull()
+    }
+    if obj, ok := item["inventoryStatus"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.InventoryStatus = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.InventoryStatus = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.InventoryStatus = types.StringValue(string(jsonBytes))
+        } else {
+            data.InventoryStatus = types.StringNull()
+        }
+    } else if val, ok := item["inventoryStatus"].(string); ok {
+        data.InventoryStatus = types.StringValue(val)
+    } else {
+        data.InventoryStatus = types.StringNull()
     }
     if val, ok := item["isArchived"].(bool); ok {
         data.IsArchived = types.BoolValue(val)

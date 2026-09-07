@@ -30,6 +30,8 @@ resource "oneuptime_network_device" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description for this network device..
+- `mac_address` (String) MAC address of this device. Lets the topology map find the switch port it is plugged into from the forwarding tables of walked switches, for a device that speaks neither LLDP nor CDP (one monitored by ping alone). Optional: a device whose hostname is an IP address that a walked router's ARP table resolves is matched by address, and the MAC learned that way is stored here...
+- `is_mac_address_learned` (Bool) True when the MAC Address was filled in from a walked device's ARP table rather than typed. A learned MAC is corrected when a later walk binds the device's address to a different MAC; a typed one is never touched...
 - `probe_id` (String) A unique identifier for an object, represented as a UUID..
 - `site_id` (String) A unique identifier for an object, represented as a UUID..
 - `oid_template_id` (String) A unique identifier for an object, represented as a UUID..
