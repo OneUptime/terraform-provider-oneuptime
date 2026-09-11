@@ -45,6 +45,7 @@ data "oneuptime_alert" "by_id" {
 - `docker_hosts` (Set) List of Docker hosts affected by this alert... Computed.
 - `podman_hosts` (Set) List of Podman hosts affected by this alert... Computed.
 - `proxmox_clusters` (Set) List of Proxmox clusters affected by this alert... Computed.
+- `vmware_v_centers` (Set) List of vCenters affected by this alert... Computed.
 - `iot_fleets` (Set) List of IoT fleets affected by this alert... Computed.
 - `docker_swarm_clusters` (Set) List of Docker Swarm clusters affected by this alert... Computed.
 - `ceph_clusters` (Set) List of Ceph clusters affected by this alert... Computed.

@@ -36,8 +36,12 @@ data "oneuptime_google_sec_ops_connection" "by_id" {
 - `instance_resource_name` (String) The Chronicle instance resource name: projects/{project}/locations/{location}/instances/{instance}... Computed.
 - `is_enabled` (Bool) Whether this connection is polled... Computed.
 - `poll_interval_in_minutes` (Number) How often detection alerts are polled, in minutes... Computed.
+- `include_non_alerting_detections` (Bool) Include detections that have not been marked as alerts in Google SecOps... Computed.
+- `last_successful_poll_at` (String) A date time object.. Computed.
+- `last_event_ingested_at` (String) A date time object.. Computed.
+- `last_poll_result` (String) The latest scheduled or on-demand poll result with counts and warnings... Computed.
 - `last_polled_at` (String) A date time object.. Computed.
-- `cursor` (String) Poll cursor: the newest detection timestamp already ingested, as an ISO string... Computed.
+- `cursor` (String) Poll cursor: the end of the last completely processed window, or the boundary retained for retry, as an ISO string... Computed.
 - `last_error` (String) The most recent poll error, if any. Cleared on the next successful poll... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

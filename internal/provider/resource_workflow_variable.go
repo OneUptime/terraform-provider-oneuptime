@@ -105,7 +105,6 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
-                    boolplanmodifier.RequiresReplace(),
                 },
             },
             "created_by_user_id": schema.StringAttribute{
@@ -903,6 +902,9 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
     }
     if !data.Content.IsUnknown() && !state.Content.IsUnknown() && !data.Content.Equal(state.Content) {
         requestDataMap["content"] = data.Content.ValueString()
+    }
+    if !data.IsSecret.IsUnknown() && !state.IsSecret.IsUnknown() && !data.IsSecret.Equal(state.IsSecret) {
+        requestDataMap["isSecret"] = data.IsSecret.ValueBool()
     }
 
     // Only call the API when there are changed fields to send. An empty

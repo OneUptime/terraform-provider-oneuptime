@@ -34,7 +34,7 @@ data "oneuptime_cloud_resource" "by_id" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `slug` (String) Friendly globally unique name for your object.. Computed.
 - `description` (String) Friendly description that will help you remember.. Computed.
-- `resource_identifier` (String) Stable identifier for this managed-compute workload (service.name, falling back to host.name). Identity key for this resource... Computed.
+- `resource_identifier` (String) Environment key: the cloud.platform, cloud.account.id and cloud.region OpenTelemetry resource attributes joined with '|' (e.g. aws_ecs|123456789012|us-east-1; missing parts stay as empty segments). Built by buildCloudEnvironmentKey in Common/Types/Cloud/CloudPlatform. An environment created by hand must carry the same key for ingest to find it instead of creating a duplicate... Computed.
 - `cloud_platform` (String) Last-seen cloud.platform OpenTelemetry resource attribute, e.g. aws_ecs, gcp_cloud_run, azure_container_apps... Computed.
 - `cloud_provider` (String) Last-seen cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure... Computed.
 - `cloud_region` (String) Last-seen cloud.region OpenTelemetry resource attribute, e.g. us-east-1... Computed.

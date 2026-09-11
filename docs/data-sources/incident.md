@@ -46,6 +46,7 @@ data "oneuptime_incident" "by_id" {
 - `docker_hosts` (Set) List of Docker hosts affected by this incident... Computed.
 - `podman_hosts` (Set) List of Podman hosts affected by this incident... Computed.
 - `proxmox_clusters` (Set) List of Proxmox clusters affected by this incident... Computed.
+- `vmware_v_centers` (Set) List of vCenters affected by this incident... Computed.
 - `iot_fleets` (Set) List of IoT fleets affected by this incident... Computed.
 - `docker_swarm_clusters` (Set) List of Docker Swarm clusters affected by this incident... Computed.
 - `ceph_clusters` (Set) List of Ceph clusters affected by this incident... Computed.

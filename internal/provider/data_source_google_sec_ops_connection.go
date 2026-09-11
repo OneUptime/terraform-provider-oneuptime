@@ -38,6 +38,10 @@ type GoogleSecOpsConnectionDataSourceModel struct {
     InstanceResourceName types.String `tfsdk:"instance_resource_name"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     PollIntervalInMinutes types.Number `tfsdk:"poll_interval_in_minutes"`
+    IncludeNonAlertingDetections types.Bool `tfsdk:"include_non_alerting_detections"`
+    LastSuccessfulPollAt types.String `tfsdk:"last_successful_poll_at"`
+    LastEventIngestedAt types.String `tfsdk:"last_event_ingested_at"`
+    LastPollResult types.String `tfsdk:"last_poll_result"`
     LastPolledAt types.String `tfsdk:"last_polled_at"`
     Cursor types.String `tfsdk:"cursor"`
     LastError types.String `tfsdk:"last_error"`
@@ -100,12 +104,28 @@ func (d *GoogleSecOpsConnectionDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "How often detection alerts are polled, in minutes..",
                 Computed: true,
             },
+            "include_non_alerting_detections": schema.BoolAttribute{
+                MarkdownDescription: "Include detections that have not been marked as alerts in Google SecOps..",
+                Computed: true,
+            },
+            "last_successful_poll_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_event_ingested_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_poll_result": schema.StringAttribute{
+                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings..",
+                Computed: true,
+            },
             "last_polled_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the newest detection timestamp already ingested, as an ISO string..",
+                MarkdownDescription: "Poll cursor: the end of the last completely processed window, or the boundary retained for retry, as an ISO string..",
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
@@ -175,6 +195,10 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
         "instanceResourceName": true,
         "isEnabled": true,
         "pollIntervalInMinutes": true,
+        "includeNonAlertingDetections": true,
+        "lastSuccessfulPollAt": true,
+        "lastEventIngestedAt": true,
+        "lastPollResult": true,
         "lastPolledAt": true,
         "cursor": true,
         "lastError": true,
@@ -404,6 +428,62 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
         }
     } else {
         data.PollIntervalInMinutes = types.NumberNull()
+    }
+    if val, ok := item["includeNonAlertingDetections"].(bool); ok {
+        data.IncludeNonAlertingDetections = types.BoolValue(val)
+    } else {
+        data.IncludeNonAlertingDetections = types.BoolNull()
+    }
+    if obj, ok := item["lastSuccessfulPollAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSuccessfulPollAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSuccessfulPollAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSuccessfulPollAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSuccessfulPollAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSuccessfulPollAt = types.StringNull()
+        }
+    } else if val, ok := item["lastSuccessfulPollAt"].(string); ok {
+        data.LastSuccessfulPollAt = types.StringValue(val)
+    } else {
+        data.LastSuccessfulPollAt = types.StringNull()
+    }
+    if obj, ok := item["lastEventIngestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastEventIngestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastEventIngestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastEventIngestedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastEventIngestedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastEventIngestedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastEventIngestedAt"].(string); ok {
+        data.LastEventIngestedAt = types.StringValue(val)
+    } else {
+        data.LastEventIngestedAt = types.StringNull()
+    }
+    if obj, ok := item["lastPollResult"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPollResult = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastPollResult = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastPollResult = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastPollResult = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastPollResult = types.StringNull()
+        }
+    } else if val, ok := item["lastPollResult"].(string); ok {
+        data.LastPollResult = types.StringValue(val)
+    } else {
+        data.LastPollResult = types.StringNull()
     }
     if obj, ok := item["lastPolledAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

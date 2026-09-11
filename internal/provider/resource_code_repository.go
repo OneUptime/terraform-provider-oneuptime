@@ -18,6 +18,7 @@ import (
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 )
@@ -49,6 +50,8 @@ type CodeRepositoryResourceModel struct {
     BuildCommand types.String `tfsdk:"build_command"`
     TestCommand types.String `tfsdk:"test_command"`
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
+    IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
+    GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
     SecretToken types.String `tfsdk:"secret_token"`
@@ -157,6 +160,22 @@ func (r *CodeRepositoryResource) Schema(ctx context.Context, req resource.Schema
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_git_hub_commands_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. Unset means enabled..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "git_hub_trigger_label": schema.StringAttribute{
+                MarkdownDescription: "The issue label that hands an issue to the OneUptime GitHub App. Adding this label to an issue starts the same work an '@mention implement this' would, which is how you assign work to the app from the GitHub UI. Unset means 'oneuptime'..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "repository_url": schema.StringAttribute{
@@ -305,6 +324,12 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
     if !data.MaxOpenFixPullRequests.IsNull() && !data.MaxOpenFixPullRequests.IsUnknown() {
         requestDataMap["maxOpenFixPullRequests"] = r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat())
     }
+    if !data.IsGitHubCommandsEnabled.IsNull() && !data.IsGitHubCommandsEnabled.IsUnknown() {
+        requestDataMap["isGitHubCommandsEnabled"] = data.IsGitHubCommandsEnabled.ValueBool()
+    }
+    if !data.GitHubTriggerLabel.IsNull() && !data.GitHubTriggerLabel.IsUnknown() {
+        requestDataMap["gitHubTriggerLabel"] = data.GitHubTriggerLabel.ValueString()
+    }
     if !data.RepositoryUrl.IsNull() && !data.RepositoryUrl.IsUnknown() {
         requestDataMap["repositoryUrl"] = data.RepositoryUrl.ValueString()
     }
@@ -376,6 +401,8 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         "buildCommand": true,
         "testCommand": true,
         "maxOpenFixPullRequests": true,
+        "isGitHubCommandsEnabled": true,
+        "gitHubTriggerLabel": true,
         "repositoryUrl": true,
         "gitLabProjectId": true,
         "createdByUserId": true,
@@ -780,6 +807,48 @@ func (r *CodeRepositoryResource) Create(ctx context.Context, req resource.Create
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.MaxOpenFixPullRequests = types.NumberNull()
     }
+    if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
+        data.IsGitHubCommandsEnabled = types.BoolValue(val)
+    } else {
+        data.IsGitHubCommandsEnabled = types.BoolNull()
+    }
+    if obj, ok := dataMap["gitHubTriggerLabel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubTriggerLabel = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitHubTriggerLabel"].(string); ok {
+        data.GitHubTriggerLabel = types.StringValue(val)
+    } else {
+        data.GitHubTriggerLabel = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1122,6 +1191,8 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         "buildCommand": true,
         "testCommand": true,
         "maxOpenFixPullRequests": true,
+        "isGitHubCommandsEnabled": true,
+        "gitHubTriggerLabel": true,
         "repositoryUrl": true,
         "gitLabProjectId": true,
         "createdByUserId": true,
@@ -1527,6 +1598,48 @@ func (r *CodeRepositoryResource) Read(ctx context.Context, req resource.ReadRequ
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.MaxOpenFixPullRequests = types.NumberNull()
     }
+    if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
+        data.IsGitHubCommandsEnabled = types.BoolValue(val)
+    } else {
+        data.IsGitHubCommandsEnabled = types.BoolNull()
+    }
+    if obj, ok := dataMap["gitHubTriggerLabel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubTriggerLabel = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitHubTriggerLabel"].(string); ok {
+        data.GitHubTriggerLabel = types.StringValue(val)
+    } else {
+        data.GitHubTriggerLabel = types.StringNull()
+    }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1887,6 +2000,12 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     if !data.MaxOpenFixPullRequests.IsUnknown() && !state.MaxOpenFixPullRequests.IsUnknown() && !data.MaxOpenFixPullRequests.Equal(state.MaxOpenFixPullRequests) {
         requestDataMap["maxOpenFixPullRequests"] = r.bigFloatToFloat64(data.MaxOpenFixPullRequests.ValueBigFloat())
     }
+    if !data.IsGitHubCommandsEnabled.IsUnknown() && !state.IsGitHubCommandsEnabled.IsUnknown() && !data.IsGitHubCommandsEnabled.Equal(state.IsGitHubCommandsEnabled) {
+        requestDataMap["isGitHubCommandsEnabled"] = data.IsGitHubCommandsEnabled.ValueBool()
+    }
+    if !data.GitHubTriggerLabel.IsUnknown() && !state.GitHubTriggerLabel.IsUnknown() && !data.GitHubTriggerLabel.Equal(state.GitHubTriggerLabel) {
+        requestDataMap["gitHubTriggerLabel"] = data.GitHubTriggerLabel.ValueString()
+    }
     if !data.SecretToken.IsUnknown() && !state.SecretToken.IsUnknown() && !data.SecretToken.Equal(state.SecretToken) {
         requestDataMap["secretToken"] = data.SecretToken.ValueString()
     }
@@ -1927,6 +2046,8 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
         "buildCommand": true,
         "testCommand": true,
         "maxOpenFixPullRequests": true,
+        "isGitHubCommandsEnabled": true,
+        "gitHubTriggerLabel": true,
         "repositoryUrl": true,
         "gitLabProjectId": true,
         "createdByUserId": true,
@@ -2325,6 +2446,48 @@ func (r *CodeRepositoryResource) Update(ctx context.Context, req resource.Update
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.MaxOpenFixPullRequests = types.NumberNull()
+    }
+    if val, ok := dataMap["isGitHubCommandsEnabled"].(bool); ok {
+        data.IsGitHubCommandsEnabled = types.BoolValue(val)
+    } else {
+        data.IsGitHubCommandsEnabled = types.BoolNull()
+    }
+    if obj, ok := dataMap["gitHubTriggerLabel"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+            } else {
+                data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubTriggerLabel = types.StringNull()
+        }
+    } else if val, ok := dataMap["gitHubTriggerLabel"].(string); ok {
+        data.GitHubTriggerLabel = types.StringValue(val)
+    } else {
+        data.GitHubTriggerLabel = types.StringNull()
     }
     if obj, ok := dataMap["repositoryUrl"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

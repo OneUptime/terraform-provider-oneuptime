@@ -46,6 +46,8 @@ type CodeRepositoryDataSourceModel struct {
     BuildCommand types.String `tfsdk:"build_command"`
     TestCommand types.String `tfsdk:"test_command"`
     MaxOpenFixPullRequests types.Number `tfsdk:"max_open_fix_pull_requests"`
+    IsGitHubCommandsEnabled types.Bool `tfsdk:"is_git_hub_commands_enabled"`
+    GitHubTriggerLabel types.String `tfsdk:"git_hub_trigger_label"`
     RepositoryUrl types.String `tfsdk:"repository_url"`
     GitHubAppInstallationId types.String `tfsdk:"git_hub_app_installation_id"`
     GitLabProjectId types.String `tfsdk:"git_lab_project_id"`
@@ -131,6 +133,14 @@ func (d *CodeRepositoryDataSource) Schema(ctx context.Context, req datasource.Sc
             },
             "max_open_fix_pull_requests": schema.NumberAttribute{
                 MarkdownDescription: "Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means the default of 5; 0 blocks AI fix pull requests for this repository entirely..",
+                Computed: true,
+            },
+            "is_git_hub_commands_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether the OneUptime GitHub App acts on mentions, assignments and trigger labels in this repository. Only people with write access to the repository can command it, and it never merges anything. Unset means enabled..",
+                Computed: true,
+            },
+            "git_hub_trigger_label": schema.StringAttribute{
+                MarkdownDescription: "The issue label that hands an issue to the OneUptime GitHub App. Adding this label to an issue starts the same work an '@mention implement this' would, which is how you assign work to the app from the GitHub UI. Unset means 'oneuptime'..",
                 Computed: true,
             },
             "repository_url": schema.StringAttribute{
@@ -219,6 +229,8 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         "buildCommand": true,
         "testCommand": true,
         "maxOpenFixPullRequests": true,
+        "isGitHubCommandsEnabled": true,
+        "gitHubTriggerLabel": true,
         "repositoryUrl": true,
         "gitHubAppInstallationId": true,
         "gitLabProjectId": true,
@@ -563,6 +575,28 @@ func (d *CodeRepositoryDataSource) Read(ctx context.Context, req datasource.Read
         }
     } else {
         data.MaxOpenFixPullRequests = types.NumberNull()
+    }
+    if val, ok := item["isGitHubCommandsEnabled"].(bool); ok {
+        data.IsGitHubCommandsEnabled = types.BoolValue(val)
+    } else {
+        data.IsGitHubCommandsEnabled = types.BoolNull()
+    }
+    if obj, ok := item["gitHubTriggerLabel"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.GitHubTriggerLabel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.GitHubTriggerLabel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.GitHubTriggerLabel = types.StringValue(string(jsonBytes))
+        } else {
+            data.GitHubTriggerLabel = types.StringNull()
+        }
+    } else if val, ok := item["gitHubTriggerLabel"].(string); ok {
+        data.GitHubTriggerLabel = types.StringValue(val)
+    } else {
+        data.GitHubTriggerLabel = types.StringNull()
     }
     if obj, ok := item["repositoryUrl"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

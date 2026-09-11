@@ -42,6 +42,7 @@ data "oneuptime_scheduled_maintenance_event" "by_id" {
 - `docker_hosts` (Set) List of Docker hosts affected by this event... Computed.
 - `podman_hosts` (Set) List of Podman hosts affected by this event... Computed.
 - `proxmox_clusters` (Set) List of Proxmox clusters affected by this event... Computed.
+- `vmware_v_centers` (Set) List of vCenters affected by this event... Computed.
 - `iot_fleets` (Set) List of IoT fleets affected by this event... Computed.
 - `network_sites` (Set) List of network sites affected by this event. Their descendants are covered too... Computed.
 - `docker_swarm_clusters` (Set) List of Docker Swarm clusters affected by this event... Computed.

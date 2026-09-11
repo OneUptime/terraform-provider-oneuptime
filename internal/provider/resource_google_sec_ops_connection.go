@@ -46,10 +46,14 @@ type GoogleSecOpsConnectionResourceModel struct {
     ServiceAccountJson types.String `tfsdk:"service_account_json"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     PollIntervalInMinutes types.Number `tfsdk:"poll_interval_in_minutes"`
+    IncludeNonAlertingDetections types.Bool `tfsdk:"include_non_alerting_detections"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    LastSuccessfulPollAt RFC3339Value `tfsdk:"last_successful_poll_at"`
+    LastEventIngestedAt RFC3339Value `tfsdk:"last_event_ingested_at"`
+    LastPollResult JSONSubsetValue `tfsdk:"last_poll_result"`
     LastPolledAt RFC3339Value `tfsdk:"last_polled_at"`
     Cursor types.String `tfsdk:"cursor"`
     LastError types.String `tfsdk:"last_error"`
@@ -118,6 +122,15 @@ func (r *GoogleSecOpsConnectionResource) Schema(ctx context.Context, req resourc
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "include_non_alerting_detections": schema.BoolAttribute{
+                MarkdownDescription: "Include detections that have not been marked as alerts in Google SecOps..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
@@ -137,13 +150,28 @@ func (r *GoogleSecOpsConnectionResource) Schema(ctx context.Context, req resourc
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
+            "last_successful_poll_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_event_ingested_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_poll_result": schema.StringAttribute{
+                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings..",
+                CustomType: JSONSubsetType{},
+                Computed: true,
+            },
             "last_polled_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
                 Computed: true,
             },
             "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the newest detection timestamp already ingested, as an ISO string..",
+                MarkdownDescription: "Poll cursor: the end of the last completely processed window, or the boundary retained for retry, as an ISO string..",
                 Computed: true,
             },
             "last_error": schema.StringAttribute{
@@ -221,6 +249,9 @@ func (r *GoogleSecOpsConnectionResource) Create(ctx context.Context, req resourc
     if !data.PollIntervalInMinutes.IsNull() && !data.PollIntervalInMinutes.IsUnknown() {
         requestDataMap["pollIntervalInMinutes"] = r.bigFloatToFloat64(data.PollIntervalInMinutes.ValueBigFloat())
     }
+    if !data.IncludeNonAlertingDetections.IsNull() && !data.IncludeNonAlertingDetections.IsUnknown() {
+        requestDataMap["includeNonAlertingDetections"] = data.IncludeNonAlertingDetections.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/google-secops-connection", googleSecOpsConnectionRequest)
@@ -272,10 +303,14 @@ func (r *GoogleSecOpsConnectionResource) Create(ctx context.Context, req resourc
         "instanceResourceName": true,
         "isEnabled": true,
         "pollIntervalInMinutes": true,
+        "includeNonAlertingDetections": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "lastSuccessfulPollAt": true,
+        "lastEventIngestedAt": true,
+        "lastPollResult": true,
         "lastPolledAt": true,
         "cursor": true,
         "lastError": true,
@@ -455,6 +490,9 @@ func (r *GoogleSecOpsConnectionResource) Create(ctx context.Context, req resourc
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PollIntervalInMinutes = types.NumberNull()
     }
+    if val, ok := dataMap["includeNonAlertingDetections"].(bool); ok {
+        data.IncludeNonAlertingDetections = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -504,6 +542,65 @@ func (r *GoogleSecOpsConnectionResource) Create(ctx context.Context, req resourc
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["lastSuccessfulPollAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSuccessfulPollAt = NewRFC3339Value(val)
+        } else {
+            data.LastSuccessfulPollAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSuccessfulPollAt"].(string); ok && val != "" {
+        data.LastSuccessfulPollAt = NewRFC3339Value(val)
+    } else {
+        data.LastSuccessfulPollAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastEventIngestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastEventIngestedAt = NewRFC3339Value(val)
+        } else {
+            data.LastEventIngestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastEventIngestedAt"].(string); ok && val != "" {
+        data.LastEventIngestedAt = NewRFC3339Value(val)
+    } else {
+        data.LastEventIngestedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastPollResult"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPollResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastPollResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LastPollResult = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lastPollResult"].(string); ok {
+        data.LastPollResult = NewJSONSubsetValue(val)
+    } else {
+        data.LastPollResult = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -697,10 +794,14 @@ func (r *GoogleSecOpsConnectionResource) Read(ctx context.Context, req resource.
         "instanceResourceName": true,
         "isEnabled": true,
         "pollIntervalInMinutes": true,
+        "includeNonAlertingDetections": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "lastSuccessfulPollAt": true,
+        "lastEventIngestedAt": true,
+        "lastPollResult": true,
         "lastPolledAt": true,
         "cursor": true,
         "lastError": true,
@@ -881,6 +982,9 @@ func (r *GoogleSecOpsConnectionResource) Read(ctx context.Context, req resource.
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PollIntervalInMinutes = types.NumberNull()
     }
+    if val, ok := dataMap["includeNonAlertingDetections"].(bool); ok {
+        data.IncludeNonAlertingDetections = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -930,6 +1034,65 @@ func (r *GoogleSecOpsConnectionResource) Read(ctx context.Context, req resource.
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["lastSuccessfulPollAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSuccessfulPollAt = NewRFC3339Value(val)
+        } else {
+            data.LastSuccessfulPollAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSuccessfulPollAt"].(string); ok && val != "" {
+        data.LastSuccessfulPollAt = NewRFC3339Value(val)
+    } else {
+        data.LastSuccessfulPollAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastEventIngestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastEventIngestedAt = NewRFC3339Value(val)
+        } else {
+            data.LastEventIngestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastEventIngestedAt"].(string); ok && val != "" {
+        data.LastEventIngestedAt = NewRFC3339Value(val)
+    } else {
+        data.LastEventIngestedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastPollResult"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPollResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastPollResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LastPollResult = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lastPollResult"].(string); ok {
+        data.LastPollResult = NewJSONSubsetValue(val)
+    } else {
+        data.LastPollResult = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1148,6 +1311,9 @@ func (r *GoogleSecOpsConnectionResource) Update(ctx context.Context, req resourc
     if !data.PollIntervalInMinutes.IsUnknown() && !state.PollIntervalInMinutes.IsUnknown() && !data.PollIntervalInMinutes.Equal(state.PollIntervalInMinutes) {
         requestDataMap["pollIntervalInMinutes"] = r.bigFloatToFloat64(data.PollIntervalInMinutes.ValueBigFloat())
     }
+    if !data.IncludeNonAlertingDetections.IsUnknown() && !state.IncludeNonAlertingDetections.IsUnknown() && !data.IncludeNonAlertingDetections.Equal(state.IncludeNonAlertingDetections) {
+        requestDataMap["includeNonAlertingDetections"] = data.IncludeNonAlertingDetections.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1177,10 +1343,14 @@ func (r *GoogleSecOpsConnectionResource) Update(ctx context.Context, req resourc
         "instanceResourceName": true,
         "isEnabled": true,
         "pollIntervalInMinutes": true,
+        "includeNonAlertingDetections": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "lastSuccessfulPollAt": true,
+        "lastEventIngestedAt": true,
+        "lastPollResult": true,
         "lastPolledAt": true,
         "cursor": true,
         "lastError": true,
@@ -1355,6 +1525,9 @@ func (r *GoogleSecOpsConnectionResource) Update(ctx context.Context, req resourc
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.PollIntervalInMinutes = types.NumberNull()
     }
+    if val, ok := dataMap["includeNonAlertingDetections"].(bool); ok {
+        data.IncludeNonAlertingDetections = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1404,6 +1577,65 @@ func (r *GoogleSecOpsConnectionResource) Update(ctx context.Context, req resourc
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["lastSuccessfulPollAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastSuccessfulPollAt = NewRFC3339Value(val)
+        } else {
+            data.LastSuccessfulPollAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastSuccessfulPollAt"].(string); ok && val != "" {
+        data.LastSuccessfulPollAt = NewRFC3339Value(val)
+    } else {
+        data.LastSuccessfulPollAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastEventIngestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastEventIngestedAt = NewRFC3339Value(val)
+        } else {
+            data.LastEventIngestedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastEventIngestedAt"].(string); ok && val != "" {
+        data.LastEventIngestedAt = NewRFC3339Value(val)
+    } else {
+        data.LastEventIngestedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastPollResult"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPollResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.LastPollResult = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.LastPollResult = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.LastPollResult = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.LastPollResult = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["lastPollResult"].(string); ok {
+        data.LastPollResult = NewJSONSubsetValue(val)
+    } else {
+        data.LastPollResult = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["lastPolledAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

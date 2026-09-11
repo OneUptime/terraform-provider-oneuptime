@@ -46,6 +46,7 @@ type ScheduledMaintenanceEventDataSourceModel struct {
     DockerHosts types.Set `tfsdk:"docker_hosts"`
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
     IotFleets types.Set `tfsdk:"iot_fleets"`
     NetworkSites types.Set `tfsdk:"network_sites"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
@@ -156,6 +157,11 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
             },
             "proxmox_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Proxmox clusters affected by this event..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "vmware_v_centers": schema.SetAttribute{
+                MarkdownDescription: "List of vCenters affected by this event..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -331,6 +337,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         "dockerHosts": true,
         "podmanHosts": true,
         "proxmoxClusters": true,
+        "vmwareVCenters": true,
         "iotFleets": true,
         "networkSites": true,
         "dockerSwarmClusters": true,
@@ -743,6 +750,30 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         data.ProxmoxClusters = types.SetValueMust(types.StringType, setItems)
     } else {
         data.ProxmoxClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["vmwareVCenters"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.VmwareVCenters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.VmwareVCenters = types.SetNull(types.StringType)
     }
     if val, ok := item["iotFleets"].([]interface{}); ok {
         var setItems []attr.Value

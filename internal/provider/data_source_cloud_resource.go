@@ -106,7 +106,7 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
                 Computed: true,
             },
             "resource_identifier": schema.StringAttribute{
-                MarkdownDescription: "Stable identifier for this managed-compute workload (service.name, falling back to host.name). Identity key for this resource..",
+                MarkdownDescription: "Environment key: the cloud.platform, cloud.account.id and cloud.region OpenTelemetry resource attributes joined with '|' (e.g. aws_ecs|123456789012|us-east-1; missing parts stay as empty segments). Built by buildCloudEnvironmentKey in Common/Types/Cloud/CloudPlatform. An environment created by hand must carry the same key for ingest to find it instead of creating a duplicate..",
                 Computed: true,
             },
             "cloud_platform": schema.StringAttribute{
