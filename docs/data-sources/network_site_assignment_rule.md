@@ -31,6 +31,7 @@ data "oneuptime_network_site_assignment_rule" "by_id" {
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `site_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `subnet_cidr` (String) Devices and endpoints with an IP in this CIDR are assigned to the site.. Computed.

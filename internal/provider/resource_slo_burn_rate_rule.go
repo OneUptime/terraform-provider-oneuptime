@@ -49,8 +49,12 @@ type SloBurnRateRuleResourceModel struct {
     ShortWindowInMinutes types.Number `tfsdk:"short_window_in_minutes"`
     MinimumSampleCount types.Number `tfsdk:"minimum_sample_count"`
     RefireSuppressionMinutes types.Number `tfsdk:"refire_suppression_minutes"`
+    ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
+    ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
+    IncidentOnCallDutyPolicies types.Set `tfsdk:"incident_on_call_duty_policies"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -58,6 +62,8 @@ type SloBurnRateRuleResourceModel struct {
     Version types.Number `tfsdk:"version"`
     LastAlertCreatedAt RFC3339Value `tfsdk:"last_alert_created_at"`
     LastAlertResolvedAt RFC3339Value `tfsdk:"last_alert_resolved_at"`
+    LastIncidentCreatedAt RFC3339Value `tfsdk:"last_incident_created_at"`
+    LastIncidentResolvedAt RFC3339Value `tfsdk:"last_incident_resolved_at"`
 }
 
 func (r *SloBurnRateRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -66,7 +72,7 @@ func (r *SloBurnRateRuleResource) Metadata(ctx context.Context, req resource.Met
 
 func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure multi-window burn rate rules that raise alerts when a Service Level Objective consumes its error budget too quickly",
+        MarkdownDescription: "Configure multi-window burn rate rules that raise alerts and/or declare incidents when a Service Level Objective consumes its error budget too quickly",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -124,11 +130,29 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "refire_suppression_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Minimum number of minutes after an alert resolves before this rule can fire again. Defaults to the long window length when not set..",
+                MarkdownDescription: "Minimum number of minutes after an alert or incident resolves before this rule can declare that same record again. Each output is suppressed independently, from its own resolve. Defaults to the long window length when not set..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "should_create_alert": schema.BoolAttribute{
+                MarkdownDescription: "Raise an Alert when this burn rate rule fires. Enabled by default..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "should_create_incident": schema.BoolAttribute{
+                MarkdownDescription: "Declare an Incident when this burn rate rule fires. Disabled by default..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "alert_severity_id": schema.StringAttribute{
@@ -140,7 +164,24 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 },
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule..",
+                MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_severity_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_on_call_duty_policies": schema.SetAttribute{
+                MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -182,6 +223,16 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 Computed: true,
             },
             "last_alert_resolved_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_incident_created_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_incident_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
                 Computed: true,
@@ -255,11 +306,23 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     if !data.RefireSuppressionMinutes.IsNull() && !data.RefireSuppressionMinutes.IsUnknown() {
         requestDataMap["refireSuppressionMinutes"] = r.bigFloatToFloat64(data.RefireSuppressionMinutes.ValueBigFloat())
     }
+    if !data.ShouldCreateAlert.IsNull() && !data.ShouldCreateAlert.IsUnknown() {
+        requestDataMap["shouldCreateAlert"] = data.ShouldCreateAlert.ValueBool()
+    }
+    if !data.ShouldCreateIncident.IsNull() && !data.ShouldCreateIncident.IsUnknown() {
+        requestDataMap["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
+    }
     if !data.AlertSeverityId.IsNull() && !data.AlertSeverityId.IsUnknown() {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
     if !data.OnCallDutyPolicies.IsNull() && !data.OnCallDutyPolicies.IsUnknown() {
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
+    }
+    if !data.IncidentSeverityId.IsNull() && !data.IncidentSeverityId.IsUnknown() {
+        requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
+    }
+    if !data.IncidentOnCallDutyPolicies.IsNull() && !data.IncidentOnCallDutyPolicies.IsUnknown() {
+        requestDataMap["incidentOnCallDutyPolicies"] = r.convertTerraformSetToInterface(data.IncidentOnCallDutyPolicies)
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
@@ -318,8 +381,12 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
         "shortWindowInMinutes": true,
         "minimumSampleCount": true,
         "refireSuppressionMinutes": true,
+        "shouldCreateAlert": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "incidentSeverityId": true,
+        "incidentOnCallDutyPolicies": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -327,6 +394,8 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
         "version": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
+        "lastIncidentCreatedAt": true,
+        "lastIncidentResolvedAt": true,
         "_id": true,
     }
 
@@ -532,6 +601,12 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.RefireSuppressionMinutes = types.NumberNull()
     }
+    if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
+        data.ShouldCreateAlert = types.BoolValue(val)
+    }
+    if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -600,6 +675,75 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     } else {
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["incidentOnCallDutyPolicies"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -710,6 +854,28 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     } else {
         data.LastAlertResolvedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["lastIncidentCreatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastIncidentCreatedAt = NewRFC3339Value(val)
+        } else {
+            data.LastIncidentCreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastIncidentCreatedAt"].(string); ok && val != "" {
+        data.LastIncidentCreatedAt = NewRFC3339Value(val)
+    } else {
+        data.LastIncidentCreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastIncidentResolvedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastIncidentResolvedAt = NewRFC3339Value(val)
+        } else {
+            data.LastIncidentResolvedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastIncidentResolvedAt"].(string); ok && val != "" {
+        data.LastIncidentResolvedAt = NewRFC3339Value(val)
+    } else {
+        data.LastIncidentResolvedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -746,8 +912,12 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
         "shortWindowInMinutes": true,
         "minimumSampleCount": true,
         "refireSuppressionMinutes": true,
+        "shouldCreateAlert": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "incidentSeverityId": true,
+        "incidentOnCallDutyPolicies": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -755,6 +925,8 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
         "version": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
+        "lastIncidentCreatedAt": true,
+        "lastIncidentResolvedAt": true,
         "_id": true,
     }
 
@@ -961,6 +1133,12 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.RefireSuppressionMinutes = types.NumberNull()
     }
+    if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
+        data.ShouldCreateAlert = types.BoolValue(val)
+    }
+    if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1029,6 +1207,75 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["incidentOnCallDutyPolicies"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1139,6 +1386,28 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         data.LastAlertResolvedAt = NewRFC3339Null()
     }
+    if obj, ok := dataMap["lastIncidentCreatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastIncidentCreatedAt = NewRFC3339Value(val)
+        } else {
+            data.LastIncidentCreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastIncidentCreatedAt"].(string); ok && val != "" {
+        data.LastIncidentCreatedAt = NewRFC3339Value(val)
+    } else {
+        data.LastIncidentCreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastIncidentResolvedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastIncidentResolvedAt = NewRFC3339Value(val)
+        } else {
+            data.LastIncidentResolvedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastIncidentResolvedAt"].(string); ok && val != "" {
+        data.LastIncidentResolvedAt = NewRFC3339Value(val)
+    } else {
+        data.LastIncidentResolvedAt = NewRFC3339Null()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1195,11 +1464,23 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
     if !data.RefireSuppressionMinutes.IsUnknown() && !state.RefireSuppressionMinutes.IsUnknown() && !data.RefireSuppressionMinutes.Equal(state.RefireSuppressionMinutes) {
         requestDataMap["refireSuppressionMinutes"] = r.bigFloatToFloat64(data.RefireSuppressionMinutes.ValueBigFloat())
     }
+    if !data.ShouldCreateAlert.IsUnknown() && !state.ShouldCreateAlert.IsUnknown() && !data.ShouldCreateAlert.Equal(state.ShouldCreateAlert) {
+        requestDataMap["shouldCreateAlert"] = data.ShouldCreateAlert.ValueBool()
+    }
+    if !data.ShouldCreateIncident.IsUnknown() && !state.ShouldCreateIncident.IsUnknown() && !data.ShouldCreateIncident.Equal(state.ShouldCreateIncident) {
+        requestDataMap["shouldCreateIncident"] = data.ShouldCreateIncident.ValueBool()
+    }
     if !data.AlertSeverityId.IsUnknown() && !state.AlertSeverityId.IsUnknown() && !data.AlertSeverityId.Equal(state.AlertSeverityId) {
         requestDataMap["alertSeverityId"] = data.AlertSeverityId.ValueString()
     }
     if !data.OnCallDutyPolicies.IsUnknown() && !state.OnCallDutyPolicies.IsUnknown() && !data.OnCallDutyPolicies.Equal(state.OnCallDutyPolicies) {
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
+    }
+    if !data.IncidentSeverityId.IsUnknown() && !state.IncidentSeverityId.IsUnknown() && !data.IncidentSeverityId.Equal(state.IncidentSeverityId) {
+        requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
+    }
+    if !data.IncidentOnCallDutyPolicies.IsUnknown() && !state.IncidentOnCallDutyPolicies.IsUnknown() && !data.IncidentOnCallDutyPolicies.Equal(state.IncidentOnCallDutyPolicies) {
+        requestDataMap["incidentOnCallDutyPolicies"] = r.convertTerraformSetToInterface(data.IncidentOnCallDutyPolicies)
     }
 
     // Only call the API when there are changed fields to send. An empty
@@ -1233,8 +1514,12 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         "shortWindowInMinutes": true,
         "minimumSampleCount": true,
         "refireSuppressionMinutes": true,
+        "shouldCreateAlert": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "incidentSeverityId": true,
+        "incidentOnCallDutyPolicies": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1242,6 +1527,8 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         "version": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
+        "lastIncidentCreatedAt": true,
+        "lastIncidentResolvedAt": true,
         "_id": true,
     }
 
@@ -1442,6 +1729,12 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.RefireSuppressionMinutes = types.NumberNull()
     }
+    if val, ok := dataMap["shouldCreateAlert"].(bool); ok {
+        data.ShouldCreateAlert = types.BoolValue(val)
+    }
+    if val, ok := dataMap["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    }
     if obj, ok := dataMap["alertSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1510,6 +1803,75 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
     } else {
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
+    }
+    if val, ok := dataMap["incidentOnCallDutyPolicies"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1619,6 +1981,28 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         data.LastAlertResolvedAt = NewRFC3339Value(val)
     } else {
         data.LastAlertResolvedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastIncidentCreatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastIncidentCreatedAt = NewRFC3339Value(val)
+        } else {
+            data.LastIncidentCreatedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastIncidentCreatedAt"].(string); ok && val != "" {
+        data.LastIncidentCreatedAt = NewRFC3339Value(val)
+    } else {
+        data.LastIncidentCreatedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastIncidentResolvedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastIncidentResolvedAt = NewRFC3339Value(val)
+        } else {
+            data.LastIncidentResolvedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastIncidentResolvedAt"].(string); ok && val != "" {
+        data.LastIncidentResolvedAt = NewRFC3339Value(val)
+    } else {
+        data.LastIncidentResolvedAt = NewRFC3339Null()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

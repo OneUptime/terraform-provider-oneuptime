@@ -26,6 +26,7 @@ resource "oneuptime_incident_privacy_rule" "example" {
 
 ### Optional
 
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource...
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Description of this incident privacy rule..
 - `is_enabled` (Bool) Whether this rule is enabled..

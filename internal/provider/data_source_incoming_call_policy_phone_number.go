@@ -6,8 +6,6 @@ import (
     "fmt"
     "net/http"
     "math/big"
-    "github.com/hashicorp/terraform-plugin-framework/attr"
-    "sort"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -16,43 +14,42 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &MonitorLabelRuleDataSource{}
+var _ datasource.DataSource = &IncomingCallPolicyPhoneNumberDataSource{}
 
-func NewMonitorLabelRuleDataSource() datasource.DataSource {
-    return &MonitorLabelRuleDataSource{}
+func NewIncomingCallPolicyPhoneNumberDataSource() datasource.DataSource {
+    return &IncomingCallPolicyPhoneNumberDataSource{}
 }
 
-// MonitorLabelRuleDataSource defines the data source implementation.
-type MonitorLabelRuleDataSource struct {
+// IncomingCallPolicyPhoneNumberDataSource defines the data source implementation.
+type IncomingCallPolicyPhoneNumberDataSource struct {
     client *Client
 }
 
-// MonitorLabelRuleDataSourceModel describes the data source data model.
-type MonitorLabelRuleDataSourceModel struct {
+// IncomingCallPolicyPhoneNumberDataSourceModel describes the data source data model.
+type IncomingCallPolicyPhoneNumberDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
-    Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
-    Description types.String `tfsdk:"description"`
-    IsEnabled types.Bool `tfsdk:"is_enabled"`
-    MonitorLabels types.Set `tfsdk:"monitor_labels"`
-    MonitorNamePattern types.String `tfsdk:"monitor_name_pattern"`
-    MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
-    LabelsToAdd types.Set `tfsdk:"labels_to_add"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IncomingCallPolicyId types.String `tfsdk:"incoming_call_policy_id"`
+    ProjectCallSmsConfigId types.String `tfsdk:"project_call_sms_config_id"`
+    PhoneNumber types.String `tfsdk:"phone_number"`
+    CallProviderPhoneNumberId types.String `tfsdk:"call_provider_phone_number_id"`
+    CountryCode types.String `tfsdk:"country_code"`
+    AreaCode types.String `tfsdk:"area_code"`
+    PhoneNumberPurchasedAt types.String `tfsdk:"phone_number_purchased_at"`
 }
 
-func (d *MonitorLabelRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_monitor_label_rule"
+func (d *IncomingCallPolicyPhoneNumberDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_incoming_call_policy_phone_number"
 }
 
-func (d *MonitorLabelRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *IncomingCallPolicyPhoneNumberDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules for automatically attaching labels to monitors when matching monitors are created Look up an existing monitor_label_rule by `id` or by `name`.",
+        MarkdownDescription: "Phone numbers that route incoming calls to an incoming call policy. Look up an existing incoming_call_policy_phone_number by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -81,49 +78,43 @@ func (d *MonitorLabelRuleDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
-            "criteria": schema.StringAttribute{
-                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
-                Computed: true,
-            },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this monitor label rule.",
-                Computed: true,
-            },
-            "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled.",
-                Computed: true,
-            },
-            "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for monitors that already have at least one of these labels. Leave empty to match regardless of labels..",
-                Computed: true,
-                ElementType: types.StringType,
-            },
-            "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to match any name..",
-                Computed: true,
-            },
-            "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to match any description..",
-                Computed: true,
-            },
-            "labels_to_add": schema.SetAttribute{
-                MarkdownDescription: "Labels to attach to the monitor when this rule matches. Already-attached labels are not duplicated..",
-                Computed: true,
-                ElementType: types.StringType,
-            },
-            "created_by_user_id": schema.StringAttribute{
+            "incoming_call_policy_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "project_call_sms_config_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "phone_number": schema.StringAttribute{
+                MarkdownDescription: "Phone object",
+                Computed: true,
+            },
+            "call_provider_phone_number_id": schema.StringAttribute{
+                MarkdownDescription: "The call provider identifier for this phone number..",
+                Computed: true,
+            },
+            "country_code": schema.StringAttribute{
+                MarkdownDescription: "Country code associated with this phone number..",
+                Computed: true,
+            },
+            "area_code": schema.StringAttribute{
+                MarkdownDescription: "Area code associated with this phone number..",
+                Computed: true,
+            },
+            "phone_number_purchased_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
         },
     }
 }
 
-func (d *MonitorLabelRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *IncomingCallPolicyPhoneNumberDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -143,8 +134,8 @@ func (d *MonitorLabelRuleDataSource) Configure(ctx context.Context, req datasour
     d.client = client
 }
 
-func (d *MonitorLabelRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data MonitorLabelRuleDataSourceModel
+func (d *IncomingCallPolicyPhoneNumberDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data IncomingCallPolicyPhoneNumberDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -158,7 +149,7 @@ func (d *MonitorLabelRuleDataSource) Read(ctx context.Context, req datasource.Re
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a monitor_label_rule.",
+            "Exactly one of `id` or `name` must be set to look up a incoming_call_policy_phone_number.",
         )
         return
     }
@@ -169,33 +160,32 @@ func (d *MonitorLabelRuleDataSource) Read(ctx context.Context, req datasource.Re
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "criteria": true,
         "projectId": true,
-        "description": true,
-        "isEnabled": true,
-        "monitorLabels": true,
-        "monitorNamePattern": true,
-        "monitorDescriptionPattern": true,
-        "labelsToAdd": true,
-        "createdByUserId": true,
+        "incomingCallPolicyId": true,
+        "projectCallSMSConfigId": true,
+        "phoneNumber": true,
+        "callProviderPhoneNumberId": true,
+        "countryCode": true,
+        "areaCode": true,
+        "phoneNumberPurchasedAt": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/monitor-label-rule/" + data.Id.ValueString() + "/get-item"
+        readPath := "/incoming-call-policy-phone-number/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read monitor_label_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read incoming_call_policy_phone_number, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor_label_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming_call_policy_phone_number found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read monitor_label_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read incoming_call_policy_phone_number: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -212,28 +202,28 @@ func (d *MonitorLabelRuleDataSource) Read(ctx context.Context, req datasource.Re
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/monitor-label-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incoming-call-policy-phone-number/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list monitor_label_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incoming_call_policy_phone_number, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list monitor_label_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list incoming_call_policy_phone_number: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No monitor_label_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incoming_call_policy_phone_number found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one monitor_label_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incoming_call_policy_phone_number matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for monitor_label_rule.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for incoming_call_policy_phone_number.")
             return
         }
         item = first
@@ -336,23 +326,6 @@ func (d *MonitorLabelRuleDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.Version = types.NumberNull()
     }
-    if obj, ok := item["criteria"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Criteria = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Criteria = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Criteria = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Criteria = types.StringValue(string(jsonBytes))
-        } else {
-            data.Criteria = types.StringNull()
-        }
-    } else if val, ok := item["criteria"].(string); ok {
-        data.Criteria = types.StringValue(val)
-    } else {
-        data.Criteria = types.StringNull()
-    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -370,126 +343,124 @@ func (d *MonitorLabelRuleDataSource) Read(ctx context.Context, req datasource.Re
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["description"].(map[string]interface{}); ok {
+    if obj, ok := item["incomingCallPolicyId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Description = types.StringValue(val)
+            data.IncomingCallPolicyId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Description = types.StringValue(val)
+            data.IncomingCallPolicyId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+            data.IncomingCallPolicyId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Description = types.StringValue(string(jsonBytes))
+            data.IncomingCallPolicyId = types.StringValue(string(jsonBytes))
         } else {
-            data.Description = types.StringNull()
+            data.IncomingCallPolicyId = types.StringNull()
         }
-    } else if val, ok := item["description"].(string); ok {
-        data.Description = types.StringValue(val)
+    } else if val, ok := item["incomingCallPolicyId"].(string); ok {
+        data.IncomingCallPolicyId = types.StringValue(val)
     } else {
-        data.Description = types.StringNull()
+        data.IncomingCallPolicyId = types.StringNull()
     }
-    if val, ok := item["isEnabled"].(bool); ok {
-        data.IsEnabled = types.BoolValue(val)
-    } else {
-        data.IsEnabled = types.BoolNull()
-    }
-    if val, ok := item["monitorLabels"].([]interface{}); ok {
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                }
-            } else if str, ok := item.(string); ok {
-                setItems = append(setItems, types.StringValue(str))
-            } else {
-                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
-            }
-        }
-        sort.Slice(setItems, func(i, j int) bool {
-            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
-        })
-        data.MonitorLabels = types.SetValueMust(types.StringType, setItems)
-    } else {
-        data.MonitorLabels = types.SetNull(types.StringType)
-    }
-    if obj, ok := item["monitorNamePattern"].(map[string]interface{}); ok {
+    if obj, ok := item["projectCallSMSConfigId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ProjectCallSmsConfigId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ProjectCallSmsConfigId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+            data.ProjectCallSmsConfigId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+            data.ProjectCallSmsConfigId = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorNamePattern = types.StringNull()
+            data.ProjectCallSmsConfigId = types.StringNull()
         }
-    } else if val, ok := item["monitorNamePattern"].(string); ok {
-        data.MonitorNamePattern = types.StringValue(val)
+    } else if val, ok := item["projectCallSMSConfigId"].(string); ok {
+        data.ProjectCallSmsConfigId = types.StringValue(val)
     } else {
-        data.MonitorNamePattern = types.StringNull()
+        data.ProjectCallSmsConfigId = types.StringNull()
     }
-    if obj, ok := item["monitorDescriptionPattern"].(map[string]interface{}); ok {
+    if obj, ok := item["phoneNumber"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorDescriptionPattern = types.StringValue(val)
+            data.PhoneNumber = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.MonitorDescriptionPattern = types.StringValue(val)
+            data.PhoneNumber = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
+            data.PhoneNumber = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
+            data.PhoneNumber = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorDescriptionPattern = types.StringNull()
+            data.PhoneNumber = types.StringNull()
         }
-    } else if val, ok := item["monitorDescriptionPattern"].(string); ok {
-        data.MonitorDescriptionPattern = types.StringValue(val)
+    } else if val, ok := item["phoneNumber"].(string); ok {
+        data.PhoneNumber = types.StringValue(val)
     } else {
-        data.MonitorDescriptionPattern = types.StringNull()
+        data.PhoneNumber = types.StringNull()
     }
-    if val, ok := item["labelsToAdd"].([]interface{}); ok {
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                }
-            } else if str, ok := item.(string); ok {
-                setItems = append(setItems, types.StringValue(str))
-            } else {
-                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
-            }
-        }
-        sort.Slice(setItems, func(i, j int) bool {
-            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
-        })
-        data.LabelsToAdd = types.SetValueMust(types.StringType, setItems)
-    } else {
-        data.LabelsToAdd = types.SetNull(types.StringType)
-    }
-    if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
+    if obj, ok := item["callProviderPhoneNumberId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
+            data.CallProviderPhoneNumberId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.CreatedByUserId = types.StringValue(val)
+            data.CallProviderPhoneNumberId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+            data.CallProviderPhoneNumberId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            data.CallProviderPhoneNumberId = types.StringValue(string(jsonBytes))
         } else {
-            data.CreatedByUserId = types.StringNull()
+            data.CallProviderPhoneNumberId = types.StringNull()
         }
-    } else if val, ok := item["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
+    } else if val, ok := item["callProviderPhoneNumberId"].(string); ok {
+        data.CallProviderPhoneNumberId = types.StringValue(val)
     } else {
-        data.CreatedByUserId = types.StringNull()
+        data.CallProviderPhoneNumberId = types.StringNull()
+    }
+    if obj, ok := item["countryCode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CountryCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CountryCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CountryCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CountryCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.CountryCode = types.StringNull()
+        }
+    } else if val, ok := item["countryCode"].(string); ok {
+        data.CountryCode = types.StringValue(val)
+    } else {
+        data.CountryCode = types.StringNull()
+    }
+    if obj, ok := item["areaCode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AreaCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AreaCode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AreaCode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AreaCode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AreaCode = types.StringNull()
+        }
+    } else if val, ok := item["areaCode"].(string); ok {
+        data.AreaCode = types.StringValue(val)
+    } else {
+        data.AreaCode = types.StringNull()
+    }
+    if obj, ok := item["phoneNumberPurchasedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PhoneNumberPurchasedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PhoneNumberPurchasedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PhoneNumberPurchasedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PhoneNumberPurchasedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.PhoneNumberPurchasedAt = types.StringNull()
+        }
+    } else if val, ok := item["phoneNumberPurchasedAt"].(string); ok {
+        data.PhoneNumberPurchasedAt = types.StringValue(val)
+    } else {
+        data.PhoneNumberPurchasedAt = types.StringNull()
     }
 
     // Write logs using the tflog package

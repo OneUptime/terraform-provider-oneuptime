@@ -31,6 +31,7 @@ data "oneuptime_status_page_owner_rule" "by_id" {
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Description of this status page owner rule.. Computed.
 - `is_enabled` (Bool) Whether this rule is enabled.. Computed.

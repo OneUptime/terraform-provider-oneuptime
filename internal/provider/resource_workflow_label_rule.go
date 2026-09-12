@@ -21,6 +21,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -39,6 +40,7 @@ type WorkflowLabelRuleResource struct {
 // WorkflowLabelRuleResourceModel describes the resource data model.
 type WorkflowLabelRuleResourceModel struct {
     Id types.String `tfsdk:"id"`
+    Criteria JSONSubsetValue `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
@@ -68,6 +70,18 @@ func (r *WorkflowLabelRuleResource) Schema(ctx context.Context, req resource.Sch
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "criteria": schema.StringAttribute{
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "project_id": schema.StringAttribute{
@@ -205,6 +219,9 @@ func (r *WorkflowLabelRuleResource) Create(ctx context.Context, req resource.Cre
     }
     requestDataMap := workflowLabelRuleRequest["data"].(map[string]interface{})
 
+    if parsedCriteria := r.parseJSONField(data.Criteria); parsedCriteria != nil {
+        requestDataMap["criteria"] = parsedCriteria
+    }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
     }
@@ -274,6 +291,7 @@ func (r *WorkflowLabelRuleResource) Create(ctx context.Context, req resource.Cre
 
     // Re-read the resource so state reflects server-normalized values.
     selectParam := map[string]interface{}{
+        "criteria": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -319,6 +337,43 @@ func (r *WorkflowLabelRuleResource) Create(ctx context.Context, req resource.Cre
         dataMap = readResponse
     }
 
+    if obj, ok := dataMap["criteria"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Criteria = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Criteria = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["criteria"].(string); ok {
+        data.Criteria = NewJSONSubsetValue(val)
+    } else {
+        data.Criteria = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -659,6 +714,7 @@ func (r *WorkflowLabelRuleResource) Read(ctx context.Context, req resource.ReadR
 
     // Create select parameter to get full object
     selectParam := map[string]interface{}{
+        "criteria": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -705,6 +761,43 @@ func (r *WorkflowLabelRuleResource) Read(ctx context.Context, req resource.ReadR
         dataMap = workflowLabelRuleResponse
     }
 
+    if obj, ok := dataMap["criteria"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Criteria = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Criteria = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["criteria"].(string); ok {
+        data.Criteria = NewJSONSubsetValue(val)
+    } else {
+        data.Criteria = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)
@@ -1053,6 +1146,14 @@ func (r *WorkflowLabelRuleResource) Update(ctx context.Context, req resource.Upd
     }
     requestDataMap := workflowLabelRuleRequest["data"].(map[string]interface{})
 
+    if !data.Criteria.IsUnknown() && !state.Criteria.IsUnknown() && !data.Criteria.Equal(state.Criteria) {
+        var criteriaData interface{}
+        if err := json.Unmarshal([]byte(data.Criteria.ValueString()), &criteriaData); err == nil {
+            requestDataMap["criteria"] = criteriaData
+        } else {
+            requestDataMap["criteria"] = data.Criteria.ValueString()
+        }
+    }
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
     }
@@ -1097,6 +1198,7 @@ func (r *WorkflowLabelRuleResource) Update(ctx context.Context, req resource.Upd
 
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
+        "criteria": true,
         "projectId": true,
         "name": true,
         "description": true,
@@ -1137,6 +1239,43 @@ func (r *WorkflowLabelRuleResource) Update(ctx context.Context, req resource.Upd
         dataMap = readResponse
     }
 
+    if obj, ok := dataMap["criteria"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Criteria = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Criteria = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Criteria = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Criteria = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Criteria = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["criteria"].(string); ok {
+        data.Criteria = NewJSONSubsetValue(val)
+    } else {
+        data.Criteria = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok {
             data.ProjectId = types.StringValue(val)

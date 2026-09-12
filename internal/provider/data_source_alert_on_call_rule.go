@@ -35,6 +35,7 @@ type AlertOnCallRuleDataSourceModel struct {
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
@@ -83,6 +84,10 @@ func (d *AlertOnCallRuleDataSource) Schema(ctx context.Context, req datasource.S
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
+                Computed: true,
+            },
+            "criteria": schema.StringAttribute{
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
                 Computed: true,
             },
             "project_id": schema.StringAttribute{
@@ -192,6 +197,7 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "criteria": true,
         "projectId": true,
         "description": true,
         "isEnabled": true,
@@ -362,6 +368,23 @@ func (d *AlertOnCallRuleDataSource) Read(ctx context.Context, req datasource.Rea
         }
     } else {
         data.Version = types.NumberNull()
+    }
+    if obj, ok := item["criteria"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Criteria = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Criteria = types.StringValue(string(jsonBytes))
+        } else {
+            data.Criteria = types.StringNull()
+        }
+    } else if val, ok := item["criteria"].(string); ok {
+        data.Criteria = types.StringValue(val)
+    } else {
+        data.Criteria = types.StringNull()
     }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

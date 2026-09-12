@@ -43,10 +43,16 @@ type SloBurnRateRuleDataSourceModel struct {
     ShortWindowInMinutes types.Number `tfsdk:"short_window_in_minutes"`
     MinimumSampleCount types.Number `tfsdk:"minimum_sample_count"`
     RefireSuppressionMinutes types.Number `tfsdk:"refire_suppression_minutes"`
+    ShouldCreateAlert types.Bool `tfsdk:"should_create_alert"`
+    ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
+    IncidentOnCallDutyPolicies types.Set `tfsdk:"incident_on_call_duty_policies"`
     LastAlertCreatedAt types.String `tfsdk:"last_alert_created_at"`
     LastAlertResolvedAt types.String `tfsdk:"last_alert_resolved_at"`
+    LastIncidentCreatedAt types.String `tfsdk:"last_incident_created_at"`
+    LastIncidentResolvedAt types.String `tfsdk:"last_incident_resolved_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -56,7 +62,7 @@ func (d *SloBurnRateRuleDataSource) Metadata(ctx context.Context, req datasource
 
 func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure multi-window burn rate rules that raise alerts when a Service Level Objective consumes its error budget too quickly Look up an existing slo_burn_rate_rule by `id` or by `name`.",
+        MarkdownDescription: "Configure multi-window burn rate rules that raise alerts and/or declare incidents when a Service Level Objective consumes its error budget too quickly Look up an existing slo_burn_rate_rule by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -114,7 +120,15 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "refire_suppression_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Minimum number of minutes after an alert resolves before this rule can fire again. Defaults to the long window length when not set..",
+                MarkdownDescription: "Minimum number of minutes after an alert or incident resolves before this rule can declare that same record again. Each output is suppressed independently, from its own resolve. Defaults to the long window length when not set..",
+                Computed: true,
+            },
+            "should_create_alert": schema.BoolAttribute{
+                MarkdownDescription: "Raise an Alert when this burn rate rule fires. Enabled by default..",
+                Computed: true,
+            },
+            "should_create_incident": schema.BoolAttribute{
+                MarkdownDescription: "Declare an Incident when this burn rate rule fires. Disabled by default..",
                 Computed: true,
             },
             "alert_severity_id": schema.StringAttribute{
@@ -122,7 +136,16 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "on_call_duty_policies": schema.SetAttribute{
-                MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule..",
+                MarkdownDescription: "On-call duty policies attached to alerts created by this burn rate rule. Incidents have their own list..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "incident_severity_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "incident_on_call_duty_policies": schema.SetAttribute{
+                MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -131,6 +154,14 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "last_alert_resolved_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_incident_created_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_incident_resolved_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
@@ -196,10 +227,16 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
         "shortWindowInMinutes": true,
         "minimumSampleCount": true,
         "refireSuppressionMinutes": true,
+        "shouldCreateAlert": true,
+        "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "incidentSeverityId": true,
+        "incidentOnCallDutyPolicies": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
+        "lastIncidentCreatedAt": true,
+        "lastIncidentResolvedAt": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -453,6 +490,16 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.RefireSuppressionMinutes = types.NumberNull()
     }
+    if val, ok := item["shouldCreateAlert"].(bool); ok {
+        data.ShouldCreateAlert = types.BoolValue(val)
+    } else {
+        data.ShouldCreateAlert = types.BoolNull()
+    }
+    if val, ok := item["shouldCreateIncident"].(bool); ok {
+        data.ShouldCreateIncident = types.BoolValue(val)
+    } else {
+        data.ShouldCreateIncident = types.BoolNull()
+    }
     if obj, ok := item["alertSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.AlertSeverityId = types.StringValue(val)
@@ -494,6 +541,47 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.OnCallDutyPolicies = types.SetNull(types.StringType)
     }
+    if obj, ok := item["incidentSeverityId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncidentSeverityId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentSeverityId = types.StringNull()
+        }
+    } else if val, ok := item["incidentSeverityId"].(string); ok {
+        data.IncidentSeverityId = types.StringValue(val)
+    } else {
+        data.IncidentSeverityId = types.StringNull()
+    }
+    if val, ok := item["incidentOnCallDutyPolicies"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.IncidentOnCallDutyPolicies = types.SetNull(types.StringType)
+    }
     if obj, ok := item["lastAlertCreatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.LastAlertCreatedAt = types.StringValue(val)
@@ -527,6 +615,40 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
         data.LastAlertResolvedAt = types.StringValue(val)
     } else {
         data.LastAlertResolvedAt = types.StringNull()
+    }
+    if obj, ok := item["lastIncidentCreatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastIncidentCreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastIncidentCreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastIncidentCreatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastIncidentCreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastIncidentCreatedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastIncidentCreatedAt"].(string); ok {
+        data.LastIncidentCreatedAt = types.StringValue(val)
+    } else {
+        data.LastIncidentCreatedAt = types.StringNull()
+    }
+    if obj, ok := item["lastIncidentResolvedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastIncidentResolvedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastIncidentResolvedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastIncidentResolvedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastIncidentResolvedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastIncidentResolvedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastIncidentResolvedAt"].(string); ok {
+        data.LastIncidentResolvedAt = types.StringValue(val)
+    } else {
+        data.LastIncidentResolvedAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

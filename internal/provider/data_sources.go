@@ -50,6 +50,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewUserOverrideDataSource,
         NewIncomingCallPolicyDataSource,
         NewIncomingCallPolicyEscalationRuleDataSource,
+        NewIncomingCallPolicyPhoneNumberDataSource,
         NewIncomingCallLogDataSource,
         NewIncomingCallLogItemDataSource,
         NewMonitorDataSource,

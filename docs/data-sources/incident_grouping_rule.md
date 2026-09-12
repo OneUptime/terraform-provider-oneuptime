@@ -31,6 +31,7 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 - `updated_at` (String) A date time object.. Computed.
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Description of this incident grouping rule.. Computed.
 - `priority` (Number) Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order... Computed.
