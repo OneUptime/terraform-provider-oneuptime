@@ -27,6 +27,8 @@ func GetDataSources() []func() datasource.DataSource {
         NewDetectionRuleDataSource,
         NewGoogleSecOpsConnectionDataSource,
         NewGoogleSecOpsConnectionRunDataSource,
+        NewSecurityEventConnectionDataSource,
+        NewSecurityEventConnectionRunDataSource,
         NewThreatIntelFeedDataSource,
         NewLogScrubRuleDataSource,
         NewMetricPipelineRuleDataSource,

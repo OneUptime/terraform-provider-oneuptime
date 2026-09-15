@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &TelemetryIngestionKeyDataSource{}
+var _ datasource.DataSource = &SecurityEventConnectionDataSource{}
 
-func NewTelemetryIngestionKeyDataSource() datasource.DataSource {
-    return &TelemetryIngestionKeyDataSource{}
+func NewSecurityEventConnectionDataSource() datasource.DataSource {
+    return &SecurityEventConnectionDataSource{}
 }
 
-// TelemetryIngestionKeyDataSource defines the data source implementation.
-type TelemetryIngestionKeyDataSource struct {
+// SecurityEventConnectionDataSource defines the data source implementation.
+type SecurityEventConnectionDataSource struct {
     client *Client
 }
 
-// TelemetryIngestionKeyDataSourceModel describes the data source data model.
-type TelemetryIngestionKeyDataSourceModel struct {
+// SecurityEventConnectionDataSourceModel describes the data source data model.
+type SecurityEventConnectionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -35,24 +35,28 @@ type TelemetryIngestionKeyDataSourceModel struct {
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    SecretKey types.String `tfsdk:"secret_key"`
-    KeyType types.String `tfsdk:"key_type"`
-    AllowedOrigins types.String `tfsdk:"allowed_origins"`
-    PinnedServiceName types.String `tfsdk:"pinned_service_name"`
+    ProviderValue types.String `tfsdk:"provider_value"`
+    Config types.String `tfsdk:"config"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
-    ExpiresAt types.String `tfsdk:"expires_at"`
-    LastUsedAt types.String `tfsdk:"last_used_at"`
-    RequestsPerMinuteLimit types.Number `tfsdk:"requests_per_minute_limit"`
+    PollIntervalInMinutes types.Number `tfsdk:"poll_interval_in_minutes"`
+    AlertingOnly types.Bool `tfsdk:"alerting_only"`
+    LastSuccessfulPollAt types.String `tfsdk:"last_successful_poll_at"`
+    LastEventIngestedAt types.String `tfsdk:"last_event_ingested_at"`
+    LastPollResult types.String `tfsdk:"last_poll_result"`
+    LastPolledAt types.String `tfsdk:"last_polled_at"`
+    Cursor types.String `tfsdk:"cursor"`
+    LastError types.String `tfsdk:"last_error"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *TelemetryIngestionKeyDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_telemetry_ingestion_key"
+func (d *SecurityEventConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_security_event_connection"
 }
 
-func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *SecurityEventConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage Telemetry Ingestion Keys for your project Look up an existing telemetry_ingestion_key by `id` or by `name`.",
+        MarkdownDescription: "Managed connections to SIEM, EDR, cloud security and identity products. Records are polled on an interval and ingested as security events. Look up an existing security_event_connection by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -86,50 +90,66 @@ func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req dataso
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember.",
+                MarkdownDescription: "What this connection imports and why..",
+                Computed: true,
+            },
+            "provider_value": schema.StringAttribute{
+                MarkdownDescription: "Which security product this connection polls, e.g. 'microsoft-sentinel' or 'crowdstrike-falcon'. Fixed once created..",
+                Computed: true,
+            },
+            "config": schema.StringAttribute{
+                MarkdownDescription: "Provider-specific, non-secret settings such as tenant, workspace, region or base URL. Keys are defined by the provider catalog..",
+                Computed: true,
+            },
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this connection is polled on its schedule..",
+                Computed: true,
+            },
+            "poll_interval_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "How often new records are polled, in minutes..",
+                Computed: true,
+            },
+            "alerting_only": schema.BoolAttribute{
+                MarkdownDescription: "For providers that distinguish alerting from non-alerting records: import only the alerting ones..",
+                Computed: true,
+            },
+            "last_successful_poll_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_event_ingested_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_poll_result": schema.StringAttribute{
+                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings..",
+                Computed: true,
+            },
+            "last_polled_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "cursor": schema.StringAttribute{
+                MarkdownDescription: "Poll cursor: the end of the last completely processed creation-time window, as an ISO string..",
+                Computed: true,
+            },
+            "last_error": schema.StringAttribute{
+                MarkdownDescription: "The most recent poll error with credentials redacted, if any. Cleared on the next successful poll..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "secret_key": schema.StringAttribute{
+            "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "key_type": schema.StringAttribute{
-                MarkdownDescription: "Server keys are for backend services and OpenTelemetry collectors: full ingest, no origin checks. Browser keys are write-only client keys: listed web origins may send traces, logs, metrics and session replay, while listed app:// identities currently authorize React Native session replay only. This cannot be changed after the key is created - create a new key instead..",
-                Computed: true,
-            },
-            "allowed_origins": schema.StringAttribute{
-                MarkdownDescription: "Web origins (for example https://app.example.com or https://*.example.com) and exact React Native identities (for example app://com.example.mobile) that may use this key. Required on a Browser key. Web requests need a listed Origin; mobile replay requests without Origin need a listed app identity. app:// entries cannot use wildcards and are self-asserted identifiers, not platform attestation. Ignored on a Server key..",
-                Computed: true,
-            },
-            "pinned_service_name": schema.StringAttribute{
-                MarkdownDescription: "When set, every OpenTelemetry resource ingested with this key has its service.name REPLACED with this value. This is what stops data written with a scraped key from masquerading as another service: forged spans land in one service you can see and mute, instead of poisoning your backend services' dashboards and alerts..",
-                Computed: true,
-            },
-            "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Turn this off to immediately stop accepting telemetry written with this key, without deleting it. Turn it back on to resume..",
-                Computed: true,
-            },
-            "expires_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "last_used_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "requests_per_minute_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum ingest requests per minute accepted with this key. Leave empty to use the shipped default for a Browser key, and to leave a Server key unlimited. The limit is per key, across every client using it, so it has to clear your whole fleet - see DEFAULT_BROWSER_KEY_REQUESTS_PER_MINUTE for the default and the reasoning behind its size..",
                 Computed: true,
             },
         },
     }
 }
 
-func (d *TelemetryIngestionKeyDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *SecurityEventConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -149,8 +169,8 @@ func (d *TelemetryIngestionKeyDataSource) Configure(ctx context.Context, req dat
     d.client = client
 }
 
-func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data TelemetryIngestionKeyDataSourceModel
+func (d *SecurityEventConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data SecurityEventConnectionDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -164,7 +184,7 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a telemetry_ingestion_key.",
+            "Exactly one of `id` or `name` must be set to look up a security_event_connection.",
         )
         return
     }
@@ -177,33 +197,37 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         "version": true,
         "projectId": true,
         "description": true,
-        "createdByUserId": true,
-        "secretKey": true,
-        "keyType": true,
-        "allowedOrigins": true,
-        "pinnedServiceName": true,
+        "provider": true,
+        "config": true,
         "isEnabled": true,
-        "expiresAt": true,
-        "lastUsedAt": true,
-        "requestsPerMinuteLimit": true,
+        "pollIntervalInMinutes": true,
+        "alertingOnly": true,
+        "lastSuccessfulPollAt": true,
+        "lastEventIngestedAt": true,
+        "lastPollResult": true,
+        "lastPolledAt": true,
+        "cursor": true,
+        "lastError": true,
+        "createdByUserId": true,
+        "deletedByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/telemetry-ingestion-key/" + data.Id.ValueString() + "/get-item"
+        readPath := "/security-event-connection/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_ingestion_key, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read security_event_connection, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No telemetry_ingestion_key found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event_connection found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read telemetry_ingestion_key: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read security_event_connection: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -220,28 +244,28 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/telemetry-ingestion-key/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/security-event-connection/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list telemetry_ingestion_key, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list security_event_connection, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list telemetry_ingestion_key: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list security_event_connection: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No telemetry_ingestion_key found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event_connection found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one telemetry_ingestion_key matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one security_event_connection matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for telemetry_ingestion_key.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for security_event_connection.")
             return
         }
         item = first
@@ -378,6 +402,163 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := item["provider"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProviderValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProviderValue = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProviderValue = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProviderValue = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderValue = types.StringNull()
+        }
+    } else if val, ok := item["provider"].(string); ok {
+        data.ProviderValue = types.StringValue(val)
+    } else {
+        data.ProviderValue = types.StringNull()
+    }
+    if obj, ok := item["config"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Config = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Config = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Config = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Config = types.StringValue(string(jsonBytes))
+        } else {
+            data.Config = types.StringNull()
+        }
+    } else if val, ok := item["config"].(string); ok {
+        data.Config = types.StringValue(val)
+    } else {
+        data.Config = types.StringNull()
+    }
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    } else {
+        data.IsEnabled = types.BoolNull()
+    }
+    if val, ok := item["pollIntervalInMinutes"].(float64); ok {
+        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["pollIntervalInMinutes"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.PollIntervalInMinutes = types.NumberNull()
+        }
+    } else {
+        data.PollIntervalInMinutes = types.NumberNull()
+    }
+    if val, ok := item["alertingOnly"].(bool); ok {
+        data.AlertingOnly = types.BoolValue(val)
+    } else {
+        data.AlertingOnly = types.BoolNull()
+    }
+    if obj, ok := item["lastSuccessfulPollAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastSuccessfulPollAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastSuccessfulPollAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastSuccessfulPollAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastSuccessfulPollAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastSuccessfulPollAt = types.StringNull()
+        }
+    } else if val, ok := item["lastSuccessfulPollAt"].(string); ok {
+        data.LastSuccessfulPollAt = types.StringValue(val)
+    } else {
+        data.LastSuccessfulPollAt = types.StringNull()
+    }
+    if obj, ok := item["lastEventIngestedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastEventIngestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastEventIngestedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastEventIngestedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastEventIngestedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastEventIngestedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastEventIngestedAt"].(string); ok {
+        data.LastEventIngestedAt = types.StringValue(val)
+    } else {
+        data.LastEventIngestedAt = types.StringNull()
+    }
+    if obj, ok := item["lastPollResult"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPollResult = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastPollResult = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastPollResult = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastPollResult = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastPollResult = types.StringNull()
+        }
+    } else if val, ok := item["lastPollResult"].(string); ok {
+        data.LastPollResult = types.StringValue(val)
+    } else {
+        data.LastPollResult = types.StringNull()
+    }
+    if obj, ok := item["lastPolledAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastPolledAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastPolledAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastPolledAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastPolledAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastPolledAt = types.StringNull()
+        }
+    } else if val, ok := item["lastPolledAt"].(string); ok {
+        data.LastPolledAt = types.StringValue(val)
+    } else {
+        data.LastPolledAt = types.StringNull()
+    }
+    if obj, ok := item["cursor"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Cursor = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Cursor = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Cursor = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Cursor = types.StringValue(string(jsonBytes))
+        } else {
+            data.Cursor = types.StringNull()
+        }
+    } else if val, ok := item["cursor"].(string); ok {
+        data.Cursor = types.StringValue(val)
+    } else {
+        data.Cursor = types.StringNull()
+    }
+    if obj, ok := item["lastError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
+    } else if val, ok := item["lastError"].(string); ok {
+        data.LastError = types.StringValue(val)
+    } else {
+        data.LastError = types.StringNull()
+    }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.CreatedByUserId = types.StringValue(val)
@@ -395,123 +576,22 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
     } else {
         data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := item["secretKey"].(map[string]interface{}); ok {
+    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SecretKey = types.StringValue(val)
+            data.DeletedByUserId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.SecretKey = types.StringValue(val)
+            data.DeletedByUserId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.SecretKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SecretKey = types.StringValue(string(jsonBytes))
+            data.DeletedByUserId = types.StringValue(string(jsonBytes))
         } else {
-            data.SecretKey = types.StringNull()
+            data.DeletedByUserId = types.StringNull()
         }
-    } else if val, ok := item["secretKey"].(string); ok {
-        data.SecretKey = types.StringValue(val)
+    } else if val, ok := item["deletedByUserId"].(string); ok {
+        data.DeletedByUserId = types.StringValue(val)
     } else {
-        data.SecretKey = types.StringNull()
-    }
-    if obj, ok := item["keyType"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.KeyType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.KeyType = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.KeyType = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.KeyType = types.StringValue(string(jsonBytes))
-        } else {
-            data.KeyType = types.StringNull()
-        }
-    } else if val, ok := item["keyType"].(string); ok {
-        data.KeyType = types.StringValue(val)
-    } else {
-        data.KeyType = types.StringNull()
-    }
-    if obj, ok := item["allowedOrigins"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AllowedOrigins = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.AllowedOrigins = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.AllowedOrigins = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AllowedOrigins = types.StringValue(string(jsonBytes))
-        } else {
-            data.AllowedOrigins = types.StringNull()
-        }
-    } else if val, ok := item["allowedOrigins"].(string); ok {
-        data.AllowedOrigins = types.StringValue(val)
-    } else {
-        data.AllowedOrigins = types.StringNull()
-    }
-    if obj, ok := item["pinnedServiceName"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PinnedServiceName = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PinnedServiceName = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PinnedServiceName = types.StringValue(string(jsonBytes))
-        } else {
-            data.PinnedServiceName = types.StringNull()
-        }
-    } else if val, ok := item["pinnedServiceName"].(string); ok {
-        data.PinnedServiceName = types.StringValue(val)
-    } else {
-        data.PinnedServiceName = types.StringNull()
-    }
-    if val, ok := item["isEnabled"].(bool); ok {
-        data.IsEnabled = types.BoolValue(val)
-    } else {
-        data.IsEnabled = types.BoolNull()
-    }
-    if obj, ok := item["expiresAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ExpiresAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.ExpiresAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.ExpiresAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ExpiresAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.ExpiresAt = types.StringNull()
-        }
-    } else if val, ok := item["expiresAt"].(string); ok {
-        data.ExpiresAt = types.StringValue(val)
-    } else {
-        data.ExpiresAt = types.StringNull()
-    }
-    if obj, ok := item["lastUsedAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastUsedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LastUsedAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LastUsedAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastUsedAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.LastUsedAt = types.StringNull()
-        }
-    } else if val, ok := item["lastUsedAt"].(string); ok {
-        data.LastUsedAt = types.StringValue(val)
-    } else {
-        data.LastUsedAt = types.StringNull()
-    }
-    if val, ok := item["requestsPerMinuteLimit"].(float64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["requestsPerMinuteLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.RequestsPerMinuteLimit = types.NumberNull()
-        }
-    } else {
-        data.RequestsPerMinuteLimit = types.NumberNull()
+        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

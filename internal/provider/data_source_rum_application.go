@@ -195,7 +195,7 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "session_replay_allowed_origins": schema.StringAttribute{
-                MarkdownDescription: "Exact browser origins (scheme + host + port) allowed to upload session replay chunks for this application. Empty (the default) accepts any origin. Once you list an origin this becomes a strict allowlist: anything unlisted, and any request with no Origin header, is refused..",
+                MarkdownDescription: "Browser origins (scheme + host + port) and exact React Native app identities (app:// followed by the Android package or iOS bundle id) allowed to upload replays for this application. Empty (the default) accepts any sender. Web origins may use one leading host wildcard; app:// identities never allow wildcards. Once populated, browsers must send a listed Origin and native recorders without Origin must send a listed app identity..",
                 Computed: true,
             },
             "session_replay_consent_mode": schema.StringAttribute{

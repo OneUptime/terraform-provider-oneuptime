@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &TelemetryIngestionKeyDataSource{}
+var _ datasource.DataSource = &SecurityEventConnectionRunDataSource{}
 
-func NewTelemetryIngestionKeyDataSource() datasource.DataSource {
-    return &TelemetryIngestionKeyDataSource{}
+func NewSecurityEventConnectionRunDataSource() datasource.DataSource {
+    return &SecurityEventConnectionRunDataSource{}
 }
 
-// TelemetryIngestionKeyDataSource defines the data source implementation.
-type TelemetryIngestionKeyDataSource struct {
+// SecurityEventConnectionRunDataSource defines the data source implementation.
+type SecurityEventConnectionRunDataSource struct {
     client *Client
 }
 
-// TelemetryIngestionKeyDataSourceModel describes the data source data model.
-type TelemetryIngestionKeyDataSourceModel struct {
+// SecurityEventConnectionRunDataSourceModel describes the data source data model.
+type SecurityEventConnectionRunDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,25 +34,24 @@ type TelemetryIngestionKeyDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Description types.String `tfsdk:"description"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    SecretKey types.String `tfsdk:"secret_key"`
-    KeyType types.String `tfsdk:"key_type"`
-    AllowedOrigins types.String `tfsdk:"allowed_origins"`
-    PinnedServiceName types.String `tfsdk:"pinned_service_name"`
-    IsEnabled types.Bool `tfsdk:"is_enabled"`
-    ExpiresAt types.String `tfsdk:"expires_at"`
-    LastUsedAt types.String `tfsdk:"last_used_at"`
-    RequestsPerMinuteLimit types.Number `tfsdk:"requests_per_minute_limit"`
+    SecurityEventConnectionId types.String `tfsdk:"security_event_connection_id"`
+    RequestedByUserId types.String `tfsdk:"requested_by_user_id"`
+    Type types.String `tfsdk:"type"`
+    Status types.String `tfsdk:"status"`
+    StartedAt types.String `tfsdk:"started_at"`
+    CompletedAt types.String `tfsdk:"completed_at"`
+    Request types.String `tfsdk:"request"`
+    Result types.String `tfsdk:"result"`
+    Error types.String `tfsdk:"error"`
 }
 
-func (d *TelemetryIngestionKeyDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_telemetry_ingestion_key"
+func (d *SecurityEventConnectionRunDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_security_event_connection_run"
 }
 
-func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *SecurityEventConnectionRunDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage Telemetry Ingestion Keys for your project Look up an existing telemetry_ingestion_key by `id` or by `name`.",
+        MarkdownDescription: "History of connection tests, previews, scheduled polls and historical imports for security event connections. Credentials are never included. Look up an existing security_event_connection_run by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -85,51 +84,47 @@ func (d *TelemetryIngestionKeyDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember.",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
+            "security_event_connection_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "secret_key": schema.StringAttribute{
+            "requested_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "key_type": schema.StringAttribute{
-                MarkdownDescription: "Server keys are for backend services and OpenTelemetry collectors: full ingest, no origin checks. Browser keys are write-only client keys: listed web origins may send traces, logs, metrics and session replay, while listed app:// identities currently authorize React Native session replay only. This cannot be changed after the key is created - create a new key instead..",
+            "type": schema.StringAttribute{
+                MarkdownDescription: "Operation of this connection run..",
                 Computed: true,
             },
-            "allowed_origins": schema.StringAttribute{
-                MarkdownDescription: "Web origins (for example https://app.example.com or https://*.example.com) and exact React Native identities (for example app://com.example.mobile) that may use this key. Required on a Browser key. Web requests need a listed Origin; mobile replay requests without Origin need a listed app identity. app:// entries cannot use wildcards and are self-asserted identifiers, not platform attestation. Ignored on a Server key..",
+            "status": schema.StringAttribute{
+                MarkdownDescription: "Status of this connection run..",
                 Computed: true,
             },
-            "pinned_service_name": schema.StringAttribute{
-                MarkdownDescription: "When set, every OpenTelemetry resource ingested with this key has its service.name REPLACED with this value. This is what stops data written with a scraped key from masquerading as another service: forged spans land in one service you can see and mute, instead of poisoning your backend services' dashboards and alerts..",
-                Computed: true,
-            },
-            "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Turn this off to immediately stop accepting telemetry written with this key, without deleting it. Turn it back on to resume..",
-                Computed: true,
-            },
-            "expires_at": schema.StringAttribute{
+            "started_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
-            "last_used_at": schema.StringAttribute{
+            "completed_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
-            "requests_per_minute_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum ingest requests per minute accepted with this key. Leave empty to use the shipped default for a Browser key, and to leave a Server key unlimited. The limit is per key, across every client using it, so it has to clear your whole fleet - see DEFAULT_BROWSER_KEY_REQUESTS_PER_MINUTE for the default and the reasoning behind its size..",
+            "request": schema.StringAttribute{
+                MarkdownDescription: "Validated operation and selected time range. Contains no credentials..",
+                Computed: true,
+            },
+            "result": schema.StringAttribute{
+                MarkdownDescription: "Counts, requested time range, checks and a bounded preview of records..",
+                Computed: true,
+            },
+            "error": schema.StringAttribute{
+                MarkdownDescription: "The run failure with credentials redacted..",
                 Computed: true,
             },
         },
     }
 }
 
-func (d *TelemetryIngestionKeyDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *SecurityEventConnectionRunDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -149,8 +144,8 @@ func (d *TelemetryIngestionKeyDataSource) Configure(ctx context.Context, req dat
     d.client = client
 }
 
-func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data TelemetryIngestionKeyDataSourceModel
+func (d *SecurityEventConnectionRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data SecurityEventConnectionRunDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -164,7 +159,7 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a telemetry_ingestion_key.",
+            "Exactly one of `id` or `name` must be set to look up a security_event_connection_run.",
         )
         return
     }
@@ -176,34 +171,33 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "description": true,
-        "createdByUserId": true,
-        "secretKey": true,
-        "keyType": true,
-        "allowedOrigins": true,
-        "pinnedServiceName": true,
-        "isEnabled": true,
-        "expiresAt": true,
-        "lastUsedAt": true,
-        "requestsPerMinuteLimit": true,
+        "securityEventConnectionId": true,
+        "requestedByUserId": true,
+        "type": true,
+        "status": true,
+        "startedAt": true,
+        "completedAt": true,
+        "request": true,
+        "result": true,
+        "error": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/telemetry-ingestion-key/" + data.Id.ValueString() + "/get-item"
+        readPath := "/security-event-connection-run/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read telemetry_ingestion_key, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read security_event_connection_run, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No telemetry_ingestion_key found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event_connection_run found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read telemetry_ingestion_key: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read security_event_connection_run: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -220,28 +214,28 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/telemetry-ingestion-key/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/security-event-connection-run/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list telemetry_ingestion_key, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list security_event_connection_run, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list telemetry_ingestion_key: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list security_event_connection_run: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No telemetry_ingestion_key found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No security_event_connection_run found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one telemetry_ingestion_key matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one security_event_connection_run matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for telemetry_ingestion_key.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for security_event_connection_run.")
             return
         }
         item = first
@@ -361,157 +355,158 @@ func (d *TelemetryIngestionKeyDataSource) Read(ctx context.Context, req datasour
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["description"].(map[string]interface{}); ok {
+    if obj, ok := item["securityEventConnectionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Description = types.StringValue(val)
+            data.SecurityEventConnectionId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Description = types.StringValue(val)
+            data.SecurityEventConnectionId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+            data.SecurityEventConnectionId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Description = types.StringValue(string(jsonBytes))
+            data.SecurityEventConnectionId = types.StringValue(string(jsonBytes))
         } else {
-            data.Description = types.StringNull()
+            data.SecurityEventConnectionId = types.StringNull()
         }
-    } else if val, ok := item["description"].(string); ok {
-        data.Description = types.StringValue(val)
+    } else if val, ok := item["securityEventConnectionId"].(string); ok {
+        data.SecurityEventConnectionId = types.StringValue(val)
     } else {
-        data.Description = types.StringNull()
+        data.SecurityEventConnectionId = types.StringNull()
     }
-    if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
+    if obj, ok := item["requestedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
+            data.RequestedByUserId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.CreatedByUserId = types.StringValue(val)
+            data.RequestedByUserId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+            data.RequestedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            data.RequestedByUserId = types.StringValue(string(jsonBytes))
         } else {
-            data.CreatedByUserId = types.StringNull()
+            data.RequestedByUserId = types.StringNull()
         }
-    } else if val, ok := item["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
+    } else if val, ok := item["requestedByUserId"].(string); ok {
+        data.RequestedByUserId = types.StringValue(val)
     } else {
-        data.CreatedByUserId = types.StringNull()
+        data.RequestedByUserId = types.StringNull()
     }
-    if obj, ok := item["secretKey"].(map[string]interface{}); ok {
+    if obj, ok := item["type"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SecretKey = types.StringValue(val)
+            data.Type = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.SecretKey = types.StringValue(val)
+            data.Type = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.SecretKey = types.StringValue(fmt.Sprintf("%v", val))
+            data.Type = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SecretKey = types.StringValue(string(jsonBytes))
+            data.Type = types.StringValue(string(jsonBytes))
         } else {
-            data.SecretKey = types.StringNull()
+            data.Type = types.StringNull()
         }
-    } else if val, ok := item["secretKey"].(string); ok {
-        data.SecretKey = types.StringValue(val)
+    } else if val, ok := item["type"].(string); ok {
+        data.Type = types.StringValue(val)
     } else {
-        data.SecretKey = types.StringNull()
+        data.Type = types.StringNull()
     }
-    if obj, ok := item["keyType"].(map[string]interface{}); ok {
+    if obj, ok := item["status"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.KeyType = types.StringValue(val)
+            data.Status = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.KeyType = types.StringValue(val)
+            data.Status = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.KeyType = types.StringValue(fmt.Sprintf("%v", val))
+            data.Status = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.KeyType = types.StringValue(string(jsonBytes))
+            data.Status = types.StringValue(string(jsonBytes))
         } else {
-            data.KeyType = types.StringNull()
+            data.Status = types.StringNull()
         }
-    } else if val, ok := item["keyType"].(string); ok {
-        data.KeyType = types.StringValue(val)
+    } else if val, ok := item["status"].(string); ok {
+        data.Status = types.StringValue(val)
     } else {
-        data.KeyType = types.StringNull()
+        data.Status = types.StringNull()
     }
-    if obj, ok := item["allowedOrigins"].(map[string]interface{}); ok {
+    if obj, ok := item["startedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AllowedOrigins = types.StringValue(val)
+            data.StartedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.AllowedOrigins = types.StringValue(val)
+            data.StartedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.AllowedOrigins = types.StringValue(fmt.Sprintf("%v", val))
+            data.StartedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AllowedOrigins = types.StringValue(string(jsonBytes))
+            data.StartedAt = types.StringValue(string(jsonBytes))
         } else {
-            data.AllowedOrigins = types.StringNull()
+            data.StartedAt = types.StringNull()
         }
-    } else if val, ok := item["allowedOrigins"].(string); ok {
-        data.AllowedOrigins = types.StringValue(val)
+    } else if val, ok := item["startedAt"].(string); ok {
+        data.StartedAt = types.StringValue(val)
     } else {
-        data.AllowedOrigins = types.StringNull()
+        data.StartedAt = types.StringNull()
     }
-    if obj, ok := item["pinnedServiceName"].(map[string]interface{}); ok {
+    if obj, ok := item["completedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PinnedServiceName = types.StringValue(val)
+            data.CompletedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.PinnedServiceName = types.StringValue(val)
+            data.CompletedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.PinnedServiceName = types.StringValue(fmt.Sprintf("%v", val))
+            data.CompletedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PinnedServiceName = types.StringValue(string(jsonBytes))
+            data.CompletedAt = types.StringValue(string(jsonBytes))
         } else {
-            data.PinnedServiceName = types.StringNull()
+            data.CompletedAt = types.StringNull()
         }
-    } else if val, ok := item["pinnedServiceName"].(string); ok {
-        data.PinnedServiceName = types.StringValue(val)
+    } else if val, ok := item["completedAt"].(string); ok {
+        data.CompletedAt = types.StringValue(val)
     } else {
-        data.PinnedServiceName = types.StringNull()
+        data.CompletedAt = types.StringNull()
     }
-    if val, ok := item["isEnabled"].(bool); ok {
-        data.IsEnabled = types.BoolValue(val)
-    } else {
-        data.IsEnabled = types.BoolNull()
-    }
-    if obj, ok := item["expiresAt"].(map[string]interface{}); ok {
+    if obj, ok := item["request"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ExpiresAt = types.StringValue(val)
+            data.Request = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.ExpiresAt = types.StringValue(val)
+            data.Request = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.ExpiresAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.Request = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ExpiresAt = types.StringValue(string(jsonBytes))
+            data.Request = types.StringValue(string(jsonBytes))
         } else {
-            data.ExpiresAt = types.StringNull()
+            data.Request = types.StringNull()
         }
-    } else if val, ok := item["expiresAt"].(string); ok {
-        data.ExpiresAt = types.StringValue(val)
+    } else if val, ok := item["request"].(string); ok {
+        data.Request = types.StringValue(val)
     } else {
-        data.ExpiresAt = types.StringNull()
+        data.Request = types.StringNull()
     }
-    if obj, ok := item["lastUsedAt"].(map[string]interface{}); ok {
+    if obj, ok := item["result"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastUsedAt = types.StringValue(val)
+            data.Result = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastUsedAt = types.StringValue(val)
+            data.Result = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastUsedAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.Result = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastUsedAt = types.StringValue(string(jsonBytes))
+            data.Result = types.StringValue(string(jsonBytes))
         } else {
-            data.LastUsedAt = types.StringNull()
+            data.Result = types.StringNull()
         }
-    } else if val, ok := item["lastUsedAt"].(string); ok {
-        data.LastUsedAt = types.StringValue(val)
+    } else if val, ok := item["result"].(string); ok {
+        data.Result = types.StringValue(val)
     } else {
-        data.LastUsedAt = types.StringNull()
+        data.Result = types.StringNull()
     }
-    if val, ok := item["requestsPerMinuteLimit"].(float64); ok {
-        data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["requestsPerMinuteLimit"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.RequestsPerMinuteLimit = types.NumberValue(big.NewFloat(val))
+    if obj, ok := item["error"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Error = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Error = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Error = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Error = types.StringValue(string(jsonBytes))
         } else {
-            data.RequestsPerMinuteLimit = types.NumberNull()
+            data.Error = types.StringNull()
         }
+    } else if val, ok := item["error"].(string); ok {
+        data.Error = types.StringValue(val)
     } else {
-        data.RequestsPerMinuteLimit = types.NumberNull()
+        data.Error = types.StringNull()
     }
 
     // Write logs using the tflog package
