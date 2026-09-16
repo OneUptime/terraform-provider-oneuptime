@@ -97,6 +97,7 @@ type ProjectDataSourceModel struct {
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     PlanName types.String `tfsdk:"plan_name"`
+    DataResidency types.String `tfsdk:"data_residency"`
     ResellerId types.String `tfsdk:"reseller_id"`
     ResellerPlanId types.String `tfsdk:"reseller_plan_id"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
@@ -393,6 +394,10 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "Name of the plan this project is subscribed to..",
                 Computed: true,
             },
+            "data_residency": schema.StringAttribute{
+                MarkdownDescription: "Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud..",
+                Computed: true,
+            },
             "reseller_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -559,6 +564,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableAutoRechargeAiBalance": true,
         "sendInvoicesByEmail": true,
         "planName": true,
+        "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
         "letCustomerSupportAccessProject": true,
@@ -1439,6 +1445,23 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.PlanName = types.StringValue(val)
     } else {
         data.PlanName = types.StringNull()
+    }
+    if obj, ok := item["dataResidency"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DataResidency = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if val, ok := item["dataResidency"].(string); ok {
+        data.DataResidency = types.StringValue(val)
+    } else {
+        data.DataResidency = types.StringNull()
     }
     if obj, ok := item["resellerId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

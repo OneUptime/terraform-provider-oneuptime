@@ -38,6 +38,7 @@ type NetworkDeviceDiscoveryScanDataSourceModel struct {
     Cidr types.String `tfsdk:"cidr"`
     SnmpConfigs types.String `tfsdk:"snmp_configs"`
     IsSnmpEnabled types.Bool `tfsdk:"is_snmp_enabled"`
+    UseShortDeviceNames types.Bool `tfsdk:"use_short_device_names"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
@@ -49,6 +50,7 @@ type NetworkDeviceDiscoveryScanDataSourceModel struct {
     SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
     Status types.String `tfsdk:"status"`
     StatusMessage types.String `tfsdk:"status_message"`
+    IsNetbiosLookupEnabled types.Bool `tfsdk:"is_netbios_lookup_enabled"`
     DiscoveredDevices types.String `tfsdk:"discovered_devices"`
     ScannedHostCount types.Number `tfsdk:"scanned_host_count"`
     RespondedHostCount types.Number `tfsdk:"responded_host_count"`
@@ -117,6 +119,10 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
                 MarkdownDescription: "Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them..",
                 Computed: true,
             },
+            "use_short_device_names": schema.BoolAttribute{
+                MarkdownDescription: "Name imported devices by their short hostname (the first label of a fully qualified name, e.g. 'core-sw-01' rather than 'core-sw-01.corp.example.com'). The full reverse-DNS name is still stored on the device as its DNS Name..",
+                Computed: true,
+            },
             "snmp_version": schema.StringAttribute{
                 MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored when Check SNMP is off..",
                 Computed: true,
@@ -159,6 +165,10 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Schema(ctx context.Context, req d
             },
             "status_message": schema.StringAttribute{
                 MarkdownDescription: "Details about the current status of this scan, e.g. the failure reason. Managed by the scanning probe..",
+                Computed: true,
+            },
+            "is_netbios_lookup_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether hosts with no SNMP name and no reverse DNS record are asked for their NetBIOS name over UDP 137. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes..",
                 Computed: true,
             },
             "discovered_devices": schema.StringAttribute{
@@ -260,6 +270,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         "cidr": true,
         "snmpConfigs": true,
         "isSnmpEnabled": true,
+        "useShortDeviceNames": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -271,6 +282,7 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         "snmpV3PrivKey": true,
         "status": true,
         "statusMessage": true,
+        "isNetbiosLookupEnabled": true,
         "discoveredDevices": true,
         "scannedHostCount": true,
         "respondedHostCount": true,
@@ -513,6 +525,11 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
     } else {
         data.IsSnmpEnabled = types.BoolNull()
     }
+    if val, ok := item["useShortDeviceNames"].(bool); ok {
+        data.UseShortDeviceNames = types.BoolValue(val)
+    } else {
+        data.UseShortDeviceNames = types.BoolNull()
+    }
     if obj, ok := item["snmpVersion"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.SnmpVersion = types.StringValue(val)
@@ -693,6 +710,11 @@ func (d *NetworkDeviceDiscoveryScanDataSource) Read(ctx context.Context, req dat
         data.StatusMessage = types.StringValue(val)
     } else {
         data.StatusMessage = types.StringNull()
+    }
+    if val, ok := item["isNetbiosLookupEnabled"].(bool); ok {
+        data.IsNetbiosLookupEnabled = types.BoolValue(val)
+    } else {
+        data.IsNetbiosLookupEnabled = types.BoolNull()
     }
     if obj, ok := item["discoveredDevices"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

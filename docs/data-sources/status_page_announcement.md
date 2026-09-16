@@ -42,5 +42,7 @@ data "oneuptime_status_page_announcement" "by_id" {
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `subscriber_notification_status` (String) Status page announcement subscriber_notification_status. Computed.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.. Computed.
+- `subscriber_notification_status_on_announcement_updated` (String) Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested... Computed.
+- `subscriber_notification_status_message_on_announcement_updated` (String) Status message for the notification sent to subscribers when this announcement was last updated - includes success messages, failure reasons, or skip reasons.. Computed.
 - `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this announcement?.. Computed.
 - `is_owner_notified` (Bool) Are owners notified of this announcement?.. Computed.

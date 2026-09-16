@@ -57,6 +57,7 @@ type IncidentDataSourceModel struct {
     DockerResources types.Set `tfsdk:"docker_resources"`
     PodmanResources types.Set `tfsdk:"podman_resources"`
     Services types.Set `tfsdk:"services"`
+    ServiceLevelObjectives types.Set `tfsdk:"service_level_objectives"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
     Labels types.Set `tfsdk:"labels"`
     CurrentIncidentStateId types.String `tfsdk:"current_incident_state_id"`
@@ -230,6 +231,11 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "List of services affected by this incident..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "service_level_objectives": schema.SetAttribute{
+                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this incident..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -451,6 +457,7 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         "dockerResources": true,
         "podmanResources": true,
         "services": true,
+        "serviceLevelObjectives": true,
         "onCallDutyPolicies": true,
         "labels": true,
         "currentIncidentStateId": true,
@@ -1123,6 +1130,30 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.Services = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Services = types.SetNull(types.StringType)
+    }
+    if val, ok := item["serviceLevelObjectives"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.ServiceLevelObjectives = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.ServiceLevelObjectives = types.SetNull(types.StringType)
     }
     if val, ok := item["onCallDutyPolicies"].([]interface{}); ok {
         var setItems []attr.Value

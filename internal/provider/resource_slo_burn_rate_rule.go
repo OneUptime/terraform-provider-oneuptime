@@ -53,8 +53,25 @@ type SloBurnRateRuleResourceModel struct {
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    AlertTitleTemplate types.String `tfsdk:"alert_title_template"`
+    AlertDescriptionTemplate types.String `tfsdk:"alert_description_template"`
+    AlertRemediationNotes types.String `tfsdk:"alert_remediation_notes"`
+    IsAlertPrivate types.Bool `tfsdk:"is_alert_private"`
+    AutoResolveAlert types.Bool `tfsdk:"auto_resolve_alert"`
+    AlertLabels types.Set `tfsdk:"alert_labels"`
+    AlertOwnerTeams types.Set `tfsdk:"alert_owner_teams"`
+    AlertOwnerUsers types.Set `tfsdk:"alert_owner_users"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     IncidentOnCallDutyPolicies types.Set `tfsdk:"incident_on_call_duty_policies"`
+    IncidentTitleTemplate types.String `tfsdk:"incident_title_template"`
+    IncidentDescriptionTemplate types.String `tfsdk:"incident_description_template"`
+    IncidentRemediationNotes types.String `tfsdk:"incident_remediation_notes"`
+    IsIncidentPrivate types.Bool `tfsdk:"is_incident_private"`
+    AutoResolveIncident types.Bool `tfsdk:"auto_resolve_incident"`
+    IncidentLabels types.Set `tfsdk:"incident_labels"`
+    IncidentOwnerTeams types.Set `tfsdk:"incident_owner_teams"`
+    IncidentOwnerUsers types.Set `tfsdk:"incident_owner_users"`
+    AddSloOwnersAsOwners types.Bool `tfsdk:"add_slo_owners_as_owners"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -172,6 +189,75 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "alert_title_template": schema.StringAttribute{
+                MarkdownDescription: "Title of the alert raised when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_description_template": schema.StringAttribute{
+                MarkdownDescription: "Description (in Markdown) of the alert raised when this burn rate rule fires. Supports template variables. Leave empty to use the default description..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_remediation_notes": schema.StringAttribute{
+                MarkdownDescription: "Remediation notes (in Markdown) attached to the alert raised when this burn rate rule fires. Supports template variables..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_alert_private": schema.BoolAttribute{
+                MarkdownDescription: "Make the alert raised by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "auto_resolve_alert": schema.BoolAttribute{
+                MarkdownDescription: "Resolve the alert automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the alert stays open until someone resolves it..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_labels": schema.SetAttribute{
+                MarkdownDescription: "Labels added to alerts raised by this burn rate rule..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams added as owners of alerts raised by this burn rate rule..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users added as owners of alerts raised by this burn rate rule..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
@@ -187,6 +273,84 @@ func (r *SloBurnRateRuleResource) Schema(ctx context.Context, req resource.Schem
                 ElementType: types.StringType,
                 PlanModifiers: []planmodifier.Set{
                     setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_title_template": schema.StringAttribute{
+                MarkdownDescription: "Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_description_template": schema.StringAttribute{
+                MarkdownDescription: "Description (in Markdown) of the incident declared when this burn rate rule fires. Supports template variables. Leave empty to use the default description..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_remediation_notes": schema.StringAttribute{
+                MarkdownDescription: "Remediation notes (in Markdown) attached to the incident declared when this burn rate rule fires. Supports template variables..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_incident_private": schema.BoolAttribute{
+                MarkdownDescription: "Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "auto_resolve_incident": schema.BoolAttribute{
+                MarkdownDescription: "Resolve the incident automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the incident stays open until someone resolves it..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_labels": schema.SetAttribute{
+                MarkdownDescription: "Labels added to incidents declared by this burn rate rule..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams added as owners of incidents declared by this burn rate rule..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incident_owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users added as owners of incidents declared by this burn rate rule..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "add_slo_owners_as_owners": schema.BoolAttribute{
+                MarkdownDescription: "Also add the owner users and owner teams of the Service Level Objective as owners of the alerts and incidents this burn rate rule creates. Disabled by default..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_by_user_id": schema.StringAttribute{
@@ -318,11 +482,62 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     if !data.OnCallDutyPolicies.IsNull() && !data.OnCallDutyPolicies.IsUnknown() {
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
+    if !data.AlertTitleTemplate.IsNull() && !data.AlertTitleTemplate.IsUnknown() {
+        requestDataMap["alertTitleTemplate"] = data.AlertTitleTemplate.ValueString()
+    }
+    if !data.AlertDescriptionTemplate.IsNull() && !data.AlertDescriptionTemplate.IsUnknown() {
+        requestDataMap["alertDescriptionTemplate"] = data.AlertDescriptionTemplate.ValueString()
+    }
+    if !data.AlertRemediationNotes.IsNull() && !data.AlertRemediationNotes.IsUnknown() {
+        requestDataMap["alertRemediationNotes"] = data.AlertRemediationNotes.ValueString()
+    }
+    if !data.IsAlertPrivate.IsNull() && !data.IsAlertPrivate.IsUnknown() {
+        requestDataMap["isAlertPrivate"] = data.IsAlertPrivate.ValueBool()
+    }
+    if !data.AutoResolveAlert.IsNull() && !data.AutoResolveAlert.IsUnknown() {
+        requestDataMap["autoResolveAlert"] = data.AutoResolveAlert.ValueBool()
+    }
+    if !data.AlertLabels.IsNull() && !data.AlertLabels.IsUnknown() {
+        requestDataMap["alertLabels"] = r.convertTerraformSetToInterface(data.AlertLabels)
+    }
+    if !data.AlertOwnerTeams.IsNull() && !data.AlertOwnerTeams.IsUnknown() {
+        requestDataMap["alertOwnerTeams"] = r.convertTerraformSetToInterface(data.AlertOwnerTeams)
+    }
+    if !data.AlertOwnerUsers.IsNull() && !data.AlertOwnerUsers.IsUnknown() {
+        requestDataMap["alertOwnerUsers"] = r.convertTerraformSetToInterface(data.AlertOwnerUsers)
+    }
     if !data.IncidentSeverityId.IsNull() && !data.IncidentSeverityId.IsUnknown() {
         requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
     }
     if !data.IncidentOnCallDutyPolicies.IsNull() && !data.IncidentOnCallDutyPolicies.IsUnknown() {
         requestDataMap["incidentOnCallDutyPolicies"] = r.convertTerraformSetToInterface(data.IncidentOnCallDutyPolicies)
+    }
+    if !data.IncidentTitleTemplate.IsNull() && !data.IncidentTitleTemplate.IsUnknown() {
+        requestDataMap["incidentTitleTemplate"] = data.IncidentTitleTemplate.ValueString()
+    }
+    if !data.IncidentDescriptionTemplate.IsNull() && !data.IncidentDescriptionTemplate.IsUnknown() {
+        requestDataMap["incidentDescriptionTemplate"] = data.IncidentDescriptionTemplate.ValueString()
+    }
+    if !data.IncidentRemediationNotes.IsNull() && !data.IncidentRemediationNotes.IsUnknown() {
+        requestDataMap["incidentRemediationNotes"] = data.IncidentRemediationNotes.ValueString()
+    }
+    if !data.IsIncidentPrivate.IsNull() && !data.IsIncidentPrivate.IsUnknown() {
+        requestDataMap["isIncidentPrivate"] = data.IsIncidentPrivate.ValueBool()
+    }
+    if !data.AutoResolveIncident.IsNull() && !data.AutoResolveIncident.IsUnknown() {
+        requestDataMap["autoResolveIncident"] = data.AutoResolveIncident.ValueBool()
+    }
+    if !data.IncidentLabels.IsNull() && !data.IncidentLabels.IsUnknown() {
+        requestDataMap["incidentLabels"] = r.convertTerraformSetToInterface(data.IncidentLabels)
+    }
+    if !data.IncidentOwnerTeams.IsNull() && !data.IncidentOwnerTeams.IsUnknown() {
+        requestDataMap["incidentOwnerTeams"] = r.convertTerraformSetToInterface(data.IncidentOwnerTeams)
+    }
+    if !data.IncidentOwnerUsers.IsNull() && !data.IncidentOwnerUsers.IsUnknown() {
+        requestDataMap["incidentOwnerUsers"] = r.convertTerraformSetToInterface(data.IncidentOwnerUsers)
+    }
+    if !data.AddSloOwnersAsOwners.IsNull() && !data.AddSloOwnersAsOwners.IsUnknown() {
+        requestDataMap["addSloOwnersAsOwners"] = data.AddSloOwnersAsOwners.ValueBool()
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
@@ -385,8 +600,25 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
         "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "alertTitleTemplate": true,
+        "alertDescriptionTemplate": true,
+        "alertRemediationNotes": true,
+        "isAlertPrivate": true,
+        "autoResolveAlert": true,
+        "alertLabels": true,
+        "alertOwnerTeams": true,
+        "alertOwnerUsers": true,
         "incidentSeverityId": true,
         "incidentOnCallDutyPolicies": true,
+        "incidentTitleTemplate": true,
+        "incidentDescriptionTemplate": true,
+        "incidentRemediationNotes": true,
+        "isIncidentPrivate": true,
+        "autoResolveIncident": true,
+        "incidentLabels": true,
+        "incidentOwnerTeams": true,
+        "incidentOwnerUsers": true,
+        "addSloOwnersAsOwners": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -676,6 +908,219 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["alertTitleTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertTitleTemplate"].(string); ok {
+        data.AlertTitleTemplate = types.StringValue(val)
+    } else {
+        data.AlertTitleTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["alertDescriptionTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertDescriptionTemplate"].(string); ok {
+        data.AlertDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.AlertDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["alertRemediationNotes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertRemediationNotes"].(string); ok {
+        data.AlertRemediationNotes = types.StringValue(val)
+    } else {
+        data.AlertRemediationNotes = types.StringNull()
+    }
+    if val, ok := dataMap["isAlertPrivate"].(bool); ok {
+        data.IsAlertPrivate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoResolveAlert"].(bool); ok {
+        data.AutoResolveAlert = types.BoolValue(val)
+    }
+    if val, ok := dataMap["alertLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["alertOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["alertOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -744,6 +1189,222 @@ func (r *SloBurnRateRuleResource) Create(ctx context.Context, req resource.Creat
     } else {
         // For sets, always use empty set instead of null to match default values
         data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["incidentTitleTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentTitleTemplate"].(string); ok {
+        data.IncidentTitleTemplate = types.StringValue(val)
+    } else {
+        data.IncidentTitleTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentDescriptionTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentDescriptionTemplate"].(string); ok {
+        data.IncidentDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.IncidentDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentRemediationNotes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentRemediationNotes"].(string); ok {
+        data.IncidentRemediationNotes = types.StringValue(val)
+    } else {
+        data.IncidentRemediationNotes = types.StringNull()
+    }
+    if val, ok := dataMap["isIncidentPrivate"].(bool); ok {
+        data.IsIncidentPrivate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoResolveIncident"].(bool); ok {
+        data.AutoResolveIncident = types.BoolValue(val)
+    }
+    if val, ok := dataMap["incidentLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["incidentOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["incidentOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["addSloOwnersAsOwners"].(bool); ok {
+        data.AddSloOwnersAsOwners = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -916,8 +1577,25 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
         "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "alertTitleTemplate": true,
+        "alertDescriptionTemplate": true,
+        "alertRemediationNotes": true,
+        "isAlertPrivate": true,
+        "autoResolveAlert": true,
+        "alertLabels": true,
+        "alertOwnerTeams": true,
+        "alertOwnerUsers": true,
         "incidentSeverityId": true,
         "incidentOnCallDutyPolicies": true,
+        "incidentTitleTemplate": true,
+        "incidentDescriptionTemplate": true,
+        "incidentRemediationNotes": true,
+        "isIncidentPrivate": true,
+        "autoResolveIncident": true,
+        "incidentLabels": true,
+        "incidentOwnerTeams": true,
+        "incidentOwnerUsers": true,
+        "addSloOwnersAsOwners": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1208,6 +1886,219 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["alertTitleTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertTitleTemplate"].(string); ok {
+        data.AlertTitleTemplate = types.StringValue(val)
+    } else {
+        data.AlertTitleTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["alertDescriptionTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertDescriptionTemplate"].(string); ok {
+        data.AlertDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.AlertDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["alertRemediationNotes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertRemediationNotes"].(string); ok {
+        data.AlertRemediationNotes = types.StringValue(val)
+    } else {
+        data.AlertRemediationNotes = types.StringNull()
+    }
+    if val, ok := dataMap["isAlertPrivate"].(bool); ok {
+        data.IsAlertPrivate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoResolveAlert"].(bool); ok {
+        data.AutoResolveAlert = types.BoolValue(val)
+    }
+    if val, ok := dataMap["alertLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["alertOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["alertOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1276,6 +2167,222 @@ func (r *SloBurnRateRuleResource) Read(ctx context.Context, req resource.ReadReq
     } else {
         // For sets, always use empty set instead of null to match default values
         data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["incidentTitleTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentTitleTemplate"].(string); ok {
+        data.IncidentTitleTemplate = types.StringValue(val)
+    } else {
+        data.IncidentTitleTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentDescriptionTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentDescriptionTemplate"].(string); ok {
+        data.IncidentDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.IncidentDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentRemediationNotes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentRemediationNotes"].(string); ok {
+        data.IncidentRemediationNotes = types.StringValue(val)
+    } else {
+        data.IncidentRemediationNotes = types.StringNull()
+    }
+    if val, ok := dataMap["isIncidentPrivate"].(bool); ok {
+        data.IsIncidentPrivate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoResolveIncident"].(bool); ok {
+        data.AutoResolveIncident = types.BoolValue(val)
+    }
+    if val, ok := dataMap["incidentLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["incidentOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["incidentOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["addSloOwnersAsOwners"].(bool); ok {
+        data.AddSloOwnersAsOwners = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1476,11 +2583,62 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
     if !data.OnCallDutyPolicies.IsUnknown() && !state.OnCallDutyPolicies.IsUnknown() && !data.OnCallDutyPolicies.Equal(state.OnCallDutyPolicies) {
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
+    if !data.AlertTitleTemplate.IsUnknown() && !state.AlertTitleTemplate.IsUnknown() && !data.AlertTitleTemplate.Equal(state.AlertTitleTemplate) {
+        requestDataMap["alertTitleTemplate"] = data.AlertTitleTemplate.ValueString()
+    }
+    if !data.AlertDescriptionTemplate.IsUnknown() && !state.AlertDescriptionTemplate.IsUnknown() && !data.AlertDescriptionTemplate.Equal(state.AlertDescriptionTemplate) {
+        requestDataMap["alertDescriptionTemplate"] = data.AlertDescriptionTemplate.ValueString()
+    }
+    if !data.AlertRemediationNotes.IsUnknown() && !state.AlertRemediationNotes.IsUnknown() && !data.AlertRemediationNotes.Equal(state.AlertRemediationNotes) {
+        requestDataMap["alertRemediationNotes"] = data.AlertRemediationNotes.ValueString()
+    }
+    if !data.IsAlertPrivate.IsUnknown() && !state.IsAlertPrivate.IsUnknown() && !data.IsAlertPrivate.Equal(state.IsAlertPrivate) {
+        requestDataMap["isAlertPrivate"] = data.IsAlertPrivate.ValueBool()
+    }
+    if !data.AutoResolveAlert.IsUnknown() && !state.AutoResolveAlert.IsUnknown() && !data.AutoResolveAlert.Equal(state.AutoResolveAlert) {
+        requestDataMap["autoResolveAlert"] = data.AutoResolveAlert.ValueBool()
+    }
+    if !data.AlertLabels.IsUnknown() && !state.AlertLabels.IsUnknown() && !data.AlertLabels.Equal(state.AlertLabels) {
+        requestDataMap["alertLabels"] = r.convertTerraformSetToInterface(data.AlertLabels)
+    }
+    if !data.AlertOwnerTeams.IsUnknown() && !state.AlertOwnerTeams.IsUnknown() && !data.AlertOwnerTeams.Equal(state.AlertOwnerTeams) {
+        requestDataMap["alertOwnerTeams"] = r.convertTerraformSetToInterface(data.AlertOwnerTeams)
+    }
+    if !data.AlertOwnerUsers.IsUnknown() && !state.AlertOwnerUsers.IsUnknown() && !data.AlertOwnerUsers.Equal(state.AlertOwnerUsers) {
+        requestDataMap["alertOwnerUsers"] = r.convertTerraformSetToInterface(data.AlertOwnerUsers)
+    }
     if !data.IncidentSeverityId.IsUnknown() && !state.IncidentSeverityId.IsUnknown() && !data.IncidentSeverityId.Equal(state.IncidentSeverityId) {
         requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
     }
     if !data.IncidentOnCallDutyPolicies.IsUnknown() && !state.IncidentOnCallDutyPolicies.IsUnknown() && !data.IncidentOnCallDutyPolicies.Equal(state.IncidentOnCallDutyPolicies) {
         requestDataMap["incidentOnCallDutyPolicies"] = r.convertTerraformSetToInterface(data.IncidentOnCallDutyPolicies)
+    }
+    if !data.IncidentTitleTemplate.IsUnknown() && !state.IncidentTitleTemplate.IsUnknown() && !data.IncidentTitleTemplate.Equal(state.IncidentTitleTemplate) {
+        requestDataMap["incidentTitleTemplate"] = data.IncidentTitleTemplate.ValueString()
+    }
+    if !data.IncidentDescriptionTemplate.IsUnknown() && !state.IncidentDescriptionTemplate.IsUnknown() && !data.IncidentDescriptionTemplate.Equal(state.IncidentDescriptionTemplate) {
+        requestDataMap["incidentDescriptionTemplate"] = data.IncidentDescriptionTemplate.ValueString()
+    }
+    if !data.IncidentRemediationNotes.IsUnknown() && !state.IncidentRemediationNotes.IsUnknown() && !data.IncidentRemediationNotes.Equal(state.IncidentRemediationNotes) {
+        requestDataMap["incidentRemediationNotes"] = data.IncidentRemediationNotes.ValueString()
+    }
+    if !data.IsIncidentPrivate.IsUnknown() && !state.IsIncidentPrivate.IsUnknown() && !data.IsIncidentPrivate.Equal(state.IsIncidentPrivate) {
+        requestDataMap["isIncidentPrivate"] = data.IsIncidentPrivate.ValueBool()
+    }
+    if !data.AutoResolveIncident.IsUnknown() && !state.AutoResolveIncident.IsUnknown() && !data.AutoResolveIncident.Equal(state.AutoResolveIncident) {
+        requestDataMap["autoResolveIncident"] = data.AutoResolveIncident.ValueBool()
+    }
+    if !data.IncidentLabels.IsUnknown() && !state.IncidentLabels.IsUnknown() && !data.IncidentLabels.Equal(state.IncidentLabels) {
+        requestDataMap["incidentLabels"] = r.convertTerraformSetToInterface(data.IncidentLabels)
+    }
+    if !data.IncidentOwnerTeams.IsUnknown() && !state.IncidentOwnerTeams.IsUnknown() && !data.IncidentOwnerTeams.Equal(state.IncidentOwnerTeams) {
+        requestDataMap["incidentOwnerTeams"] = r.convertTerraformSetToInterface(data.IncidentOwnerTeams)
+    }
+    if !data.IncidentOwnerUsers.IsUnknown() && !state.IncidentOwnerUsers.IsUnknown() && !data.IncidentOwnerUsers.Equal(state.IncidentOwnerUsers) {
+        requestDataMap["incidentOwnerUsers"] = r.convertTerraformSetToInterface(data.IncidentOwnerUsers)
+    }
+    if !data.AddSloOwnersAsOwners.IsUnknown() && !state.AddSloOwnersAsOwners.IsUnknown() && !data.AddSloOwnersAsOwners.Equal(state.AddSloOwnersAsOwners) {
+        requestDataMap["addSloOwnersAsOwners"] = data.AddSloOwnersAsOwners.ValueBool()
     }
 
     // Only call the API when there are changed fields to send. An empty
@@ -1518,8 +2676,25 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "alertTitleTemplate": true,
+        "alertDescriptionTemplate": true,
+        "alertRemediationNotes": true,
+        "isAlertPrivate": true,
+        "autoResolveAlert": true,
+        "alertLabels": true,
+        "alertOwnerTeams": true,
+        "alertOwnerUsers": true,
         "incidentSeverityId": true,
         "incidentOnCallDutyPolicies": true,
+        "incidentTitleTemplate": true,
+        "incidentDescriptionTemplate": true,
+        "incidentRemediationNotes": true,
+        "isIncidentPrivate": true,
+        "autoResolveIncident": true,
+        "incidentLabels": true,
+        "incidentOwnerTeams": true,
+        "incidentOwnerUsers": true,
+        "addSloOwnersAsOwners": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1804,6 +2979,219 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if obj, ok := dataMap["alertTitleTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertTitleTemplate"].(string); ok {
+        data.AlertTitleTemplate = types.StringValue(val)
+    } else {
+        data.AlertTitleTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["alertDescriptionTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertDescriptionTemplate"].(string); ok {
+        data.AlertDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.AlertDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["alertRemediationNotes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := dataMap["alertRemediationNotes"].(string); ok {
+        data.AlertRemediationNotes = types.StringValue(val)
+    } else {
+        data.AlertRemediationNotes = types.StringNull()
+    }
+    if val, ok := dataMap["isAlertPrivate"].(bool); ok {
+        data.IsAlertPrivate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoResolveAlert"].(bool); ok {
+        data.AutoResolveAlert = types.BoolValue(val)
+    }
+    if val, ok := dataMap["alertLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["alertOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["alertOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.AlertOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.AlertOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1872,6 +3260,222 @@ func (r *SloBurnRateRuleResource) Update(ctx context.Context, req resource.Updat
     } else {
         // For sets, always use empty set instead of null to match default values
         data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if obj, ok := dataMap["incidentTitleTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentTitleTemplate"].(string); ok {
+        data.IncidentTitleTemplate = types.StringValue(val)
+    } else {
+        data.IncidentTitleTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentDescriptionTemplate"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentDescriptionTemplate"].(string); ok {
+        data.IncidentDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.IncidentDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := dataMap["incidentRemediationNotes"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentRemediationNotes"].(string); ok {
+        data.IncidentRemediationNotes = types.StringValue(val)
+    } else {
+        data.IncidentRemediationNotes = types.StringNull()
+    }
+    if val, ok := dataMap["isIncidentPrivate"].(bool); ok {
+        data.IsIncidentPrivate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["autoResolveIncident"].(bool); ok {
+        data.AutoResolveIncident = types.BoolValue(val)
+    }
+    if val, ok := dataMap["incidentLabels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentLabels = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["incidentOwnerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["incidentOwnerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.IncidentOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.IncidentOwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["addSloOwnersAsOwners"].(bool); ok {
+        data.AddSloOwnersAsOwners = types.BoolValue(val)
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

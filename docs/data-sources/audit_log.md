@@ -31,6 +31,8 @@ data "oneuptime_audit_log" "by_id" {
 - `resource_type` (String) Resource Type. Computed.
 - `resource_id` (String) Resource ID. Computed.
 - `resource_name` (String) Resource Name. Computed.
+- `root_resource_type` (String) Root Resource Type. Computed.
+- `root_resource_id` (String) Root Resource ID. Computed.
 - `action` (String) Action. Computed.
 - `user_id` (String) User ID. Computed.
 - `user_name` (String) User Name. Computed.

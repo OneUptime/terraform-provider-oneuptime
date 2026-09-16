@@ -48,6 +48,8 @@ This is **markdown** content"
 - `version` (Number) Object version.
 - `subscriber_notification_status` (String) Status page announcement subscriber_notification_status.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons..
+- `subscriber_notification_status_on_announcement_updated` (String) Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested...
+- `subscriber_notification_status_message_on_announcement_updated` (String) Status message for the notification sent to subscribers when this announcement was last updated - includes success messages, failure reasons, or skip reasons..
 - `is_owner_notified` (Bool) Are owners notified of this announcement?..
 
 ## Import

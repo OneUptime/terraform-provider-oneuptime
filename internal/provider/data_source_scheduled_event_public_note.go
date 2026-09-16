@@ -42,6 +42,8 @@ type ScheduledEventPublicNoteDataSourceModel struct {
     Attachments types.Set `tfsdk:"attachments"`
     SubscriberNotificationStatusOnNoteCreated types.String `tfsdk:"subscriber_notification_status_on_note_created"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
+    SubscriberNotificationStatusOnNoteUpdated types.String `tfsdk:"subscriber_notification_status_on_note_updated"`
+    SubscriberNotificationStatusMessageOnNoteUpdated types.String `tfsdk:"subscriber_notification_status_message_on_note_updated"`
     ShouldStatusPageSubscribersBeNotifiedOnNoteCreated types.Bool `tfsdk:"should_status_page_subscribers_be_notified_on_note_created"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     PostedAt types.String `tfsdk:"posted_at"`
@@ -110,6 +112,14 @@ func (d *ScheduledEventPublicNoteDataSource) Schema(ctx context.Context, req dat
             },
             "subscriber_notification_status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.",
+                Computed: true,
+            },
+            "subscriber_notification_status_on_note_updated": schema.StringAttribute{
+                MarkdownDescription: "Status of the notification sent to subscribers when this note was last updated. Empty until an update notification is requested..",
+                Computed: true,
+            },
+            "subscriber_notification_status_message_on_note_updated": schema.StringAttribute{
+                MarkdownDescription: "Status message for the notification sent to subscribers when this note was last updated - includes success messages, failure reasons, or skip reasons.",
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
@@ -185,6 +195,8 @@ func (d *ScheduledEventPublicNoteDataSource) Read(ctx context.Context, req datas
         "attachments": true,
         "subscriberNotificationStatusOnNoteCreated": true,
         "subscriberNotificationStatusMessage": true,
+        "subscriberNotificationStatusOnNoteUpdated": true,
+        "subscriberNotificationStatusMessageOnNoteUpdated": true,
         "shouldStatusPageSubscribersBeNotifiedOnNoteCreated": true,
         "isOwnerNotified": true,
         "postedAt": true,
@@ -472,6 +484,40 @@ func (d *ScheduledEventPublicNoteDataSource) Read(ctx context.Context, req datas
         data.SubscriberNotificationStatusMessage = types.StringValue(val)
     } else {
         data.SubscriberNotificationStatusMessage = types.StringNull()
+    }
+    if obj, ok := item["subscriberNotificationStatusOnNoteUpdated"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
+        }
+    } else if val, ok := item["subscriberNotificationStatusOnNoteUpdated"].(string); ok {
+        data.SubscriberNotificationStatusOnNoteUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusOnNoteUpdated = types.StringNull()
+    }
+    if obj, ok := item["subscriberNotificationStatusMessageOnNoteUpdated"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
+        }
+    } else if val, ok := item["subscriberNotificationStatusMessageOnNoteUpdated"].(string); ok {
+        data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusMessageOnNoteUpdated = types.StringNull()
     }
     if val, ok := item["shouldStatusPageSubscribersBeNotifiedOnNoteCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = types.BoolValue(val)

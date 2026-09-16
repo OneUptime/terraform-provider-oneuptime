@@ -52,6 +52,7 @@ data "oneuptime_alert" "by_id" {
 - `docker_resources` (Set) List of Docker resources (containers, images, networks, volumes) affected by this alert... Computed.
 - `podman_resources` (Set) List of Podman resources (containers, images, networks, volumes) affected by this alert... Computed.
 - `services` (Set) List of services affected by this alert... Computed.
+- `service_level_objectives` (Set) List of Service Level Objectives (SLOs) affected by this alert... Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `current_alert_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_severity_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

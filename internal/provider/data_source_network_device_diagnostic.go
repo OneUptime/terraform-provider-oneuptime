@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &GoogleSecOpsConnectionDataSource{}
+var _ datasource.DataSource = &NetworkDeviceDiagnosticDataSource{}
 
-func NewGoogleSecOpsConnectionDataSource() datasource.DataSource {
-    return &GoogleSecOpsConnectionDataSource{}
+func NewNetworkDeviceDiagnosticDataSource() datasource.DataSource {
+    return &NetworkDeviceDiagnosticDataSource{}
 }
 
-// GoogleSecOpsConnectionDataSource defines the data source implementation.
-type GoogleSecOpsConnectionDataSource struct {
+// NetworkDeviceDiagnosticDataSource defines the data source implementation.
+type NetworkDeviceDiagnosticDataSource struct {
     client *Client
 }
 
-// GoogleSecOpsConnectionDataSourceModel describes the data source data model.
-type GoogleSecOpsConnectionDataSourceModel struct {
+// NetworkDeviceDiagnosticDataSourceModel describes the data source data model.
+type NetworkDeviceDiagnosticDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,28 +34,27 @@ type GoogleSecOpsConnectionDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Region types.String `tfsdk:"region"`
-    InstanceResourceName types.String `tfsdk:"instance_resource_name"`
-    IsEnabled types.Bool `tfsdk:"is_enabled"`
-    PollIntervalInMinutes types.Number `tfsdk:"poll_interval_in_minutes"`
-    IncludeNonAlertingDetections types.Bool `tfsdk:"include_non_alerting_detections"`
-    LastSuccessfulPollAt types.String `tfsdk:"last_successful_poll_at"`
-    LastEventIngestedAt types.String `tfsdk:"last_event_ingested_at"`
-    LastPollResult types.String `tfsdk:"last_poll_result"`
-    LastPolledAt types.String `tfsdk:"last_polled_at"`
-    Cursor types.String `tfsdk:"cursor"`
-    LastError types.String `tfsdk:"last_error"`
+    NetworkDeviceId types.String `tfsdk:"network_device_id"`
+    ProbeId types.String `tfsdk:"probe_id"`
+    DiagnosticType types.String `tfsdk:"diagnostic_type"`
+    Hostname types.String `tfsdk:"hostname"`
+    Status types.String `tfsdk:"status"`
+    StatusMessage types.String `tfsdk:"status_message"`
+    PingResult types.String `tfsdk:"ping_result"`
+    TraceRouteResult types.String `tfsdk:"trace_route_result"`
+    StartedAt types.String `tfsdk:"started_at"`
+    CompletedAt types.String `tfsdk:"completed_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *GoogleSecOpsConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_google_sec_ops_connection"
+func (d *NetworkDeviceDiagnosticDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_network_device_diagnostic"
 }
 
-func (d *GoogleSecOpsConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *NetworkDeviceDiagnosticDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Connections to Google SecOps (Chronicle) tenants. Detection alerts are polled on an interval and ingested as security events. Look up an existing google_sec_ops_connection by `id` or by `name`.",
+        MarkdownDescription: "An on-demand ping or traceroute run against a Network Device from its probe. Transient: rows are deleted after two days. Look up an existing network_device_diagnostic by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -88,48 +87,44 @@ func (d *GoogleSecOpsConnectionDataSource) Schema(ctx context.Context, req datas
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "region": schema.StringAttribute{
-                MarkdownDescription: "Google SecOps regional endpoint prefix, e.g. 'us' or 'europe'. Used to build the API base URL..",
+            "network_device_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "instance_resource_name": schema.StringAttribute{
-                MarkdownDescription: "The Chronicle instance resource name: projects/{project}/locations/{location}/instances/{instance}..",
+            "probe_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this connection is polled..",
+            "diagnostic_type": schema.StringAttribute{
+                MarkdownDescription: "What to run against the device: \"Ping\" (ICMP echo: reachability, round-trip time, jitter, packet loss) or \"Traceroute\" (the hop-by-hop path from the probe to the device)..",
                 Computed: true,
             },
-            "poll_interval_in_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How often detection alerts are polled, in minutes..",
+            "hostname": schema.StringAttribute{
+                MarkdownDescription: "The hostname or IP address the probe reaches, copied from the device when the diagnostic is created. Managed by the server..",
                 Computed: true,
             },
-            "include_non_alerting_detections": schema.BoolAttribute{
-                MarkdownDescription: "Include detections that have not been marked as alerts in Google SecOps..",
+            "status": schema.StringAttribute{
+                MarkdownDescription: "Where this diagnostic is in its run: \"Pending\" (waiting for the probe), \"In Progress\" (claimed by the probe), \"Completed\" (a result is stored) or \"Failed\" (the probe could not run it; see Status Message). Managed by the server and the probe..",
                 Computed: true,
             },
-            "last_successful_poll_at": schema.StringAttribute{
+            "status_message": schema.StringAttribute{
+                MarkdownDescription: "Why a diagnostic Failed, e.g. the device has no usable hostname or the probe does not support this diagnostic. Managed by the probe..",
+                Computed: true,
+            },
+            "ping_result": schema.StringAttribute{
+                MarkdownDescription: "For a Ping diagnostic: whether the device answered, the failure cause when it did not, and the packet statistics (min/avg/max round-trip time, jitter, packet loss). Managed by the probe..",
+                Computed: true,
+            },
+            "trace_route_result": schema.StringAttribute{
+                MarkdownDescription: "For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe..",
+                Computed: true,
+            },
+            "started_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 Computed: true,
             },
-            "last_event_ingested_at": schema.StringAttribute{
+            "completed_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "last_poll_result": schema.StringAttribute{
-                MarkdownDescription: "The latest scheduled or on-demand poll result with counts and warnings..",
-                Computed: true,
-            },
-            "last_polled_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "cursor": schema.StringAttribute{
-                MarkdownDescription: "Poll cursor: the end of the last completely processed window, or the boundary retained for retry, as an ISO string..",
-                Computed: true,
-            },
-            "last_error": schema.StringAttribute{
-                MarkdownDescription: "The most recent poll error, if any. Cleared on the next successful poll..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -144,7 +139,7 @@ func (d *GoogleSecOpsConnectionDataSource) Schema(ctx context.Context, req datas
     }
 }
 
-func (d *GoogleSecOpsConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *NetworkDeviceDiagnosticDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -164,8 +159,8 @@ func (d *GoogleSecOpsConnectionDataSource) Configure(ctx context.Context, req da
     d.client = client
 }
 
-func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data GoogleSecOpsConnectionDataSourceModel
+func (d *NetworkDeviceDiagnosticDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data NetworkDeviceDiagnosticDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -179,7 +174,7 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a google_sec_ops_connection.",
+            "Exactly one of `id` or `name` must be set to look up a network_device_diagnostic.",
         )
         return
     }
@@ -191,17 +186,16 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "region": true,
-        "instanceResourceName": true,
-        "isEnabled": true,
-        "pollIntervalInMinutes": true,
-        "includeNonAlertingDetections": true,
-        "lastSuccessfulPollAt": true,
-        "lastEventIngestedAt": true,
-        "lastPollResult": true,
-        "lastPolledAt": true,
-        "cursor": true,
-        "lastError": true,
+        "networkDeviceId": true,
+        "probeId": true,
+        "diagnosticType": true,
+        "hostname": true,
+        "status": true,
+        "statusMessage": true,
+        "pingResult": true,
+        "traceRouteResult": true,
+        "startedAt": true,
+        "completedAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -209,19 +203,19 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/google-secops-connection/" + data.Id.ValueString() + "/get-item"
+        readPath := "/network-device-diagnostic/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read google_sec_ops_connection, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_device_diagnostic, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No google_sec_ops_connection found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_diagnostic found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read google_sec_ops_connection: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_device_diagnostic: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -238,28 +232,28 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/google-secops-connection/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-diagnostic/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list google_sec_ops_connection, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_device_diagnostic, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list google_sec_ops_connection: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_device_diagnostic: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No google_sec_ops_connection found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_device_diagnostic found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one google_sec_ops_connection matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_device_diagnostic matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for google_sec_ops_connection.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_device_diagnostic.")
             return
         }
         item = first
@@ -379,162 +373,175 @@ func (d *GoogleSecOpsConnectionDataSource) Read(ctx context.Context, req datasou
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["region"].(map[string]interface{}); ok {
+    if obj, ok := item["networkDeviceId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Region = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Region = types.StringValue(val)
+            data.NetworkDeviceId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Region = types.StringValue(fmt.Sprintf("%v", val))
+            data.NetworkDeviceId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Region = types.StringValue(string(jsonBytes))
+            data.NetworkDeviceId = types.StringValue(string(jsonBytes))
         } else {
-            data.Region = types.StringNull()
+            data.NetworkDeviceId = types.StringNull()
         }
-    } else if val, ok := item["region"].(string); ok {
-        data.Region = types.StringValue(val)
+    } else if val, ok := item["networkDeviceId"].(string); ok {
+        data.NetworkDeviceId = types.StringValue(val)
     } else {
-        data.Region = types.StringNull()
+        data.NetworkDeviceId = types.StringNull()
     }
-    if obj, ok := item["instanceResourceName"].(map[string]interface{}); ok {
+    if obj, ok := item["probeId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.InstanceResourceName = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.InstanceResourceName = types.StringValue(val)
+            data.ProbeId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.InstanceResourceName = types.StringValue(fmt.Sprintf("%v", val))
+            data.ProbeId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.InstanceResourceName = types.StringValue(string(jsonBytes))
+            data.ProbeId = types.StringValue(string(jsonBytes))
         } else {
-            data.InstanceResourceName = types.StringNull()
+            data.ProbeId = types.StringNull()
         }
-    } else if val, ok := item["instanceResourceName"].(string); ok {
-        data.InstanceResourceName = types.StringValue(val)
+    } else if val, ok := item["probeId"].(string); ok {
+        data.ProbeId = types.StringValue(val)
     } else {
-        data.InstanceResourceName = types.StringNull()
+        data.ProbeId = types.StringNull()
     }
-    if val, ok := item["isEnabled"].(bool); ok {
-        data.IsEnabled = types.BoolValue(val)
-    } else {
-        data.IsEnabled = types.BoolNull()
-    }
-    if val, ok := item["pollIntervalInMinutes"].(float64); ok {
-        data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["pollIntervalInMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.PollIntervalInMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.PollIntervalInMinutes = types.NumberNull()
-        }
-    } else {
-        data.PollIntervalInMinutes = types.NumberNull()
-    }
-    if val, ok := item["includeNonAlertingDetections"].(bool); ok {
-        data.IncludeNonAlertingDetections = types.BoolValue(val)
-    } else {
-        data.IncludeNonAlertingDetections = types.BoolNull()
-    }
-    if obj, ok := item["lastSuccessfulPollAt"].(map[string]interface{}); ok {
+    if obj, ok := item["diagnosticType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastSuccessfulPollAt = types.StringValue(val)
+            data.DiagnosticType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastSuccessfulPollAt = types.StringValue(val)
+            data.DiagnosticType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastSuccessfulPollAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.DiagnosticType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastSuccessfulPollAt = types.StringValue(string(jsonBytes))
+            data.DiagnosticType = types.StringValue(string(jsonBytes))
         } else {
-            data.LastSuccessfulPollAt = types.StringNull()
+            data.DiagnosticType = types.StringNull()
         }
-    } else if val, ok := item["lastSuccessfulPollAt"].(string); ok {
-        data.LastSuccessfulPollAt = types.StringValue(val)
+    } else if val, ok := item["diagnosticType"].(string); ok {
+        data.DiagnosticType = types.StringValue(val)
     } else {
-        data.LastSuccessfulPollAt = types.StringNull()
+        data.DiagnosticType = types.StringNull()
     }
-    if obj, ok := item["lastEventIngestedAt"].(map[string]interface{}); ok {
+    if obj, ok := item["hostname"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastEventIngestedAt = types.StringValue(val)
+            data.Hostname = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastEventIngestedAt = types.StringValue(val)
+            data.Hostname = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastEventIngestedAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.Hostname = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastEventIngestedAt = types.StringValue(string(jsonBytes))
+            data.Hostname = types.StringValue(string(jsonBytes))
         } else {
-            data.LastEventIngestedAt = types.StringNull()
+            data.Hostname = types.StringNull()
         }
-    } else if val, ok := item["lastEventIngestedAt"].(string); ok {
-        data.LastEventIngestedAt = types.StringValue(val)
+    } else if val, ok := item["hostname"].(string); ok {
+        data.Hostname = types.StringValue(val)
     } else {
-        data.LastEventIngestedAt = types.StringNull()
+        data.Hostname = types.StringNull()
     }
-    if obj, ok := item["lastPollResult"].(map[string]interface{}); ok {
+    if obj, ok := item["status"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastPollResult = types.StringValue(val)
+            data.Status = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastPollResult = types.StringValue(val)
+            data.Status = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastPollResult = types.StringValue(fmt.Sprintf("%v", val))
+            data.Status = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastPollResult = types.StringValue(string(jsonBytes))
+            data.Status = types.StringValue(string(jsonBytes))
         } else {
-            data.LastPollResult = types.StringNull()
+            data.Status = types.StringNull()
         }
-    } else if val, ok := item["lastPollResult"].(string); ok {
-        data.LastPollResult = types.StringValue(val)
+    } else if val, ok := item["status"].(string); ok {
+        data.Status = types.StringValue(val)
     } else {
-        data.LastPollResult = types.StringNull()
+        data.Status = types.StringNull()
     }
-    if obj, ok := item["lastPolledAt"].(map[string]interface{}); ok {
+    if obj, ok := item["statusMessage"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastPolledAt = types.StringValue(val)
+            data.StatusMessage = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastPolledAt = types.StringValue(val)
+            data.StatusMessage = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastPolledAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.StatusMessage = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastPolledAt = types.StringValue(string(jsonBytes))
+            data.StatusMessage = types.StringValue(string(jsonBytes))
         } else {
-            data.LastPolledAt = types.StringNull()
+            data.StatusMessage = types.StringNull()
         }
-    } else if val, ok := item["lastPolledAt"].(string); ok {
-        data.LastPolledAt = types.StringValue(val)
+    } else if val, ok := item["statusMessage"].(string); ok {
+        data.StatusMessage = types.StringValue(val)
     } else {
-        data.LastPolledAt = types.StringNull()
+        data.StatusMessage = types.StringNull()
     }
-    if obj, ok := item["cursor"].(map[string]interface{}); ok {
+    if obj, ok := item["pingResult"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Cursor = types.StringValue(val)
+            data.PingResult = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Cursor = types.StringValue(val)
+            data.PingResult = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Cursor = types.StringValue(fmt.Sprintf("%v", val))
+            data.PingResult = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Cursor = types.StringValue(string(jsonBytes))
+            data.PingResult = types.StringValue(string(jsonBytes))
         } else {
-            data.Cursor = types.StringNull()
+            data.PingResult = types.StringNull()
         }
-    } else if val, ok := item["cursor"].(string); ok {
-        data.Cursor = types.StringValue(val)
+    } else if val, ok := item["pingResult"].(string); ok {
+        data.PingResult = types.StringValue(val)
     } else {
-        data.Cursor = types.StringNull()
+        data.PingResult = types.StringNull()
     }
-    if obj, ok := item["lastError"].(map[string]interface{}); ok {
+    if obj, ok := item["traceRouteResult"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastError = types.StringValue(val)
+            data.TraceRouteResult = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.LastError = types.StringValue(val)
+            data.TraceRouteResult = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.LastError = types.StringValue(fmt.Sprintf("%v", val))
+            data.TraceRouteResult = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastError = types.StringValue(string(jsonBytes))
+            data.TraceRouteResult = types.StringValue(string(jsonBytes))
         } else {
-            data.LastError = types.StringNull()
+            data.TraceRouteResult = types.StringNull()
         }
-    } else if val, ok := item["lastError"].(string); ok {
-        data.LastError = types.StringValue(val)
+    } else if val, ok := item["traceRouteResult"].(string); ok {
+        data.TraceRouteResult = types.StringValue(val)
     } else {
-        data.LastError = types.StringNull()
+        data.TraceRouteResult = types.StringNull()
+    }
+    if obj, ok := item["startedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.StartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.StartedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.StartedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.StartedAt = types.StringNull()
+        }
+    } else if val, ok := item["startedAt"].(string); ok {
+        data.StartedAt = types.StringValue(val)
+    } else {
+        data.StartedAt = types.StringNull()
+    }
+    if obj, ok := item["completedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CompletedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CompletedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CompletedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CompletedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CompletedAt = types.StringNull()
+        }
+    } else if val, ok := item["completedAt"].(string); ok {
+        data.CompletedAt = types.StringValue(val)
+    } else {
+        data.CompletedAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

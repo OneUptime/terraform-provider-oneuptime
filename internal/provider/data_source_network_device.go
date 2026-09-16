@@ -39,6 +39,7 @@ type NetworkDeviceDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
     Hostname types.String `tfsdk:"hostname"`
+    DnsName types.String `tfsdk:"dns_name"`
     MacAddress types.String `tfsdk:"mac_address"`
     IsMacAddressLearned types.Bool `tfsdk:"is_mac_address_learned"`
     ProbeId types.String `tfsdk:"probe_id"`
@@ -146,6 +147,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "hostname": schema.StringAttribute{
                 MarkdownDescription: "IP address or hostname the probe polls; also matches SNMP trap sources.",
+                Computed: true,
+            },
+            "dns_name": schema.StringAttribute{
+                MarkdownDescription: "Fully qualified DNS name of this device, from its reverse-DNS (PTR) record when it was discovered, or its previous full name when its name was shortened to the hostname. Kept so the device can still be found, and matched by site-assignment hostname patterns, by the name DNS gives it..",
                 Computed: true,
             },
             "mac_address": schema.StringAttribute{
@@ -427,6 +432,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "slug": true,
         "description": true,
         "hostname": true,
+        "dnsName": true,
         "macAddress": true,
         "isMacAddressLearned": true,
         "probeId": true,
@@ -708,6 +714,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Hostname = types.StringValue(val)
     } else {
         data.Hostname = types.StringNull()
+    }
+    if obj, ok := item["dnsName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DnsName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DnsName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DnsName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DnsName = types.StringValue(string(jsonBytes))
+        } else {
+            data.DnsName = types.StringNull()
+        }
+    } else if val, ok := item["dnsName"].(string); ok {
+        data.DnsName = types.StringValue(val)
+    } else {
+        data.DnsName = types.StringNull()
     }
     if obj, ok := item["macAddress"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

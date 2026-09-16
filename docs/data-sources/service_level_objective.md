@@ -36,11 +36,14 @@ data "oneuptime_service_level_objective" "by_id" {
 - `slug` (String) Friendly globally unique name for your object.. Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `is_enabled` (Bool) Whether this Service Level Objective is enabled. Disabled SLOs are not evaluated... Computed.
+- `is_archived` (Bool) Archived SLOs are hidden from lists and are not evaluated... Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `sli_type` (String) Type of Service Level Indicator this objective measures (Monitor Uptime or Metric).. Computed.
 - `multi_monitor_mode` (String) How downtime is counted when multiple monitors are attached. 'Any Monitor Down' counts time when any monitor is down. 'Monitor Seconds Average' averages downtime across monitors... Computed.
 - `monitors` (Set) Monitors whose uptime is measured by this Service Level Objective (for Monitor Uptime SLIs)... Computed.
-- `monitor_labels` (Set) Monitor labels that automatically attach monitors to this SLO. Any monitor in the project carrying at least one of these labels is added to the Monitors list, and is removed again when it stops carrying any of them... Computed.
-- `auto_added_monitors` (Set) Monitors that were attached to this SLO by its label rule rather than by hand. Maintained by the server... Computed.
+- `monitor_labels` (Set) Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named "Auto-add monitors with labels". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead... Computed.
+- `auto_added_monitors` (Set) Monitors that were attached to this SLO by its monitor rules rather than by hand. Maintained by the server... Computed.
 - `downtime_monitor_statuses` (Set) List of monitor statuses that are considered as "down" for this Service Level Objective... Computed.
 - `metric_query_config` (String) Query configuration for Metric SLIs: metric name, good-event predicate and optional attribute filters... Computed.
 - `target_percentage` (Number) Target of this Service Level Objective as a percentage (e.g. 99.9). Must be less than 100... Computed.

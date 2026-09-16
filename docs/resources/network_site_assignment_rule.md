@@ -28,7 +28,7 @@ resource "oneuptime_network_site_assignment_rule" "example" {
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource...
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `subnet_cidr` (String) Devices and endpoints with an IP in this CIDR are assigned to the site..
-- `hostname_pattern` (String) Devices whose hostname, SNMP system name or display name matches this wildcard pattern are assigned to the site..
+- `hostname_pattern` (String) Devices whose hostname, SNMP system name, display name or DNS name matches this wildcard pattern are assigned to the site..
 - `priority` (Number) Higher priority number wins; ties broken by earlier creation...
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 

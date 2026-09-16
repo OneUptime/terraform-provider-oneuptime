@@ -6,6 +6,8 @@ import (
     "fmt"
     "net/http"
     "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -14,19 +16,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &NetworkSiteAssignmentRuleDataSource{}
+var _ datasource.DataSource = &SloMonitorRuleDataSource{}
 
-func NewNetworkSiteAssignmentRuleDataSource() datasource.DataSource {
-    return &NetworkSiteAssignmentRuleDataSource{}
+func NewSloMonitorRuleDataSource() datasource.DataSource {
+    return &SloMonitorRuleDataSource{}
 }
 
-// NetworkSiteAssignmentRuleDataSource defines the data source implementation.
-type NetworkSiteAssignmentRuleDataSource struct {
+// SloMonitorRuleDataSource defines the data source implementation.
+type SloMonitorRuleDataSource struct {
     client *Client
 }
 
-// NetworkSiteAssignmentRuleDataSourceModel describes the data source data model.
-type NetworkSiteAssignmentRuleDataSourceModel struct {
+// SloMonitorRuleDataSourceModel describes the data source data model.
+type SloMonitorRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -35,21 +37,22 @@ type NetworkSiteAssignmentRuleDataSourceModel struct {
     Version types.Number `tfsdk:"version"`
     Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
-    SiteId types.String `tfsdk:"site_id"`
-    SubnetCidr types.String `tfsdk:"subnet_cidr"`
-    HostnamePattern types.String `tfsdk:"hostname_pattern"`
-    Priority types.Number `tfsdk:"priority"`
+    ServiceLevelObjectiveId types.String `tfsdk:"service_level_objective_id"`
+    Description types.String `tfsdk:"description"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    MonitorLabels types.Set `tfsdk:"monitor_labels"`
+    MonitorNamePattern types.String `tfsdk:"monitor_name_pattern"`
+    MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *NetworkSiteAssignmentRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_network_site_assignment_rule"
+func (d *SloMonitorRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_slo_monitor_rule"
 }
 
-func (d *NetworkSiteAssignmentRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *SloMonitorRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Rules that automatically assign discovered Network Devices and Endpoints to a Network Site by subnet CIDR or hostname pattern. At least one of the two matchers must be set. Look up an existing network_site_assignment_rule by `id` or by `name`.",
+        MarkdownDescription: "Configure rules that automatically attach matching monitors to a Service Level Objective, instead of picking every monitor by hand Look up an existing slo_monitor_rule by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -86,27 +89,32 @@ func (d *NetworkSiteAssignmentRuleDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "site_id": schema.StringAttribute{
+            "service_level_objective_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "subnet_cidr": schema.StringAttribute{
-                MarkdownDescription: "Devices and endpoints with an IP in this CIDR are assigned to the site.",
+            "description": schema.StringAttribute{
+                MarkdownDescription: "Description of this SLO monitor rule.",
                 Computed: true,
             },
-            "hostname_pattern": schema.StringAttribute{
-                MarkdownDescription: "Devices whose hostname, SNMP system name, display name or DNS name matches this wildcard pattern are assigned to the site.",
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this rule is enabled. A disabled rule matches nothing, so monitors that only this rule attached are detached from the SLO..",
                 Computed: true,
             },
-            "priority": schema.NumberAttribute{
-                MarkdownDescription: "Higher priority number wins; ties broken by earlier creation..",
+            "monitor_labels": schema.SetAttribute{
+                MarkdownDescription: "Only match monitors that carry at least one of these labels. Leave empty to skip the label filter..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "monitor_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to skip the name filter. Use .* to match every monitor..",
+                Computed: true,
+            },
+            "monitor_description_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to skip the description filter..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -114,7 +122,7 @@ func (d *NetworkSiteAssignmentRuleDataSource) Schema(ctx context.Context, req da
     }
 }
 
-func (d *NetworkSiteAssignmentRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *SloMonitorRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -134,8 +142,8 @@ func (d *NetworkSiteAssignmentRuleDataSource) Configure(ctx context.Context, req
     d.client = client
 }
 
-func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data NetworkSiteAssignmentRuleDataSourceModel
+func (d *SloMonitorRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data SloMonitorRuleDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -149,7 +157,7 @@ func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req data
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a network_site_assignment_rule.",
+            "Exactly one of `id` or `name` must be set to look up a slo_monitor_rule.",
         )
         return
     }
@@ -162,30 +170,31 @@ func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req data
         "version": true,
         "criteria": true,
         "projectId": true,
-        "siteId": true,
-        "subnetCidr": true,
-        "hostnamePattern": true,
-        "priority": true,
+        "serviceLevelObjectiveId": true,
+        "description": true,
+        "isEnabled": true,
+        "monitorLabels": true,
+        "monitorNamePattern": true,
+        "monitorDescriptionPattern": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/network-site-assignment-rule/" + data.Id.ValueString() + "/get-item"
+        readPath := "/service-level-objective-monitor-rule/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read network_site_assignment_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read slo_monitor_rule, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_site_assignment_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No slo_monitor_rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read network_site_assignment_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read slo_monitor_rule: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -202,28 +211,28 @@ func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req data
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-site-assignment-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/service-level-objective-monitor-rule/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list network_site_assignment_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list slo_monitor_rule, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list network_site_assignment_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list slo_monitor_rule: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No network_site_assignment_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No slo_monitor_rule found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one network_site_assignment_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one slo_monitor_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for network_site_assignment_rule.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for slo_monitor_rule.")
             return
         }
         item = first
@@ -360,67 +369,102 @@ func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req data
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["siteId"].(map[string]interface{}); ok {
+    if obj, ok := item["serviceLevelObjectiveId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SiteId = types.StringValue(val)
+            data.ServiceLevelObjectiveId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.SiteId = types.StringValue(val)
+            data.ServiceLevelObjectiveId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.SiteId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SiteId = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
         } else {
-            data.SiteId = types.StringNull()
+            data.ServiceLevelObjectiveId = types.StringNull()
         }
-    } else if val, ok := item["siteId"].(string); ok {
-        data.SiteId = types.StringValue(val)
+    } else if val, ok := item["serviceLevelObjectiveId"].(string); ok {
+        data.ServiceLevelObjectiveId = types.StringValue(val)
     } else {
-        data.SiteId = types.StringNull()
+        data.ServiceLevelObjectiveId = types.StringNull()
     }
-    if obj, ok := item["subnetCidr"].(map[string]interface{}); ok {
+    if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.SubnetCidr = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.SubnetCidr = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.SubnetCidr = types.StringValue(fmt.Sprintf("%v", val))
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.SubnetCidr = types.StringValue(string(jsonBytes))
+            data.Description = types.StringValue(string(jsonBytes))
         } else {
-            data.SubnetCidr = types.StringNull()
+            data.Description = types.StringNull()
         }
-    } else if val, ok := item["subnetCidr"].(string); ok {
-        data.SubnetCidr = types.StringValue(val)
+    } else if val, ok := item["description"].(string); ok {
+        data.Description = types.StringValue(val)
     } else {
-        data.SubnetCidr = types.StringNull()
+        data.Description = types.StringNull()
     }
-    if obj, ok := item["hostnamePattern"].(map[string]interface{}); ok {
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    } else {
+        data.IsEnabled = types.BoolNull()
+    }
+    if val, ok := item["monitorLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.MonitorLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.MonitorLabels = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["monitorNamePattern"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.HostnamePattern = types.StringValue(val)
+            data.MonitorNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.HostnamePattern = types.StringValue(val)
+            data.MonitorNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.HostnamePattern = types.StringValue(fmt.Sprintf("%v", val))
+            data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.HostnamePattern = types.StringValue(string(jsonBytes))
+            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
         } else {
-            data.HostnamePattern = types.StringNull()
+            data.MonitorNamePattern = types.StringNull()
         }
-    } else if val, ok := item["hostnamePattern"].(string); ok {
-        data.HostnamePattern = types.StringValue(val)
+    } else if val, ok := item["monitorNamePattern"].(string); ok {
+        data.MonitorNamePattern = types.StringValue(val)
     } else {
-        data.HostnamePattern = types.StringNull()
+        data.MonitorNamePattern = types.StringNull()
     }
-    if val, ok := item["priority"].(float64); ok {
-        data.Priority = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["priority"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.Priority = types.NumberValue(big.NewFloat(val))
+    if obj, ok := item["monitorDescriptionPattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitorDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
-            data.Priority = types.NumberNull()
+            data.MonitorDescriptionPattern = types.StringNull()
         }
+    } else if val, ok := item["monitorDescriptionPattern"].(string); ok {
+        data.MonitorDescriptionPattern = types.StringValue(val)
     } else {
-        data.Priority = types.NumberNull()
+        data.MonitorDescriptionPattern = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -438,23 +482,6 @@ func (d *NetworkSiteAssignmentRuleDataSource) Read(ctx context.Context, req data
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -61,6 +61,7 @@ type AlertResourceModel struct {
     DockerResources types.Set `tfsdk:"docker_resources"`
     PodmanResources types.Set `tfsdk:"podman_resources"`
     Services types.Set `tfsdk:"services"`
+    ServiceLevelObjectives types.Set `tfsdk:"service_level_objectives"`
     Labels types.Set `tfsdk:"labels"`
     CurrentAlertStateId types.String `tfsdk:"current_alert_state_id"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
@@ -279,6 +280,15 @@ func (r *AlertResource) Schema(ctx context.Context, req resource.SchemaRequest, 
             },
             "services": schema.SetAttribute{
                 MarkdownDescription: "List of services affected by this alert..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "service_level_objectives": schema.SetAttribute{
+                MarkdownDescription: "List of Service Level Objectives (SLOs) affected by this alert..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -558,6 +568,9 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     if !data.Services.IsNull() && !data.Services.IsUnknown() {
         requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
     }
+    if !data.ServiceLevelObjectives.IsNull() && !data.ServiceLevelObjectives.IsUnknown() {
+        requestDataMap["serviceLevelObjectives"] = r.convertTerraformSetToInterface(data.ServiceLevelObjectives)
+    }
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -657,6 +670,7 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
         "dockerResources": true,
         "podmanResources": true,
         "services": true,
+        "serviceLevelObjectives": true,
         "labels": true,
         "currentAlertStateId": true,
         "alertSeverityId": true,
@@ -1365,6 +1379,38 @@ func (r *AlertResource) Create(ctx context.Context, req resource.CreateRequest, 
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["serviceLevelObjectives"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ServiceLevelObjectives = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ServiceLevelObjectives = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2108,6 +2154,7 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
         "dockerResources": true,
         "podmanResources": true,
         "services": true,
+        "serviceLevelObjectives": true,
         "labels": true,
         "currentAlertStateId": true,
         "alertSeverityId": true,
@@ -2817,6 +2864,38 @@ func (r *AlertResource) Read(ctx context.Context, req resource.ReadRequest, resp
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["serviceLevelObjectives"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ServiceLevelObjectives = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ServiceLevelObjectives = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -3604,6 +3683,9 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     if !data.Services.IsUnknown() && !state.Services.IsUnknown() && !data.Services.Equal(state.Services) {
         requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
     }
+    if !data.ServiceLevelObjectives.IsUnknown() && !state.ServiceLevelObjectives.IsUnknown() && !data.ServiceLevelObjectives.Equal(state.ServiceLevelObjectives) {
+        requestDataMap["serviceLevelObjectives"] = r.convertTerraformSetToInterface(data.ServiceLevelObjectives)
+    }
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -3688,6 +3770,7 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
         "dockerResources": true,
         "podmanResources": true,
         "services": true,
+        "serviceLevelObjectives": true,
         "labels": true,
         "currentAlertStateId": true,
         "alertSeverityId": true,
@@ -4391,6 +4474,38 @@ func (r *AlertResource) Update(ctx context.Context, req resource.UpdateRequest, 
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Services = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["serviceLevelObjectives"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.ServiceLevelObjectives = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.ServiceLevelObjectives = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set

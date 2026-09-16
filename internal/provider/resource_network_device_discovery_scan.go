@@ -44,6 +44,7 @@ type NetworkDeviceDiscoveryScanResourceModel struct {
     Cidr types.String `tfsdk:"cidr"`
     SnmpConfigs JSONSubsetValue `tfsdk:"snmp_configs"`
     IsSnmpEnabled types.Bool `tfsdk:"is_snmp_enabled"`
+    UseShortDeviceNames types.Bool `tfsdk:"use_short_device_names"`
     SnmpVersion types.String `tfsdk:"snmp_version"`
     SnmpCommunityString types.String `tfsdk:"snmp_community_string"`
     SnmpPort types.Number `tfsdk:"snmp_port"`
@@ -53,6 +54,7 @@ type NetworkDeviceDiscoveryScanResourceModel struct {
     SnmpV3AuthKey types.String `tfsdk:"snmp_v3_auth_key"`
     SnmpV3PrivProtocol types.String `tfsdk:"snmp_v3_priv_protocol"`
     SnmpV3PrivKey types.String `tfsdk:"snmp_v3_priv_key"`
+    IsNetbiosLookupEnabled types.Bool `tfsdk:"is_netbios_lookup_enabled"`
     IsRecurring types.Bool `tfsdk:"is_recurring"`
     RescanIntervalInMinutes types.Number `tfsdk:"rescan_interval_in_minutes"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -132,6 +134,15 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "use_short_device_names": schema.BoolAttribute{
+                MarkdownDescription: "Name imported devices by their short hostname (the first label of a fully qualified name, e.g. 'core-sw-01' rather than 'core-sw-01.corp.example.com'). The full reverse-DNS name is still stored on the device as its DNS Name..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "snmp_version": schema.StringAttribute{
                 MarkdownDescription: "SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored when Check SNMP is off..",
                 Optional: true,
@@ -202,6 +213,15 @@ func (r *NetworkDeviceDiscoveryScanResource) Schema(ctx context.Context, req res
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "is_netbios_lookup_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether hosts with no SNMP name and no reverse DNS record are asked for their NetBIOS name over UDP 137. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "is_recurring": schema.BoolAttribute{
@@ -354,6 +374,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     if !data.IsSnmpEnabled.IsNull() && !data.IsSnmpEnabled.IsUnknown() {
         requestDataMap["isSnmpEnabled"] = data.IsSnmpEnabled.ValueBool()
     }
+    if !data.UseShortDeviceNames.IsNull() && !data.UseShortDeviceNames.IsUnknown() {
+        requestDataMap["useShortDeviceNames"] = data.UseShortDeviceNames.ValueBool()
+    }
     if !data.SnmpVersion.IsNull() && !data.SnmpVersion.IsUnknown() {
         requestDataMap["snmpVersion"] = data.SnmpVersion.ValueString()
     }
@@ -380,6 +403,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     }
     if !data.SnmpV3PrivKey.IsNull() && !data.SnmpV3PrivKey.IsUnknown() {
         requestDataMap["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
+    }
+    if !data.IsNetbiosLookupEnabled.IsNull() && !data.IsNetbiosLookupEnabled.IsUnknown() {
+        requestDataMap["isNetbiosLookupEnabled"] = data.IsNetbiosLookupEnabled.ValueBool()
     }
     if !data.IsRecurring.IsNull() && !data.IsRecurring.IsUnknown() {
         requestDataMap["isRecurring"] = data.IsRecurring.ValueBool()
@@ -441,6 +467,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         "cidr": true,
         "snmpConfigs": true,
         "isSnmpEnabled": true,
+        "useShortDeviceNames": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -450,6 +477,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         "snmpV3AuthKey": true,
         "snmpV3PrivProtocol": true,
         "snmpV3PrivKey": true,
+        "isNetbiosLookupEnabled": true,
         "isRecurring": true,
         "rescanIntervalInMinutes": true,
         "createdByUserId": true,
@@ -660,6 +688,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
     }
     if val, ok := dataMap["isSnmpEnabled"].(bool); ok {
         data.IsSnmpEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["useShortDeviceNames"].(bool); ok {
+        data.UseShortDeviceNames = types.BoolValue(val)
     }
     if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -973,6 +1004,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Create(ctx context.Context, req res
         data.SnmpV3PrivKey = types.StringValue(val)
     } else {
         data.SnmpV3PrivKey = types.StringNull()
+    }
+    if val, ok := dataMap["isNetbiosLookupEnabled"].(bool); ok {
+        data.IsNetbiosLookupEnabled = types.BoolValue(val)
     }
     if val, ok := dataMap["isRecurring"].(bool); ok {
         data.IsRecurring = types.BoolValue(val)
@@ -1340,6 +1374,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         "cidr": true,
         "snmpConfigs": true,
         "isSnmpEnabled": true,
+        "useShortDeviceNames": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -1349,6 +1384,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         "snmpV3AuthKey": true,
         "snmpV3PrivProtocol": true,
         "snmpV3PrivKey": true,
+        "isNetbiosLookupEnabled": true,
         "isRecurring": true,
         "rescanIntervalInMinutes": true,
         "createdByUserId": true,
@@ -1560,6 +1596,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
     }
     if val, ok := dataMap["isSnmpEnabled"].(bool); ok {
         data.IsSnmpEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["useShortDeviceNames"].(bool); ok {
+        data.UseShortDeviceNames = types.BoolValue(val)
     }
     if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1873,6 +1912,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Read(ctx context.Context, req resou
         data.SnmpV3PrivKey = types.StringValue(val)
     } else {
         data.SnmpV3PrivKey = types.StringNull()
+    }
+    if val, ok := dataMap["isNetbiosLookupEnabled"].(bool); ok {
+        data.IsNetbiosLookupEnabled = types.BoolValue(val)
     }
     if val, ok := dataMap["isRecurring"].(bool); ok {
         data.IsRecurring = types.BoolValue(val)
@@ -2262,6 +2304,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     if !data.IsSnmpEnabled.IsUnknown() && !state.IsSnmpEnabled.IsUnknown() && !data.IsSnmpEnabled.Equal(state.IsSnmpEnabled) {
         requestDataMap["isSnmpEnabled"] = data.IsSnmpEnabled.ValueBool()
     }
+    if !data.UseShortDeviceNames.IsUnknown() && !state.UseShortDeviceNames.IsUnknown() && !data.UseShortDeviceNames.Equal(state.UseShortDeviceNames) {
+        requestDataMap["useShortDeviceNames"] = data.UseShortDeviceNames.ValueBool()
+    }
     if !data.SnmpVersion.IsUnknown() && !state.SnmpVersion.IsUnknown() && !data.SnmpVersion.Equal(state.SnmpVersion) {
         requestDataMap["snmpVersion"] = data.SnmpVersion.ValueString()
     }
@@ -2288,6 +2333,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     }
     if !data.SnmpV3PrivKey.IsUnknown() && !state.SnmpV3PrivKey.IsUnknown() && !data.SnmpV3PrivKey.Equal(state.SnmpV3PrivKey) {
         requestDataMap["snmpV3PrivKey"] = data.SnmpV3PrivKey.ValueString()
+    }
+    if !data.IsNetbiosLookupEnabled.IsUnknown() && !state.IsNetbiosLookupEnabled.IsUnknown() && !data.IsNetbiosLookupEnabled.Equal(state.IsNetbiosLookupEnabled) {
+        requestDataMap["isNetbiosLookupEnabled"] = data.IsNetbiosLookupEnabled.ValueBool()
     }
     if !data.IsRecurring.IsUnknown() && !state.IsRecurring.IsUnknown() && !data.IsRecurring.Equal(state.IsRecurring) {
         requestDataMap["isRecurring"] = data.IsRecurring.ValueBool()
@@ -2324,6 +2372,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         "cidr": true,
         "snmpConfigs": true,
         "isSnmpEnabled": true,
+        "useShortDeviceNames": true,
         "snmpVersion": true,
         "snmpCommunityString": true,
         "snmpPort": true,
@@ -2333,6 +2382,7 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         "snmpV3AuthKey": true,
         "snmpV3PrivProtocol": true,
         "snmpV3PrivKey": true,
+        "isNetbiosLookupEnabled": true,
         "isRecurring": true,
         "rescanIntervalInMinutes": true,
         "createdByUserId": true,
@@ -2538,6 +2588,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
     }
     if val, ok := dataMap["isSnmpEnabled"].(bool); ok {
         data.IsSnmpEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["useShortDeviceNames"].(bool); ok {
+        data.UseShortDeviceNames = types.BoolValue(val)
     }
     if obj, ok := dataMap["snmpVersion"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2851,6 +2904,9 @@ func (r *NetworkDeviceDiscoveryScanResource) Update(ctx context.Context, req res
         data.SnmpV3PrivKey = types.StringValue(val)
     } else {
         data.SnmpV3PrivKey = types.StringNull()
+    }
+    if val, ok := dataMap["isNetbiosLookupEnabled"].(bool); ok {
+        data.IsNetbiosLookupEnabled = types.BoolValue(val)
     }
     if val, ok := dataMap["isRecurring"].(bool); ok {
         data.IsRecurring = types.BoolValue(val)

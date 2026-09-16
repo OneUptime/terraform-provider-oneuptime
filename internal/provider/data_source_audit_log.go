@@ -34,6 +34,8 @@ type AuditLogDataSourceModel struct {
     ResourceType types.String `tfsdk:"resource_type"`
     ResourceId types.String `tfsdk:"resource_id"`
     ResourceName types.String `tfsdk:"resource_name"`
+    RootResourceType types.String `tfsdk:"root_resource_type"`
+    RootResourceId types.String `tfsdk:"root_resource_id"`
     Action types.String `tfsdk:"action"`
     UserId types.String `tfsdk:"user_id"`
     UserName types.String `tfsdk:"user_name"`
@@ -77,6 +79,14 @@ func (d *AuditLogDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "resource_name": schema.StringAttribute{
                 MarkdownDescription: "Resource Name",
+                Computed: true,
+            },
+            "root_resource_type": schema.StringAttribute{
+                MarkdownDescription: "Root Resource Type",
+                Computed: true,
+            },
+            "root_resource_id": schema.StringAttribute{
+                MarkdownDescription: "Root Resource ID",
                 Computed: true,
             },
             "action": schema.StringAttribute{
@@ -162,6 +172,8 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         "resourceType": true,
         "resourceId": true,
         "resourceName": true,
+        "rootResourceType": true,
+        "rootResourceId": true,
         "action": true,
         "userId": true,
         "userName": true,
@@ -333,6 +345,40 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.ResourceName = types.StringValue(val)
     } else {
         data.ResourceName = types.StringNull()
+    }
+    if obj, ok := item["rootResourceType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RootResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RootResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RootResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RootResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.RootResourceType = types.StringNull()
+        }
+    } else if val, ok := item["rootResourceType"].(string); ok {
+        data.RootResourceType = types.StringValue(val)
+    } else {
+        data.RootResourceType = types.StringNull()
+    }
+    if obj, ok := item["rootResourceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.RootResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.RootResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.RootResourceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.RootResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.RootResourceId = types.StringNull()
+        }
+    } else if val, ok := item["rootResourceId"].(string); ok {
+        data.RootResourceId = types.StringValue(val)
+    } else {
+        data.RootResourceId = types.StringNull()
     }
     if obj, ok := item["action"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &GoogleSecOpsConnectionRunDataSource{}
+var _ datasource.DataSource = &SloFeedDataSource{}
 
-func NewGoogleSecOpsConnectionRunDataSource() datasource.DataSource {
-    return &GoogleSecOpsConnectionRunDataSource{}
+func NewSloFeedDataSource() datasource.DataSource {
+    return &SloFeedDataSource{}
 }
 
-// GoogleSecOpsConnectionRunDataSource defines the data source implementation.
-type GoogleSecOpsConnectionRunDataSource struct {
+// SloFeedDataSource defines the data source implementation.
+type SloFeedDataSource struct {
     client *Client
 }
 
-// GoogleSecOpsConnectionRunDataSourceModel describes the data source data model.
-type GoogleSecOpsConnectionRunDataSourceModel struct {
+// SloFeedDataSourceModel describes the data source data model.
+type SloFeedDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,24 +34,23 @@ type GoogleSecOpsConnectionRunDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    GoogleSecOpsConnectionId types.String `tfsdk:"google_sec_ops_connection_id"`
-    RequestedByUserId types.String `tfsdk:"requested_by_user_id"`
-    Type types.String `tfsdk:"type"`
-    Status types.String `tfsdk:"status"`
-    StartedAt types.String `tfsdk:"started_at"`
-    CompletedAt types.String `tfsdk:"completed_at"`
-    Request types.String `tfsdk:"request"`
-    Result types.String `tfsdk:"result"`
-    Error types.String `tfsdk:"error"`
+    ServiceLevelObjectiveId types.String `tfsdk:"service_level_objective_id"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    FeedInfoInMarkdown types.String `tfsdk:"feed_info_in_markdown"`
+    MoreInformationInMarkdown types.String `tfsdk:"more_information_in_markdown"`
+    ServiceLevelObjectiveFeedEventType types.String `tfsdk:"service_level_objective_feed_event_type"`
+    DisplayColor types.String `tfsdk:"display_color"`
+    UserId types.String `tfsdk:"user_id"`
+    PostedAt types.String `tfsdk:"posted_at"`
 }
 
-func (d *GoogleSecOpsConnectionRunDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_google_sec_ops_connection_run"
+func (d *SloFeedDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_slo_feed"
 }
 
-func (d *GoogleSecOpsConnectionRunDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *SloFeedDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "History of connection tests, previews, scheduled polls and historical imports. Credentials are never included. Look up an existing google_sec_ops_connection_run by `id` or by `name`.",
+        MarkdownDescription: "Log of everything that happened to this Service Level Objective - configuration changes, status transitions, burn rate alerts and incidents, monitor rule changes and owner changes. Look up an existing slo_feed by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -84,47 +83,43 @@ func (d *GoogleSecOpsConnectionRunDataSource) Schema(ctx context.Context, req da
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "google_sec_ops_connection_id": schema.StringAttribute{
+            "service_level_objective_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "requested_by_user_id": schema.StringAttribute{
+            "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "type": schema.StringAttribute{
-                MarkdownDescription: "Operation of this connection run..",
+            "feed_info_in_markdown": schema.StringAttribute{
+                MarkdownDescription: "Log of the Service Level Objective change in Markdown.",
                 Computed: true,
             },
-            "status": schema.StringAttribute{
-                MarkdownDescription: "Status of this connection run..",
+            "more_information_in_markdown": schema.StringAttribute{
+                MarkdownDescription: "More information in Markdown.",
                 Computed: true,
             },
-            "started_at": schema.StringAttribute{
+            "service_level_objective_feed_event_type": schema.StringAttribute{
+                MarkdownDescription: "Service Level Objective Feed Event.",
+                Computed: true,
+            },
+            "display_color": schema.StringAttribute{
+                MarkdownDescription: "Color object",
+                Computed: true,
+            },
+            "user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "posted_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "completed_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "request": schema.StringAttribute{
-                MarkdownDescription: "Validated operation and selected time range. Contains no credentials..",
-                Computed: true,
-            },
-            "result": schema.StringAttribute{
-                MarkdownDescription: "Counts, requested time range, checks and a bounded preview of detections..",
-                Computed: true,
-            },
-            "error": schema.StringAttribute{
-                MarkdownDescription: "The run failure with credentials redacted..",
                 Computed: true,
             },
         },
     }
 }
 
-func (d *GoogleSecOpsConnectionRunDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *SloFeedDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -144,8 +139,8 @@ func (d *GoogleSecOpsConnectionRunDataSource) Configure(ctx context.Context, req
     d.client = client
 }
 
-func (d *GoogleSecOpsConnectionRunDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data GoogleSecOpsConnectionRunDataSourceModel
+func (d *SloFeedDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data SloFeedDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -159,7 +154,7 @@ func (d *GoogleSecOpsConnectionRunDataSource) Read(ctx context.Context, req data
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a google_sec_ops_connection_run.",
+            "Exactly one of `id` or `name` must be set to look up a slo_feed.",
         )
         return
     }
@@ -171,33 +166,32 @@ func (d *GoogleSecOpsConnectionRunDataSource) Read(ctx context.Context, req data
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "googleSecOpsConnectionId": true,
-        "requestedByUserId": true,
-        "type": true,
-        "status": true,
-        "startedAt": true,
-        "completedAt": true,
-        "request": true,
-        "result": true,
-        "error": true,
+        "serviceLevelObjectiveId": true,
+        "createdByUserId": true,
+        "feedInfoInMarkdown": true,
+        "moreInformationInMarkdown": true,
+        "serviceLevelObjectiveFeedEventType": true,
+        "displayColor": true,
+        "userId": true,
+        "postedAt": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/google-secops-connection-run/" + data.Id.ValueString() + "/get-item"
+        readPath := "/service-level-objective-feed/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read google_sec_ops_connection_run, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read slo_feed, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No google_sec_ops_connection_run found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No slo_feed found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read google_sec_ops_connection_run: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read slo_feed: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -214,28 +208,28 @@ func (d *GoogleSecOpsConnectionRunDataSource) Read(ctx context.Context, req data
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/google-secops-connection-run/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/service-level-objective-feed/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list google_sec_ops_connection_run, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list slo_feed, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list google_sec_ops_connection_run: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list slo_feed: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No google_sec_ops_connection_run found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No slo_feed found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one google_sec_ops_connection_run matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one slo_feed matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for google_sec_ops_connection_run.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for slo_feed.")
             return
         }
         item = first
@@ -355,158 +349,141 @@ func (d *GoogleSecOpsConnectionRunDataSource) Read(ctx context.Context, req data
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["googleSecOpsConnectionId"].(map[string]interface{}); ok {
+    if obj, ok := item["serviceLevelObjectiveId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.GoogleSecOpsConnectionId = types.StringValue(val)
+            data.ServiceLevelObjectiveId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.GoogleSecOpsConnectionId = types.StringValue(val)
+            data.ServiceLevelObjectiveId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.GoogleSecOpsConnectionId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.GoogleSecOpsConnectionId = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
         } else {
-            data.GoogleSecOpsConnectionId = types.StringNull()
+            data.ServiceLevelObjectiveId = types.StringNull()
         }
-    } else if val, ok := item["googleSecOpsConnectionId"].(string); ok {
-        data.GoogleSecOpsConnectionId = types.StringValue(val)
+    } else if val, ok := item["serviceLevelObjectiveId"].(string); ok {
+        data.ServiceLevelObjectiveId = types.StringValue(val)
     } else {
-        data.GoogleSecOpsConnectionId = types.StringNull()
+        data.ServiceLevelObjectiveId = types.StringNull()
     }
-    if obj, ok := item["requestedByUserId"].(map[string]interface{}); ok {
+    if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RequestedByUserId = types.StringValue(val)
+            data.CreatedByUserId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.RequestedByUserId = types.StringValue(val)
+            data.CreatedByUserId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.RequestedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.RequestedByUserId = types.StringValue(string(jsonBytes))
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
         } else {
-            data.RequestedByUserId = types.StringNull()
+            data.CreatedByUserId = types.StringNull()
         }
-    } else if val, ok := item["requestedByUserId"].(string); ok {
-        data.RequestedByUserId = types.StringValue(val)
+    } else if val, ok := item["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
     } else {
-        data.RequestedByUserId = types.StringNull()
+        data.CreatedByUserId = types.StringNull()
     }
-    if obj, ok := item["type"].(map[string]interface{}); ok {
+    if obj, ok := item["feedInfoInMarkdown"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Type = types.StringValue(val)
+            data.FeedInfoInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Type = types.StringValue(val)
+            data.FeedInfoInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Type = types.StringValue(fmt.Sprintf("%v", val))
+            data.FeedInfoInMarkdown = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Type = types.StringValue(string(jsonBytes))
+            data.FeedInfoInMarkdown = types.StringValue(string(jsonBytes))
         } else {
-            data.Type = types.StringNull()
+            data.FeedInfoInMarkdown = types.StringNull()
         }
-    } else if val, ok := item["type"].(string); ok {
-        data.Type = types.StringValue(val)
+    } else if val, ok := item["feedInfoInMarkdown"].(string); ok {
+        data.FeedInfoInMarkdown = types.StringValue(val)
     } else {
-        data.Type = types.StringNull()
+        data.FeedInfoInMarkdown = types.StringNull()
     }
-    if obj, ok := item["status"].(map[string]interface{}); ok {
+    if obj, ok := item["moreInformationInMarkdown"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Status = types.StringValue(val)
+            data.MoreInformationInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Status = types.StringValue(val)
+            data.MoreInformationInMarkdown = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Status = types.StringValue(fmt.Sprintf("%v", val))
+            data.MoreInformationInMarkdown = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Status = types.StringValue(string(jsonBytes))
+            data.MoreInformationInMarkdown = types.StringValue(string(jsonBytes))
         } else {
-            data.Status = types.StringNull()
+            data.MoreInformationInMarkdown = types.StringNull()
         }
-    } else if val, ok := item["status"].(string); ok {
-        data.Status = types.StringValue(val)
+    } else if val, ok := item["moreInformationInMarkdown"].(string); ok {
+        data.MoreInformationInMarkdown = types.StringValue(val)
     } else {
-        data.Status = types.StringNull()
+        data.MoreInformationInMarkdown = types.StringNull()
     }
-    if obj, ok := item["startedAt"].(map[string]interface{}); ok {
+    if obj, ok := item["serviceLevelObjectiveFeedEventType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.StartedAt = types.StringValue(val)
+            data.ServiceLevelObjectiveFeedEventType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.StartedAt = types.StringValue(val)
+            data.ServiceLevelObjectiveFeedEventType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.StartedAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveFeedEventType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.StartedAt = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveFeedEventType = types.StringValue(string(jsonBytes))
         } else {
-            data.StartedAt = types.StringNull()
+            data.ServiceLevelObjectiveFeedEventType = types.StringNull()
         }
-    } else if val, ok := item["startedAt"].(string); ok {
-        data.StartedAt = types.StringValue(val)
+    } else if val, ok := item["serviceLevelObjectiveFeedEventType"].(string); ok {
+        data.ServiceLevelObjectiveFeedEventType = types.StringValue(val)
     } else {
-        data.StartedAt = types.StringNull()
+        data.ServiceLevelObjectiveFeedEventType = types.StringNull()
     }
-    if obj, ok := item["completedAt"].(map[string]interface{}); ok {
+    if obj, ok := item["displayColor"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CompletedAt = types.StringValue(val)
+            data.DisplayColor = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.CompletedAt = types.StringValue(val)
+            data.DisplayColor = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.CompletedAt = types.StringValue(fmt.Sprintf("%v", val))
+            data.DisplayColor = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.CompletedAt = types.StringValue(string(jsonBytes))
+            data.DisplayColor = types.StringValue(string(jsonBytes))
         } else {
-            data.CompletedAt = types.StringNull()
+            data.DisplayColor = types.StringNull()
         }
-    } else if val, ok := item["completedAt"].(string); ok {
-        data.CompletedAt = types.StringValue(val)
+    } else if val, ok := item["displayColor"].(string); ok {
+        data.DisplayColor = types.StringValue(val)
     } else {
-        data.CompletedAt = types.StringNull()
+        data.DisplayColor = types.StringNull()
     }
-    if obj, ok := item["request"].(map[string]interface{}); ok {
+    if obj, ok := item["userId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Request = types.StringValue(val)
+            data.UserId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Request = types.StringValue(val)
+            data.UserId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Request = types.StringValue(fmt.Sprintf("%v", val))
+            data.UserId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Request = types.StringValue(string(jsonBytes))
+            data.UserId = types.StringValue(string(jsonBytes))
         } else {
-            data.Request = types.StringNull()
+            data.UserId = types.StringNull()
         }
-    } else if val, ok := item["request"].(string); ok {
-        data.Request = types.StringValue(val)
+    } else if val, ok := item["userId"].(string); ok {
+        data.UserId = types.StringValue(val)
     } else {
-        data.Request = types.StringNull()
+        data.UserId = types.StringNull()
     }
-    if obj, ok := item["result"].(map[string]interface{}); ok {
+    if obj, ok := item["postedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Result = types.StringValue(val)
+            data.PostedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Result = types.StringValue(val)
+            data.PostedAt = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Result = types.StringValue(fmt.Sprintf("%v", val))
+            data.PostedAt = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Result = types.StringValue(string(jsonBytes))
+            data.PostedAt = types.StringValue(string(jsonBytes))
         } else {
-            data.Result = types.StringNull()
+            data.PostedAt = types.StringNull()
         }
-    } else if val, ok := item["result"].(string); ok {
-        data.Result = types.StringValue(val)
+    } else if val, ok := item["postedAt"].(string); ok {
+        data.PostedAt = types.StringValue(val)
     } else {
-        data.Result = types.StringNull()
-    }
-    if obj, ok := item["error"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Error = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Error = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Error = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Error = types.StringValue(string(jsonBytes))
-        } else {
-            data.Error = types.StringNull()
-        }
-    } else if val, ok := item["error"].(string); ok {
-        data.Error = types.StringValue(val)
-    } else {
-        data.Error = types.StringNull()
+        data.PostedAt = types.StringNull()
     }
 
     // Write logs using the tflog package

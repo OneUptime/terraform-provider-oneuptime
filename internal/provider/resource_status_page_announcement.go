@@ -55,6 +55,8 @@ type StatusPageAnnouncementResourceModel struct {
     Version types.Number `tfsdk:"version"`
     SubscriberNotificationStatus types.String `tfsdk:"subscriber_notification_status"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
+    SubscriberNotificationStatusOnAnnouncementUpdated types.String `tfsdk:"subscriber_notification_status_on_announcement_updated"`
+    SubscriberNotificationStatusMessageOnAnnouncementUpdated types.String `tfsdk:"subscriber_notification_status_message_on_announcement_updated"`
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
 }
 
@@ -173,6 +175,14 @@ func (r *StatusPageAnnouncementResource) Schema(ctx context.Context, req resourc
             },
             "subscriber_notification_status_message": schema.StringAttribute{
                 MarkdownDescription: "Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.",
+                Computed: true,
+            },
+            "subscriber_notification_status_on_announcement_updated": schema.StringAttribute{
+                MarkdownDescription: "Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested..",
+                Computed: true,
+            },
+            "subscriber_notification_status_message_on_announcement_updated": schema.StringAttribute{
+                MarkdownDescription: "Status message for the notification sent to subscribers when this announcement was last updated - includes success messages, failure reasons, or skip reasons.",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
@@ -312,6 +322,8 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
         "version": true,
         "subscriberNotificationStatus": true,
         "subscriberNotificationStatusMessage": true,
+        "subscriberNotificationStatusOnAnnouncementUpdated": true,
+        "subscriberNotificationStatusMessageOnAnnouncementUpdated": true,
         "isOwnerNotified": true,
         "_id": true,
     }
@@ -712,6 +724,80 @@ func (r *StatusPageAnnouncementResource) Create(ctx context.Context, req resourc
     } else {
         data.SubscriberNotificationStatusMessage = types.StringNull()
     }
+    if obj, ok := dataMap["subscriberNotificationStatusOnAnnouncementUpdated"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusOnAnnouncementUpdated"].(string); ok {
+        data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringNull()
+    }
+    if obj, ok := dataMap["subscriberNotificationStatusMessageOnAnnouncementUpdated"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusMessageOnAnnouncementUpdated"].(string); ok {
+        data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringNull()
+    }
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
     }
@@ -758,6 +844,8 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
         "version": true,
         "subscriberNotificationStatus": true,
         "subscriberNotificationStatusMessage": true,
+        "subscriberNotificationStatusOnAnnouncementUpdated": true,
+        "subscriberNotificationStatusMessageOnAnnouncementUpdated": true,
         "isOwnerNotified": true,
         "_id": true,
     }
@@ -1159,6 +1247,80 @@ func (r *StatusPageAnnouncementResource) Read(ctx context.Context, req resource.
     } else {
         data.SubscriberNotificationStatusMessage = types.StringNull()
     }
+    if obj, ok := dataMap["subscriberNotificationStatusOnAnnouncementUpdated"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusOnAnnouncementUpdated"].(string); ok {
+        data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringNull()
+    }
+    if obj, ok := dataMap["subscriberNotificationStatusMessageOnAnnouncementUpdated"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusMessageOnAnnouncementUpdated"].(string); ok {
+        data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringNull()
+    }
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)
     }
@@ -1257,6 +1419,8 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
         "version": true,
         "subscriberNotificationStatus": true,
         "subscriberNotificationStatusMessage": true,
+        "subscriberNotificationStatusOnAnnouncementUpdated": true,
+        "subscriberNotificationStatusMessageOnAnnouncementUpdated": true,
         "isOwnerNotified": true,
         "_id": true,
     }
@@ -1651,6 +1815,80 @@ func (r *StatusPageAnnouncementResource) Update(ctx context.Context, req resourc
         data.SubscriberNotificationStatusMessage = types.StringValue(val)
     } else {
         data.SubscriberNotificationStatusMessage = types.StringNull()
+    }
+    if obj, ok := dataMap["subscriberNotificationStatusOnAnnouncementUpdated"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusOnAnnouncementUpdated"].(string); ok {
+        data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusOnAnnouncementUpdated = types.StringNull()
+    }
+    if obj, ok := dataMap["subscriberNotificationStatusMessageOnAnnouncementUpdated"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+            } else {
+                data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(string(jsonBytes))
+        } else {
+            data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringNull()
+        }
+    } else if val, ok := dataMap["subscriberNotificationStatusMessageOnAnnouncementUpdated"].(string); ok {
+        data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringValue(val)
+    } else {
+        data.SubscriberNotificationStatusMessageOnAnnouncementUpdated = types.StringNull()
     }
     if val, ok := dataMap["isOwnerNotified"].(bool); ok {
         data.IsOwnerNotified = types.BoolValue(val)

@@ -36,6 +36,7 @@ data "oneuptime_network_device_discovery_scan" "by_id" {
 - `cidr` (String) Address space to scan, either in CIDR notation (192.168.1.0/24) or octet-range notation where any octet may be an inclusive low-high range (10.16-22.0-255.51-66).. Computed.
 - `snmp_configs` (String) Ordered list of SNMP credential sets tried against every host in the subnet, first match wins. Each entry carries an id, an optional name, a version, a community string or the v3 credentials, and a port. When empty, the scan uses the single flattened SNMP configuration on this row... Computed.
 - `is_snmp_enabled` (Bool) Whether hosts that answer the ping sweep are then queried over SNMP. Turn it off for an ICMP-only scan, which reports every host that answers ping and asks nothing else of them... Computed.
+- `use_short_device_names` (Bool) Name imported devices by their short hostname (the first label of a fully qualified name, e.g. 'core-sw-01' rather than 'core-sw-01.corp.example.com'). The full reverse-DNS name is still stored on the device as its DNS Name... Computed.
 - `snmp_version` (String) SNMP version tried against every host in the subnet (V1, V2c, V3). Ignored when Check SNMP is off... Computed.
 - `snmp_community_string` (String) Community string tried against every host in the subnet (SNMP v1/v2c). Ignored when Check SNMP is off... Computed.
 - `snmp_port` (Number) UDP port tried against every host in the subnet. Ignored when Check SNMP is off... Computed.
@@ -47,6 +48,7 @@ data "oneuptime_network_device_discovery_scan" "by_id" {
 - `snmp_v3_priv_key` (String) SNMP v3 privacy (encryption) passphrase tried against every host. Ignored when Check SNMP is off... Computed.
 - `status` (String) Status of this discovery scan: "Pending", "In Progress", "Completed" or "Failed". Managed by the scanning probe... Computed.
 - `status_message` (String) Details about the current status of this scan, e.g. the failure reason. Managed by the scanning probe... Computed.
+- `is_netbios_lookup_enabled` (Bool) Whether hosts with no SNMP name and no reverse DNS record are asked for their NetBIOS name over UDP 137. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes... Computed.
 - `discovered_devices` (String) Devices found by this scan: array of {ipAddress, sysName, sysDescr, isAlreadyRegistered}. Managed by the scanning probe... Computed.
 - `scanned_host_count` (Number) Total number of host addresses swept in the subnet. Managed by the scanning probe... Computed.
 - `responded_host_count` (Number) Number of hosts that answered the check this scan performed: SNMP responders on a scan with Check SNMP on, hosts that answered the ping sweep on an ICMP-only one. Managed by the scanning probe... Computed.

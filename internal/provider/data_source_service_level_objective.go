@@ -40,6 +40,9 @@ type ServiceLevelObjectiveDataSourceModel struct {
     Slug types.String `tfsdk:"slug"`
     Labels types.Set `tfsdk:"labels"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     SliType types.String `tfsdk:"sli_type"`
     MultiMonitorMode types.String `tfsdk:"multi_monitor_mode"`
     Monitors types.Set `tfsdk:"monitors"`
@@ -121,6 +124,18 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Whether this Service Level Objective is enabled. Disabled SLOs are not evaluated..",
                 Computed: true,
             },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived SLOs are hidden from lists and are not evaluated..",
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "sli_type": schema.StringAttribute{
                 MarkdownDescription: "Type of Service Level Indicator this objective measures (Monitor Uptime or Metric).",
                 Computed: true,
@@ -135,12 +150,12 @@ func (d *ServiceLevelObjectiveDataSource) Schema(ctx context.Context, req dataso
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Monitor labels that automatically attach monitors to this SLO. Any monitor in the project carrying at least one of these labels is added to the Monitors list, and is removed again when it stops carrying any of them..",
+                MarkdownDescription: "Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named \"Auto-add monitors with labels\". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead..",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "auto_added_monitors": schema.SetAttribute{
-                MarkdownDescription: "Monitors that were attached to this SLO by its label rule rather than by hand. Maintained by the server..",
+                MarkdownDescription: "Monitors that were attached to this SLO by its monitor rules rather than by hand. Maintained by the server..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -272,6 +287,9 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
         "slug": true,
         "labels": true,
         "isEnabled": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
@@ -532,6 +550,45 @@ func (d *ServiceLevelObjectiveDataSource) Read(ctx context.Context, req datasour
         data.IsEnabled = types.BoolValue(val)
     } else {
         data.IsEnabled = types.BoolNull()
+    }
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    } else {
+        data.IsArchived = types.BoolNull()
+    }
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    } else {
+        data.ArchivedAt = types.StringNull()
+    }
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
     if obj, ok := item["sliType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

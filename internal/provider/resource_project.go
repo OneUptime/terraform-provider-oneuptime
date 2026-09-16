@@ -120,6 +120,7 @@ type ProjectResourceModel struct {
     SmsOrCallCurrentBalanceInUsdCents types.Number `tfsdk:"sms_or_call_current_balance_in_usd_cents"`
     AiCurrentBalanceInUsdCents types.Number `tfsdk:"ai_current_balance_in_usd_cents"`
     PlanName types.String `tfsdk:"plan_name"`
+    DataResidency types.String `tfsdk:"data_residency"`
     ResellerId types.String `tfsdk:"reseller_id"`
     ResellerPlanId types.String `tfsdk:"reseller_plan_id"`
     LetCustomerSupportAccessProject types.Bool `tfsdk:"let_customer_support_access_project"`
@@ -754,6 +755,10 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 MarkdownDescription: "Name of the plan this project is subscribed to..",
                 Computed: true,
             },
+            "data_residency": schema.StringAttribute{
+                MarkdownDescription: "Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud..",
+                Computed: true,
+            },
             "reseller_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -1001,6 +1006,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "smsOrCallCurrentBalanceInUSDCents": true,
         "aiCurrentBalanceInUSDCents": true,
         "planName": true,
+        "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
         "letCustomerSupportAccessProject": true,
@@ -2475,6 +2481,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.PlanName = types.StringNull()
     }
+    if obj, ok := dataMap["dataResidency"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DataResidency = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DataResidency = types.StringValue(string(jsonBytes))
+            } else {
+                data.DataResidency = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DataResidency = types.StringValue(string(jsonBytes))
+            } else {
+                data.DataResidency = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if val, ok := dataMap["dataResidency"].(string); ok {
+        data.DataResidency = types.StringValue(val)
+    } else {
+        data.DataResidency = types.StringNull()
+    }
     if obj, ok := dataMap["resellerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -2694,6 +2737,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "smsOrCallCurrentBalanceInUSDCents": true,
         "aiCurrentBalanceInUSDCents": true,
         "planName": true,
+        "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
         "letCustomerSupportAccessProject": true,
@@ -4169,6 +4213,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.PlanName = types.StringNull()
     }
+    if obj, ok := dataMap["dataResidency"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DataResidency = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DataResidency = types.StringValue(string(jsonBytes))
+            } else {
+                data.DataResidency = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DataResidency = types.StringValue(string(jsonBytes))
+            } else {
+                data.DataResidency = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if val, ok := dataMap["dataResidency"].(string); ok {
+        data.DataResidency = types.StringValue(val)
+    } else {
+        data.DataResidency = types.StringNull()
+    }
     if obj, ok := dataMap["resellerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4606,6 +4687,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "smsOrCallCurrentBalanceInUSDCents": true,
         "aiCurrentBalanceInUSDCents": true,
         "planName": true,
+        "dataResidency": true,
         "resellerId": true,
         "resellerPlanId": true,
         "letCustomerSupportAccessProject": true,
@@ -6074,6 +6156,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.PlanName = types.StringValue(val)
     } else {
         data.PlanName = types.StringNull()
+    }
+    if obj, ok := dataMap["dataResidency"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.DataResidency = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.DataResidency = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.DataResidency = types.StringValue(string(jsonBytes))
+            } else {
+                data.DataResidency = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.DataResidency = types.StringValue(string(jsonBytes))
+            } else {
+                data.DataResidency = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.DataResidency = types.StringValue(string(jsonBytes))
+        } else {
+            data.DataResidency = types.StringNull()
+        }
+    } else if val, ok := dataMap["dataResidency"].(string); ok {
+        data.DataResidency = types.StringValue(val)
+    } else {
+        data.DataResidency = types.StringNull()
     }
     if obj, ok := dataMap["resellerId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

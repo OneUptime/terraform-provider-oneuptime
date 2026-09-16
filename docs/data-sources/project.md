@@ -95,6 +95,7 @@ data "oneuptime_project" "by_id" {
 - `enable_auto_recharge_ai_balance` (Bool) Enable auto recharge for AI balance for this project... Computed.
 - `send_invoices_by_email` (Bool) When enabled, invoices will be automatically sent to the finance/accounting email when they are generated... Computed.
 - `plan_name` (String) Name of the plan this project is subscribed to... Computed.
+- `data_residency` (String) Where this project's data is hosted. Set by OneUptime staff on OneUptime Cloud... Computed.
 - `reseller_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `reseller_plan_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `let_customer_support_access_project` (Bool) OneUptime customer support can access this project. This is used for debugging purposes... Computed.

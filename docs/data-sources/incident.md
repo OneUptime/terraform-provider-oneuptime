@@ -53,6 +53,7 @@ data "oneuptime_incident" "by_id" {
 - `docker_resources` (Set) List of Docker resources (containers, images, networks, volumes) affected by this incident... Computed.
 - `podman_resources` (Set) List of Podman resources (containers, images, networks, volumes) affected by this incident... Computed.
 - `services` (Set) List of services affected by this incident... Computed.
+- `service_level_objectives` (Set) List of Service Level Objectives (SLOs) affected by this incident... Computed.
 - `on_call_duty_policies` (Set) List of on-call duty policies affected by this incident... Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `current_incident_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

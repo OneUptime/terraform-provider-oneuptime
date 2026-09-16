@@ -48,6 +48,7 @@ type ServiceLevelObjectiveResourceModel struct {
     Description types.String `tfsdk:"description"`
     Labels types.Set `tfsdk:"labels"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
     SliType types.String `tfsdk:"sli_type"`
     MultiMonitorMode types.String `tfsdk:"multi_monitor_mode"`
     Monitors types.Set `tfsdk:"monitors"`
@@ -64,6 +65,8 @@ type ServiceLevelObjectiveResourceModel struct {
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
+    ArchivedAt RFC3339Value `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     AutoAddedMonitors types.Set `tfsdk:"auto_added_monitors"`
     DowntimeMonitorStatuses types.Set `tfsdk:"downtime_monitor_statuses"`
     CurrentSliPercentage types.Number `tfsdk:"current_sli_percentage"`
@@ -131,6 +134,15 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived SLOs are hidden from lists and are not evaluated..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "sli_type": schema.StringAttribute{
                 MarkdownDescription: "Type of Service Level Indicator this objective measures (Monitor Uptime or Metric).",
                 Optional: true,
@@ -159,7 +171,7 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Monitor labels that automatically attach monitors to this SLO. Any monitor in the project carrying at least one of these labels is added to the Monitors list, and is removed again when it stops carrying any of them..",
+                MarkdownDescription: "Deprecated: superseded by SLO Monitor Rules and no longer read by the SLO engine. Existing labels were migrated into a monitor rule named \"Auto-add monitors with labels\". Kept only for compatibility during upgrades: labels written here to an SLO with no monitor rules are turned into that rule, and are ignored once the SLO has monitor rules. Use SLO Monitor Rules instead..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -250,8 +262,17 @@ func (r *ServiceLevelObjectiveResource) Schema(ctx context.Context, req resource
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
             },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "auto_added_monitors": schema.SetAttribute{
-                MarkdownDescription: "Monitors that were attached to this SLO by its label rule rather than by hand. Maintained by the server..",
+                MarkdownDescription: "Monitors that were attached to this SLO by its monitor rules rather than by hand. Maintained by the server..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -361,6 +382,9 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
     if !data.SliType.IsNull() && !data.SliType.IsUnknown() {
         requestDataMap["sliType"] = data.SliType.ValueString()
     }
@@ -444,6 +468,7 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         "description": true,
         "labels": true,
         "isEnabled": true,
+        "isArchived": true,
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
@@ -460,6 +485,8 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "autoAddedMonitors": true,
         "downtimeMonitorStatuses": true,
         "currentSliPercentage": true,
@@ -623,6 +650,9 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
     }
     if obj, ok := dataMap["sliType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1047,6 +1077,54 @@ func (r *ServiceLevelObjectiveResource) Create(ctx context.Context, req resource
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
     if val, ok := dataMap["autoAddedMonitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1310,6 +1388,7 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         "description": true,
         "labels": true,
         "isEnabled": true,
+        "isArchived": true,
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
@@ -1326,6 +1405,8 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "autoAddedMonitors": true,
         "downtimeMonitorStatuses": true,
         "currentSliPercentage": true,
@@ -1490,6 +1571,9 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
     }
     if obj, ok := dataMap["sliType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1914,6 +1998,54 @@ func (r *ServiceLevelObjectiveResource) Read(ctx context.Context, req resource.R
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
     if val, ok := dataMap["autoAddedMonitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2192,6 +2324,9 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
+    if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
+    }
     if !data.SliType.IsUnknown() && !state.SliType.IsUnknown() && !data.SliType.Equal(state.SliType) {
         requestDataMap["sliType"] = data.SliType.ValueString()
     }
@@ -2255,6 +2390,7 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         "description": true,
         "labels": true,
         "isEnabled": true,
+        "isArchived": true,
         "sliType": true,
         "multiMonitorMode": true,
         "monitors": true,
@@ -2271,6 +2407,8 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "autoAddedMonitors": true,
         "downtimeMonitorStatuses": true,
         "currentSliPercentage": true,
@@ -2429,6 +2567,9 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
     }
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
+    }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
     }
     if obj, ok := dataMap["sliType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2853,6 +2994,54 @@ func (r *ServiceLevelObjectiveResource) Update(ctx context.Context, req resource
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
     if val, ok := dataMap["autoAddedMonitors"].([]interface{}); ok {
         // Convert API response list to Terraform set

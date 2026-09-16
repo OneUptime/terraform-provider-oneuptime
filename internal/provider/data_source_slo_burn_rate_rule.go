@@ -47,8 +47,25 @@ type SloBurnRateRuleDataSourceModel struct {
     ShouldCreateIncident types.Bool `tfsdk:"should_create_incident"`
     AlertSeverityId types.String `tfsdk:"alert_severity_id"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    AlertTitleTemplate types.String `tfsdk:"alert_title_template"`
+    AlertDescriptionTemplate types.String `tfsdk:"alert_description_template"`
+    AlertRemediationNotes types.String `tfsdk:"alert_remediation_notes"`
+    IsAlertPrivate types.Bool `tfsdk:"is_alert_private"`
+    AutoResolveAlert types.Bool `tfsdk:"auto_resolve_alert"`
+    AlertLabels types.Set `tfsdk:"alert_labels"`
+    AlertOwnerTeams types.Set `tfsdk:"alert_owner_teams"`
+    AlertOwnerUsers types.Set `tfsdk:"alert_owner_users"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     IncidentOnCallDutyPolicies types.Set `tfsdk:"incident_on_call_duty_policies"`
+    IncidentTitleTemplate types.String `tfsdk:"incident_title_template"`
+    IncidentDescriptionTemplate types.String `tfsdk:"incident_description_template"`
+    IncidentRemediationNotes types.String `tfsdk:"incident_remediation_notes"`
+    IsIncidentPrivate types.Bool `tfsdk:"is_incident_private"`
+    AutoResolveIncident types.Bool `tfsdk:"auto_resolve_incident"`
+    IncidentLabels types.Set `tfsdk:"incident_labels"`
+    IncidentOwnerTeams types.Set `tfsdk:"incident_owner_teams"`
+    IncidentOwnerUsers types.Set `tfsdk:"incident_owner_users"`
+    AddSloOwnersAsOwners types.Bool `tfsdk:"add_slo_owners_as_owners"`
     LastAlertCreatedAt types.String `tfsdk:"last_alert_created_at"`
     LastAlertResolvedAt types.String `tfsdk:"last_alert_resolved_at"`
     LastIncidentCreatedAt types.String `tfsdk:"last_incident_created_at"`
@@ -140,6 +157,41 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "alert_title_template": schema.StringAttribute{
+                MarkdownDescription: "Title of the alert raised when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title..",
+                Computed: true,
+            },
+            "alert_description_template": schema.StringAttribute{
+                MarkdownDescription: "Description (in Markdown) of the alert raised when this burn rate rule fires. Supports template variables. Leave empty to use the default description..",
+                Computed: true,
+            },
+            "alert_remediation_notes": schema.StringAttribute{
+                MarkdownDescription: "Remediation notes (in Markdown) attached to the alert raised when this burn rate rule fires. Supports template variables..",
+                Computed: true,
+            },
+            "is_alert_private": schema.BoolAttribute{
+                MarkdownDescription: "Make the alert raised by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default..",
+                Computed: true,
+            },
+            "auto_resolve_alert": schema.BoolAttribute{
+                MarkdownDescription: "Resolve the alert automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the alert stays open until someone resolves it..",
+                Computed: true,
+            },
+            "alert_labels": schema.SetAttribute{
+                MarkdownDescription: "Labels added to alerts raised by this burn rate rule..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "alert_owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams added as owners of alerts raised by this burn rate rule..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "alert_owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users added as owners of alerts raised by this burn rate rule..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "incident_severity_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -148,6 +200,45 @@ func (d *SloBurnRateRuleDataSource) Schema(ctx context.Context, req datasource.S
                 MarkdownDescription: "On-call duty policies attached to incidents declared by this burn rate rule..",
                 Computed: true,
                 ElementType: types.StringType,
+            },
+            "incident_title_template": schema.StringAttribute{
+                MarkdownDescription: "Title of the incident declared when this burn rate rule fires. Supports template variables such as {{sloName}}. Leave empty to use the default title..",
+                Computed: true,
+            },
+            "incident_description_template": schema.StringAttribute{
+                MarkdownDescription: "Description (in Markdown) of the incident declared when this burn rate rule fires. Supports template variables. Leave empty to use the default description..",
+                Computed: true,
+            },
+            "incident_remediation_notes": schema.StringAttribute{
+                MarkdownDescription: "Remediation notes (in Markdown) attached to the incident declared when this burn rate rule fires. Supports template variables..",
+                Computed: true,
+            },
+            "is_incident_private": schema.BoolAttribute{
+                MarkdownDescription: "Make the incident declared by this burn rate rule private, so only its owners, project admins and project owners can see it. Disabled by default..",
+                Computed: true,
+            },
+            "auto_resolve_incident": schema.BoolAttribute{
+                MarkdownDescription: "Resolve the incident automatically when the burn rate over the long window drops back below the threshold. Enabled by default. When disabled, the incident stays open until someone resolves it..",
+                Computed: true,
+            },
+            "incident_labels": schema.SetAttribute{
+                MarkdownDescription: "Labels added to incidents declared by this burn rate rule..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "incident_owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams added as owners of incidents declared by this burn rate rule..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "incident_owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users added as owners of incidents declared by this burn rate rule..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "add_slo_owners_as_owners": schema.BoolAttribute{
+                MarkdownDescription: "Also add the owner users and owner teams of the Service Level Objective as owners of the alerts and incidents this burn rate rule creates. Disabled by default..",
+                Computed: true,
             },
             "last_alert_created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
@@ -231,8 +322,25 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
         "shouldCreateIncident": true,
         "alertSeverityId": true,
         "onCallDutyPolicies": true,
+        "alertTitleTemplate": true,
+        "alertDescriptionTemplate": true,
+        "alertRemediationNotes": true,
+        "isAlertPrivate": true,
+        "autoResolveAlert": true,
+        "alertLabels": true,
+        "alertOwnerTeams": true,
+        "alertOwnerUsers": true,
         "incidentSeverityId": true,
         "incidentOnCallDutyPolicies": true,
+        "incidentTitleTemplate": true,
+        "incidentDescriptionTemplate": true,
+        "incidentRemediationNotes": true,
+        "isIncidentPrivate": true,
+        "autoResolveIncident": true,
+        "incidentLabels": true,
+        "incidentOwnerTeams": true,
+        "incidentOwnerUsers": true,
+        "addSloOwnersAsOwners": true,
         "lastAlertCreatedAt": true,
         "lastAlertResolvedAt": true,
         "lastIncidentCreatedAt": true,
@@ -541,6 +649,139 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
     } else {
         data.OnCallDutyPolicies = types.SetNull(types.StringType)
     }
+    if obj, ok := item["alertTitleTemplate"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AlertTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AlertTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AlertTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := item["alertTitleTemplate"].(string); ok {
+        data.AlertTitleTemplate = types.StringValue(val)
+    } else {
+        data.AlertTitleTemplate = types.StringNull()
+    }
+    if obj, ok := item["alertDescriptionTemplate"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AlertDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AlertDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AlertDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := item["alertDescriptionTemplate"].(string); ok {
+        data.AlertDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.AlertDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := item["alertRemediationNotes"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AlertRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AlertRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AlertRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.AlertRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := item["alertRemediationNotes"].(string); ok {
+        data.AlertRemediationNotes = types.StringValue(val)
+    } else {
+        data.AlertRemediationNotes = types.StringNull()
+    }
+    if val, ok := item["isAlertPrivate"].(bool); ok {
+        data.IsAlertPrivate = types.BoolValue(val)
+    } else {
+        data.IsAlertPrivate = types.BoolNull()
+    }
+    if val, ok := item["autoResolveAlert"].(bool); ok {
+        data.AutoResolveAlert = types.BoolValue(val)
+    } else {
+        data.AutoResolveAlert = types.BoolNull()
+    }
+    if val, ok := item["alertLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.AlertLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.AlertLabels = types.SetNull(types.StringType)
+    }
+    if val, ok := item["alertOwnerTeams"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.AlertOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.AlertOwnerTeams = types.SetNull(types.StringType)
+    }
+    if val, ok := item["alertOwnerUsers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.AlertOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.AlertOwnerUsers = types.SetNull(types.StringType)
+    }
     if obj, ok := item["incidentSeverityId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.IncidentSeverityId = types.StringValue(val)
@@ -581,6 +822,144 @@ func (d *SloBurnRateRuleDataSource) Read(ctx context.Context, req datasource.Rea
         data.IncidentOnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
     } else {
         data.IncidentOnCallDutyPolicies = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["incidentTitleTemplate"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncidentTitleTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncidentTitleTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentTitleTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentTitleTemplate = types.StringNull()
+        }
+    } else if val, ok := item["incidentTitleTemplate"].(string); ok {
+        data.IncidentTitleTemplate = types.StringValue(val)
+    } else {
+        data.IncidentTitleTemplate = types.StringNull()
+    }
+    if obj, ok := item["incidentDescriptionTemplate"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncidentDescriptionTemplate = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncidentDescriptionTemplate = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentDescriptionTemplate = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentDescriptionTemplate = types.StringNull()
+        }
+    } else if val, ok := item["incidentDescriptionTemplate"].(string); ok {
+        data.IncidentDescriptionTemplate = types.StringValue(val)
+    } else {
+        data.IncidentDescriptionTemplate = types.StringNull()
+    }
+    if obj, ok := item["incidentRemediationNotes"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncidentRemediationNotes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncidentRemediationNotes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncidentRemediationNotes = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentRemediationNotes = types.StringNull()
+        }
+    } else if val, ok := item["incidentRemediationNotes"].(string); ok {
+        data.IncidentRemediationNotes = types.StringValue(val)
+    } else {
+        data.IncidentRemediationNotes = types.StringNull()
+    }
+    if val, ok := item["isIncidentPrivate"].(bool); ok {
+        data.IsIncidentPrivate = types.BoolValue(val)
+    } else {
+        data.IsIncidentPrivate = types.BoolNull()
+    }
+    if val, ok := item["autoResolveIncident"].(bool); ok {
+        data.AutoResolveIncident = types.BoolValue(val)
+    } else {
+        data.AutoResolveIncident = types.BoolNull()
+    }
+    if val, ok := item["incidentLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.IncidentLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.IncidentLabels = types.SetNull(types.StringType)
+    }
+    if val, ok := item["incidentOwnerTeams"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.IncidentOwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.IncidentOwnerTeams = types.SetNull(types.StringType)
+    }
+    if val, ok := item["incidentOwnerUsers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.IncidentOwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.IncidentOwnerUsers = types.SetNull(types.StringType)
+    }
+    if val, ok := item["addSloOwnersAsOwners"].(bool); ok {
+        data.AddSloOwnersAsOwners = types.BoolValue(val)
+    } else {
+        data.AddSloOwnersAsOwners = types.BoolNull()
     }
     if obj, ok := item["lastAlertCreatedAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
