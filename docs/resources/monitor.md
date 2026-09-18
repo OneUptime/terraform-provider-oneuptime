@@ -15,7 +15,7 @@ Monitor is anything that monitors your API, Websites, IP, Network or more. You c
 resource "oneuptime_monitor" "example" {
   name = "Example short text"
   monitor_type = "Manual"
-  description = "This is an example of longer text content that might be stored in this field."
+  description = "This is an example of very long text content that might be stored in this field. It can contain a lot of information, such as detailed descriptions, comments, or any other lengthy text data that needs to be stored in the database."
   monitor_steps = [
     {
       monitor_destination      = "https://your-service.example.com"
