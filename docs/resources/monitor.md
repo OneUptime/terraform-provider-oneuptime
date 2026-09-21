@@ -55,7 +55,7 @@ resource "oneuptime_monitor" "example" {
 - `monitor_template_id` (String) A unique identifier for an object, represented as a UUID..
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID..
 - `monitor_steps` (Block List) MonitorSteps object.
-- `monitoring_interval` (String) How often would you like OneUptime to monitor this resource?..
+- `monitoring_interval` (String) How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes...
 - `custom_fields` (String) Custom Fields on this resource...
 - `disable_active_monitoring` (Bool) Disable active monitoring for this resource?..
 - `incoming_request_monitor_heartbeat_checked_at` (String) A date time object..

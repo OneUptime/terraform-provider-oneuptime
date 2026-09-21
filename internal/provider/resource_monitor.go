@@ -182,7 +182,7 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
             },
             "monitor_steps": MonitorStepsSchemaAttribute("MonitorSteps object"),
             "monitoring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often would you like OneUptime to monitor this resource?.",
+                MarkdownDescription: "How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{

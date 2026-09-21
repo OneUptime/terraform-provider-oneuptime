@@ -44,7 +44,7 @@ data "oneuptime_monitor" "by_id" {
 - `monitor_type` (String) What is the type of this monitor? Website? API? etc... Computed.
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `monitor_steps` (Monitor_steps) MonitorSteps object. Computed.
-- `monitoring_interval` (String) How often would you like OneUptime to monitor this resource?.. Computed.
+- `monitoring_interval` (String) How often would you like OneUptime to monitor this resource? A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes... Computed.
 - `custom_fields` (String) Custom Fields on this resource... Computed.
 - `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?.. Computed.
 - `disable_active_monitoring` (Bool) Disable active monitoring for this resource?.. Computed.

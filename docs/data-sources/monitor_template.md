@@ -39,7 +39,7 @@ data "oneuptime_monitor_template" "by_id" {
 - `monitor_description` (String) Default description applied to monitors created from this template... Computed.
 - `monitor_type` (String) What is the type of monitor created from this template?.. Computed.
 - `monitor_steps` (Monitor_steps) MonitorSteps object. Computed.
-- `monitoring_interval` (String) Default monitoring interval for monitors created from this template.. Computed.
+- `monitoring_interval` (String) Default monitoring interval for monitors created from this template. A 5-field cron expression, not a label: "*/5 * * * *" is every five minutes... Computed.
 - `labels` (Set) Default labels applied to monitors created from this template... Computed.
 - `custom_fields` (String) Custom Fields on this resource... Computed.
 - `minimum_probe_agreement` (Number) Default minimum number of probes that must agree on a status before the monitor status changes... Computed.

@@ -118,7 +118,7 @@ func (d *MonitorTemplateDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "monitoring_interval": schema.StringAttribute{
-                MarkdownDescription: "Default monitoring interval for monitors created from this template.",
+                MarkdownDescription: "Default monitoring interval for monitors created from this template. A 5-field cron expression, not a label: \"*/5 * * * *\" is every five minutes..",
                 Computed: true,
             },
             "labels": schema.SetAttribute{
