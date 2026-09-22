@@ -22,35 +22,35 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
-    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &SloMonitorRuleResource{}
-var _ resource.ResourceWithImportState = &SloMonitorRuleResource{}
+var _ resource.Resource = &SloOwnerRuleResource{}
+var _ resource.ResourceWithImportState = &SloOwnerRuleResource{}
 
-func NewSloMonitorRuleResource() resource.Resource {
-    return &SloMonitorRuleResource{}
+func NewSloOwnerRuleResource() resource.Resource {
+    return &SloOwnerRuleResource{}
 }
 
-// SloMonitorRuleResource defines the resource implementation.
-type SloMonitorRuleResource struct {
+// SloOwnerRuleResource defines the resource implementation.
+type SloOwnerRuleResource struct {
     client *Client
 }
 
-// SloMonitorRuleResourceModel describes the resource data model.
-type SloMonitorRuleResourceModel struct {
+// SloOwnerRuleResourceModel describes the resource data model.
+type SloOwnerRuleResourceModel struct {
     Id types.String `tfsdk:"id"`
     Criteria JSONSubsetValue `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
-    ServiceLevelObjectiveId types.String `tfsdk:"service_level_objective_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
-    MonitorLabels types.Set `tfsdk:"monitor_labels"`
-    MonitorType types.String `tfsdk:"monitor_type"`
-    MonitorNamePattern types.String `tfsdk:"monitor_name_pattern"`
-    MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
+    NotifyOwners types.Bool `tfsdk:"notify_owners"`
+    ServiceLevelObjectiveLabels types.Set `tfsdk:"service_level_objective_labels"`
+    ServiceLevelObjectiveNamePattern types.String `tfsdk:"service_level_objective_name_pattern"`
+    ServiceLevelObjectiveDescriptionPattern types.String `tfsdk:"service_level_objective_description_pattern"`
+    OwnerUsers types.Set `tfsdk:"owner_users"`
+    OwnerTeams types.Set `tfsdk:"owner_teams"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -58,13 +58,13 @@ type SloMonitorRuleResourceModel struct {
     Version types.Number `tfsdk:"version"`
 }
 
-func (r *SloMonitorRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_slo_monitor_rule"
+func (r *SloOwnerRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_slo_owner_rule"
 }
 
-func (r *SloMonitorRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *SloOwnerRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Configure rules that automatically attach matching monitors to a Service Level Objective, instead of picking every monitor by hand",
+        MarkdownDescription: "Configure rules for automatically assigning owner users and teams when matching SLOs are created",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -93,19 +93,12 @@ func (r *SloMonitorRuleResource) Schema(ctx context.Context, req resource.Schema
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "service_level_objective_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Required: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this SLO monitor rule.",
+                MarkdownDescription: "Name of this SLO owner rule.",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this SLO monitor rule.",
+                MarkdownDescription: "Description of this SLO owner rule.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -113,7 +106,7 @@ func (r *SloMonitorRuleResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this rule is enabled. A disabled rule matches nothing, so monitors that only this rule attached are detached from the SLO..",
+                MarkdownDescription: "Whether this rule is enabled.",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -121,8 +114,17 @@ func (r *SloMonitorRuleResource) Schema(ctx context.Context, req resource.Schema
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
-            "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only match monitors that carry at least one of these labels. Leave empty to skip the label filter..",
+            "notify_owners": schema.BoolAttribute{
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule.",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "service_level_objective_labels": schema.SetAttribute{
+                MarkdownDescription: "Only trigger for SLOs that have at least one of these labels. Leave empty to match regardless of labels..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -130,31 +132,38 @@ func (r *SloMonitorRuleResource) Schema(ctx context.Context, req resource.Schema
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
-            "monitor_type": schema.StringAttribute{
-                MarkdownDescription: "Only match monitors of this type. Leave empty to skip the type filter..",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-                Validators: []validator.String{
-                    stringvalidator.OneOf("Manual", "Website", "API", "Ping", "Kubernetes", "Docker", "Host", "Podman", "Docker Swarm", "Proxmox", "VMware", "Ceph", "IoT Device", "IP", "Incoming Request", "Incoming Email", "Port", "Server", "SSL Certificate", "SQL Query", "Database", "Synthetic Monitor", "Custom JavaScript Code", "Logs", "Metrics", "Traces", "Exceptions", "Profiles", "Security Events", "Network Device", "DNS", "DNSSEC", "Domain", "External Status Page"),
-                },
-            },
-            "monitor_name_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor name. Leave empty to skip the name filter. Use .* to match every monitor..",
+            "service_level_objective_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the SLO name. Leave empty to match any name..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "monitor_description_pattern": schema.StringAttribute{
-                MarkdownDescription: "Regex (case-insensitive) matched against the monitor description. Leave empty to skip the description filter..",
+            "service_level_objective_description_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the SLO description. Leave empty to match any description..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users to add as owners on the SLO when this rule matches..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams to add as owners on the SLO when this rule matches..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_by_user_id": schema.StringAttribute{
@@ -189,7 +198,7 @@ func (r *SloMonitorRuleResource) Schema(ctx context.Context, req resource.Schema
     }
 }
 
-func (r *SloMonitorRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *SloOwnerRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -210,8 +219,8 @@ func (r *SloMonitorRuleResource) Configure(ctx context.Context, req resource.Con
 }
 
 
-func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data SloMonitorRuleResourceModel
+func (r *SloOwnerRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data SloOwnerRuleResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -225,16 +234,13 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    sloMonitorRuleRequest := map[string]interface{}{
+    sloOwnerRuleRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := sloMonitorRuleRequest["data"].(map[string]interface{})
+    requestDataMap := sloOwnerRuleRequest["data"].(map[string]interface{})
 
     if parsedCriteria := r.parseJSONField(data.Criteria); parsedCriteria != nil {
         requestDataMap["criteria"] = parsedCriteria
-    }
-    if !data.ServiceLevelObjectiveId.IsNull() && !data.ServiceLevelObjectiveId.IsUnknown() {
-        requestDataMap["serviceLevelObjectiveId"] = data.ServiceLevelObjectiveId.ValueString()
     }
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
@@ -245,47 +251,53 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
-    if !data.MonitorLabels.IsNull() && !data.MonitorLabels.IsUnknown() {
-        requestDataMap["monitorLabels"] = r.convertTerraformSetToInterface(data.MonitorLabels)
+    if !data.NotifyOwners.IsNull() && !data.NotifyOwners.IsUnknown() {
+        requestDataMap["notifyOwners"] = data.NotifyOwners.ValueBool()
     }
-    if !data.MonitorType.IsNull() && !data.MonitorType.IsUnknown() {
-        requestDataMap["monitorType"] = data.MonitorType.ValueString()
+    if !data.ServiceLevelObjectiveLabels.IsNull() && !data.ServiceLevelObjectiveLabels.IsUnknown() {
+        requestDataMap["serviceLevelObjectiveLabels"] = r.convertTerraformSetToInterface(data.ServiceLevelObjectiveLabels)
     }
-    if !data.MonitorNamePattern.IsNull() && !data.MonitorNamePattern.IsUnknown() {
-        requestDataMap["monitorNamePattern"] = data.MonitorNamePattern.ValueString()
+    if !data.ServiceLevelObjectiveNamePattern.IsNull() && !data.ServiceLevelObjectiveNamePattern.IsUnknown() {
+        requestDataMap["serviceLevelObjectiveNamePattern"] = data.ServiceLevelObjectiveNamePattern.ValueString()
     }
-    if !data.MonitorDescriptionPattern.IsNull() && !data.MonitorDescriptionPattern.IsUnknown() {
-        requestDataMap["monitorDescriptionPattern"] = data.MonitorDescriptionPattern.ValueString()
+    if !data.ServiceLevelObjectiveDescriptionPattern.IsNull() && !data.ServiceLevelObjectiveDescriptionPattern.IsUnknown() {
+        requestDataMap["serviceLevelObjectiveDescriptionPattern"] = data.ServiceLevelObjectiveDescriptionPattern.ValueString()
+    }
+    if !data.OwnerUsers.IsNull() && !data.OwnerUsers.IsUnknown() {
+        requestDataMap["ownerUsers"] = r.convertTerraformSetToInterface(data.OwnerUsers)
+    }
+    if !data.OwnerTeams.IsNull() && !data.OwnerTeams.IsUnknown() {
+        requestDataMap["ownerTeams"] = r.convertTerraformSetToInterface(data.OwnerTeams)
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/service-level-objective-monitor-rule", sloMonitorRuleRequest)
+    httpResp, err := r.client.Post(ctx, "/service-level-objective-owner-rule", sloOwnerRuleRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create slo_monitor_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create slo_owner_rule, got error: %s", err))
         return
     }
 
-    var sloMonitorRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &sloMonitorRuleResponse)
+    var sloOwnerRuleResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &sloOwnerRuleResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create slo_monitor_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create slo_owner_rule: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := sloMonitorRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := sloOwnerRuleResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := sloMonitorRuleResponse["_id"].(string); ok {
+    } else if val, ok := sloOwnerRuleResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for slo_monitor_rule did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for slo_owner_rule did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -294,7 +306,7 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * slo_monitor_rule is orphaned server-side — never refreshed, never
+     * slo_owner_rule is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -307,14 +319,15 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
     selectParam := map[string]interface{}{
         "criteria": true,
         "projectId": true,
-        "serviceLevelObjectiveId": true,
         "name": true,
         "description": true,
         "isEnabled": true,
-        "monitorLabels": true,
-        "monitorType": true,
-        "monitorNamePattern": true,
-        "monitorDescriptionPattern": true,
+        "notifyOwners": true,
+        "serviceLevelObjectiveLabels": true,
+        "serviceLevelObjectiveNamePattern": true,
+        "serviceLevelObjectiveDescriptionPattern": true,
+        "ownerUsers": true,
+        "ownerTeams": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -323,21 +336,21 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-monitor-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-owner-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created slo_monitor_rule but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created slo_owner_rule but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created slo_monitor_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created slo_owner_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -399,43 +412,6 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
-    }
-    if obj, ok := dataMap["serviceLevelObjectiveId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ServiceLevelObjectiveId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ServiceLevelObjectiveId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ServiceLevelObjectiveId = types.StringNull()
-        }
-    } else if val, ok := dataMap["serviceLevelObjectiveId"].(string); ok {
-        data.ServiceLevelObjectiveId = types.StringValue(val)
-    } else {
-        data.ServiceLevelObjectiveId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -514,7 +490,10 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["monitorLabels"].([]interface{}); ok {
+    if val, ok := dataMap["notifyOwners"].(bool); ok {
+        data.NotifyOwners = types.BoolValue(val)
+    }
+    if val, ok := dataMap["serviceLevelObjectiveLabels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
         for _, item := range val {
@@ -541,121 +520,148 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
             jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.MonitorLabels = types.SetValueMust(types.StringType, setItems)
+        data.ServiceLevelObjectiveLabels = types.SetValueMust(types.StringType, setItems)
     } else {
         // For sets, always use empty set instead of null to match default values
-        data.MonitorLabels = types.SetValueMust(types.StringType, []attr.Value{})
+        data.ServiceLevelObjectiveLabels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if obj, ok := dataMap["monitorType"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["serviceLevelObjectiveNamePattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorType = types.StringValue(val)
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorType = types.StringValue(val)
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MonitorType = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorType = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorType = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MonitorType = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorType = types.StringNull()
+            data.ServiceLevelObjectiveNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorType"].(string); ok {
-        data.MonitorType = types.StringValue(val)
+    } else if val, ok := dataMap["serviceLevelObjectiveNamePattern"].(string); ok {
+        data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
     } else {
-        data.MonitorType = types.StringNull()
+        data.ServiceLevelObjectiveNamePattern = types.StringNull()
     }
-    if obj, ok := dataMap["monitorNamePattern"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["serviceLevelObjectiveDescriptionPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorNamePattern = types.StringNull()
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
-        data.MonitorNamePattern = types.StringValue(val)
+    } else if val, ok := dataMap["serviceLevelObjectiveDescriptionPattern"].(string); ok {
+        data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
     } else {
-        data.MonitorNamePattern = types.StringNull()
+        data.ServiceLevelObjectiveDescriptionPattern = types.StringNull()
     }
-    if obj, ok := dataMap["monitorDescriptionPattern"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorDescriptionPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorDescriptionPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-            } else {
-                data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+    if val, ok := dataMap["ownerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
             }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-            } else {
-                data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-        } else {
-            data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
-        data.MonitorDescriptionPattern = types.StringValue(val)
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OwnerUsers = types.SetValueMust(types.StringType, setItems)
     } else {
-        data.MonitorDescriptionPattern = types.StringNull()
+        // For sets, always use empty set instead of null to match default values
+        data.OwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["ownerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -759,8 +765,8 @@ func (r *SloMonitorRuleResource) Create(ctx context.Context, req resource.Create
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data SloMonitorRuleResourceModel
+func (r *SloOwnerRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data SloOwnerRuleResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -773,14 +779,15 @@ func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequ
     selectParam := map[string]interface{}{
         "criteria": true,
         "projectId": true,
-        "serviceLevelObjectiveId": true,
         "name": true,
         "description": true,
         "isEnabled": true,
-        "monitorLabels": true,
-        "monitorType": true,
-        "monitorNamePattern": true,
-        "monitorDescriptionPattern": true,
+        "notifyOwners": true,
+        "serviceLevelObjectiveLabels": true,
+        "serviceLevelObjectiveNamePattern": true,
+        "serviceLevelObjectiveDescriptionPattern": true,
+        "ownerUsers": true,
+        "ownerTeams": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -790,9 +797,9 @@ func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequ
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-monitor-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-owner-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read slo_monitor_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read slo_owner_rule, got error: %s", err))
         return
     }
 
@@ -801,22 +808,22 @@ func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequ
         return
     }
 
-    var sloMonitorRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &sloMonitorRuleResponse)
+    var sloOwnerRuleResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &sloOwnerRuleResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse slo_monitor_rule response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse slo_owner_rule response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := sloMonitorRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := sloOwnerRuleResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = sloMonitorRuleResponse
+        dataMap = sloOwnerRuleResponse
     }
 
     if obj, ok := dataMap["criteria"].(map[string]interface{}); ok {
@@ -866,43 +873,6 @@ func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequ
         data.ProjectId = types.StringValue(val)
     } else {
         data.ProjectId = types.StringNull()
-    }
-    if obj, ok := dataMap["serviceLevelObjectiveId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ServiceLevelObjectiveId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ServiceLevelObjectiveId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ServiceLevelObjectiveId = types.StringNull()
-        }
-    } else if val, ok := dataMap["serviceLevelObjectiveId"].(string); ok {
-        data.ServiceLevelObjectiveId = types.StringValue(val)
-    } else {
-        data.ServiceLevelObjectiveId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -981,7 +951,10 @@ func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequ
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["monitorLabels"].([]interface{}); ok {
+    if val, ok := dataMap["notifyOwners"].(bool); ok {
+        data.NotifyOwners = types.BoolValue(val)
+    }
+    if val, ok := dataMap["serviceLevelObjectiveLabels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
         for _, item := range val {
@@ -1008,121 +981,148 @@ func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequ
             jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.MonitorLabels = types.SetValueMust(types.StringType, setItems)
+        data.ServiceLevelObjectiveLabels = types.SetValueMust(types.StringType, setItems)
     } else {
         // For sets, always use empty set instead of null to match default values
-        data.MonitorLabels = types.SetValueMust(types.StringType, []attr.Value{})
+        data.ServiceLevelObjectiveLabels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if obj, ok := dataMap["monitorType"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["serviceLevelObjectiveNamePattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorType = types.StringValue(val)
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorType = types.StringValue(val)
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MonitorType = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorType = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorType = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MonitorType = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorType = types.StringNull()
+            data.ServiceLevelObjectiveNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorType"].(string); ok {
-        data.MonitorType = types.StringValue(val)
+    } else if val, ok := dataMap["serviceLevelObjectiveNamePattern"].(string); ok {
+        data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
     } else {
-        data.MonitorType = types.StringNull()
+        data.ServiceLevelObjectiveNamePattern = types.StringNull()
     }
-    if obj, ok := dataMap["monitorNamePattern"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["serviceLevelObjectiveDescriptionPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorNamePattern = types.StringNull()
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
-        data.MonitorNamePattern = types.StringValue(val)
+    } else if val, ok := dataMap["serviceLevelObjectiveDescriptionPattern"].(string); ok {
+        data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
     } else {
-        data.MonitorNamePattern = types.StringNull()
+        data.ServiceLevelObjectiveDescriptionPattern = types.StringNull()
     }
-    if obj, ok := dataMap["monitorDescriptionPattern"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorDescriptionPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorDescriptionPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-            } else {
-                data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+    if val, ok := dataMap["ownerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
             }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-            } else {
-                data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-        } else {
-            data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
-        data.MonitorDescriptionPattern = types.StringValue(val)
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OwnerUsers = types.SetValueMust(types.StringType, setItems)
     } else {
-        data.MonitorDescriptionPattern = types.StringNull()
+        // For sets, always use empty set instead of null to match default values
+        data.OwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["ownerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1221,9 +1221,9 @@ func (r *SloMonitorRuleResource) Read(ctx context.Context, req resource.ReadRequ
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data SloMonitorRuleResourceModel
-    var state SloMonitorRuleResourceModel
+func (r *SloOwnerRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data SloOwnerRuleResourceModel
+    var state SloOwnerRuleResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -1241,10 +1241,10 @@ func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.Update
     data.Id = state.Id
 
     // Create API request body
-    sloMonitorRuleRequest := map[string]interface{}{
+    sloOwnerRuleRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := sloMonitorRuleRequest["data"].(map[string]interface{})
+    requestDataMap := sloOwnerRuleRequest["data"].(map[string]interface{})
 
     if !data.Criteria.IsUnknown() && !state.Criteria.IsUnknown() && !data.Criteria.Equal(state.Criteria) {
         var criteriaData interface{}
@@ -1263,51 +1263,58 @@ func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.Update
     if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
-    if !data.MonitorLabels.IsUnknown() && !state.MonitorLabels.IsUnknown() && !data.MonitorLabels.Equal(state.MonitorLabels) {
-        requestDataMap["monitorLabels"] = r.convertTerraformSetToInterface(data.MonitorLabels)
+    if !data.NotifyOwners.IsUnknown() && !state.NotifyOwners.IsUnknown() && !data.NotifyOwners.Equal(state.NotifyOwners) {
+        requestDataMap["notifyOwners"] = data.NotifyOwners.ValueBool()
     }
-    if !data.MonitorType.IsUnknown() && !state.MonitorType.IsUnknown() && !data.MonitorType.Equal(state.MonitorType) {
-        requestDataMap["monitorType"] = data.MonitorType.ValueString()
+    if !data.ServiceLevelObjectiveLabels.IsUnknown() && !state.ServiceLevelObjectiveLabels.IsUnknown() && !data.ServiceLevelObjectiveLabels.Equal(state.ServiceLevelObjectiveLabels) {
+        requestDataMap["serviceLevelObjectiveLabels"] = r.convertTerraformSetToInterface(data.ServiceLevelObjectiveLabels)
     }
-    if !data.MonitorNamePattern.IsUnknown() && !state.MonitorNamePattern.IsUnknown() && !data.MonitorNamePattern.Equal(state.MonitorNamePattern) {
-        requestDataMap["monitorNamePattern"] = data.MonitorNamePattern.ValueString()
+    if !data.ServiceLevelObjectiveNamePattern.IsUnknown() && !state.ServiceLevelObjectiveNamePattern.IsUnknown() && !data.ServiceLevelObjectiveNamePattern.Equal(state.ServiceLevelObjectiveNamePattern) {
+        requestDataMap["serviceLevelObjectiveNamePattern"] = data.ServiceLevelObjectiveNamePattern.ValueString()
     }
-    if !data.MonitorDescriptionPattern.IsUnknown() && !state.MonitorDescriptionPattern.IsUnknown() && !data.MonitorDescriptionPattern.Equal(state.MonitorDescriptionPattern) {
-        requestDataMap["monitorDescriptionPattern"] = data.MonitorDescriptionPattern.ValueString()
+    if !data.ServiceLevelObjectiveDescriptionPattern.IsUnknown() && !state.ServiceLevelObjectiveDescriptionPattern.IsUnknown() && !data.ServiceLevelObjectiveDescriptionPattern.Equal(state.ServiceLevelObjectiveDescriptionPattern) {
+        requestDataMap["serviceLevelObjectiveDescriptionPattern"] = data.ServiceLevelObjectiveDescriptionPattern.ValueString()
+    }
+    if !data.OwnerUsers.IsUnknown() && !state.OwnerUsers.IsUnknown() && !data.OwnerUsers.Equal(state.OwnerUsers) {
+        requestDataMap["ownerUsers"] = r.convertTerraformSetToInterface(data.OwnerUsers)
+    }
+    if !data.OwnerTeams.IsUnknown() && !state.OwnerTeams.IsUnknown() && !data.OwnerTeams.Equal(state.OwnerTeams) {
+        requestDataMap["ownerTeams"] = r.convertTerraformSetToInterface(data.OwnerTeams)
     }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(sloMonitorRuleRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/service-level-objective-monitor-rule/" + data.Id.ValueString() + "", sloMonitorRuleRequest)
+    if len(sloOwnerRuleRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/service-level-objective-owner-rule/" + data.Id.ValueString() + "", sloOwnerRuleRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update slo_monitor_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update slo_owner_rule, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var sloMonitorRuleResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &sloMonitorRuleResponse)
+        var sloOwnerRuleResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &sloOwnerRuleResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update slo_monitor_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update slo_owner_rule: %s", err))
             return
         }
-        _ = sloMonitorRuleResponse
+        _ = sloOwnerRuleResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
     selectParam := map[string]interface{}{
         "criteria": true,
         "projectId": true,
-        "serviceLevelObjectiveId": true,
         "name": true,
         "description": true,
         "isEnabled": true,
-        "monitorLabels": true,
-        "monitorType": true,
-        "monitorNamePattern": true,
-        "monitorDescriptionPattern": true,
+        "notifyOwners": true,
+        "serviceLevelObjectiveLabels": true,
+        "serviceLevelObjectiveNamePattern": true,
+        "serviceLevelObjectiveDescriptionPattern": true,
+        "ownerUsers": true,
+        "ownerTeams": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1316,16 +1323,16 @@ func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.Update
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-monitor-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/service-level-objective-owner-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read slo_monitor_rule after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read slo_owner_rule after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read slo_monitor_rule after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read slo_owner_rule after update: %s", err))
         return
     }
 
@@ -1388,43 +1395,6 @@ func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.Update
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := dataMap["serviceLevelObjectiveId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ServiceLevelObjectiveId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ServiceLevelObjectiveId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-            } else {
-                data.ServiceLevelObjectiveId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ServiceLevelObjectiveId = types.StringValue(string(jsonBytes))
-        } else {
-            data.ServiceLevelObjectiveId = types.StringNull()
-        }
-    } else if val, ok := dataMap["serviceLevelObjectiveId"].(string); ok {
-        data.ServiceLevelObjectiveId = types.StringValue(val)
-    } else {
-        data.ServiceLevelObjectiveId = types.StringNull()
-    }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1502,7 +1472,10 @@ func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.Update
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if val, ok := dataMap["monitorLabels"].([]interface{}); ok {
+    if val, ok := dataMap["notifyOwners"].(bool); ok {
+        data.NotifyOwners = types.BoolValue(val)
+    }
+    if val, ok := dataMap["serviceLevelObjectiveLabels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
         for _, item := range val {
@@ -1529,121 +1502,148 @@ func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.Update
             jStr := setItems[j].(types.String).ValueString()
             return iStr < jStr
         })
-        data.MonitorLabels = types.SetValueMust(types.StringType, setItems)
+        data.ServiceLevelObjectiveLabels = types.SetValueMust(types.StringType, setItems)
     } else {
         // For sets, always use empty set instead of null to match default values
-        data.MonitorLabels = types.SetValueMust(types.StringType, []attr.Value{})
+        data.ServiceLevelObjectiveLabels = types.SetValueMust(types.StringType, []attr.Value{})
     }
-    if obj, ok := dataMap["monitorType"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["serviceLevelObjectiveNamePattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorType = types.StringValue(val)
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorType = types.StringValue(val)
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MonitorType = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorType = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorType = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ServiceLevelObjectiveNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MonitorType = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveNamePattern = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorType = types.StringNull()
+            data.ServiceLevelObjectiveNamePattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorType"].(string); ok {
-        data.MonitorType = types.StringValue(val)
+    } else if val, ok := dataMap["serviceLevelObjectiveNamePattern"].(string); ok {
+        data.ServiceLevelObjectiveNamePattern = types.StringValue(val)
     } else {
-        data.MonitorType = types.StringNull()
+        data.ServiceLevelObjectiveNamePattern = types.StringNull()
     }
-    if obj, ok := dataMap["monitorNamePattern"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["serviceLevelObjectiveDescriptionPattern"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorNamePattern = types.StringValue(val)
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
             } else {
-                data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
-            data.MonitorNamePattern = types.StringNull()
+            data.ServiceLevelObjectiveDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorNamePattern"].(string); ok {
-        data.MonitorNamePattern = types.StringValue(val)
+    } else if val, ok := dataMap["serviceLevelObjectiveDescriptionPattern"].(string); ok {
+        data.ServiceLevelObjectiveDescriptionPattern = types.StringValue(val)
     } else {
-        data.MonitorNamePattern = types.StringNull()
+        data.ServiceLevelObjectiveDescriptionPattern = types.StringNull()
     }
-    if obj, ok := dataMap["monitorDescriptionPattern"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.MonitorDescriptionPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.MonitorDescriptionPattern = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-            } else {
-                data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+    if val, ok := dataMap["ownerUsers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
             }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-            } else {
-                data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
-        } else {
-            data.MonitorDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := dataMap["monitorDescriptionPattern"].(string); ok {
-        data.MonitorDescriptionPattern = types.StringValue(val)
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OwnerUsers = types.SetValueMust(types.StringType, setItems)
     } else {
-        data.MonitorDescriptionPattern = types.StringNull()
+        // For sets, always use empty set instead of null to match default values
+        data.OwnerUsers = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["ownerTeams"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.OwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.OwnerTeams = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1743,8 +1743,8 @@ func (r *SloMonitorRuleResource) Update(ctx context.Context, req resource.Update
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *SloMonitorRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data SloMonitorRuleResourceModel
+func (r *SloOwnerRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data SloOwnerRuleResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1754,9 +1754,9 @@ func (r *SloMonitorRuleResource) Delete(ctx context.Context, req resource.Delete
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/service-level-objective-monitor-rule/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/service-level-objective-owner-rule/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete slo_monitor_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete slo_owner_rule, got error: %s", err))
         return
     }
 
@@ -1764,7 +1764,7 @@ func (r *SloMonitorRuleResource) Delete(ctx context.Context, req resource.Delete
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete slo_monitor_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete slo_owner_rule: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -1773,12 +1773,12 @@ func (r *SloMonitorRuleResource) Delete(ctx context.Context, req resource.Delete
 }
 
 
-func (r *SloMonitorRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *SloOwnerRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *SloMonitorRuleResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *SloOwnerRuleResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1796,7 +1796,7 @@ func (r *SloMonitorRuleResource) convertTerraformMapToInterface(terraformMap typ
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *SloMonitorRuleResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *SloOwnerRuleResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -1817,7 +1817,7 @@ func (r *SloMonitorRuleResource) convertTerraformListToInterface(terraformList t
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *SloMonitorRuleResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *SloOwnerRuleResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -1839,7 +1839,7 @@ func (r *SloMonitorRuleResource) convertTerraformSetToInterface(terraformSet typ
 
 
 // Helper method to parse JSON field for complex objects
-func (r *SloMonitorRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *SloOwnerRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -1855,7 +1855,7 @@ func (r *SloMonitorRuleResource) parseJSONField(terraformString basetypes.String
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *SloMonitorRuleResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *SloOwnerRuleResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -1877,7 +1877,7 @@ func (r *SloMonitorRuleResource) normalizeURLWrappers(value interface{}) interfa
     }
 }
 
-func (r *SloMonitorRuleResource) normalizeURLString(value string) string {
+func (r *SloOwnerRuleResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1889,7 +1889,7 @@ func (r *SloMonitorRuleResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *SloMonitorRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *SloOwnerRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1899,6 +1899,6 @@ func (r *SloMonitorRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *SloMonitorRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *SloOwnerRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

@@ -37,6 +37,7 @@ data "oneuptime_slo_monitor_rule" "by_id" {
 - `description` (String) Description of this SLO monitor rule.. Computed.
 - `is_enabled` (Bool) Whether this rule is enabled. A disabled rule matches nothing, so monitors that only this rule attached are detached from the SLO... Computed.
 - `monitor_labels` (Set) Only match monitors that carry at least one of these labels. Leave empty to skip the label filter... Computed.
+- `monitor_type` (String) Only match monitors of this type. Leave empty to skip the type filter... Computed.
 - `monitor_name_pattern` (String) Regex (case-insensitive) matched against the monitor name. Leave empty to skip the name filter. Use .* to match every monitor... Computed.
 - `monitor_description_pattern` (String) Regex (case-insensitive) matched against the monitor description. Leave empty to skip the description filter... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

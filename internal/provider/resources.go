@@ -127,6 +127,8 @@ func GetResources() []func() resource.Resource {
         NewServiceLevelObjectiveTeamOwnerResource,
         NewSloMonitorRuleResource,
         NewSloFeedResource,
+        NewSloOwnerRuleResource,
+        NewSloLabelRuleResource,
         NewIncidentReminderRuleResource,
         NewAlertReminderRuleResource,
         NewScheduledMaintenanceReminderRuleResource,

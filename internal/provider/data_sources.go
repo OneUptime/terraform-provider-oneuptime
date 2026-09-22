@@ -135,6 +135,8 @@ func GetDataSources() []func() datasource.DataSource {
         NewServiceLevelObjectiveTeamOwnerDataSource,
         NewSloMonitorRuleDataSource,
         NewSloFeedDataSource,
+        NewSloOwnerRuleDataSource,
+        NewSloLabelRuleDataSource,
         NewIncidentReminderRuleDataSource,
         NewAlertReminderRuleDataSource,
         NewScheduledMaintenanceReminderRuleDataSource,
