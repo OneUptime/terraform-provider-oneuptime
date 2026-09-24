@@ -63,6 +63,7 @@ type MonitorResourceModel struct {
     IncomingMonitorRequest JSONSubsetValue `tfsdk:"incoming_monitor_request"`
     ServerMonitorResponse JSONSubsetValue `tfsdk:"server_monitor_response"`
     MinimumProbeAgreement types.Number `tfsdk:"minimum_probe_agreement"`
+    IncomingEmailCustomLocalPart types.String `tfsdk:"incoming_email_custom_local_part"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
@@ -282,6 +283,14 @@ func (r *MonitorResource) Schema(ctx context.Context, req resource.SchemaRequest
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "incoming_email_custom_local_part": schema.StringAttribute{
+                MarkdownDescription: "This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -538,6 +547,7 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         "incomingMonitorRequest": true,
         "serverMonitorResponse": true,
         "minimumProbeAgreement": true,
+        "incomingEmailCustomLocalPart": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1134,6 +1144,43 @@ func (r *MonitorResource) Create(ctx context.Context, req resource.CreateRequest
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.MinimumProbeAgreement = types.NumberNull()
     }
+    if obj, ok := dataMap["incomingEmailCustomLocalPart"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingEmailCustomLocalPart = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingEmailCustomLocalPart = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailCustomLocalPart = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingEmailCustomLocalPart"].(string); ok {
+        data.IncomingEmailCustomLocalPart = types.StringValue(val)
+    } else {
+        data.IncomingEmailCustomLocalPart = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1528,6 +1575,7 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         "incomingMonitorRequest": true,
         "serverMonitorResponse": true,
         "minimumProbeAgreement": true,
+        "incomingEmailCustomLocalPart": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2125,6 +2173,43 @@ func (r *MonitorResource) Read(ctx context.Context, req resource.ReadRequest, re
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.MinimumProbeAgreement = types.NumberNull()
     }
+    if obj, ok := dataMap["incomingEmailCustomLocalPart"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingEmailCustomLocalPart = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingEmailCustomLocalPart = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailCustomLocalPart = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingEmailCustomLocalPart"].(string); ok {
+        data.IncomingEmailCustomLocalPart = types.StringValue(val)
+    } else {
+        data.IncomingEmailCustomLocalPart = types.StringNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2549,6 +2634,9 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.DisableActiveMonitoring.IsUnknown() && !state.DisableActiveMonitoring.IsUnknown() && !data.DisableActiveMonitoring.Equal(state.DisableActiveMonitoring) {
         requestDataMap["disableActiveMonitoring"] = data.DisableActiveMonitoring.ValueBool()
     }
+    if !data.IncomingEmailCustomLocalPart.IsUnknown() && !state.IncomingEmailCustomLocalPart.IsUnknown() && !data.IncomingEmailCustomLocalPart.Equal(state.IncomingEmailCustomLocalPart) {
+        requestDataMap["incomingEmailCustomLocalPart"] = data.IncomingEmailCustomLocalPart.ValueString()
+    }
     if !data.MinimumProbeAgreement.IsUnknown() && !state.MinimumProbeAgreement.IsUnknown() && !data.MinimumProbeAgreement.Equal(state.MinimumProbeAgreement) {
         requestDataMap["minimumProbeAgreement"] = r.bigFloatToFloat64(data.MinimumProbeAgreement.ValueBigFloat())
     }
@@ -2596,6 +2684,7 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
         "incomingMonitorRequest": true,
         "serverMonitorResponse": true,
         "minimumProbeAgreement": true,
+        "incomingEmailCustomLocalPart": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -3186,6 +3275,43 @@ func (r *MonitorResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.MinimumProbeAgreement = types.NumberNull()
+    }
+    if obj, ok := dataMap["incomingEmailCustomLocalPart"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingEmailCustomLocalPart = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncomingEmailCustomLocalPart = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncomingEmailCustomLocalPart = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncomingEmailCustomLocalPart = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailCustomLocalPart = types.StringNull()
+        }
+    } else if val, ok := dataMap["incomingEmailCustomLocalPart"].(string); ok {
+        data.IncomingEmailCustomLocalPart = types.StringValue(val)
+    } else {
+        data.IncomingEmailCustomLocalPart = types.StringNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

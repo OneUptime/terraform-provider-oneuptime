@@ -15,9 +15,11 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -42,11 +44,24 @@ type WorkflowVariableResourceModel struct {
     Description types.String `tfsdk:"description"`
     Content types.String `tfsdk:"content"`
     IsSecret types.Bool `tfsdk:"is_secret"`
+    VariableType types.String `tfsdk:"variable_type"`
+    OauthGrantType types.String `tfsdk:"oauth_grant_type"`
+    OauthTokenUrl types.String `tfsdk:"oauth_token_url"`
+    OauthClientId types.String `tfsdk:"oauth_client_id"`
+    OauthClientSecret types.String `tfsdk:"oauth_client_secret"`
+    OauthRefreshToken types.String `tfsdk:"oauth_refresh_token"`
+    OauthScope types.String `tfsdk:"oauth_scope"`
+    OauthAdditionalParameters JSONSubsetValue `tfsdk:"oauth_additional_parameters"`
+    OauthClientAuthenticationMethod types.String `tfsdk:"oauth_client_authentication_method"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    OauthAccessTokenExpiresAt RFC3339Value `tfsdk:"oauth_access_token_expires_at"`
+    OauthLastRefreshedAt RFC3339Value `tfsdk:"oauth_last_refreshed_at"`
+    OauthLastRefreshError types.String `tfsdk:"oauth_last_refresh_error"`
+    OauthLastRefreshErrorAt RFC3339Value `tfsdk:"oauth_last_refresh_error_at"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -95,8 +110,8 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "content": schema.StringAttribute{
-                MarkdownDescription: "Content of the variable.",
-                Required: true,
+                MarkdownDescription: "Content of the variable. Required for Static variables. Not used by OAuth 2.0 variables, whose value is the access token OneUptime fetches..",
+                Optional: true,
             },
             "is_secret": schema.BoolAttribute{
                 MarkdownDescription: "Is this variable a secret. If true, then it'll not be in the logs.",
@@ -105,6 +120,77 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
                 Default: booldefault.StaticBool(false),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "variable_type": schema.StringAttribute{
+                MarkdownDescription: "Static: the content you save is used as is. OAuth 2.0: OneUptime fetches an access token from your identity provider and refreshes it automatically when a workflow uses it after it has expired..",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Static"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "oauth_grant_type": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. Client Credentials for machine-to-machine access, or Refresh Token to keep delegated access alive with a refresh token you obtained once..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "oauth_token_url": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. The token endpoint of your identity provider..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "oauth_client_id": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. The client ID of the application registered with your identity provider..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "oauth_client_secret": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. The client secret of the application. Required for the Client Credentials grant; optional for the Refresh Token grant (public clients have none). Encrypted, and never readable through the API..",
+                Optional: true,
+            },
+            "oauth_refresh_token": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables using the Refresh Token grant only. OneUptime exchanges it for access tokens and stores the replacement when your identity provider rotates it. Encrypted, and never readable through the API..",
+                Optional: true,
+            },
+            "oauth_scope": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "oauth_additional_parameters": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "oauth_client_authentication_method": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. How the client ID and secret are sent: in an HTTP Basic header (client_secret_basic, the default) or in the request body (client_secret_post)..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_by_user_id": schema.StringAttribute{
@@ -133,6 +219,25 @@ func (r *WorkflowVariableResource) Schema(ctx context.Context, req resource.Sche
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
+                Computed: true,
+            },
+            "oauth_access_token_expires_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "oauth_last_refreshed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "oauth_last_refresh_error": schema.StringAttribute{
+                MarkdownDescription: "Why the last attempt to fetch an access token failed. Cleared by the next successful refresh..",
+                Computed: true,
+            },
+            "oauth_last_refresh_error_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -199,6 +304,33 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
     if !data.IsSecret.IsNull() && !data.IsSecret.IsUnknown() {
         requestDataMap["isSecret"] = data.IsSecret.ValueBool()
     }
+    if !data.VariableType.IsNull() && !data.VariableType.IsUnknown() {
+        requestDataMap["variableType"] = data.VariableType.ValueString()
+    }
+    if !data.OauthGrantType.IsNull() && !data.OauthGrantType.IsUnknown() {
+        requestDataMap["oauthGrantType"] = data.OauthGrantType.ValueString()
+    }
+    if !data.OauthTokenUrl.IsNull() && !data.OauthTokenUrl.IsUnknown() {
+        requestDataMap["oauthTokenUrl"] = data.OauthTokenUrl.ValueString()
+    }
+    if !data.OauthClientId.IsNull() && !data.OauthClientId.IsUnknown() {
+        requestDataMap["oauthClientId"] = data.OauthClientId.ValueString()
+    }
+    if !data.OauthClientSecret.IsNull() && !data.OauthClientSecret.IsUnknown() {
+        requestDataMap["oauthClientSecret"] = data.OauthClientSecret.ValueString()
+    }
+    if !data.OauthRefreshToken.IsNull() && !data.OauthRefreshToken.IsUnknown() {
+        requestDataMap["oauthRefreshToken"] = data.OauthRefreshToken.ValueString()
+    }
+    if !data.OauthScope.IsNull() && !data.OauthScope.IsUnknown() {
+        requestDataMap["oauthScope"] = data.OauthScope.ValueString()
+    }
+    if parsedOauthAdditionalParameters := r.parseJSONField(data.OauthAdditionalParameters); parsedOauthAdditionalParameters != nil {
+        requestDataMap["oauthAdditionalParameters"] = parsedOauthAdditionalParameters
+    }
+    if !data.OauthClientAuthenticationMethod.IsNull() && !data.OauthClientAuthenticationMethod.IsUnknown() {
+        requestDataMap["oauthClientAuthenticationMethod"] = data.OauthClientAuthenticationMethod.ValueString()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -252,11 +384,22 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         "name": true,
         "description": true,
         "isSecret": true,
+        "variableType": true,
+        "oauthGrantType": true,
+        "oauthTokenUrl": true,
+        "oauthClientId": true,
+        "oauthScope": true,
+        "oauthAdditionalParameters": true,
+        "oauthClientAuthenticationMethod": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "oauthAccessTokenExpiresAt": true,
+        "oauthLastRefreshedAt": true,
+        "oauthLastRefreshError": true,
+        "oauthLastRefreshErrorAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -415,6 +558,265 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
     if val, ok := dataMap["isSecret"].(bool); ok {
         data.IsSecret = types.BoolValue(val)
     }
+    if obj, ok := dataMap["variableType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VariableType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VariableType = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VariableType = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VariableType = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableType = types.StringNull()
+        }
+    } else if val, ok := dataMap["variableType"].(string); ok {
+        data.VariableType = types.StringValue(val)
+    } else {
+        data.VariableType = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthGrantType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthGrantType = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthGrantType = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthGrantType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthGrantType = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthGrantType"].(string); ok {
+        data.OauthGrantType = types.StringValue(val)
+    } else {
+        data.OauthGrantType = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthTokenUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthTokenUrl"].(string); ok {
+        data.OauthTokenUrl = types.StringValue(val)
+    } else {
+        data.OauthTokenUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthClientId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthClientId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthClientId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthClientId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthClientId"].(string); ok {
+        data.OauthClientId = types.StringValue(val)
+    } else {
+        data.OauthClientId = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthScope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthScope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthScope = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthScope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthScope = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthScope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthScope"].(string); ok {
+        data.OauthScope = types.StringValue(val)
+    } else {
+        data.OauthScope = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthAdditionalParameters"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OauthAdditionalParameters = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["oauthAdditionalParameters"].(string); ok {
+        data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+    } else {
+        data.OauthAdditionalParameters = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["oauthClientAuthenticationMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientAuthenticationMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthClientAuthenticationMethod"].(string); ok {
+        data.OauthClientAuthenticationMethod = types.StringValue(val)
+    } else {
+        data.OauthClientAuthenticationMethod = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -502,6 +904,76 @@ func (r *WorkflowVariableResource) Create(ctx context.Context, req resource.Crea
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["oauthAccessTokenExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthAccessTokenExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthAccessTokenExpiresAt"].(string); ok && val != "" {
+        data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthAccessTokenExpiresAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthLastRefreshedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthLastRefreshedAt = NewRFC3339Value(val)
+        } else {
+            data.OauthLastRefreshedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshedAt"].(string); ok && val != "" {
+        data.OauthLastRefreshedAt = NewRFC3339Value(val)
+    } else {
+        data.OauthLastRefreshedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthLastRefreshError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshError = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshError"].(string); ok {
+        data.OauthLastRefreshError = types.StringValue(val)
+    } else {
+        data.OauthLastRefreshError = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthLastRefreshErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthLastRefreshErrorAt = NewRFC3339Value(val)
+        } else {
+            data.OauthLastRefreshErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshErrorAt"].(string); ok && val != "" {
+        data.OauthLastRefreshErrorAt = NewRFC3339Value(val)
+    } else {
+        data.OauthLastRefreshErrorAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -571,11 +1043,22 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         "name": true,
         "description": true,
         "isSecret": true,
+        "variableType": true,
+        "oauthGrantType": true,
+        "oauthTokenUrl": true,
+        "oauthClientId": true,
+        "oauthScope": true,
+        "oauthAdditionalParameters": true,
+        "oauthClientAuthenticationMethod": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "oauthAccessTokenExpiresAt": true,
+        "oauthLastRefreshedAt": true,
+        "oauthLastRefreshError": true,
+        "oauthLastRefreshErrorAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -735,6 +1218,265 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
     if val, ok := dataMap["isSecret"].(bool); ok {
         data.IsSecret = types.BoolValue(val)
     }
+    if obj, ok := dataMap["variableType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VariableType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VariableType = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VariableType = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VariableType = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableType = types.StringNull()
+        }
+    } else if val, ok := dataMap["variableType"].(string); ok {
+        data.VariableType = types.StringValue(val)
+    } else {
+        data.VariableType = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthGrantType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthGrantType = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthGrantType = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthGrantType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthGrantType = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthGrantType"].(string); ok {
+        data.OauthGrantType = types.StringValue(val)
+    } else {
+        data.OauthGrantType = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthTokenUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthTokenUrl"].(string); ok {
+        data.OauthTokenUrl = types.StringValue(val)
+    } else {
+        data.OauthTokenUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthClientId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthClientId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthClientId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthClientId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthClientId"].(string); ok {
+        data.OauthClientId = types.StringValue(val)
+    } else {
+        data.OauthClientId = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthScope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthScope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthScope = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthScope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthScope = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthScope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthScope"].(string); ok {
+        data.OauthScope = types.StringValue(val)
+    } else {
+        data.OauthScope = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthAdditionalParameters"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OauthAdditionalParameters = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["oauthAdditionalParameters"].(string); ok {
+        data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+    } else {
+        data.OauthAdditionalParameters = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["oauthClientAuthenticationMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientAuthenticationMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthClientAuthenticationMethod"].(string); ok {
+        data.OauthClientAuthenticationMethod = types.StringValue(val)
+    } else {
+        data.OauthClientAuthenticationMethod = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -822,6 +1564,76 @@ func (r *WorkflowVariableResource) Read(ctx context.Context, req resource.ReadRe
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["oauthAccessTokenExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthAccessTokenExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthAccessTokenExpiresAt"].(string); ok && val != "" {
+        data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthAccessTokenExpiresAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthLastRefreshedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthLastRefreshedAt = NewRFC3339Value(val)
+        } else {
+            data.OauthLastRefreshedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshedAt"].(string); ok && val != "" {
+        data.OauthLastRefreshedAt = NewRFC3339Value(val)
+    } else {
+        data.OauthLastRefreshedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthLastRefreshError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshError = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshError"].(string); ok {
+        data.OauthLastRefreshError = types.StringValue(val)
+    } else {
+        data.OauthLastRefreshError = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthLastRefreshErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthLastRefreshErrorAt = NewRFC3339Value(val)
+        } else {
+            data.OauthLastRefreshErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshErrorAt"].(string); ok && val != "" {
+        data.OauthLastRefreshErrorAt = NewRFC3339Value(val)
+    } else {
+        data.OauthLastRefreshErrorAt = NewRFC3339Null()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -906,6 +1718,32 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
     if !data.IsSecret.IsUnknown() && !state.IsSecret.IsUnknown() && !data.IsSecret.Equal(state.IsSecret) {
         requestDataMap["isSecret"] = data.IsSecret.ValueBool()
     }
+    if !data.OauthTokenUrl.IsUnknown() && !state.OauthTokenUrl.IsUnknown() && !data.OauthTokenUrl.Equal(state.OauthTokenUrl) {
+        requestDataMap["oauthTokenUrl"] = data.OauthTokenUrl.ValueString()
+    }
+    if !data.OauthClientId.IsUnknown() && !state.OauthClientId.IsUnknown() && !data.OauthClientId.Equal(state.OauthClientId) {
+        requestDataMap["oauthClientId"] = data.OauthClientId.ValueString()
+    }
+    if !data.OauthClientSecret.IsUnknown() && !state.OauthClientSecret.IsUnknown() && !data.OauthClientSecret.Equal(state.OauthClientSecret) {
+        requestDataMap["oauthClientSecret"] = data.OauthClientSecret.ValueString()
+    }
+    if !data.OauthRefreshToken.IsUnknown() && !state.OauthRefreshToken.IsUnknown() && !data.OauthRefreshToken.Equal(state.OauthRefreshToken) {
+        requestDataMap["oauthRefreshToken"] = data.OauthRefreshToken.ValueString()
+    }
+    if !data.OauthScope.IsUnknown() && !state.OauthScope.IsUnknown() && !data.OauthScope.Equal(state.OauthScope) {
+        requestDataMap["oauthScope"] = data.OauthScope.ValueString()
+    }
+    if !data.OauthAdditionalParameters.IsUnknown() && !state.OauthAdditionalParameters.IsUnknown() && !data.OauthAdditionalParameters.Equal(state.OauthAdditionalParameters) {
+        var oauthadditionalparametersData interface{}
+        if err := json.Unmarshal([]byte(data.OauthAdditionalParameters.ValueString()), &oauthadditionalparametersData); err == nil {
+            requestDataMap["oauthAdditionalParameters"] = oauthadditionalparametersData
+        } else {
+            requestDataMap["oauthAdditionalParameters"] = data.OauthAdditionalParameters.ValueString()
+        }
+    }
+    if !data.OauthClientAuthenticationMethod.IsUnknown() && !state.OauthClientAuthenticationMethod.IsUnknown() && !data.OauthClientAuthenticationMethod.Equal(state.OauthClientAuthenticationMethod) {
+        requestDataMap["oauthClientAuthenticationMethod"] = data.OauthClientAuthenticationMethod.ValueString()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -934,11 +1772,22 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
         "name": true,
         "description": true,
         "isSecret": true,
+        "variableType": true,
+        "oauthGrantType": true,
+        "oauthTokenUrl": true,
+        "oauthClientId": true,
+        "oauthScope": true,
+        "oauthAdditionalParameters": true,
+        "oauthClientAuthenticationMethod": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "oauthAccessTokenExpiresAt": true,
+        "oauthLastRefreshedAt": true,
+        "oauthLastRefreshError": true,
+        "oauthLastRefreshErrorAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1092,6 +1941,265 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
     if val, ok := dataMap["isSecret"].(bool); ok {
         data.IsSecret = types.BoolValue(val)
     }
+    if obj, ok := dataMap["variableType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VariableType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VariableType = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VariableType = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VariableType = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableType = types.StringNull()
+        }
+    } else if val, ok := dataMap["variableType"].(string); ok {
+        data.VariableType = types.StringValue(val)
+    } else {
+        data.VariableType = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthGrantType"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthGrantType = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthGrantType = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthGrantType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthGrantType = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthGrantType"].(string); ok {
+        data.OauthGrantType = types.StringValue(val)
+    } else {
+        data.OauthGrantType = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthTokenUrl"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthTokenUrl"].(string); ok {
+        data.OauthTokenUrl = types.StringValue(val)
+    } else {
+        data.OauthTokenUrl = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthClientId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthClientId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthClientId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthClientId = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthClientId"].(string); ok {
+        data.OauthClientId = types.StringValue(val)
+    } else {
+        data.OauthClientId = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthScope"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthScope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthScope = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthScope = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthScope = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthScope = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthScope"].(string); ok {
+        data.OauthScope = types.StringValue(val)
+    } else {
+        data.OauthScope = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthAdditionalParameters"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.OauthAdditionalParameters = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthAdditionalParameters = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.OauthAdditionalParameters = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["oauthAdditionalParameters"].(string); ok {
+        data.OauthAdditionalParameters = NewJSONSubsetValue(val)
+    } else {
+        data.OauthAdditionalParameters = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["oauthClientAuthenticationMethod"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientAuthenticationMethod = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthClientAuthenticationMethod"].(string); ok {
+        data.OauthClientAuthenticationMethod = types.StringValue(val)
+    } else {
+        data.OauthClientAuthenticationMethod = types.StringNull()
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1178,6 +2286,76 @@ func (r *WorkflowVariableResource) Update(ctx context.Context, req resource.Upda
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["oauthAccessTokenExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
+        } else {
+            data.OauthAccessTokenExpiresAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthAccessTokenExpiresAt"].(string); ok && val != "" {
+        data.OauthAccessTokenExpiresAt = NewRFC3339Value(val)
+    } else {
+        data.OauthAccessTokenExpiresAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthLastRefreshedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthLastRefreshedAt = NewRFC3339Value(val)
+        } else {
+            data.OauthLastRefreshedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshedAt"].(string); ok && val != "" {
+        data.OauthLastRefreshedAt = NewRFC3339Value(val)
+    } else {
+        data.OauthLastRefreshedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["oauthLastRefreshError"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+            } else {
+                data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshError = types.StringNull()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshError"].(string); ok {
+        data.OauthLastRefreshError = types.StringValue(val)
+    } else {
+        data.OauthLastRefreshError = types.StringNull()
+    }
+    if obj, ok := dataMap["oauthLastRefreshErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.OauthLastRefreshErrorAt = NewRFC3339Value(val)
+        } else {
+            data.OauthLastRefreshErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["oauthLastRefreshErrorAt"].(string); ok && val != "" {
+        data.OauthLastRefreshErrorAt = NewRFC3339Value(val)
+    } else {
+        data.OauthLastRefreshErrorAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

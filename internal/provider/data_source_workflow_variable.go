@@ -37,6 +37,17 @@ type WorkflowVariableDataSourceModel struct {
     WorkflowId types.String `tfsdk:"workflow_id"`
     Description types.String `tfsdk:"description"`
     IsSecret types.Bool `tfsdk:"is_secret"`
+    VariableType types.String `tfsdk:"variable_type"`
+    OauthGrantType types.String `tfsdk:"oauth_grant_type"`
+    OauthTokenUrl types.String `tfsdk:"oauth_token_url"`
+    OauthClientId types.String `tfsdk:"oauth_client_id"`
+    OauthScope types.String `tfsdk:"oauth_scope"`
+    OauthAdditionalParameters types.String `tfsdk:"oauth_additional_parameters"`
+    OauthClientAuthenticationMethod types.String `tfsdk:"oauth_client_authentication_method"`
+    OauthAccessTokenExpiresAt types.String `tfsdk:"oauth_access_token_expires_at"`
+    OauthLastRefreshedAt types.String `tfsdk:"oauth_last_refreshed_at"`
+    OauthLastRefreshError types.String `tfsdk:"oauth_last_refresh_error"`
+    OauthLastRefreshErrorAt types.String `tfsdk:"oauth_last_refresh_error_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -90,6 +101,50 @@ func (d *WorkflowVariableDataSource) Schema(ctx context.Context, req datasource.
             },
             "is_secret": schema.BoolAttribute{
                 MarkdownDescription: "Is this variable a secret. If true, then it'll not be in the logs.",
+                Computed: true,
+            },
+            "variable_type": schema.StringAttribute{
+                MarkdownDescription: "Static: the content you save is used as is. OAuth 2.0: OneUptime fetches an access token from your identity provider and refreshes it automatically when a workflow uses it after it has expired..",
+                Computed: true,
+            },
+            "oauth_grant_type": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. Client Credentials for machine-to-machine access, or Refresh Token to keep delegated access alive with a refresh token you obtained once..",
+                Computed: true,
+            },
+            "oauth_token_url": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. The token endpoint of your identity provider..",
+                Computed: true,
+            },
+            "oauth_client_id": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. The client ID of the application registered with your identity provider..",
+                Computed: true,
+            },
+            "oauth_scope": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default..",
+                Computed: true,
+            },
+            "oauth_additional_parameters": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here..",
+                Computed: true,
+            },
+            "oauth_client_authentication_method": schema.StringAttribute{
+                MarkdownDescription: "OAuth 2.0 variables only. How the client ID and secret are sent: in an HTTP Basic header (client_secret_basic, the default) or in the request body (client_secret_post)..",
+                Computed: true,
+            },
+            "oauth_access_token_expires_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "oauth_last_refreshed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "oauth_last_refresh_error": schema.StringAttribute{
+                MarkdownDescription: "Why the last attempt to fetch an access token failed. Cleared by the next successful refresh..",
+                Computed: true,
+            },
+            "oauth_last_refresh_error_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -154,6 +209,17 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         "workflowId": true,
         "description": true,
         "isSecret": true,
+        "variableType": true,
+        "oauthGrantType": true,
+        "oauthTokenUrl": true,
+        "oauthClientId": true,
+        "oauthScope": true,
+        "oauthAdditionalParameters": true,
+        "oauthClientAuthenticationMethod": true,
+        "oauthAccessTokenExpiresAt": true,
+        "oauthLastRefreshedAt": true,
+        "oauthLastRefreshError": true,
+        "oauthLastRefreshErrorAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -369,6 +435,193 @@ func (d *WorkflowVariableDataSource) Read(ctx context.Context, req datasource.Re
         data.IsSecret = types.BoolValue(val)
     } else {
         data.IsSecret = types.BoolNull()
+    }
+    if obj, ok := item["variableType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.VariableType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.VariableType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VariableType = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableType = types.StringNull()
+        }
+    } else if val, ok := item["variableType"].(string); ok {
+        data.VariableType = types.StringValue(val)
+    } else {
+        data.VariableType = types.StringNull()
+    }
+    if obj, ok := item["oauthGrantType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthGrantType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthGrantType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthGrantType = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthGrantType = types.StringNull()
+        }
+    } else if val, ok := item["oauthGrantType"].(string); ok {
+        data.OauthGrantType = types.StringValue(val)
+    } else {
+        data.OauthGrantType = types.StringNull()
+    }
+    if obj, ok := item["oauthTokenUrl"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthTokenUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthTokenUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthTokenUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthTokenUrl = types.StringNull()
+        }
+    } else if val, ok := item["oauthTokenUrl"].(string); ok {
+        data.OauthTokenUrl = types.StringValue(val)
+    } else {
+        data.OauthTokenUrl = types.StringNull()
+    }
+    if obj, ok := item["oauthClientId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthClientId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthClientId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthClientId = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientId = types.StringNull()
+        }
+    } else if val, ok := item["oauthClientId"].(string); ok {
+        data.OauthClientId = types.StringValue(val)
+    } else {
+        data.OauthClientId = types.StringNull()
+    }
+    if obj, ok := item["oauthScope"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthScope = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthScope = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthScope = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthScope = types.StringNull()
+        }
+    } else if val, ok := item["oauthScope"].(string); ok {
+        data.OauthScope = types.StringValue(val)
+    } else {
+        data.OauthScope = types.StringNull()
+    }
+    if obj, ok := item["oauthAdditionalParameters"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthAdditionalParameters = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthAdditionalParameters = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthAdditionalParameters = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthAdditionalParameters = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthAdditionalParameters = types.StringNull()
+        }
+    } else if val, ok := item["oauthAdditionalParameters"].(string); ok {
+        data.OauthAdditionalParameters = types.StringValue(val)
+    } else {
+        data.OauthAdditionalParameters = types.StringNull()
+    }
+    if obj, ok := item["oauthClientAuthenticationMethod"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthClientAuthenticationMethod = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthClientAuthenticationMethod = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthClientAuthenticationMethod = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthClientAuthenticationMethod = types.StringNull()
+        }
+    } else if val, ok := item["oauthClientAuthenticationMethod"].(string); ok {
+        data.OauthClientAuthenticationMethod = types.StringValue(val)
+    } else {
+        data.OauthClientAuthenticationMethod = types.StringNull()
+    }
+    if obj, ok := item["oauthAccessTokenExpiresAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthAccessTokenExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthAccessTokenExpiresAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthAccessTokenExpiresAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthAccessTokenExpiresAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthAccessTokenExpiresAt = types.StringNull()
+        }
+    } else if val, ok := item["oauthAccessTokenExpiresAt"].(string); ok {
+        data.OauthAccessTokenExpiresAt = types.StringValue(val)
+    } else {
+        data.OauthAccessTokenExpiresAt = types.StringNull()
+    }
+    if obj, ok := item["oauthLastRefreshedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthLastRefreshedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthLastRefreshedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthLastRefreshedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthLastRefreshedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshedAt = types.StringNull()
+        }
+    } else if val, ok := item["oauthLastRefreshedAt"].(string); ok {
+        data.OauthLastRefreshedAt = types.StringValue(val)
+    } else {
+        data.OauthLastRefreshedAt = types.StringNull()
+    }
+    if obj, ok := item["oauthLastRefreshError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthLastRefreshError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthLastRefreshError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthLastRefreshError = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshError = types.StringNull()
+        }
+    } else if val, ok := item["oauthLastRefreshError"].(string); ok {
+        data.OauthLastRefreshError = types.StringValue(val)
+    } else {
+        data.OauthLastRefreshError = types.StringNull()
+    }
+    if obj, ok := item["oauthLastRefreshErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.OauthLastRefreshErrorAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.OauthLastRefreshErrorAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.OauthLastRefreshErrorAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.OauthLastRefreshErrorAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.OauthLastRefreshErrorAt = types.StringNull()
+        }
+    } else if val, ok := item["oauthLastRefreshErrorAt"].(string); ok {
+        data.OauthLastRefreshErrorAt = types.StringValue(val)
+    } else {
+        data.OauthLastRefreshErrorAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

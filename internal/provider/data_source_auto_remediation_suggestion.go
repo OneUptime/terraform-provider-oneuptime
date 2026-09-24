@@ -36,6 +36,7 @@ type AutoRemediationSuggestionDataSourceModel struct {
     ProjectId types.String `tfsdk:"project_id"`
     AutoRemediationRuleId types.String `tfsdk:"auto_remediation_rule_id"`
     RuleNameSnapshot types.String `tfsdk:"rule_name_snapshot"`
+    KubernetesClusterId types.String `tfsdk:"kubernetes_cluster_id"`
     IncidentId types.String `tfsdk:"incident_id"`
     AlertId types.String `tfsdk:"alert_id"`
     RunbookId types.String `tfsdk:"runbook_id"`
@@ -104,6 +105,10 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
             },
             "rule_name_snapshot": schema.StringAttribute{
                 MarkdownDescription: "Name of the rule when this suggestion was created — survives rule deletion..",
+                Computed: true,
+            },
+            "kubernetes_cluster_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
@@ -243,6 +248,7 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "projectId": true,
         "autoRemediationRuleId": true,
         "ruleNameSnapshot": true,
+        "kubernetesClusterId": true,
         "incidentId": true,
         "alertId": true,
         "runbookId": true,
@@ -472,6 +478,23 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.RuleNameSnapshot = types.StringValue(val)
     } else {
         data.RuleNameSnapshot = types.StringNull()
+    }
+    if obj, ok := item["kubernetesClusterId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.KubernetesClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.KubernetesClusterId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.KubernetesClusterId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.KubernetesClusterId = types.StringValue(string(jsonBytes))
+        } else {
+            data.KubernetesClusterId = types.StringNull()
+        }
+    } else if val, ok := item["kubernetesClusterId"].(string); ok {
+        data.KubernetesClusterId = types.StringValue(val)
+    } else {
+        data.KubernetesClusterId = types.StringNull()
     }
     if obj, ok := item["incidentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

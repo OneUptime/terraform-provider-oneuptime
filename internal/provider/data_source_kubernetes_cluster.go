@@ -54,6 +54,15 @@ type KubernetesClusterDataSourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
+    AiAccessRunnerId types.String `tfsdk:"ai_access_runner_id"`
+    AiAccessCredentialId types.String `tfsdk:"ai_access_credential_id"`
+    IsAiInvestigationEnabled types.Bool `tfsdk:"is_ai_investigation_enabled"`
+    AiRemediationMode types.String `tfsdk:"ai_remediation_mode"`
+    AiKubectlCommandAllowlist types.String `tfsdk:"ai_kubectl_command_allowlist"`
+    AiAccessLastVerifiedAt types.String `tfsdk:"ai_access_last_verified_at"`
+    AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
+    AiAccessConfiguredAt types.String `tfsdk:"ai_access_configured_at"`
+    AiAccessRunnerBoundAt types.String `tfsdk:"ai_access_runner_bound_at"`
 }
 
 func (d *KubernetesClusterDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -168,6 +177,42 @@ func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource
                 MarkdownDescription: "Per-pillar retention overrides for this Kubernetes cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the cluster default, then the project's retention settings..",
                 Computed: true,
             },
+            "ai_access_runner_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "ai_access_credential_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "is_ai_investigation_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. Anyone who may edit the cluster can turn it on or off..",
+                Computed: true,
+            },
+            "ai_remediation_mode": schema.StringAttribute{
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this cluster. RequireApproval: AI composes a kubectl plan and a human approves it with one click before anything runs. Any follow-up plan asks again. Automatic: AI runs safe changes without a human — each on ONE named object: rollout restart/undo/pause/resume of one workload, scale one workload above zero, delete one named pod, cordon/uncordon one node, label/annotate one pod or workload with unreserved keys. A riskier change (patch, set image, drain, taint, scale to zero, deleting workloads or jobs, anything touching several objects) never runs without one: when the round could only find riskier fixes it ends by proposing exactly those for one-click approval; when it also ran safe fixes, a riskier fix is proposed only if verification shows the safe ones did not recover the signal (the follow-up round, which asks). Shapes on the cluster's kubectl allowlist run on their own. BypassApproval: AI does not ask. Every change the policy allows — safe AND riskier — runs on its own, follow-up rounds included, except for what always asks (below). In EVERY mode, Bypass approval included: destructive commands (Denied tier) never run; a write in a protected namespace (kube-system, kube-public, kube-node-lease), a node drain, a node taint and a patch of a Node always need a human; the in-cluster Runner never changes its own namespace or anything outside the namespaces its chart may write; and an unattended run becomes a proposal when the hourly per-cluster circuit breaker trips or another unattended round already holds the cluster. Anyone who may edit the cluster can lower the mode (to Disabled, RequireApproval, or from BypassApproval to Automatic); raising it to Automatic or BypassApproval needs Project Owner, Project Admin or Edit Auto Remediation Rule..",
+                Computed: true,
+            },
+            "ai_kubectl_command_allowlist": schema.StringAttribute{
+                MarkdownDescription: "Optional JSON array of kubectl command patterns that Automatic mode may run without approval even though they are riskier changes, for example: [\"kubectl set image deployment/web * -n web\"]. A pattern is compared with the command word by word: * stands for exactly one word (an image, a name), never for extra objects, flags or a second -n, every flag the command uses must be written out in the pattern, and the leading \"kubectl\" is optional. At most 100 patterns of at most 500 characters each; a pattern that is not one kubectl command line is refused. Destructive commands (Denied tier) never run regardless, and a write in a protected namespace (kube-system, kube-public, kube-node-lease) or a node drain still needs a human. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the cluster can remove patterns or clear the list..",
+                Computed: true,
+            },
+            "ai_access_last_verified_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "ai_access_last_error": schema.StringAttribute{
+                MarkdownDescription: "The most recent failure OneUptime AI hit while running kubectl on this cluster, kept until the next successful command. Set by the server..",
+                Computed: true,
+            },
+            "ai_access_configured_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "ai_access_runner_bound_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
         },
     }
 }
@@ -237,6 +282,15 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
+        "aiAccessRunnerId": true,
+        "aiAccessCredentialId": true,
+        "isAiInvestigationEnabled": true,
+        "aiRemediationMode": true,
+        "aiKubectlCommandAllowlist": true,
+        "aiAccessLastVerifiedAt": true,
+        "aiAccessLastError": true,
+        "aiAccessConfiguredAt": true,
+        "aiAccessRunnerBoundAt": true,
         "_id": true,
     }
 
@@ -688,6 +742,147 @@ func (d *KubernetesClusterDataSource) Read(ctx context.Context, req datasource.R
         data.TelemetryRetentionConfig = types.StringValue(val)
     } else {
         data.TelemetryRetentionConfig = types.StringNull()
+    }
+    if obj, ok := item["aiAccessRunnerId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessRunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessRunnerId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessRunnerId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessRunnerId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessRunnerId = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessRunnerId"].(string); ok {
+        data.AiAccessRunnerId = types.StringValue(val)
+    } else {
+        data.AiAccessRunnerId = types.StringNull()
+    }
+    if obj, ok := item["aiAccessCredentialId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessCredentialId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessCredentialId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessCredentialId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessCredentialId = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessCredentialId = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessCredentialId"].(string); ok {
+        data.AiAccessCredentialId = types.StringValue(val)
+    } else {
+        data.AiAccessCredentialId = types.StringNull()
+    }
+    if val, ok := item["isAiInvestigationEnabled"].(bool); ok {
+        data.IsAiInvestigationEnabled = types.BoolValue(val)
+    } else {
+        data.IsAiInvestigationEnabled = types.BoolNull()
+    }
+    if obj, ok := item["aiRemediationMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
+    } else if val, ok := item["aiRemediationMode"].(string); ok {
+        data.AiRemediationMode = types.StringValue(val)
+    } else {
+        data.AiRemediationMode = types.StringNull()
+    }
+    if obj, ok := item["aiKubectlCommandAllowlist"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiKubectlCommandAllowlist = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiKubectlCommandAllowlist = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiKubectlCommandAllowlist = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiKubectlCommandAllowlist = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiKubectlCommandAllowlist = types.StringNull()
+        }
+    } else if val, ok := item["aiKubectlCommandAllowlist"].(string); ok {
+        data.AiKubectlCommandAllowlist = types.StringValue(val)
+    } else {
+        data.AiKubectlCommandAllowlist = types.StringNull()
+    }
+    if obj, ok := item["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastVerifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessLastVerifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessLastVerifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessLastVerifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastVerifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessLastVerifiedAt"].(string); ok {
+        data.AiAccessLastVerifiedAt = types.StringValue(val)
+    } else {
+        data.AiAccessLastVerifiedAt = types.StringNull()
+    }
+    if obj, ok := item["aiAccessLastError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessLastError"].(string); ok {
+        data.AiAccessLastError = types.StringValue(val)
+    } else {
+        data.AiAccessLastError = types.StringNull()
+    }
+    if obj, ok := item["aiAccessConfiguredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessConfiguredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessConfiguredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessConfiguredAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessConfiguredAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessConfiguredAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessConfiguredAt"].(string); ok {
+        data.AiAccessConfiguredAt = types.StringValue(val)
+    } else {
+        data.AiAccessConfiguredAt = types.StringNull()
+    }
+    if obj, ok := item["aiAccessRunnerBoundAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessRunnerBoundAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessRunnerBoundAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessRunnerBoundAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessRunnerBoundAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessRunnerBoundAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessRunnerBoundAt"].(string); ok {
+        data.AiAccessRunnerBoundAt = types.StringValue(val)
+    } else {
+        data.AiAccessRunnerBoundAt = types.StringNull()
     }
 
     // Write logs using the tflog package

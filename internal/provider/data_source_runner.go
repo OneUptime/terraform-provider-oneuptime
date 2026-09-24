@@ -114,15 +114,15 @@ func (d *RunnerDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
                 Computed: true,
             },
             "can_run_runbooks": schema.BoolAttribute{
-                MarkdownDescription: "Whether this Runner executes runbook steps. On by default — this is why most Runners are installed..",
+                MarkdownDescription: "Whether this Runner executes runbook steps. On by default — this is why most Runners are installed. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only..",
                 Computed: true,
             },
             "can_run_code_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "Whether this Runner works in your code repository to open AI fix pull requests. Off by default; it requires a connected code repository..",
+                MarkdownDescription: "Whether this Runner works in your code repository to open AI fix pull requests. Off by default; it requires a connected code repository. It cannot be turned on for an in-cluster Runner the Kubernetes agent chart registered, which runs kubectl only..",
                 Computed: true,
             },
             "can_run_ai_commands": schema.BoolAttribute{
-                MarkdownDescription: "Whether AI auto-remediation may execute commands on this Runner. Off by default. Commands are policy-checked and either match an operator allowlist or require one-click human approval..",
+                MarkdownDescription: "Whether OneUptime AI may run commands through this Runner: read-only kubectl while investigating a cluster it is bound to, and policy-checked remediation commands (Bash, SSH, kubectl) that either match an allowlist or wait for one-click human approval. Off by default; the in-cluster Runner installed by the Kubernetes agent chart turns it on..",
                 Computed: true,
             },
             "host_info": schema.StringAttribute{

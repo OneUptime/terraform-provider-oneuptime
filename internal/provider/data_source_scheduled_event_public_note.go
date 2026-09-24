@@ -123,7 +123,7 @@ func (d *ScheduledEventPublicNoteDataSource) Schema(ctx context.Context, req dat
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note?.",
+                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the scheduled maintenance event: true when subscribers were notified that the event was created, false when it was created without notifying them..",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{

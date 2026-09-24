@@ -17,6 +17,7 @@ import (
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -43,11 +44,11 @@ type AlertEpisodeMemberResourceModel struct {
     AddedByUserId types.String `tfsdk:"added_by_user_id"`
     MatchedRuleId types.String `tfsdk:"matched_rule_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsOwnerNotifiedOfAlertAdded types.Bool `tfsdk:"is_owner_notified_of_alert_added"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
-    IsOwnerNotifiedOfAlertAdded types.Bool `tfsdk:"is_owner_notified_of_alert_added"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -135,6 +136,15 @@ func (r *AlertEpisodeMemberResource) Schema(ctx context.Context, req resource.Sc
                     stringplanmodifier.RequiresReplace(),
                 },
             },
+            "is_owner_notified_of_alert_added": schema.BoolAttribute{
+                MarkdownDescription: "Has the owner been notified that this alert was added to the episode?.",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                    boolplanmodifier.RequiresReplace(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
@@ -152,10 +162,6 @@ func (r *AlertEpisodeMemberResource) Schema(ctx context.Context, req resource.Sc
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
-                Computed: true,
-            },
-            "is_owner_notified_of_alert_added": schema.BoolAttribute{
-                MarkdownDescription: "Has the owner been notified that this alert was added to the episode?.",
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -228,6 +234,9 @@ func (r *AlertEpisodeMemberResource) Create(ctx context.Context, req resource.Cr
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
+    if !data.IsOwnerNotifiedOfAlertAdded.IsNull() && !data.IsOwnerNotifiedOfAlertAdded.IsUnknown() {
+        requestDataMap["isOwnerNotifiedOfAlertAdded"] = data.IsOwnerNotifiedOfAlertAdded.ValueBool()
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/alert-episode-member", alertEpisodeMemberRequest)
@@ -281,11 +290,11 @@ func (r *AlertEpisodeMemberResource) Create(ctx context.Context, req resource.Cr
         "addedByUserId": true,
         "matchedRuleId": true,
         "createdByUserId": true,
+        "isOwnerNotifiedOfAlertAdded": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "isOwnerNotifiedOfAlertAdded": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -563,6 +572,11 @@ func (r *AlertEpisodeMemberResource) Create(ctx context.Context, req resource.Cr
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
+    } else {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -612,11 +626,6 @@ func (r *AlertEpisodeMemberResource) Create(ctx context.Context, req resource.Cr
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
-    }
-    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
-        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
-    } else {
-        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -690,11 +699,11 @@ func (r *AlertEpisodeMemberResource) Read(ctx context.Context, req resource.Read
         "addedByUserId": true,
         "matchedRuleId": true,
         "createdByUserId": true,
+        "isOwnerNotifiedOfAlertAdded": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "isOwnerNotifiedOfAlertAdded": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -973,6 +982,11 @@ func (r *AlertEpisodeMemberResource) Read(ctx context.Context, req resource.Read
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
+    } else {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1022,11 +1036,6 @@ func (r *AlertEpisodeMemberResource) Read(ctx context.Context, req resource.Read
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
-    }
-    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
-        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
-    } else {
-        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1130,11 +1139,11 @@ func (r *AlertEpisodeMemberResource) Update(ctx context.Context, req resource.Up
         "addedByUserId": true,
         "matchedRuleId": true,
         "createdByUserId": true,
+        "isOwnerNotifiedOfAlertAdded": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "isOwnerNotifiedOfAlertAdded": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1407,6 +1416,11 @@ func (r *AlertEpisodeMemberResource) Update(ctx context.Context, req resource.Up
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
+    } else {
+        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1456,11 +1470,6 @@ func (r *AlertEpisodeMemberResource) Update(ctx context.Context, req resource.Up
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
-    }
-    if val, ok := dataMap["isOwnerNotifiedOfAlertAdded"].(bool); ok {
-        data.IsOwnerNotifiedOfAlertAdded = types.BoolValue(val)
-    } else {
-        data.IsOwnerNotifiedOfAlertAdded = types.BoolNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

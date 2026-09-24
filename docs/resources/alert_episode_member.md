@@ -33,6 +33,7 @@ resource "oneuptime_alert_episode_member" "example" {
 - `added_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `matched_rule_id` (String) A unique identifier for an object, represented as a UUID..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `is_owner_notified_of_alert_added` (Bool) Has the owner been notified that this alert was added to the episode?..
 
 ### Read-Only
 
@@ -41,7 +42,6 @@ resource "oneuptime_alert_episode_member" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
-- `is_owner_notified_of_alert_added` (Bool) Has the owner been notified that this alert was added to the episode?..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

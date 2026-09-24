@@ -34,6 +34,7 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `auto_remediation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `rule_name_snapshot` (String) Name of the rule when this suggestion was created — survives rule deletion... Computed.
+- `kubernetes_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `runbook_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

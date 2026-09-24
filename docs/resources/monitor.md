@@ -65,6 +65,7 @@ resource "oneuptime_monitor" "example" {
 - `incoming_monitor_request` (String) Incoming Monitor Request for Incoming Request Monitor..
 - `server_monitor_response` (String) Server Monitor Response for Server Monitor..
 - `minimum_probe_agreement` (Number) Minimum number of probes that must agree on a status before the monitor status changes. If null, all enabled and connected probes must agree...
+- `incoming_email_custom_local_part` (String) This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address...
 
 ### Read-Only
 

@@ -58,6 +58,7 @@ data "oneuptime_monitor" "by_id" {
 - `incoming_request_secret_key` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incoming_monitor_request` (String) Incoming Monitor Request for Incoming Request Monitor.. Computed.
 - `incoming_email_secret_key` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `incoming_email_custom_local_part` (String) This field is for Incoming Email Monitor only. A custom name for this monitor's inbound email address: the part before the @, on the server's inbound email domain. While set, it replaces the generated monitor-{secret key} address. Must be unique across all monitors. Set to null to go back to the generated address... Computed.
 - `incoming_email_monitor_last_email_received_at` (String) A date time object.. Computed.
 - `incoming_email_monitor_request` (String) This field is for Incoming Email Monitor only. Last email data received... Computed.
 - `incoming_email_monitor_heartbeat_checked_at` (String) A date time object.. Computed.

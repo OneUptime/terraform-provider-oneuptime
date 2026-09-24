@@ -14,7 +14,6 @@ import (
     "encoding/json"
     "net/url"
     "strings"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -115,10 +114,9 @@ func (r *IncidentEpisodePublicNoteResource) Schema(ctx context.Context, req reso
                 },
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note?.",
+                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the episode: true when subscribers were notified that the episode was created, false when it was created without notifying them..",
                 Optional: true,
                 Computed: true,
-                Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
                     boolplanmodifier.RequiresReplace(),
@@ -497,6 +495,8 @@ func (r *IncidentEpisodePublicNoteResource) Create(ctx context.Context, req reso
     }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnNoteCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = types.BoolValue(val)
+    } else {
+        data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = types.BoolNull()
     }
     if obj, ok := dataMap["postedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -980,6 +980,8 @@ func (r *IncidentEpisodePublicNoteResource) Read(ctx context.Context, req resour
     }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnNoteCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = types.BoolValue(val)
+    } else {
+        data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = types.BoolNull()
     }
     if obj, ok := dataMap["postedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1497,6 +1499,8 @@ func (r *IncidentEpisodePublicNoteResource) Update(ctx context.Context, req reso
     }
     if val, ok := dataMap["shouldStatusPageSubscribersBeNotifiedOnNoteCreated"].(bool); ok {
         data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = types.BoolValue(val)
+    } else {
+        data.ShouldStatusPageSubscribersBeNotifiedOnNoteCreated = types.BoolNull()
     }
     if obj, ok := dataMap["postedAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

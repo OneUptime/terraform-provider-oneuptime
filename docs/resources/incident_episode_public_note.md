@@ -29,7 +29,7 @@ resource "oneuptime_incident_episode_public_note" "example" {
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `note` (String) Notes in markdown..
 - `attachments` (Set) Files attached to this note..
-- `should_status_page_subscribers_be_notified_on_note_created` (Bool) Should subscribers be notified about this note?..
+- `should_status_page_subscribers_be_notified_on_note_created` (Bool) Should subscribers be notified about this note? If left out, this follows the episode: true when subscribers were notified that the episode was created, false when it was created without notifying them...
 - `posted_at` (String) A date time object..
 - `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message...
 

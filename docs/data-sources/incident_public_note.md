@@ -40,7 +40,7 @@ data "oneuptime_incident_public_note" "by_id" {
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons.. Computed.
 - `subscriber_notification_status_on_note_updated` (String) Status of the notification sent to subscribers when this note was last updated. Empty until an update notification is requested... Computed.
 - `subscriber_notification_status_message_on_note_updated` (String) Status message for the notification sent to subscribers when this note was last updated - includes success messages, failure reasons, or skip reasons.. Computed.
-- `should_status_page_subscribers_be_notified_on_note_created` (Bool) Should subscribers be notified about this note?.. Computed.
+- `should_status_page_subscribers_be_notified_on_note_created` (Bool) Should subscribers be notified about this note? If left out, this follows the incident: true when subscribers were notified that the incident was declared, false when it was declared without notifying them... Computed.
 - `is_owner_notified` (Bool) Are owners notified of this resource ownership?.. Computed.
 - `posted_at` (String) A date time object.. Computed.
 - `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message... Computed.

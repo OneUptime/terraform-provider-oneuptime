@@ -123,7 +123,7 @@ func (d *IncidentPublicNoteDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "should_status_page_subscribers_be_notified_on_note_created": schema.BoolAttribute{
-                MarkdownDescription: "Should subscribers be notified about this note?.",
+                MarkdownDescription: "Should subscribers be notified about this note? If left out, this follows the incident: true when subscribers were notified that the incident was declared, false when it was declared without notifying them..",
                 Computed: true,
             },
             "is_owner_notified": schema.BoolAttribute{
