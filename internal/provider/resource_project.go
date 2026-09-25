@@ -77,6 +77,8 @@ type ProjectResourceModel struct {
     EnableAiCommandExecution types.Bool `tfsdk:"enable_ai_command_execution"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
+    ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
     EnableAlertInstrumentationFixTasks types.Bool `tfsdk:"enable_alert_instrumentation_fix_tasks"`
     EnableAutomaticIncidentCodeFixes types.Bool `tfsdk:"enable_automatic_incident_code_fixes"`
@@ -451,6 +453,24 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "resolve_linked_alerts_when_incident_resolved": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -963,6 +983,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
+        "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
         "enableAlertInstrumentationFixTasks": true,
         "enableAutomaticIncidentCodeFixes": true,
@@ -1659,6 +1681,12 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
+        data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
+    }
+    if val, ok := dataMap["resolveLinkedAlertsWhenIncidentResolved"].(bool); ok {
+        data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
     }
     if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
         data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
@@ -2694,6 +2722,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
+        "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
         "enableAlertInstrumentationFixTasks": true,
         "enableAutomaticIncidentCodeFixes": true,
@@ -3391,6 +3421,12 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
+        data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
+    }
+    if val, ok := dataMap["resolveLinkedAlertsWhenIncidentResolved"].(bool); ok {
+        data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
     }
     if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
         data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
@@ -4483,6 +4519,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAutomaticAlertInvestigation.IsUnknown() && !state.EnableAutomaticAlertInvestigation.IsUnknown() && !data.EnableAutomaticAlertInvestigation.Equal(state.EnableAutomaticAlertInvestigation) {
         requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
     }
+    if !data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsUnknown() && !state.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsUnknown() && !data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.Equal(state.AcknowledgeLinkedAlertsWhenIncidentAcknowledged) {
+        requestDataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"] = data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.ValueBool()
+    }
+    if !data.ResolveLinkedAlertsWhenIncidentResolved.IsUnknown() && !state.ResolveLinkedAlertsWhenIncidentResolved.IsUnknown() && !data.ResolveLinkedAlertsWhenIncidentResolved.Equal(state.ResolveLinkedAlertsWhenIncidentResolved) {
+        requestDataMap["resolveLinkedAlertsWhenIncidentResolved"] = data.ResolveLinkedAlertsWhenIncidentResolved.ValueBool()
+    }
     if !data.EnableIncidentInstrumentationFixTasks.IsUnknown() && !state.EnableIncidentInstrumentationFixTasks.IsUnknown() && !data.EnableIncidentInstrumentationFixTasks.Equal(state.EnableIncidentInstrumentationFixTasks) {
         requestDataMap["enableIncidentInstrumentationFixTasks"] = data.EnableIncidentInstrumentationFixTasks.ValueBool()
     }
@@ -4644,6 +4686,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
+        "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
         "enableAlertInstrumentationFixTasks": true,
         "enableAutomaticIncidentCodeFixes": true,
@@ -5335,6 +5379,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
+        data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
+    }
+    if val, ok := dataMap["resolveLinkedAlertsWhenIncidentResolved"].(bool); ok {
+        data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
     }
     if val, ok := dataMap["enableIncidentInstrumentationFixTasks"].(bool); ok {
         data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)

@@ -56,6 +56,7 @@ type RumApplicationResourceModel struct {
     SessionReplayBlockSelectors JSONSubsetValue `tfsdk:"session_replay_block_selectors"`
     SessionReplayIgnoreErrorPatterns JSONSubsetValue `tfsdk:"session_replay_ignore_error_patterns"`
     SessionReplayTracePropagationOrigins JSONSubsetValue `tfsdk:"session_replay_trace_propagation_origins"`
+    SessionReplaySameOriginTracePropagation types.Bool `tfsdk:"session_replay_same_origin_trace_propagation"`
     SessionReplayLcpBudgetMs types.Number `tfsdk:"session_replay_lcp_budget_ms"`
     SessionReplayLongTaskBudgetMs types.Number `tfsdk:"session_replay_long_task_budget_ms"`
     SessionReplaySlowRequestBudgetMs types.Number `tfsdk:"session_replay_slow_request_budget_ms"`
@@ -213,7 +214,7 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "session_replay_trace_propagation_origins": schema.StringAttribute{
-                MarkdownDescription: "Origins the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Empty means never inject: adding a header makes cross-origin requests preflighted, so each listed origin is an explicit statement that its API allows the traceparent header..",
+                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -222,6 +223,15 @@ func (r *RumApplicationResource) Schema(ctx context.Context, req resource.Schema
                 },
                 Validators: []validator.String{
                     JSONEnvelopeValidator(),
+                },
+            },
+            "session_replay_same_origin_trace_propagation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(true),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "session_replay_lcp_budget_ms": schema.NumberAttribute{
@@ -500,6 +510,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
     if parsedSessionReplayTracePropagationOrigins := r.parseJSONField(data.SessionReplayTracePropagationOrigins); parsedSessionReplayTracePropagationOrigins != nil {
         requestDataMap["sessionReplayTracePropagationOrigins"] = parsedSessionReplayTracePropagationOrigins
     }
+    if !data.SessionReplaySameOriginTracePropagation.IsNull() && !data.SessionReplaySameOriginTracePropagation.IsUnknown() {
+        requestDataMap["sessionReplaySameOriginTracePropagation"] = data.SessionReplaySameOriginTracePropagation.ValueBool()
+    }
     if !data.SessionReplayLcpBudgetMs.IsNull() && !data.SessionReplayLcpBudgetMs.IsUnknown() {
         requestDataMap["sessionReplayLcpBudgetMs"] = r.bigFloatToFloat64(data.SessionReplayLcpBudgetMs.ValueBigFloat())
     }
@@ -600,6 +613,7 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         "sessionReplayBlockSelectors": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
+        "sessionReplaySameOriginTracePropagation": true,
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
@@ -1056,6 +1070,9 @@ func (r *RumApplicationResource) Create(ctx context.Context, req resource.Create
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(val)
     } else {
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["sessionReplaySameOriginTracePropagation"].(bool); ok {
+        data.SessionReplaySameOriginTracePropagation = types.BoolValue(val)
     }
     if val, ok := dataMap["sessionReplayLcpBudgetMs"].(float64); ok {
         data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
@@ -1712,6 +1729,7 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         "sessionReplayBlockSelectors": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
+        "sessionReplaySameOriginTracePropagation": true,
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
@@ -2169,6 +2187,9 @@ func (r *RumApplicationResource) Read(ctx context.Context, req resource.ReadRequ
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(val)
     } else {
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["sessionReplaySameOriginTracePropagation"].(bool); ok {
+        data.SessionReplaySameOriginTracePropagation = types.BoolValue(val)
     }
     if val, ok := dataMap["sessionReplayLcpBudgetMs"].(float64); ok {
         data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))
@@ -2878,6 +2899,9 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
             requestDataMap["sessionReplayTracePropagationOrigins"] = data.SessionReplayTracePropagationOrigins.ValueString()
         }
     }
+    if !data.SessionReplaySameOriginTracePropagation.IsUnknown() && !state.SessionReplaySameOriginTracePropagation.IsUnknown() && !data.SessionReplaySameOriginTracePropagation.Equal(state.SessionReplaySameOriginTracePropagation) {
+        requestDataMap["sessionReplaySameOriginTracePropagation"] = data.SessionReplaySameOriginTracePropagation.ValueBool()
+    }
     if !data.SessionReplayLcpBudgetMs.IsUnknown() && !state.SessionReplayLcpBudgetMs.IsUnknown() && !data.SessionReplayLcpBudgetMs.Equal(state.SessionReplayLcpBudgetMs) {
         requestDataMap["sessionReplayLcpBudgetMs"] = r.bigFloatToFloat64(data.SessionReplayLcpBudgetMs.ValueBigFloat())
     }
@@ -2958,6 +2982,7 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         "sessionReplayBlockSelectors": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
+        "sessionReplaySameOriginTracePropagation": true,
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
@@ -3409,6 +3434,9 @@ func (r *RumApplicationResource) Update(ctx context.Context, req resource.Update
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetValue(val)
     } else {
         data.SessionReplayTracePropagationOrigins = NewJSONSubsetNull()
+    }
+    if val, ok := dataMap["sessionReplaySameOriginTracePropagation"].(bool); ok {
+        data.SessionReplaySameOriginTracePropagation = types.BoolValue(val)
     }
     if val, ok := dataMap["sessionReplayLcpBudgetMs"].(float64); ok {
         data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))

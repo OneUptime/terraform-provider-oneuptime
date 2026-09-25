@@ -53,6 +53,7 @@ type RumApplicationDataSourceModel struct {
     SessionReplayBlockSelectors types.String `tfsdk:"session_replay_block_selectors"`
     SessionReplayIgnoreErrorPatterns types.String `tfsdk:"session_replay_ignore_error_patterns"`
     SessionReplayTracePropagationOrigins types.String `tfsdk:"session_replay_trace_propagation_origins"`
+    SessionReplaySameOriginTracePropagation types.Bool `tfsdk:"session_replay_same_origin_trace_propagation"`
     SessionReplayLcpBudgetMs types.Number `tfsdk:"session_replay_lcp_budget_ms"`
     SessionReplayLongTaskBudgetMs types.Number `tfsdk:"session_replay_long_task_budget_ms"`
     SessionReplaySlowRequestBudgetMs types.Number `tfsdk:"session_replay_slow_request_budget_ms"`
@@ -179,7 +180,11 @@ func (d *RumApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "session_replay_trace_propagation_origins": schema.StringAttribute{
-                MarkdownDescription: "Origins the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Empty means never inject: adding a header makes cross-origin requests preflighted, so each listed origin is an explicit statement that its API allows the traceparent header..",
+                MarkdownDescription: "APIs on OTHER origins than the page (for example https://api.example.com) that the recorder may inject a W3C traceparent header into, linking recordings to the backend traces of their requests without any OpenTelemetry browser setup. Requests to the page's own origin need no entry here: Same-origin trace propagation covers them. Empty (the default) injects nothing cross-origin: adding a header makes a cross-origin request preflighted, so each listed origin is an explicit statement that its API allows traceparent in Access-Control-Allow-Headers. Listed origins get traceparent only, never the session id..",
+                Computed: true,
+            },
+            "session_replay_same_origin_trace_propagation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, the recorder adds a W3C traceparent and a tracestate member carrying the replay session id (oneuptime=sid:<session id>) to the fetch and XHR requests the page makes to its own origin while a session is uploading, so the backend spans, logs and exceptions those requests cause link to the recording automatically, with no code in your frontend or backend. Nothing is added before consent, after consent is revoked, or before an on-error trigger fires, and a request that already carries a traceparent or tracestate keeps its own. A traceparent the recorder generates is marked sampled, so ParentBased samplers in your backend keep every browser-originated trace (to keep ratio sampling, set a remoteParentSampled ratio delegate only on the service(s) your pages call directly, never on the services they call: ratio decisions differ between language SDKs; for one rate across services, use tail sampling in an OpenTelemetry Collector). Your backend's OpenTelemetry forwards the tracestate, and with it the session id, to every service it calls, third parties included; the visitor id is never sent. On by default. Narrower create/update ACL than the other replay settings: it links recordings to backend telemetry that may name the user..",
                 Computed: true,
             },
             "session_replay_lcp_budget_ms": schema.NumberAttribute{
@@ -326,6 +331,7 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         "sessionReplayBlockSelectors": true,
         "sessionReplayIgnoreErrorPatterns": true,
         "sessionReplayTracePropagationOrigins": true,
+        "sessionReplaySameOriginTracePropagation": true,
         "sessionReplayLcpBudgetMs": true,
         "sessionReplayLongTaskBudgetMs": true,
         "sessionReplaySlowRequestBudgetMs": true,
@@ -797,6 +803,11 @@ func (d *RumApplicationDataSource) Read(ctx context.Context, req datasource.Read
         data.SessionReplayTracePropagationOrigins = types.StringValue(val)
     } else {
         data.SessionReplayTracePropagationOrigins = types.StringNull()
+    }
+    if val, ok := item["sessionReplaySameOriginTracePropagation"].(bool); ok {
+        data.SessionReplaySameOriginTracePropagation = types.BoolValue(val)
+    } else {
+        data.SessionReplaySameOriginTracePropagation = types.BoolNull()
     }
     if val, ok := item["sessionReplayLcpBudgetMs"].(float64); ok {
         data.SessionReplayLcpBudgetMs = types.NumberValue(big.NewFloat(val))

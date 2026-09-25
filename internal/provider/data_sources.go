@@ -103,6 +103,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewAlertEpisodeLabelRuleDataSource,
         NewIncidentEpisodeDataSource,
         NewIncidentEpisodeMemberDataSource,
+        NewIncidentAlertDataSource,
         NewIncidentEpisodeRoleMemberDataSource,
         NewIncidentEpisodeStateTimelineDataSource,
         NewIncidentEpisodeUserOwnerDataSource,

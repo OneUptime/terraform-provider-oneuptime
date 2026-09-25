@@ -27,7 +27,7 @@ terraform {
   required_providers {
     oneuptime = {
       source = "oneuptime/oneuptime"
-      version = "14.0.2"
+      version = "14.0.3"
     }
   }
 }
@@ -48,7 +48,7 @@ The source address carries no registry hostname on purpose: OpenTofu resolves it
 
 ```terraform
 module "storefront" {
-  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v14.0.2"
+  source = "github.com/OneUptime/terraform-provider-oneuptime//modules/monitoring-and-incident-response?ref=v14.0.3"
 
   service_name = "storefront"
   monitors     = { homepage = { url = "https://example.com" } }

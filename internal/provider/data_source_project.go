@@ -74,6 +74,8 @@ type ProjectDataSourceModel struct {
     EnableAiCommandExecution types.Bool `tfsdk:"enable_ai_command_execution"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
+    ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
     EnableAlertInstrumentationFixTasks types.Bool `tfsdk:"enable_alert_instrumentation_fix_tasks"`
     EnableAutomaticIncidentCodeFixes types.Bool `tfsdk:"enable_automatic_incident_code_fixes"`
@@ -300,6 +302,14 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured..",
+                Computed: true,
+            },
+            "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked..",
+                Computed: true,
+            },
+            "resolve_linked_alerts_when_incident_resolved": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked..",
                 Computed: true,
             },
             "enable_incident_instrumentation_fix_tasks": schema.BoolAttribute{
@@ -541,6 +551,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
+        "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
         "enableAlertInstrumentationFixTasks": true,
         "enableAutomaticIncidentCodeFixes": true,
@@ -1228,6 +1240,16 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     } else {
         data.EnableAutomaticAlertInvestigation = types.BoolNull()
+    }
+    if val, ok := item["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
+        data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
+    } else {
+        data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolNull()
+    }
+    if val, ok := item["resolveLinkedAlertsWhenIncidentResolved"].(bool); ok {
+        data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolValue(val)
+    } else {
+        data.ResolveLinkedAlertsWhenIncidentResolved = types.BoolNull()
     }
     if val, ok := item["enableIncidentInstrumentationFixTasks"].(bool); ok {
         data.EnableIncidentInstrumentationFixTasks = types.BoolValue(val)
