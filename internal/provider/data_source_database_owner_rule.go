@@ -1,0 +1,542 @@
+package provider
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
+
+    "github.com/hashicorp/terraform-plugin-framework/datasource"
+    "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+    "github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-log/tflog"
+)
+
+// Ensure provider defined types fully satisfy framework interfaces.
+var _ datasource.DataSource = &DatabaseOwnerRuleDataSource{}
+
+func NewDatabaseOwnerRuleDataSource() datasource.DataSource {
+    return &DatabaseOwnerRuleDataSource{}
+}
+
+// DatabaseOwnerRuleDataSource defines the data source implementation.
+type DatabaseOwnerRuleDataSource struct {
+    client *Client
+}
+
+// DatabaseOwnerRuleDataSourceModel describes the data source data model.
+type DatabaseOwnerRuleDataSourceModel struct {
+    Id types.String `tfsdk:"id"`
+    Name types.String `tfsdk:"name"`
+    CreatedAt types.String `tfsdk:"created_at"`
+    UpdatedAt types.String `tfsdk:"updated_at"`
+    DeletedAt types.String `tfsdk:"deleted_at"`
+    Version types.Number `tfsdk:"version"`
+    Criteria types.String `tfsdk:"criteria"`
+    ProjectId types.String `tfsdk:"project_id"`
+    Description types.String `tfsdk:"description"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    NotifyOwners types.Bool `tfsdk:"notify_owners"`
+    DatabaseServerLabels types.Set `tfsdk:"database_server_labels"`
+    DatabaseServerNamePattern types.String `tfsdk:"database_server_name_pattern"`
+    DatabaseServerDescriptionPattern types.String `tfsdk:"database_server_description_pattern"`
+    OwnerUsers types.Set `tfsdk:"owner_users"`
+    OwnerTeams types.Set `tfsdk:"owner_teams"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+}
+
+func (d *DatabaseOwnerRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_database_owner_rule"
+}
+
+func (d *DatabaseOwnerRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+    resp.Schema = schema.Schema{
+        MarkdownDescription: "Configure rules for automatically assigning owner users and teams when matching databases are created Look up an existing database_owner_rule by `id` or by `name`.",
+
+        Attributes: map[string]schema.Attribute{
+            "id": schema.StringAttribute{
+                MarkdownDescription: "Look up by unique identifier. Exactly one of `id` or `name` must be set.",
+                Optional: true,
+                Computed: true,
+            },
+            "name": schema.StringAttribute{
+                MarkdownDescription: "Look up by name. Exactly one of `id` or `name` must be set. Fails if the name does not match exactly one item.",
+                Optional: true,
+                Computed: true,
+            },
+            "created_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "updated_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "deleted_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "version": schema.NumberAttribute{
+                MarkdownDescription: "Object version",
+                Computed: true,
+            },
+            "criteria": schema.StringAttribute{
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                Computed: true,
+            },
+            "project_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "description": schema.StringAttribute{
+                MarkdownDescription: "Description of this database owner rule.",
+                Computed: true,
+            },
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this rule is enabled.",
+                Computed: true,
+            },
+            "notify_owners": schema.BoolAttribute{
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule.",
+                Computed: true,
+            },
+            "database_server_labels": schema.SetAttribute{
+                MarkdownDescription: "Only trigger for databases that have at least one of these labels. Leave empty to match regardless of labels..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "database_server_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the database name. Discovered databases are named after their engine (e.g. PostgreSQL orders-db:5432), so ^PostgreSQL matches every PostgreSQL database. Leave empty to match any name..",
+                Computed: true,
+            },
+            "database_server_description_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the database description. Leave empty to match any description..",
+                Computed: true,
+            },
+            "owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users to add as owners on the database when this rule matches..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams to add as owners on the database when this rule matches..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+        },
+    }
+}
+
+func (d *DatabaseOwnerRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+    // Prevent panic if the provider has not been configured.
+    if req.ProviderData == nil {
+        return
+    }
+
+    client, ok := req.ProviderData.(*Client)
+
+    if !ok {
+        resp.Diagnostics.AddError(
+            "Unexpected Data Source Configure Type",
+            fmt.Sprintf("Expected *Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+        )
+
+        return
+    }
+
+    d.client = client
+}
+
+func (d *DatabaseOwnerRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data DatabaseOwnerRuleDataSourceModel
+
+    // Read Terraform configuration data into the model
+    resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+    if resp.Diagnostics.HasError() {
+        return
+    }
+
+    hasId := !data.Id.IsNull() && data.Id.ValueString() != ""
+    hasName := !data.Name.IsNull() && data.Name.ValueString() != ""
+    if hasId == hasName {
+        resp.Diagnostics.AddError(
+            "Invalid Lookup",
+            "Exactly one of `id` or `name` must be set to look up a database_owner_rule.",
+        )
+        return
+    }
+
+    selectParam := map[string]interface{}{
+        "name": true,
+        "createdAt": true,
+        "updatedAt": true,
+        "deletedAt": true,
+        "version": true,
+        "criteria": true,
+        "projectId": true,
+        "description": true,
+        "isEnabled": true,
+        "notifyOwners": true,
+        "databaseServerLabels": true,
+        "databaseServerNamePattern": true,
+        "databaseServerDescriptionPattern": true,
+        "ownerUsers": true,
+        "ownerTeams": true,
+        "createdByUserId": true,
+        "_id": true,
+    }
+
+    var item map[string]interface{}
+    if hasId {
+        readPath := "/database-server-owner-rule/" + data.Id.ValueString() + "/get-item"
+        httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database_owner_rule, got error: %s", err))
+            return
+        }
+        if httpResp.StatusCode == http.StatusNotFound {
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No database_owner_rule found with id %q.", data.Id.ValueString()))
+            return
+        }
+        var itemResponse map[string]interface{}
+        if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read database_owner_rule: %s", err))
+            return
+        }
+        if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
+            item = wrapper
+        } else {
+            item = itemResponse
+        }
+    } else {
+        listBody := map[string]interface{}{
+            "query": map[string]interface{}{
+                "name": data.Name.ValueString(),
+            },
+            "select": selectParam,
+            // limit 2 is enough to detect ambiguity without paging.
+            "limit": 2,
+        }
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/database-server-owner-rule/get-list", listBody)
+        if err != nil {
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list database_owner_rule, got error: %s", err))
+            return
+        }
+        var listResponse map[string]interface{}
+        if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list database_owner_rule: %s", err))
+            return
+        }
+        items, _ := listResponse["data"].([]interface{})
+        if len(items) == 0 {
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No database_owner_rule found with name %q.", data.Name.ValueString()))
+            return
+        }
+        if len(items) > 1 {
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one database_owner_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            return
+        }
+        first, ok := items[0].(map[string]interface{})
+        if !ok {
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for database_owner_rule.")
+            return
+        }
+        item = first
+    }
+
+    // Update the model with response data
+    if obj, ok := item["_id"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Id = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Id = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Id = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Id = types.StringValue(string(jsonBytes))
+        } else {
+            data.Id = types.StringNull()
+        }
+    } else if val, ok := item["_id"].(string); ok {
+        data.Id = types.StringValue(val)
+    } else {
+        data.Id = types.StringNull()
+    }
+    if obj, ok := item["name"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Name = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Name = types.StringValue(string(jsonBytes))
+        } else {
+            data.Name = types.StringNull()
+        }
+    } else if val, ok := item["name"].(string); ok {
+        data.Name = types.StringValue(val)
+    } else {
+        data.Name = types.StringNull()
+    }
+    if obj, ok := item["createdAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedAt = types.StringNull()
+        }
+    } else if val, ok := item["createdAt"].(string); ok {
+        data.CreatedAt = types.StringValue(val)
+    } else {
+        data.CreatedAt = types.StringNull()
+    }
+    if obj, ok := item["updatedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UpdatedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UpdatedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UpdatedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UpdatedAt = types.StringNull()
+        }
+    } else if val, ok := item["updatedAt"].(string); ok {
+        data.UpdatedAt = types.StringValue(val)
+    } else {
+        data.UpdatedAt = types.StringNull()
+    }
+    if obj, ok := item["deletedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DeletedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DeletedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DeletedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DeletedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.DeletedAt = types.StringNull()
+        }
+    } else if val, ok := item["deletedAt"].(string); ok {
+        data.DeletedAt = types.StringValue(val)
+    } else {
+        data.DeletedAt = types.StringNull()
+    }
+    if val, ok := item["version"].(float64); ok {
+        data.Version = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["version"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.Version = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.Version = types.NumberNull()
+        }
+    } else {
+        data.Version = types.NumberNull()
+    }
+    if obj, ok := item["criteria"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Criteria = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Criteria = types.StringValue(string(jsonBytes))
+        } else {
+            data.Criteria = types.StringNull()
+        }
+    } else if val, ok := item["criteria"].(string); ok {
+        data.Criteria = types.StringValue(val)
+    } else {
+        data.Criteria = types.StringNull()
+    }
+    if obj, ok := item["projectId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProjectId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProjectId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProjectId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProjectId = types.StringNull()
+        }
+    } else if val, ok := item["projectId"].(string); ok {
+        data.ProjectId = types.StringValue(val)
+    } else {
+        data.ProjectId = types.StringNull()
+    }
+    if obj, ok := item["description"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Description = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Description = types.StringValue(string(jsonBytes))
+        } else {
+            data.Description = types.StringNull()
+        }
+    } else if val, ok := item["description"].(string); ok {
+        data.Description = types.StringValue(val)
+    } else {
+        data.Description = types.StringNull()
+    }
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    } else {
+        data.IsEnabled = types.BoolNull()
+    }
+    if val, ok := item["notifyOwners"].(bool); ok {
+        data.NotifyOwners = types.BoolValue(val)
+    } else {
+        data.NotifyOwners = types.BoolNull()
+    }
+    if val, ok := item["databaseServerLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.DatabaseServerLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.DatabaseServerLabels = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["databaseServerNamePattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DatabaseServerNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DatabaseServerNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DatabaseServerNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DatabaseServerNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.DatabaseServerNamePattern = types.StringNull()
+        }
+    } else if val, ok := item["databaseServerNamePattern"].(string); ok {
+        data.DatabaseServerNamePattern = types.StringValue(val)
+    } else {
+        data.DatabaseServerNamePattern = types.StringNull()
+    }
+    if obj, ok := item["databaseServerDescriptionPattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.DatabaseServerDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.DatabaseServerDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.DatabaseServerDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.DatabaseServerDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.DatabaseServerDescriptionPattern = types.StringNull()
+        }
+    } else if val, ok := item["databaseServerDescriptionPattern"].(string); ok {
+        data.DatabaseServerDescriptionPattern = types.StringValue(val)
+    } else {
+        data.DatabaseServerDescriptionPattern = types.StringNull()
+    }
+    if val, ok := item["ownerUsers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.OwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.OwnerUsers = types.SetNull(types.StringType)
+    }
+    if val, ok := item["ownerTeams"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.OwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.OwnerTeams = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
+    }
+
+    // Write logs using the tflog package
+    tflog.Trace(ctx, "read a data source")
+
+    // Save data into Terraform state
+    resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}

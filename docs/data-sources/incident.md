@@ -50,6 +50,7 @@ data "oneuptime_incident" "by_id" {
 - `iot_fleets` (Set) List of IoT fleets affected by this incident... Computed.
 - `docker_swarm_clusters` (Set) List of Docker Swarm clusters affected by this incident... Computed.
 - `ceph_clusters` (Set) List of Ceph clusters affected by this incident... Computed.
+- `database_servers` (Set) List of databases affected by this incident... Computed.
 - `docker_resources` (Set) List of Docker resources (containers, images, networks, volumes) affected by this incident... Computed.
 - `podman_resources` (Set) List of Podman resources (containers, images, networks, volumes) affected by this incident... Computed.
 - `services` (Set) List of services affected by this incident... Computed.

@@ -53,6 +53,7 @@ type AlertDataSourceModel struct {
     IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
+    DatabaseServers types.Set `tfsdk:"database_servers"`
     DockerResources types.Set `tfsdk:"docker_resources"`
     PodmanResources types.Set `tfsdk:"podman_resources"`
     Services types.Set `tfsdk:"services"`
@@ -198,6 +199,11 @@ func (d *AlertDataSource) Schema(ctx context.Context, req datasource.SchemaReque
             },
             "ceph_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Ceph clusters affected by this alert..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "database_servers": schema.SetAttribute{
+                MarkdownDescription: "List of databases affected by this alert..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -381,6 +387,7 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         "iotFleets": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "databaseServers": true,
         "dockerResources": true,
         "podmanResources": true,
         "services": true,
@@ -955,6 +962,30 @@ func (d *AlertDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
         data.CephClusters = types.SetValueMust(types.StringType, setItems)
     } else {
         data.CephClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["databaseServers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.DatabaseServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.DatabaseServers = types.SetNull(types.StringType)
     }
     if val, ok := item["dockerResources"].([]interface{}); ok {
         var setItems []attr.Value

@@ -55,6 +55,7 @@ type ScheduledMaintenanceEventResourceModel struct {
     NetworkSites types.Set `tfsdk:"network_sites"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
+    DatabaseServers types.Set `tfsdk:"database_servers"`
     Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
     Labels types.Set `tfsdk:"labels"`
@@ -220,6 +221,15 @@ func (r *ScheduledMaintenanceEventResource) Schema(ctx context.Context, req reso
             },
             "ceph_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Ceph clusters affected by this event..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "database_servers": schema.SetAttribute{
+                MarkdownDescription: "List of databases affected by this event..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -500,6 +510,9 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     if !data.CephClusters.IsNull() && !data.CephClusters.IsUnknown() {
         requestDataMap["cephClusters"] = r.convertTerraformSetToInterface(data.CephClusters)
     }
+    if !data.DatabaseServers.IsNull() && !data.DatabaseServers.IsUnknown() {
+        requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
+    }
     if !data.Services.IsNull() && !data.Services.IsUnknown() {
         requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
     }
@@ -605,6 +618,7 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
         "networkSites": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "databaseServers": true,
         "services": true,
         "statusPages": true,
         "labels": true,
@@ -1137,6 +1151,38 @@ func (r *ScheduledMaintenanceEventResource) Create(ctx context.Context, req reso
     } else {
         // For sets, always use empty set instead of null to match default values
         data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["databaseServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.DatabaseServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1718,6 +1764,7 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
         "networkSites": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "databaseServers": true,
         "services": true,
         "statusPages": true,
         "labels": true,
@@ -2251,6 +2298,38 @@ func (r *ScheduledMaintenanceEventResource) Read(ctx context.Context, req resour
     } else {
         // For sets, always use empty set instead of null to match default values
         data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["databaseServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.DatabaseServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2864,6 +2943,9 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     if !data.CephClusters.IsUnknown() && !state.CephClusters.IsUnknown() && !data.CephClusters.Equal(state.CephClusters) {
         requestDataMap["cephClusters"] = r.convertTerraformSetToInterface(data.CephClusters)
     }
+    if !data.DatabaseServers.IsUnknown() && !state.DatabaseServers.IsUnknown() && !data.DatabaseServers.Equal(state.DatabaseServers) {
+        requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
+    }
     if !data.Services.IsUnknown() && !state.Services.IsUnknown() && !data.Services.Equal(state.Services) {
         requestDataMap["services"] = r.convertTerraformSetToInterface(data.Services)
     }
@@ -2948,6 +3030,7 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
         "networkSites": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "databaseServers": true,
         "services": true,
         "statusPages": true,
         "labels": true,
@@ -3475,6 +3558,38 @@ func (r *ScheduledMaintenanceEventResource) Update(ctx context.Context, req reso
     } else {
         // For sets, always use empty set instead of null to match default values
         data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["databaseServers"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.DatabaseServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.DatabaseServers = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["services"].([]interface{}); ok {
         // Convert API response list to Terraform set

@@ -49,6 +49,7 @@ data "oneuptime_alert" "by_id" {
 - `iot_fleets` (Set) List of IoT fleets affected by this alert... Computed.
 - `docker_swarm_clusters` (Set) List of Docker Swarm clusters affected by this alert... Computed.
 - `ceph_clusters` (Set) List of Ceph clusters affected by this alert... Computed.
+- `database_servers` (Set) List of databases affected by this alert... Computed.
 - `docker_resources` (Set) List of Docker resources (containers, images, networks, volumes) affected by this alert... Computed.
 - `podman_resources` (Set) List of Podman resources (containers, images, networks, volumes) affected by this alert... Computed.
 - `services` (Set) List of services affected by this alert... Computed.
