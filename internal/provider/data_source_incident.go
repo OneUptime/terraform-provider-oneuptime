@@ -90,6 +90,9 @@ type IncidentDataSourceModel struct {
     IncidentNumber types.Number `tfsdk:"incident_number"`
     IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    StatusPages types.Set `tfsdk:"status_pages"`
+    IsScopedToStatusPages types.Bool `tfsdk:"is_scoped_to_status_pages"`
+    StatusPagesNotifiedOnCreation types.String `tfsdk:"status_pages_notified_on_creation"`
     IsPrivate types.Bool `tfsdk:"is_private"`
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     NextReminderNotificationAt types.String `tfsdk:"next_reminder_notification_at"`
@@ -288,7 +291,7 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only..",
                 Computed: true,
             },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
@@ -369,6 +372,19 @@ func (d *IncidentDataSource) Schema(ctx context.Context, req datasource.SchemaRe
             },
             "is_visible_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Should this incident be visible on the status page?.",
+                Computed: true,
+            },
+            "status_pages": schema.SetAttribute{
+                MarkdownDescription: "Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "is_scoped_to_status_pages": schema.BoolAttribute{
+                MarkdownDescription: "Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored..",
+                Computed: true,
+            },
+            "status_pages_notified_on_creation": schema.StringAttribute{
+                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created..",
                 Computed: true,
             },
             "is_private": schema.BoolAttribute{
@@ -496,6 +512,9 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
         "isVisibleOnStatusPage": true,
+        "statusPages": true,
+        "isScopedToStatusPages": true,
+        "statusPagesNotifiedOnCreation": true,
         "isPrivate": true,
         "enableReminders": true,
         "nextReminderNotificationAt": true,
@@ -1655,6 +1674,52 @@ func (d *IncidentDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     } else {
         data.IsVisibleOnStatusPage = types.BoolNull()
+    }
+    if val, ok := item["statusPages"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.StatusPages = types.SetNull(types.StringType)
+    }
+    if val, ok := item["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
+    } else {
+        data.IsScopedToStatusPages = types.BoolNull()
+    }
+    if obj, ok := item["statusPagesNotifiedOnCreation"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StatusPagesNotifiedOnCreation = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.StatusPagesNotifiedOnCreation = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.StatusPagesNotifiedOnCreation = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.StatusPagesNotifiedOnCreation = types.StringValue(string(jsonBytes))
+        } else {
+            data.StatusPagesNotifiedOnCreation = types.StringNull()
+        }
+    } else if val, ok := item["statusPagesNotifiedOnCreation"].(string); ok {
+        data.StatusPagesNotifiedOnCreation = types.StringValue(val)
+    } else {
+        data.StatusPagesNotifiedOnCreation = types.StringNull()
     }
     if val, ok := item["isPrivate"].(bool); ok {
         data.IsPrivate = types.BoolValue(val)

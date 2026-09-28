@@ -65,7 +65,7 @@ data "oneuptime_incident" "by_id" {
 - `subscriber_notification_status_on_postmortem_published` (String) Status of notification sent to subscribers about this incident postmortem.. Computed.
 - `subscriber_notification_status_message_on_postmortem_published` (String) Status message for subscriber notifications on postmortem published - includes success messages, failure reasons, or skip reasons.. Computed.
 - `should_status_page_subscribers_be_notified_on_incident_created` (Bool) Should subscribers be notified about this incident?.. Computed.
-- `custom_fields` (String) Custom Fields on this resource... Computed.
+- `custom_fields` (String) The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only... Computed.
 - `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?.. Computed.
 - `root_cause` (String) What is the root cause of this incident?.. Computed.
 - `postmortem_note` (String) Document the postmortem summary for this incident... Computed.
@@ -86,6 +86,9 @@ data "oneuptime_incident" "by_id" {
 - `incident_number` (Number) Incident Number.. Computed.
 - `incident_number_with_prefix` (String) Incident number with prefix (e.g., 'INC-42' or '#42').. Computed.
 - `is_visible_on_status_page` (Bool) Should this incident be visible on the status page?.. Computed.
+- `status_pages` (Set) Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors... Computed.
+- `is_scoped_to_status_pages` (Bool) Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored... Computed.
+- `status_pages_notified_on_creation` (String) IDs of the status pages whose subscribers were sent the notification that this incident was created... Computed.
 - `is_private` (Bool) If true, this incident is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners. Private incidents are hidden from status pages... Computed.
 - `enable_reminders` (Bool) Should reminder notifications be sent to owners while this incident is still open? Reminders are sent based on the reminder rules configured for this project... Computed.
 - `next_reminder_notification_at` (String) A date time object.. Computed.

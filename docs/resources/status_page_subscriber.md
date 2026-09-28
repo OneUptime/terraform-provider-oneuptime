@@ -51,6 +51,8 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `unsubscribed_at` (String) A date time object..
+- `is_added_by_team` (Bool) Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored...
 
 ## Import
 

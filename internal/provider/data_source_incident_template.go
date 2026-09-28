@@ -49,6 +49,8 @@ type IncidentTemplateDataSourceModel struct {
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     Services types.Set `tfsdk:"services"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    StatusPages types.Set `tfsdk:"status_pages"`
+    IsScopedToStatusPages types.Bool `tfsdk:"is_scoped_to_status_pages"`
     Labels types.Set `tfsdk:"labels"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
@@ -154,6 +156,15 @@ func (d *IncidentTemplateDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
                 ElementType: types.StringType,
             },
+            "status_pages": schema.SetAttribute{
+                MarkdownDescription: "Limit incidents declared from this template to these status pages. Leave empty to reach every status page that lists the incident's monitors..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "is_scoped_to_status_pages": schema.BoolAttribute{
+                MarkdownDescription: "Whether incidents declared from this template are limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored..",
+                Computed: true,
+            },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
                 Computed: true,
@@ -172,7 +183,7 @@ func (d *IncidentTemplateDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies..",
                 Computed: true,
             },
         },
@@ -239,6 +250,8 @@ func (d *IncidentTemplateDataSource) Read(ctx context.Context, req datasource.Re
         "podmanHosts": true,
         "services": true,
         "onCallDutyPolicies": true,
+        "statusPages": true,
+        "isScopedToStatusPages": true,
         "labels": true,
         "incidentSeverityId": true,
         "changeMonitorStatusToId": true,
@@ -688,6 +701,35 @@ func (d *IncidentTemplateDataSource) Read(ctx context.Context, req datasource.Re
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, setItems)
     } else {
         data.OnCallDutyPolicies = types.SetNull(types.StringType)
+    }
+    if val, ok := item["statusPages"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.StatusPages = types.SetNull(types.StringType)
+    }
+    if val, ok := item["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
+    } else {
+        data.IsScopedToStatusPages = types.BoolNull()
     }
     if val, ok := item["labels"].([]interface{}); ok {
         var setItems []attr.Value

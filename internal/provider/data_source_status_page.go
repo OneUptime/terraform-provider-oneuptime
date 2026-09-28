@@ -91,6 +91,7 @@ type StatusPageDataSourceModel struct {
     SubscriberEmailNotificationFooterText types.String `tfsdk:"subscriber_email_notification_footer_text"`
     EnableCustomSubscriberEmailNotificationFooterText types.Bool `tfsdk:"enable_custom_subscriber_email_notification_footer_text"`
     ShowIncidentsOnStatusPage types.Bool `tfsdk:"show_incidents_on_status_page"`
+    OnlyShowScopedIncidents types.Bool `tfsdk:"only_show_scoped_incidents"`
     ShowAnnouncementsOnStatusPage types.Bool `tfsdk:"show_announcements_on_status_page"`
     ShowEpisodesOnStatusPage types.Bool `tfsdk:"show_episodes_on_status_page"`
     ShowEpisodeHistoryInDays types.Number `tfsdk:"show_episode_history_in_days"`
@@ -367,6 +368,10 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 MarkdownDescription: "Show Incidents on Status Page?.",
                 Computed: true,
             },
+            "only_show_scoped_incidents": schema.BoolAttribute{
+                MarkdownDescription: "When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it..",
+                Computed: true,
+            },
             "show_announcements_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Show Announcements on Status Page?.",
                 Computed: true,
@@ -521,6 +526,7 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         "subscriberEmailNotificationFooterText": true,
         "enableCustomSubscriberEmailNotificationFooterText": true,
         "showIncidentsOnStatusPage": true,
+        "onlyShowScopedIncidents": true,
         "showAnnouncementsOnStatusPage": true,
         "showEpisodesOnStatusPage": true,
         "showEpisodeHistoryInDays": true,
@@ -1392,6 +1398,11 @@ func (d *StatusPageDataSource) Read(ctx context.Context, req datasource.ReadRequ
         data.ShowIncidentsOnStatusPage = types.BoolValue(val)
     } else {
         data.ShowIncidentsOnStatusPage = types.BoolNull()
+    }
+    if val, ok := item["onlyShowScopedIncidents"].(bool); ok {
+        data.OnlyShowScopedIncidents = types.BoolValue(val)
+    } else {
+        data.OnlyShowScopedIncidents = types.BoolNull()
     }
     if val, ok := item["showAnnouncementsOnStatusPage"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)

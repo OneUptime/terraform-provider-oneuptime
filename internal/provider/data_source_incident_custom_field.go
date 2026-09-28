@@ -39,6 +39,11 @@ type IncidentCustomFieldDataSourceModel struct {
     DropdownOptions types.String `tfsdk:"dropdown_options"`
     MapFromResourceType types.String `tfsdk:"map_from_resource_type"`
     MapFromCustomFieldName types.String `tfsdk:"map_from_custom_field_name"`
+    IsRequiredOnCreate types.Bool `tfsdk:"is_required_on_create"`
+    SortOrder types.Number `tfsdk:"sort_order"`
+    ShowOnCreate types.Bool `tfsdk:"show_on_create"`
+    IncludeInSubscriberNotifications types.Bool `tfsdk:"include_in_subscriber_notifications"`
+    VariableKey types.String `tfsdk:"variable_key"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -100,6 +105,26 @@ func (d *IncidentCustomFieldDataSource) Schema(ctx context.Context, req datasour
             },
             "map_from_custom_field_name": schema.StringAttribute{
                 MarkdownDescription: "Name of the custom field on the related resource this field copies its value from..",
+                Computed: true,
+            },
+            "is_required_on_create": schema.BoolAttribute{
+                MarkdownDescription: "When on, an incident declared from the dashboard cannot be created until this field is filled in (a Boolean field must be ticked). It applies only to fields shown on create. Incidents created by monitors, the API, Slack, Microsoft Teams or AI can leave it empty, and it stays optional when an incident is edited later..",
+                Computed: true,
+            },
+            "sort_order": schema.NumberAttribute{
+                MarkdownDescription: "Where this field appears among the incident's custom fields, lowest first. Fields with no order come after the ones that have one..",
+                Computed: true,
+            },
+            "show_on_create": schema.BoolAttribute{
+                MarkdownDescription: "When on, this field is asked for in a Details step when an incident is declared from the dashboard, and incident templates can fill it in..",
+                Computed: true,
+            },
+            "include_in_subscriber_notifications": schema.BoolAttribute{
+                MarkdownDescription: "When on, this field and its value appear in the messages status page subscribers get about an incident: the default email, Slack and Microsoft Teams messages, and webhooks (under customFields, by the field's template variable key). The default SMS is kept short and leaves it out. Subscribers are usually people outside your team, so turn this on only for fields that are safe to share with them..",
+                Computed: true,
+            },
+            "variable_key": schema.StringAttribute{
+                MarkdownDescription: "The key this field is reached by in templates, as {{customFields.<key>}}. Made from the field's name when it is created - lowercase letters, digits and underscores, with _2, _3 and so on added when another field already has it - and never changed afterwards, so renaming the field does not break templates that use it..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -166,6 +191,11 @@ func (d *IncidentCustomFieldDataSource) Read(ctx context.Context, req datasource
         "dropdownOptions": true,
         "mapFromResourceType": true,
         "mapFromCustomFieldName": true,
+        "isRequiredOnCreate": true,
+        "sortOrder": true,
+        "showOnCreate": true,
+        "includeInSubscriberNotifications": true,
+        "variableKey": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -427,6 +457,49 @@ func (d *IncidentCustomFieldDataSource) Read(ctx context.Context, req datasource
         data.MapFromCustomFieldName = types.StringValue(val)
     } else {
         data.MapFromCustomFieldName = types.StringNull()
+    }
+    if val, ok := item["isRequiredOnCreate"].(bool); ok {
+        data.IsRequiredOnCreate = types.BoolValue(val)
+    } else {
+        data.IsRequiredOnCreate = types.BoolNull()
+    }
+    if val, ok := item["sortOrder"].(float64); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["sortOrder"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.SortOrder = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SortOrder = types.NumberNull()
+        }
+    } else {
+        data.SortOrder = types.NumberNull()
+    }
+    if val, ok := item["showOnCreate"].(bool); ok {
+        data.ShowOnCreate = types.BoolValue(val)
+    } else {
+        data.ShowOnCreate = types.BoolNull()
+    }
+    if val, ok := item["includeInSubscriberNotifications"].(bool); ok {
+        data.IncludeInSubscriberNotifications = types.BoolValue(val)
+    } else {
+        data.IncludeInSubscriberNotifications = types.BoolNull()
+    }
+    if obj, ok := item["variableKey"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.VariableKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.VariableKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableKey = types.StringNull()
+        }
+    } else if val, ok := item["variableKey"].(string); ok {
+        data.VariableKey = types.StringValue(val)
+    } else {
+        data.VariableKey = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

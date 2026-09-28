@@ -97,6 +97,7 @@ type StatusPageResourceModel struct {
     SubscriberEmailNotificationFooterText types.String `tfsdk:"subscriber_email_notification_footer_text"`
     EnableCustomSubscriberEmailNotificationFooterText types.Bool `tfsdk:"enable_custom_subscriber_email_notification_footer_text"`
     ShowIncidentsOnStatusPage types.Bool `tfsdk:"show_incidents_on_status_page"`
+    OnlyShowScopedIncidents types.Bool `tfsdk:"only_show_scoped_incidents"`
     ShowAnnouncementsOnStatusPage types.Bool `tfsdk:"show_announcements_on_status_page"`
     ShowEpisodesOnStatusPage types.Bool `tfsdk:"show_episodes_on_status_page"`
     ShowEpisodeHistoryInDays types.Number `tfsdk:"show_episode_history_in_days"`
@@ -608,6 +609,15 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "only_show_scoped_incidents": schema.BoolAttribute{
+                MarkdownDescription: "When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "show_announcements_on_status_page": schema.BoolAttribute{
                 MarkdownDescription: "Show Announcements on Status Page?.",
                 Optional: true,
@@ -953,6 +963,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if !data.ShowIncidentsOnStatusPage.IsNull() && !data.ShowIncidentsOnStatusPage.IsUnknown() {
         requestDataMap["showIncidentsOnStatusPage"] = data.ShowIncidentsOnStatusPage.ValueBool()
     }
+    if !data.OnlyShowScopedIncidents.IsNull() && !data.OnlyShowScopedIncidents.IsUnknown() {
+        requestDataMap["onlyShowScopedIncidents"] = data.OnlyShowScopedIncidents.ValueBool()
+    }
     if !data.ShowAnnouncementsOnStatusPage.IsNull() && !data.ShowAnnouncementsOnStatusPage.IsUnknown() {
         requestDataMap["showAnnouncementsOnStatusPage"] = data.ShowAnnouncementsOnStatusPage.ValueBool()
     }
@@ -1088,6 +1101,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "subscriberEmailNotificationFooterText": true,
         "enableCustomSubscriberEmailNotificationFooterText": true,
         "showIncidentsOnStatusPage": true,
+        "onlyShowScopedIncidents": true,
         "showAnnouncementsOnStatusPage": true,
         "showEpisodesOnStatusPage": true,
         "showEpisodeHistoryInDays": true,
@@ -2328,6 +2342,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     if val, ok := dataMap["showIncidentsOnStatusPage"].(bool); ok {
         data.ShowIncidentsOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["onlyShowScopedIncidents"].(bool); ok {
+        data.OnlyShowScopedIncidents = types.BoolValue(val)
+    }
     if val, ok := dataMap["showAnnouncementsOnStatusPage"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)
     }
@@ -2731,6 +2748,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "subscriberEmailNotificationFooterText": true,
         "enableCustomSubscriberEmailNotificationFooterText": true,
         "showIncidentsOnStatusPage": true,
+        "onlyShowScopedIncidents": true,
         "showAnnouncementsOnStatusPage": true,
         "showEpisodesOnStatusPage": true,
         "showEpisodeHistoryInDays": true,
@@ -3972,6 +3990,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     if val, ok := dataMap["showIncidentsOnStatusPage"].(bool); ok {
         data.ShowIncidentsOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["onlyShowScopedIncidents"].(bool); ok {
+        data.OnlyShowScopedIncidents = types.BoolValue(val)
+    }
     if val, ok := dataMap["showAnnouncementsOnStatusPage"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)
     }
@@ -4505,6 +4526,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     if !data.ShowIncidentsOnStatusPage.IsUnknown() && !state.ShowIncidentsOnStatusPage.IsUnknown() && !data.ShowIncidentsOnStatusPage.Equal(state.ShowIncidentsOnStatusPage) {
         requestDataMap["showIncidentsOnStatusPage"] = data.ShowIncidentsOnStatusPage.ValueBool()
     }
+    if !data.OnlyShowScopedIncidents.IsUnknown() && !state.OnlyShowScopedIncidents.IsUnknown() && !data.OnlyShowScopedIncidents.Equal(state.OnlyShowScopedIncidents) {
+        requestDataMap["onlyShowScopedIncidents"] = data.OnlyShowScopedIncidents.ValueBool()
+    }
     if !data.ShowAnnouncementsOnStatusPage.IsUnknown() && !state.ShowAnnouncementsOnStatusPage.IsUnknown() && !data.ShowAnnouncementsOnStatusPage.Equal(state.ShowAnnouncementsOnStatusPage) {
         requestDataMap["showAnnouncementsOnStatusPage"] = data.ShowAnnouncementsOnStatusPage.ValueBool()
     }
@@ -4623,6 +4647,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "subscriberEmailNotificationFooterText": true,
         "enableCustomSubscriberEmailNotificationFooterText": true,
         "showIncidentsOnStatusPage": true,
+        "onlyShowScopedIncidents": true,
         "showAnnouncementsOnStatusPage": true,
         "showEpisodesOnStatusPage": true,
         "showEpisodeHistoryInDays": true,
@@ -5857,6 +5882,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if val, ok := dataMap["showIncidentsOnStatusPage"].(bool); ok {
         data.ShowIncidentsOnStatusPage = types.BoolValue(val)
+    }
+    if val, ok := dataMap["onlyShowScopedIncidents"].(bool); ok {
+        data.OnlyShowScopedIncidents = types.BoolValue(val)
     }
     if val, ok := dataMap["showAnnouncementsOnStatusPage"].(bool); ok {
         data.ShowAnnouncementsOnStatusPage = types.BoolValue(val)

@@ -45,6 +45,8 @@ type StatusPageSubscriberDataSourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsSubscriptionConfirmed types.Bool `tfsdk:"is_subscription_confirmed"`
     IsUnsubscribed types.Bool `tfsdk:"is_unsubscribed"`
+    UnsubscribedAt types.String `tfsdk:"unsubscribed_at"`
+    IsAddedByTeam types.Bool `tfsdk:"is_added_by_team"`
     SendYouHaveSubscribedMessage types.Bool `tfsdk:"send_you_have_subscribed_message"`
     IsSubscribedToAllResources types.Bool `tfsdk:"is_subscribed_to_all_resources"`
     IsSubscribedToAllEventTypes types.Bool `tfsdk:"is_subscribed_to_all_event_types"`
@@ -126,6 +128,14 @@ func (d *StatusPageSubscriberDataSource) Schema(ctx context.Context, req datasou
             },
             "is_unsubscribed": schema.BoolAttribute{
                 MarkdownDescription: "Is Subscriber Unsubscribed?.",
+                Computed: true,
+            },
+            "unsubscribed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "is_added_by_team": schema.BoolAttribute{
+                MarkdownDescription: "Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored..",
                 Computed: true,
             },
             "send_you_have_subscribed_message": schema.BoolAttribute{
@@ -213,6 +223,8 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         "createdByUserId": true,
         "isSubscriptionConfirmed": true,
         "isUnsubscribed": true,
+        "unsubscribedAt": true,
+        "isAddedByTeam": true,
         "sendYouHaveSubscribedMessage": true,
         "isSubscribedToAllResources": true,
         "isSubscribedToAllEventTypes": true,
@@ -522,6 +534,28 @@ func (d *StatusPageSubscriberDataSource) Read(ctx context.Context, req datasourc
         data.IsUnsubscribed = types.BoolValue(val)
     } else {
         data.IsUnsubscribed = types.BoolNull()
+    }
+    if obj, ok := item["unsubscribedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.UnsubscribedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.UnsubscribedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.UnsubscribedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.UnsubscribedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.UnsubscribedAt = types.StringNull()
+        }
+    } else if val, ok := item["unsubscribedAt"].(string); ok {
+        data.UnsubscribedAt = types.StringValue(val)
+    } else {
+        data.UnsubscribedAt = types.StringNull()
+    }
+    if val, ok := item["isAddedByTeam"].(bool); ok {
+        data.IsAddedByTeam = types.BoolValue(val)
+    } else {
+        data.IsAddedByTeam = types.BoolNull()
     }
     if val, ok := item["sendYouHaveSubscribedMessage"].(bool); ok {
         data.SendYouHaveSubscribedMessage = types.BoolValue(val)

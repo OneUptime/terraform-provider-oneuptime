@@ -45,8 +45,10 @@ data "oneuptime_incident_template" "by_id" {
 - `podman_hosts` (Set) List of Podman hosts to pre-populate on incidents created from this template... Computed.
 - `services` (Set) List of services to pre-populate on incidents created from this template... Computed.
 - `on_call_duty_policies` (Set) List of on-call duty policies affected by this incident template... Computed.
+- `status_pages` (Set) Limit incidents declared from this template to these status pages. Leave empty to reach every status page that lists the incident's monitors... Computed.
+- `is_scoped_to_status_pages` (Bool) Whether incidents declared from this template are limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored... Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `incident_severity_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `change_monitor_status_to_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `initial_incident_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `custom_fields` (String) Custom Fields on this resource... Computed.
+- `custom_fields` (String) The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies... Computed.

@@ -63,6 +63,8 @@ type StatusPageSubscriberResourceModel struct {
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    UnsubscribedAt RFC3339Value `tfsdk:"unsubscribed_at"`
+    IsAddedByTeam types.Bool `tfsdk:"is_added_by_team"`
 }
 
 func (r *StatusPageSubscriberResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -267,6 +269,15 @@ func (r *StatusPageSubscriberResource) Schema(ctx context.Context, req resource.
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
+            "unsubscribed_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "is_added_by_team": schema.BoolAttribute{
+                MarkdownDescription: "Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored..",
+                Computed: true,
+            },
         },
     }
 }
@@ -431,6 +442,8 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "unsubscribedAt": true,
+        "isAddedByTeam": true,
         "_id": true,
     }
 
@@ -904,6 +917,20 @@ func (r *StatusPageSubscriberResource) Create(ctx context.Context, req resource.
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["unsubscribedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UnsubscribedAt = NewRFC3339Value(val)
+        } else {
+            data.UnsubscribedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["unsubscribedAt"].(string); ok && val != "" {
+        data.UnsubscribedAt = NewRFC3339Value(val)
+    } else {
+        data.UnsubscribedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["isAddedByTeam"].(bool); ok {
+        data.IsAddedByTeam = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -951,6 +978,8 @@ func (r *StatusPageSubscriberResource) Read(ctx context.Context, req resource.Re
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "unsubscribedAt": true,
+        "isAddedByTeam": true,
         "_id": true,
     }
 
@@ -1425,6 +1454,20 @@ func (r *StatusPageSubscriberResource) Read(ctx context.Context, req resource.Re
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["unsubscribedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UnsubscribedAt = NewRFC3339Value(val)
+        } else {
+            data.UnsubscribedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["unsubscribedAt"].(string); ok && val != "" {
+        data.UnsubscribedAt = NewRFC3339Value(val)
+    } else {
+        data.UnsubscribedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["isAddedByTeam"].(bool); ok {
+        data.IsAddedByTeam = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1554,6 +1597,8 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "unsubscribedAt": true,
+        "isAddedByTeam": true,
         "_id": true,
     }
 
@@ -2021,6 +2066,20 @@ func (r *StatusPageSubscriberResource) Update(ctx context.Context, req resource.
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["unsubscribedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.UnsubscribedAt = NewRFC3339Value(val)
+        } else {
+            data.UnsubscribedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["unsubscribedAt"].(string); ok && val != "" {
+        data.UnsubscribedAt = NewRFC3339Value(val)
+    } else {
+        data.UnsubscribedAt = NewRFC3339Null()
+    }
+    if val, ok := dataMap["isAddedByTeam"].(bool); ok {
+        data.IsAddedByTeam = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

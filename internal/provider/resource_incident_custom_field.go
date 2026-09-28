@@ -14,8 +14,11 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
@@ -42,11 +45,16 @@ type IncidentCustomFieldResourceModel struct {
     DropdownOptions types.String `tfsdk:"dropdown_options"`
     MapFromResourceType types.String `tfsdk:"map_from_resource_type"`
     MapFromCustomFieldName types.String `tfsdk:"map_from_custom_field_name"`
+    IsRequiredOnCreate types.Bool `tfsdk:"is_required_on_create"`
+    SortOrder types.Number `tfsdk:"sort_order"`
+    ShowOnCreate types.Bool `tfsdk:"show_on_create"`
+    IncludeInSubscriberNotifications types.Bool `tfsdk:"include_in_subscriber_notifications"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    VariableKey types.String `tfsdk:"variable_key"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -122,6 +130,41 @@ func (r *IncidentCustomFieldResource) Schema(ctx context.Context, req resource.S
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "is_required_on_create": schema.BoolAttribute{
+                MarkdownDescription: "When on, an incident declared from the dashboard cannot be created until this field is filled in (a Boolean field must be ticked). It applies only to fields shown on create. Incidents created by monitors, the API, Slack, Microsoft Teams or AI can leave it empty, and it stays optional when an incident is edited later..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "sort_order": schema.NumberAttribute{
+                MarkdownDescription: "Where this field appears among the incident's custom fields, lowest first. Fields with no order come after the ones that have one..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "show_on_create": schema.BoolAttribute{
+                MarkdownDescription: "When on, this field is asked for in a Details step when an incident is declared from the dashboard, and incident templates can fill it in..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "include_in_subscriber_notifications": schema.BoolAttribute{
+                MarkdownDescription: "When on, this field and its value appear in the messages status page subscribers get about an incident: the default email, Slack and Microsoft Teams messages, and webhooks (under customFields, by the field's template variable key). The default SMS is kept short and leaves it out. Subscribers are usually people outside your team, so turn this on only for fields that are safe to share with them..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
@@ -148,6 +191,10 @@ func (r *IncidentCustomFieldResource) Schema(ctx context.Context, req resource.S
             },
             "version": schema.NumberAttribute{
                 MarkdownDescription: "Object version",
+                Computed: true,
+            },
+            "variable_key": schema.StringAttribute{
+                MarkdownDescription: "The key this field is reached by in templates, as {{customFields.<key>}}. Made from the field's name when it is created - lowercase letters, digits and underscores, with _2, _3 and so on added when another field already has it - and never changed afterwards, so renaming the field does not break templates that use it..",
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -217,6 +264,18 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
     if !data.MapFromCustomFieldName.IsNull() && !data.MapFromCustomFieldName.IsUnknown() {
         requestDataMap["mapFromCustomFieldName"] = data.MapFromCustomFieldName.ValueString()
     }
+    if !data.IsRequiredOnCreate.IsNull() && !data.IsRequiredOnCreate.IsUnknown() {
+        requestDataMap["isRequiredOnCreate"] = data.IsRequiredOnCreate.ValueBool()
+    }
+    if !data.SortOrder.IsNull() && !data.SortOrder.IsUnknown() {
+        requestDataMap["sortOrder"] = r.bigFloatToFloat64(data.SortOrder.ValueBigFloat())
+    }
+    if !data.ShowOnCreate.IsNull() && !data.ShowOnCreate.IsUnknown() {
+        requestDataMap["showOnCreate"] = data.ShowOnCreate.ValueBool()
+    }
+    if !data.IncludeInSubscriberNotifications.IsNull() && !data.IncludeInSubscriberNotifications.IsUnknown() {
+        requestDataMap["includeInSubscriberNotifications"] = data.IncludeInSubscriberNotifications.ValueBool()
+    }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
@@ -272,11 +331,16 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
         "dropdownOptions": true,
         "mapFromResourceType": true,
         "mapFromCustomFieldName": true,
+        "isRequiredOnCreate": true,
+        "sortOrder": true,
+        "showOnCreate": true,
+        "includeInSubscriberNotifications": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "variableKey": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -543,6 +607,32 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
     } else {
         data.MapFromCustomFieldName = types.StringNull()
     }
+    if val, ok := dataMap["isRequiredOnCreate"].(bool); ok {
+        data.IsRequiredOnCreate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["sortOrder"].(float64); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["sortOrder"].(int); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["sortOrder"].(int64); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.SortOrder = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SortOrder = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.SortOrder = types.NumberNull()
+    }
+    if val, ok := dataMap["showOnCreate"].(bool); ok {
+        data.ShowOnCreate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["includeInSubscriberNotifications"].(bool); ok {
+        data.IncludeInSubscriberNotifications = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -630,6 +720,43 @@ func (r *IncidentCustomFieldResource) Create(ctx context.Context, req resource.C
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
+    if obj, ok := dataMap["variableKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VariableKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VariableKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VariableKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VariableKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["variableKey"].(string); ok {
+        data.VariableKey = types.StringValue(val)
+    } else {
+        data.VariableKey = types.StringNull()
+    }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -701,11 +828,16 @@ func (r *IncidentCustomFieldResource) Read(ctx context.Context, req resource.Rea
         "dropdownOptions": true,
         "mapFromResourceType": true,
         "mapFromCustomFieldName": true,
+        "isRequiredOnCreate": true,
+        "sortOrder": true,
+        "showOnCreate": true,
+        "includeInSubscriberNotifications": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "variableKey": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -973,6 +1105,32 @@ func (r *IncidentCustomFieldResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.MapFromCustomFieldName = types.StringNull()
     }
+    if val, ok := dataMap["isRequiredOnCreate"].(bool); ok {
+        data.IsRequiredOnCreate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["sortOrder"].(float64); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["sortOrder"].(int); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["sortOrder"].(int64); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.SortOrder = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SortOrder = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.SortOrder = types.NumberNull()
+    }
+    if val, ok := dataMap["showOnCreate"].(bool); ok {
+        data.ShowOnCreate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["includeInSubscriberNotifications"].(bool); ok {
+        data.IncludeInSubscriberNotifications = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1059,6 +1217,43 @@ func (r *IncidentCustomFieldResource) Read(ctx context.Context, req resource.Rea
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["variableKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VariableKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VariableKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VariableKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VariableKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["variableKey"].(string); ok {
+        data.VariableKey = types.StringValue(val)
+    } else {
+        data.VariableKey = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1147,6 +1342,18 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
     if !data.MapFromCustomFieldName.IsUnknown() && !state.MapFromCustomFieldName.IsUnknown() && !data.MapFromCustomFieldName.Equal(state.MapFromCustomFieldName) {
         requestDataMap["mapFromCustomFieldName"] = data.MapFromCustomFieldName.ValueString()
     }
+    if !data.IsRequiredOnCreate.IsUnknown() && !state.IsRequiredOnCreate.IsUnknown() && !data.IsRequiredOnCreate.Equal(state.IsRequiredOnCreate) {
+        requestDataMap["isRequiredOnCreate"] = data.IsRequiredOnCreate.ValueBool()
+    }
+    if !data.SortOrder.IsUnknown() && !state.SortOrder.IsUnknown() && !data.SortOrder.Equal(state.SortOrder) {
+        requestDataMap["sortOrder"] = r.bigFloatToFloat64(data.SortOrder.ValueBigFloat())
+    }
+    if !data.ShowOnCreate.IsUnknown() && !state.ShowOnCreate.IsUnknown() && !data.ShowOnCreate.Equal(state.ShowOnCreate) {
+        requestDataMap["showOnCreate"] = data.ShowOnCreate.ValueBool()
+    }
+    if !data.IncludeInSubscriberNotifications.IsUnknown() && !state.IncludeInSubscriberNotifications.IsUnknown() && !data.IncludeInSubscriberNotifications.Equal(state.IncludeInSubscriberNotifications) {
+        requestDataMap["includeInSubscriberNotifications"] = data.IncludeInSubscriberNotifications.ValueBool()
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -1177,11 +1384,16 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
         "dropdownOptions": true,
         "mapFromResourceType": true,
         "mapFromCustomFieldName": true,
+        "isRequiredOnCreate": true,
+        "sortOrder": true,
+        "showOnCreate": true,
+        "includeInSubscriberNotifications": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "variableKey": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -1443,6 +1655,32 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
     } else {
         data.MapFromCustomFieldName = types.StringNull()
     }
+    if val, ok := dataMap["isRequiredOnCreate"].(bool); ok {
+        data.IsRequiredOnCreate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["sortOrder"].(float64); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["sortOrder"].(int); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["sortOrder"].(int64); ok {
+        data.SortOrder = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["sortOrder"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.SortOrder = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.SortOrder = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.SortOrder = types.NumberNull()
+    }
+    if val, ok := dataMap["showOnCreate"].(bool); ok {
+        data.ShowOnCreate = types.BoolValue(val)
+    }
+    if val, ok := dataMap["includeInSubscriberNotifications"].(bool); ok {
+        data.IncludeInSubscriberNotifications = types.BoolValue(val)
+    }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -1529,6 +1767,43 @@ func (r *IncidentCustomFieldResource) Update(ctx context.Context, req resource.U
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
+    }
+    if obj, ok := dataMap["variableKey"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.VariableKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.VariableKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.VariableKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableKey = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.VariableKey = types.StringValue(string(jsonBytes))
+            } else {
+                data.VariableKey = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.VariableKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.VariableKey = types.StringNull()
+        }
+    } else if val, ok := dataMap["variableKey"].(string); ok {
+        data.VariableKey = types.StringValue(val)
+    } else {
+        data.VariableKey = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

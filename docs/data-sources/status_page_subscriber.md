@@ -41,6 +41,8 @@ data "oneuptime_status_page_subscriber" "by_id" {
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_subscription_confirmed` (Bool) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email).. Computed.
 - `is_unsubscribed` (Bool) Is Subscriber Unsubscribed?.. Computed.
+- `unsubscribed_at` (String) A date time object.. Computed.
+- `is_added_by_team` (Bool) Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored... Computed.
 - `send_you_have_subscribed_message` (Bool) Send You Have Subscribed Message when subscriber is created?.. Computed.
 - `is_subscribed_to_all_resources` (Bool) Is Subscriber Subscribed to All Resources on this status page?.. Computed.
 - `is_subscribed_to_all_event_types` (Bool) Is Subscriber Subscribed to All Event Types (like Incidents, Scheduled Events, Announcements) on this status page?.. Computed.

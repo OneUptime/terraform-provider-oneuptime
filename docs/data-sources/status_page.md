@@ -87,6 +87,7 @@ data "oneuptime_status_page" "by_id" {
 - `subscriber_email_notification_footer_text` (String) Text to send to subscribers in the footer of the email... Computed.
 - `enable_custom_subscriber_email_notification_footer_text` (Bool) Enable custom footer text in subscriber email notifications... Computed.
 - `show_incidents_on_status_page` (Bool) Show Incidents on Status Page?.. Computed.
+- `only_show_scoped_incidents` (Bool) When on, this status page shows and notifies its subscribers about only the incidents limited to it. Incidents that are not limited to any status page never reach it... Computed.
 - `show_announcements_on_status_page` (Bool) Show Announcements on Status Page?.. Computed.
 - `show_episodes_on_status_page` (Bool) Show Incident Episodes on Status Page?.. Computed.
 - `show_episode_history_in_days` (Number) How many days of episode history to show on the status page.. Computed.

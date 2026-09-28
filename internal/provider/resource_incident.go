@@ -79,6 +79,7 @@ type IncidentResourceModel struct {
     RemediationNotes types.String `tfsdk:"remediation_notes"`
     TelemetryQuery JSONSubsetValue `tfsdk:"telemetry_query"`
     IsVisibleOnStatusPage types.Bool `tfsdk:"is_visible_on_status_page"`
+    StatusPages types.Set `tfsdk:"status_pages"`
     IsPrivate types.Bool `tfsdk:"is_private"`
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
     IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
@@ -102,6 +103,8 @@ type IncidentResourceModel struct {
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
     IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
+    IsScopedToStatusPages types.Bool `tfsdk:"is_scoped_to_status_pages"`
+    StatusPagesNotifiedOnCreation JSONSubsetValue `tfsdk:"status_pages_notified_on_creation"`
     NextReminderNotificationAt RFC3339Value `tfsdk:"next_reminder_notification_at"`
     ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
 }
@@ -370,7 +373,7 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "The incident's custom field values, keyed by each incident custom field's name. When a user or an API key creates or updates an incident, each value it sets or changes must fit its field - a number for a Number field, true or false for a Boolean, one of the options for a Dropdown, and so on - or the request is refused. Values left as they were, keys that are not the name of a field and empty values are not checked. Required on Create is not enforced here: it applies to the dashboard's Declare Incident form only..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -460,6 +463,15 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Default: booldefault.StaticBool(true),
                 PlanModifiers: []planmodifier.Bool{
                     boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "status_pages": schema.SetAttribute{
+                MarkdownDescription: "Limit this incident to these status pages. When set, the incident is shown on, and notifies the subscribers of, only these pages among the status pages that list its monitors. Leave empty to reach every status page that lists its monitors..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
                 },
             },
             "is_private": schema.BoolAttribute{
@@ -572,6 +584,15 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "incident_number_with_prefix": schema.StringAttribute{
                 MarkdownDescription: "Incident number with prefix (e.g., 'INC-42' or '#42').",
+                Computed: true,
+            },
+            "is_scoped_to_status_pages": schema.BoolAttribute{
+                MarkdownDescription: "Whether this incident is limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored..",
+                Computed: true,
+            },
+            "status_pages_notified_on_creation": schema.StringAttribute{
+                MarkdownDescription: "IDs of the status pages whose subscribers were sent the notification that this incident was created..",
+                CustomType: JSONSubsetType{},
                 Computed: true,
             },
             "next_reminder_notification_at": schema.StringAttribute{
@@ -742,6 +763,9 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if !data.IsVisibleOnStatusPage.IsNull() && !data.IsVisibleOnStatusPage.IsUnknown() {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
     }
+    if !data.StatusPages.IsNull() && !data.StatusPages.IsUnknown() {
+        requestDataMap["statusPages"] = r.convertTerraformSetToInterface(data.StatusPages)
+    }
     if !data.IsPrivate.IsNull() && !data.IsPrivate.IsUnknown() {
         requestDataMap["isPrivate"] = data.IsPrivate.ValueBool()
     }
@@ -835,6 +859,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
+        "statusPages": true,
         "isPrivate": true,
         "enableReminders": true,
         "incidentEpisodeId": true,
@@ -858,6 +883,8 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "isCreatedAutomatically": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
+        "isScopedToStatusPages": true,
+        "statusPagesNotifiedOnCreation": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
         "_id": true,
@@ -1995,6 +2022,38 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["statusPages"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["isPrivate"].(bool); ok {
         data.IsPrivate = types.BoolValue(val)
     }
@@ -2592,6 +2651,46 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         data.IncidentNumberWithPrefix = types.StringNull()
     }
+    if val, ok := dataMap["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["statusPagesNotifiedOnCreation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["statusPagesNotifiedOnCreation"].(string); ok {
+        data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+    } else {
+        data.StatusPagesNotifiedOnCreation = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.NextReminderNotificationAt = NewRFC3339Value(val)
@@ -2686,6 +2785,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
+        "statusPages": true,
         "isPrivate": true,
         "enableReminders": true,
         "incidentEpisodeId": true,
@@ -2709,6 +2809,8 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "isCreatedAutomatically": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
+        "isScopedToStatusPages": true,
+        "statusPagesNotifiedOnCreation": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
         "_id": true,
@@ -3847,6 +3949,38 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["statusPages"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["isPrivate"].(bool); ok {
         data.IsPrivate = types.BoolValue(val)
     }
@@ -4444,6 +4578,46 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.IncidentNumberWithPrefix = types.StringNull()
     }
+    if val, ok := dataMap["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["statusPagesNotifiedOnCreation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["statusPagesNotifiedOnCreation"].(string); ok {
+        data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+    } else {
+        data.StatusPagesNotifiedOnCreation = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.NextReminderNotificationAt = NewRFC3339Value(val)
@@ -4625,6 +4799,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.IsVisibleOnStatusPage.IsUnknown() && !state.IsVisibleOnStatusPage.IsUnknown() && !data.IsVisibleOnStatusPage.Equal(state.IsVisibleOnStatusPage) {
         requestDataMap["isVisibleOnStatusPage"] = data.IsVisibleOnStatusPage.ValueBool()
     }
+    if !data.StatusPages.IsUnknown() && !state.StatusPages.IsUnknown() && !data.StatusPages.Equal(state.StatusPages) {
+        requestDataMap["statusPages"] = r.convertTerraformSetToInterface(data.StatusPages)
+    }
     if !data.IsPrivate.IsUnknown() && !state.IsPrivate.IsUnknown() && !data.IsPrivate.Equal(state.IsPrivate) {
         requestDataMap["isPrivate"] = data.IsPrivate.ValueBool()
     }
@@ -4696,6 +4873,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "remediationNotes": true,
         "telemetryQuery": true,
         "isVisibleOnStatusPage": true,
+        "statusPages": true,
         "isPrivate": true,
         "enableReminders": true,
         "incidentEpisodeId": true,
@@ -4719,6 +4897,8 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "isCreatedAutomatically": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
+        "isScopedToStatusPages": true,
+        "statusPagesNotifiedOnCreation": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
         "_id": true,
@@ -5851,6 +6031,38 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if val, ok := dataMap["isVisibleOnStatusPage"].(bool); ok {
         data.IsVisibleOnStatusPage = types.BoolValue(val)
     }
+    if val, ok := dataMap["statusPages"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["isPrivate"].(bool); ok {
         data.IsPrivate = types.BoolValue(val)
     }
@@ -6447,6 +6659,46 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         data.IncidentNumberWithPrefix = types.StringValue(val)
     } else {
         data.IncidentNumberWithPrefix = types.StringNull()
+    }
+    if val, ok := dataMap["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
+    }
+    if obj, ok := dataMap["statusPagesNotifiedOnCreation"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.StatusPagesNotifiedOnCreation = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["statusPagesNotifiedOnCreation"].(string); ok {
+        data.StatusPagesNotifiedOnCreation = NewJSONSubsetValue(val)
+    } else {
+        data.StatusPagesNotifiedOnCreation = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["nextReminderNotificationAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

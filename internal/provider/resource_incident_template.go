@@ -51,6 +51,7 @@ type IncidentTemplateResourceModel struct {
     PodmanHosts types.Set `tfsdk:"podman_hosts"`
     Services types.Set `tfsdk:"services"`
     OnCallDutyPolicies types.Set `tfsdk:"on_call_duty_policies"`
+    StatusPages types.Set `tfsdk:"status_pages"`
     Labels types.Set `tfsdk:"labels"`
     IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
@@ -61,6 +62,7 @@ type IncidentTemplateResourceModel struct {
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
+    IsScopedToStatusPages types.Bool `tfsdk:"is_scoped_to_status_pages"`
 }
 
 func (r *IncidentTemplateResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -178,6 +180,15 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                     setplanmodifier.UseStateForUnknown(),
                 },
             },
+            "status_pages": schema.SetAttribute{
+                MarkdownDescription: "Limit incidents declared from this template to these status pages. Leave empty to reach every status page that lists the incident's monitors..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
             "labels": schema.SetAttribute{
                 MarkdownDescription: "Relation to Labels Array where this object is categorized in..",
                 Optional: true,
@@ -212,7 +223,7 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                 },
             },
             "custom_fields": schema.StringAttribute{
-                MarkdownDescription: "Custom Fields on this resource..",
+                MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -244,6 +255,10 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Computed: true,
+            },
+            "is_scoped_to_status_pages": schema.BoolAttribute{
+                MarkdownDescription: "Whether incidents declared from this template are limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored..",
                 Computed: true,
             },
         },
@@ -327,6 +342,9 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     if !data.OnCallDutyPolicies.IsNull() && !data.OnCallDutyPolicies.IsUnknown() {
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
+    if !data.StatusPages.IsNull() && !data.StatusPages.IsUnknown() {
+        requestDataMap["statusPages"] = r.convertTerraformSetToInterface(data.StatusPages)
+    }
     if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -400,6 +418,7 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
         "podmanHosts": true,
         "services": true,
         "onCallDutyPolicies": true,
+        "statusPages": true,
         "labels": true,
         "incidentSeverityId": true,
         "changeMonitorStatusToId": true,
@@ -410,6 +429,7 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "isScopedToStatusPages": true,
         "_id": true,
     }
 
@@ -862,6 +882,38 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["statusPages"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1129,6 +1181,9 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.Slug = types.StringNull()
     }
+    if val, ok := dataMap["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1169,6 +1224,7 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
         "podmanHosts": true,
         "services": true,
         "onCallDutyPolicies": true,
+        "statusPages": true,
         "labels": true,
         "incidentSeverityId": true,
         "changeMonitorStatusToId": true,
@@ -1179,6 +1235,7 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "isScopedToStatusPages": true,
         "_id": true,
     }
 
@@ -1632,6 +1689,38 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["statusPages"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1899,6 +1988,9 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.Slug = types.StringNull()
     }
+    if val, ok := dataMap["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -1967,6 +2059,9 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
     if !data.OnCallDutyPolicies.IsUnknown() && !state.OnCallDutyPolicies.IsUnknown() && !data.OnCallDutyPolicies.Equal(state.OnCallDutyPolicies) {
         requestDataMap["onCallDutyPolicies"] = r.convertTerraformSetToInterface(data.OnCallDutyPolicies)
     }
+    if !data.StatusPages.IsUnknown() && !state.StatusPages.IsUnknown() && !data.StatusPages.Equal(state.StatusPages) {
+        requestDataMap["statusPages"] = r.convertTerraformSetToInterface(data.StatusPages)
+    }
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
@@ -2023,6 +2118,7 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         "podmanHosts": true,
         "services": true,
         "onCallDutyPolicies": true,
+        "statusPages": true,
         "labels": true,
         "incidentSeverityId": true,
         "changeMonitorStatusToId": true,
@@ -2033,6 +2129,7 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "isScopedToStatusPages": true,
         "_id": true,
     }
 
@@ -2480,6 +2577,38 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         // For sets, always use empty set instead of null to match default values
         data.OnCallDutyPolicies = types.SetValueMust(types.StringType, []attr.Value{})
     }
+    if val, ok := dataMap["statusPages"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StatusPages = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StatusPages = types.SetValueMust(types.StringType, []attr.Value{})
+    }
     if val, ok := dataMap["labels"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2746,6 +2875,9 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if val, ok := dataMap["isScopedToStatusPages"].(bool); ok {
+        data.IsScopedToStatusPages = types.BoolValue(val)
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
