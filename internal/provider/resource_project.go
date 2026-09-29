@@ -54,6 +54,9 @@ type ProjectResourceModel struct {
     ScheduledMaintenanceNumberPrefix types.String `tfsdk:"scheduled_maintenance_number_prefix"`
     IncidentEpisodeNumberPrefix types.String `tfsdk:"incident_episode_number_prefix"`
     AlertEpisodeNumberPrefix types.String `tfsdk:"alert_episode_number_prefix"`
+    EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
+    EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     UtmContent types.String `tfsdk:"utm_content"`
     EnableAuditLogs types.Bool `tfsdk:"enable_audit_logs"`
@@ -75,8 +78,6 @@ type ProjectResourceModel struct {
     EnableAi types.Bool `tfsdk:"enable_ai"`
     EnableAutoRemediation types.Bool `tfsdk:"enable_auto_remediation"`
     EnableAiCommandExecution types.Bool `tfsdk:"enable_ai_command_execution"`
-    EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
-    EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
@@ -258,6 +259,33 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
+            "enable_automatic_incident_investigation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline; any auto-remediation for the incident waits until that investigation settles. On for new projects created in OneUptime; projects that existed before keep their setting. Drafting a postmortem when an incident resolves is a separate setting (Enable Automatic Postmortem Draft). Requires AI to be enabled and an LLM provider to be configured..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_automatic_alert_investigation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "enable_automatic_postmortem_draft": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. Off by default. Requires AI to be enabled and an LLM provider to be configured..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
+                },
+            },
             "send_invoices_by_email": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, invoices will be automatically sent to the finance/accounting email when they are generated..",
                 Optional: true,
@@ -434,25 +462,7 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "enable_ai_command_execution": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, auto-remediation rules may let the AI compose and run commands on opted-in Runners (with an operator allowlist for auto-execution, and one-click approval for everything else). Off by default..",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "enable_automatic_incident_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured..",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "enable_automatic_alert_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, auto-remediation rules may let the AI compose and run commands on opted-in Runners (with an operator allowlist for auto-execution, and one-click approval for everything else), and AI may fix Kubernetes clusters reached through a Runner with a Kubernetes credential. Fixes on a cluster through its in-cluster Kubernetes AI agent do not need it: that cluster's AI agent page and the agent's write access decide. Off by default..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),
@@ -885,6 +895,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     if !data.AlertEpisodeNumberPrefix.IsNull() && !data.AlertEpisodeNumberPrefix.IsUnknown() {
         requestDataMap["alertEpisodeNumberPrefix"] = data.AlertEpisodeNumberPrefix.ValueString()
     }
+    if !data.EnableAutomaticIncidentInvestigation.IsNull() && !data.EnableAutomaticIncidentInvestigation.IsUnknown() {
+        requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
+    }
+    if !data.EnableAutomaticAlertInvestigation.IsNull() && !data.EnableAutomaticAlertInvestigation.IsUnknown() {
+        requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
+    }
+    if !data.EnableAutomaticPostmortemDraft.IsNull() && !data.EnableAutomaticPostmortemDraft.IsUnknown() {
+        requestDataMap["enableAutomaticPostmortemDraft"] = data.EnableAutomaticPostmortemDraft.ValueBool()
+    }
     if !data.SendInvoicesByEmail.IsNull() && !data.SendInvoicesByEmail.IsUnknown() {
         requestDataMap["sendInvoicesByEmail"] = data.SendInvoicesByEmail.ValueBool()
     }
@@ -961,6 +980,9 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
+        "enableAutomaticIncidentInvestigation": true,
+        "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticPostmortemDraft": true,
         "sendInvoicesByEmail": true,
         "enableAuditLogs": true,
         "isSessionReplayAllowed": true,
@@ -981,8 +1003,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "enableAi": true,
         "enableAutoRemediation": true,
         "enableAiCommandExecution": true,
-        "enableAutomaticIncidentInvestigation": true,
-        "enableAutomaticAlertInvestigation": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
@@ -1512,6 +1532,15 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
+    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
+        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
+        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticPostmortemDraft"].(bool); ok {
+        data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
+    }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
     }
@@ -1675,12 +1704,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableAiCommandExecution"].(bool); ok {
         data.EnableAiCommandExecution = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
-        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
-        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
@@ -2700,6 +2723,9 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
+        "enableAutomaticIncidentInvestigation": true,
+        "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticPostmortemDraft": true,
         "sendInvoicesByEmail": true,
         "enableAuditLogs": true,
         "isSessionReplayAllowed": true,
@@ -2720,8 +2746,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "enableAi": true,
         "enableAutoRemediation": true,
         "enableAiCommandExecution": true,
-        "enableAutomaticIncidentInvestigation": true,
-        "enableAutomaticAlertInvestigation": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
@@ -3252,6 +3276,15 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
+    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
+        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
+        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticPostmortemDraft"].(bool); ok {
+        data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
+    }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
     }
@@ -3415,12 +3448,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableAiCommandExecution"].(bool); ok {
         data.EnableAiCommandExecution = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
-        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
-        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
@@ -4519,6 +4546,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAutomaticAlertInvestigation.IsUnknown() && !state.EnableAutomaticAlertInvestigation.IsUnknown() && !data.EnableAutomaticAlertInvestigation.Equal(state.EnableAutomaticAlertInvestigation) {
         requestDataMap["enableAutomaticAlertInvestigation"] = data.EnableAutomaticAlertInvestigation.ValueBool()
     }
+    if !data.EnableAutomaticPostmortemDraft.IsUnknown() && !state.EnableAutomaticPostmortemDraft.IsUnknown() && !data.EnableAutomaticPostmortemDraft.Equal(state.EnableAutomaticPostmortemDraft) {
+        requestDataMap["enableAutomaticPostmortemDraft"] = data.EnableAutomaticPostmortemDraft.ValueBool()
+    }
     if !data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsUnknown() && !state.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.IsUnknown() && !data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.Equal(state.AcknowledgeLinkedAlertsWhenIncidentAcknowledged) {
         requestDataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"] = data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged.ValueBool()
     }
@@ -4664,6 +4694,9 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "scheduledMaintenanceNumberPrefix": true,
         "incidentEpisodeNumberPrefix": true,
         "alertEpisodeNumberPrefix": true,
+        "enableAutomaticIncidentInvestigation": true,
+        "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticPostmortemDraft": true,
         "sendInvoicesByEmail": true,
         "enableAuditLogs": true,
         "isSessionReplayAllowed": true,
@@ -4684,8 +4717,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "enableAi": true,
         "enableAutoRemediation": true,
         "enableAiCommandExecution": true,
-        "enableAutomaticIncidentInvestigation": true,
-        "enableAutomaticAlertInvestigation": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
@@ -5210,6 +5241,15 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         data.AlertEpisodeNumberPrefix = types.StringNull()
     }
+    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
+        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
+        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
+    }
+    if val, ok := dataMap["enableAutomaticPostmortemDraft"].(bool); ok {
+        data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
+    }
     if val, ok := dataMap["sendInvoicesByEmail"].(bool); ok {
         data.SendInvoicesByEmail = types.BoolValue(val)
     }
@@ -5373,12 +5413,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableAiCommandExecution"].(bool); ok {
         data.EnableAiCommandExecution = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticIncidentInvestigation"].(bool); ok {
-        data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)
-    }
-    if val, ok := dataMap["enableAutomaticAlertInvestigation"].(bool); ok {
-        data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)

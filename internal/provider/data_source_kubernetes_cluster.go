@@ -186,7 +186,7 @@ func (d *KubernetesClusterDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "is_ai_investigation_enabled": schema.BoolAttribute{
-                MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. Anyone who may edit the cluster can turn it on or off..",
+                MarkdownDescription: "When on, OneUptime AI runs read-only kubectl commands (get, describe, logs, events, top, rollout status) on this cluster, through the cluster's Kubernetes AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. On by default. Anyone who may edit the cluster can turn it on or off..",
                 Computed: true,
             },
             "ai_remediation_mode": schema.StringAttribute{

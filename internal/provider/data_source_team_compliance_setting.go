@@ -6,6 +6,8 @@ import (
     "fmt"
     "net/http"
     "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -39,6 +41,9 @@ type TeamComplianceSettingDataSourceModel struct {
     RuleType types.String `tfsdk:"rule_type"`
     Enabled types.Bool `tfsdk:"enabled"`
     Options types.String `tfsdk:"options"`
+    NotificationChannel types.String `tfsdk:"notification_channel"`
+    IncidentSeverities types.Set `tfsdk:"incident_severities"`
+    AlertSeverities types.Set `tfsdk:"alert_severities"`
 }
 
 func (d *TeamComplianceSettingDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -100,6 +105,20 @@ func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Additional options for this compliance rule..",
                 Computed: true,
             },
+            "notification_channel": schema.StringAttribute{
+                MarkdownDescription: "On-call rules only: the channel the member's rule must notify them on (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook). Leave empty to accept any channel..",
+                Computed: true,
+            },
+            "incident_severities": schema.SetAttribute{
+                MarkdownDescription: "Incident and incident episode on-call rules only: the severities members must have a rule for. Leave empty to require every incident severity..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "alert_severities": schema.SetAttribute{
+                MarkdownDescription: "Alert and alert episode on-call rules only: the severities members must have a rule for. Leave empty to require every alert severity..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
         },
     }
 }
@@ -156,6 +175,9 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         "ruleType": true,
         "enabled": true,
         "options": true,
+        "notificationChannel": true,
+        "incidentSeverities": true,
+        "alertSeverities": true,
         "_id": true,
     }
 
@@ -403,6 +425,71 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         data.Options = types.StringValue(val)
     } else {
         data.Options = types.StringNull()
+    }
+    if obj, ok := item["notificationChannel"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.NotificationChannel = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.NotificationChannel = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.NotificationChannel = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.NotificationChannel = types.StringValue(string(jsonBytes))
+        } else {
+            data.NotificationChannel = types.StringNull()
+        }
+    } else if val, ok := item["notificationChannel"].(string); ok {
+        data.NotificationChannel = types.StringValue(val)
+    } else {
+        data.NotificationChannel = types.StringNull()
+    }
+    if val, ok := item["incidentSeverities"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.IncidentSeverities = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.IncidentSeverities = types.SetNull(types.StringType)
+    }
+    if val, ok := item["alertSeverities"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.AlertSeverities = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.AlertSeverities = types.SetNull(types.StringType)
     }
 
     // Write logs using the tflog package

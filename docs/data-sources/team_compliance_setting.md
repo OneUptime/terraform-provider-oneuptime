@@ -37,3 +37,6 @@ data "oneuptime_team_compliance_setting" "by_id" {
 - `rule_type` (String) Type of compliance rule... Computed.
 - `enabled` (Bool) Whether this compliance rule is enabled... Computed.
 - `options` (String) Additional options for this compliance rule... Computed.
+- `notification_channel` (String) On-call rules only: the channel the member's rule must notify them on (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook). Leave empty to accept any channel... Computed.
+- `incident_severities` (Set) Incident and incident episode on-call rules only: the severities members must have a rule for. Leave empty to require every incident severity... Computed.
+- `alert_severities` (Set) Alert and alert episode on-call rules only: the severities members must have a rule for. Leave empty to require every alert severity... Computed.

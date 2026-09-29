@@ -74,6 +74,7 @@ type ProjectDataSourceModel struct {
     EnableAiCommandExecution types.Bool `tfsdk:"enable_ai_command_execution"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     EnableIncidentInstrumentationFixTasks types.Bool `tfsdk:"enable_incident_instrumentation_fix_tasks"`
@@ -293,15 +294,19 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "enable_ai_command_execution": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, auto-remediation rules may let the AI compose and run commands on opted-in Runners (with an operator allowlist for auto-execution, and one-click approval for everything else). Off by default..",
+                MarkdownDescription: "When enabled, auto-remediation rules may let the AI compose and run commands on opted-in Runners (with an operator allowlist for auto-execution, and one-click approval for everything else), and AI may fix Kubernetes clusters reached through a Runner with a Kubernetes credential. Fixes on a cluster through its in-cluster Kubernetes AI agent do not need it: that cluster's AI agent page and the agent's write access decide. Off by default..",
                 Computed: true,
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new incident and posts a cited root cause analysis to the incident timeline; any auto-remediation for the incident waits until that investigation settles. On for new projects created in OneUptime; projects that existed before keep their setting. Drafting a postmortem when an incident resolves is a separate setting (Enable Automatic Postmortem Draft). Requires AI to be enabled and an LLM provider to be configured..",
                 Computed: true,
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
+                Computed: true,
+            },
+            "enable_automatic_postmortem_draft": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. Off by default. Requires AI to be enabled and an LLM provider to be configured..",
                 Computed: true,
             },
             "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
@@ -551,6 +556,7 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticPostmortemDraft": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "enableIncidentInstrumentationFixTasks": true,
@@ -1240,6 +1246,11 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     } else {
         data.EnableAutomaticAlertInvestigation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticPostmortemDraft"].(bool); ok {
+        data.EnableAutomaticPostmortemDraft = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticPostmortemDraft = types.BoolNull()
     }
     if val, ok := item["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
