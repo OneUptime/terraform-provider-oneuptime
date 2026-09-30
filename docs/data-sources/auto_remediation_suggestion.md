@@ -35,6 +35,8 @@ data "oneuptime_auto_remediation_suggestion" "by_id" {
 - `auto_remediation_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `rule_name_snapshot` (String) Name of the rule when this suggestion was created — survives rule deletion... Computed.
 - `kubernetes_cluster_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `resource_type` (String) The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule)... Computed.
+- `resource_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `incident_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `alert_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `runbook_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

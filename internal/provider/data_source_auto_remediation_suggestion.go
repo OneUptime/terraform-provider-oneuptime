@@ -37,6 +37,8 @@ type AutoRemediationSuggestionDataSourceModel struct {
     AutoRemediationRuleId types.String `tfsdk:"auto_remediation_rule_id"`
     RuleNameSnapshot types.String `tfsdk:"rule_name_snapshot"`
     KubernetesClusterId types.String `tfsdk:"kubernetes_cluster_id"`
+    ResourceType types.String `tfsdk:"resource_type"`
+    ResourceId types.String `tfsdk:"resource_id"`
     IncidentId types.String `tfsdk:"incident_id"`
     AlertId types.String `tfsdk:"alert_id"`
     RunbookId types.String `tfsdk:"runbook_id"`
@@ -108,6 +110,14 @@ func (d *AutoRemediationSuggestionDataSource) Schema(ctx context.Context, req da
                 Computed: true,
             },
             "kubernetes_cluster_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "resource_type": schema.StringAttribute{
+                MarkdownDescription: "The kind of resource whose AI remediation mode produced this suggestion (DockerHost, PodmanHost, DockerSwarmCluster, ProxmoxCluster, VMwareVCenter, CephCluster, DatabaseServer or Host; resource-level remediation, no rule)..",
+                Computed: true,
+            },
+            "resource_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -249,6 +259,8 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         "autoRemediationRuleId": true,
         "ruleNameSnapshot": true,
         "kubernetesClusterId": true,
+        "resourceType": true,
+        "resourceId": true,
         "incidentId": true,
         "alertId": true,
         "runbookId": true,
@@ -495,6 +507,40 @@ func (d *AutoRemediationSuggestionDataSource) Read(ctx context.Context, req data
         data.KubernetesClusterId = types.StringValue(val)
     } else {
         data.KubernetesClusterId = types.StringNull()
+    }
+    if obj, ok := item["resourceType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceType = types.StringNull()
+        }
+    } else if val, ok := item["resourceType"].(string); ok {
+        data.ResourceType = types.StringValue(val)
+    } else {
+        data.ResourceType = types.StringNull()
+    }
+    if obj, ok := item["resourceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ResourceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ResourceId = types.StringNull()
+        }
+    } else if val, ok := item["resourceId"].(string); ok {
+        data.ResourceId = types.StringValue(val)
+    } else {
+        data.ResourceId = types.StringNull()
     }
     if obj, ok := item["incidentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

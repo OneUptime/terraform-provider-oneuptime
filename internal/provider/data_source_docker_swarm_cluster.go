@@ -59,6 +59,12 @@ type DockerSwarmClusterDataSourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     RetainTelemetryDataForDays types.Number `tfsdk:"retain_telemetry_data_for_days"`
     TelemetryRetentionConfig types.String `tfsdk:"telemetry_retention_config"`
+    IsAiInvestigationEnabled types.Bool `tfsdk:"is_ai_investigation_enabled"`
+    AiRemediationMode types.String `tfsdk:"ai_remediation_mode"`
+    AiCommandAllowlist types.String `tfsdk:"ai_command_allowlist"`
+    AiAccessLastVerifiedAt types.String `tfsdk:"ai_access_last_verified_at"`
+    AiAccessLastError types.String `tfsdk:"ai_access_last_error"`
+    AiAccessConfiguredAt types.String `tfsdk:"ai_access_configured_at"`
 }
 
 func (d *DockerSwarmClusterDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -193,6 +199,30 @@ func (d *DockerSwarmClusterDataSource) Schema(ctx context.Context, req datasourc
                 MarkdownDescription: "Per-pillar retention overrides for this DockerSwarm cluster (logs by severity, traces by status, metrics, profiles). Unset fields fall back to the DockerSwarm cluster default, then the project's retention settings..",
                 Computed: true,
             },
+            "is_ai_investigation_enabled": schema.BoolAttribute{
+                MarkdownDescription: "When on, OneUptime AI runs read-only commands (docker service ls, service ps, service logs, node ls) on this Docker Swarm cluster, through its Docker Swarm AI agent, while investigating incidents and alerts linked to it, and uses their output, with secret values redacted, as evidence. Nothing is ever changed by an investigation. Off by default. Anyone who may edit the Docker Swarm cluster can turn it on or off..",
+                Computed: true,
+            },
+            "ai_remediation_mode": schema.StringAttribute{
+                MarkdownDescription: "Disabled: AI never proposes or runs a change on this Docker Swarm cluster. RequireApproval: AI composes a command plan and a human approves it with one click before anything runs. Automatic: safe changes (SafeWrite) run without a human; a riskier change is proposed for approval unless the Docker Swarm cluster's allowlist names its exact shape. BypassApproval: every change the policy allows — safe AND riskier — runs on its own, except what always needs a human. In EVERY mode: Denied commands never run, commands the policy marks requiresHuman always ask, and the agent itself refuses every write unless it was started with ONEUPTIME_AI_ALLOW_WRITES=true (and then only on the targets ONEUPTIME_AI_WRITE_TARGETS allows, never its protected targets). Anyone who may edit the Docker Swarm cluster can lower the mode; raising it needs Project Owner, Project Admin or Edit Auto Remediation Rule..",
+                Computed: true,
+            },
+            "ai_command_allowlist": schema.StringAttribute{
+                MarkdownDescription: "Optional JSON array of command patterns that Automatic mode may run on this Docker Swarm cluster without approval even though they are riskier changes. Each pattern is one command line for this Docker Swarm cluster's agent (docker) and is compared with the command word by word: * stands for exactly one word (a name, an id), never for extra words or flags, and every flag the command uses must be written out in the pattern. At most 50 patterns of at most 500 characters each; a pattern that is not one valid write command for this Docker Swarm cluster is refused. Destructive commands (Denied tier) never run regardless, and a command that always needs a human still asks. Adding a pattern needs Project Owner, Project Admin or Edit Auto Remediation Rule; anyone who may edit the Docker Swarm cluster can remove patterns or clear the list..",
+                Computed: true,
+            },
+            "ai_access_last_verified_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "ai_access_last_error": schema.StringAttribute{
+                MarkdownDescription: "The most recent failure OneUptime AI hit while running a command on this Docker Swarm cluster, kept until the next successful command. Set by the server..",
+                Computed: true,
+            },
+            "ai_access_configured_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
         },
     }
 }
@@ -267,6 +297,12 @@ func (d *DockerSwarmClusterDataSource) Read(ctx context.Context, req datasource.
         "labels": true,
         "retainTelemetryDataForDays": true,
         "telemetryRetentionConfig": true,
+        "isAiInvestigationEnabled": true,
+        "aiRemediationMode": true,
+        "aiCommandAllowlist": true,
+        "aiAccessLastVerifiedAt": true,
+        "aiAccessLastError": true,
+        "aiAccessConfiguredAt": true,
         "_id": true,
     }
 
@@ -773,6 +809,96 @@ func (d *DockerSwarmClusterDataSource) Read(ctx context.Context, req datasource.
         data.TelemetryRetentionConfig = types.StringValue(val)
     } else {
         data.TelemetryRetentionConfig = types.StringNull()
+    }
+    if val, ok := item["isAiInvestigationEnabled"].(bool); ok {
+        data.IsAiInvestigationEnabled = types.BoolValue(val)
+    } else {
+        data.IsAiInvestigationEnabled = types.BoolNull()
+    }
+    if obj, ok := item["aiRemediationMode"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiRemediationMode = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiRemediationMode = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiRemediationMode = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiRemediationMode = types.StringNull()
+        }
+    } else if val, ok := item["aiRemediationMode"].(string); ok {
+        data.AiRemediationMode = types.StringValue(val)
+    } else {
+        data.AiRemediationMode = types.StringNull()
+    }
+    if obj, ok := item["aiCommandAllowlist"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiCommandAllowlist = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiCommandAllowlist = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiCommandAllowlist = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiCommandAllowlist = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiCommandAllowlist = types.StringNull()
+        }
+    } else if val, ok := item["aiCommandAllowlist"].(string); ok {
+        data.AiCommandAllowlist = types.StringValue(val)
+    } else {
+        data.AiCommandAllowlist = types.StringNull()
+    }
+    if obj, ok := item["aiAccessLastVerifiedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastVerifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessLastVerifiedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessLastVerifiedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessLastVerifiedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastVerifiedAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessLastVerifiedAt"].(string); ok {
+        data.AiAccessLastVerifiedAt = types.StringValue(val)
+    } else {
+        data.AiAccessLastVerifiedAt = types.StringNull()
+    }
+    if obj, ok := item["aiAccessLastError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessLastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessLastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessLastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessLastError = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessLastError"].(string); ok {
+        data.AiAccessLastError = types.StringValue(val)
+    } else {
+        data.AiAccessLastError = types.StringNull()
+    }
+    if obj, ok := item["aiAccessConfiguredAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AiAccessConfiguredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AiAccessConfiguredAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AiAccessConfiguredAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AiAccessConfiguredAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AiAccessConfiguredAt = types.StringNull()
+        }
+    } else if val, ok := item["aiAccessConfiguredAt"].(string); ok {
+        data.AiAccessConfiguredAt = types.StringValue(val)
+    } else {
+        data.AiAccessConfiguredAt = types.StringNull()
     }
 
     // Write logs using the tflog package
