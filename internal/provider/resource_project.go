@@ -100,6 +100,8 @@ type ProjectResourceModel struct {
     AiMaxConcurrentInvestigations types.Number `tfsdk:"ai_max_concurrent_investigations"`
     IncidentAiMaxConcurrentInvestigations types.Number `tfsdk:"incident_ai_max_concurrent_investigations"`
     AlertAiMaxConcurrentInvestigations types.Number `tfsdk:"alert_ai_max_concurrent_investigations"`
+    IncidentAiInvestigationTimeLimitInMinutes types.Number `tfsdk:"incident_ai_investigation_time_limit_in_minutes"`
+    AlertAiInvestigationTimeLimitInMinutes types.Number `tfsdk:"alert_ai_investigation_time_limit_in_minutes"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     DoNotAddGlobalProbesByDefaultOnNewMonitors types.Bool `tfsdk:"do_not_add_global_probes_by_default_on_new_monitors"`
     DefaultMetricCardinalityBudget types.Number `tfsdk:"default_metric_cardinality_budget"`
@@ -655,6 +657,22 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     numberplanmodifier.UseStateForUnknown(),
                 },
             },
+            "incident_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Stop an incident AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "alert_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Stop an alert AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for AI balance for this project..",
                 Optional: true,
@@ -1025,6 +1043,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "aiMaxConcurrentInvestigations": true,
         "incidentAiMaxConcurrentInvestigations": true,
         "alertAiMaxConcurrentInvestigations": true,
+        "incidentAiInvestigationTimeLimitInMinutes": true,
+        "alertAiInvestigationTimeLimitInMinutes": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "defaultMetricCardinalityBudget": true,
@@ -1993,6 +2013,40 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
     }
+    if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int64); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int64); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
+    }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
     }
@@ -2768,6 +2822,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "aiMaxConcurrentInvestigations": true,
         "incidentAiMaxConcurrentInvestigations": true,
         "alertAiMaxConcurrentInvestigations": true,
+        "incidentAiInvestigationTimeLimitInMinutes": true,
+        "alertAiInvestigationTimeLimitInMinutes": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "defaultMetricCardinalityBudget": true,
@@ -3737,6 +3793,40 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
     }
+    if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int64); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int64); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
+    }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)
     }
@@ -4615,6 +4705,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.AlertAiMaxConcurrentInvestigations.IsUnknown() && !state.AlertAiMaxConcurrentInvestigations.IsUnknown() && !data.AlertAiMaxConcurrentInvestigations.Equal(state.AlertAiMaxConcurrentInvestigations) {
         requestDataMap["alertAiMaxConcurrentInvestigations"] = r.bigFloatToFloat64(data.AlertAiMaxConcurrentInvestigations.ValueBigFloat())
     }
+    if !data.IncidentAiInvestigationTimeLimitInMinutes.IsUnknown() && !state.IncidentAiInvestigationTimeLimitInMinutes.IsUnknown() && !data.IncidentAiInvestigationTimeLimitInMinutes.Equal(state.IncidentAiInvestigationTimeLimitInMinutes) {
+        requestDataMap["incidentAiInvestigationTimeLimitInMinutes"] = r.bigFloatToFloat64(data.IncidentAiInvestigationTimeLimitInMinutes.ValueBigFloat())
+    }
+    if !data.AlertAiInvestigationTimeLimitInMinutes.IsUnknown() && !state.AlertAiInvestigationTimeLimitInMinutes.IsUnknown() && !data.AlertAiInvestigationTimeLimitInMinutes.Equal(state.AlertAiInvestigationTimeLimitInMinutes) {
+        requestDataMap["alertAiInvestigationTimeLimitInMinutes"] = r.bigFloatToFloat64(data.AlertAiInvestigationTimeLimitInMinutes.ValueBigFloat())
+    }
     if !data.EnableAutoRechargeAiBalance.IsUnknown() && !state.EnableAutoRechargeAiBalance.IsUnknown() && !data.EnableAutoRechargeAiBalance.Equal(state.EnableAutoRechargeAiBalance) {
         requestDataMap["enableAutoRechargeAiBalance"] = data.EnableAutoRechargeAiBalance.ValueBool()
     }
@@ -4739,6 +4835,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "aiMaxConcurrentInvestigations": true,
         "incidentAiMaxConcurrentInvestigations": true,
         "alertAiMaxConcurrentInvestigations": true,
+        "incidentAiInvestigationTimeLimitInMinutes": true,
+        "alertAiInvestigationTimeLimitInMinutes": true,
         "enableAutoRechargeAiBalance": true,
         "doNotAddGlobalProbesByDefaultOnNewMonitors": true,
         "defaultMetricCardinalityBudget": true,
@@ -5701,6 +5799,40 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(int64); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+    }
+    if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(int64); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
     }
     if val, ok := dataMap["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)

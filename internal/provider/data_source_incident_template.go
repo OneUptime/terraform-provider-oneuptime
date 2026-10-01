@@ -56,6 +56,7 @@ type IncidentTemplateDataSourceModel struct {
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
     InitialIncidentStateId types.String `tfsdk:"initial_incident_state_id"`
     CustomFields types.String `tfsdk:"custom_fields"`
+    CustomFieldSettings types.String `tfsdk:"custom_field_settings"`
 }
 
 func (d *IncidentTemplateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -186,6 +187,10 @@ func (d *IncidentTemplateDataSource) Schema(ctx context.Context, req datasource.
                 MarkdownDescription: "The custom field values incidents declared from this template start with, keyed by each incident custom field's name. They are merged one field at a time under the values the request or the Declare Incident form supplies..",
                 Computed: true,
             },
+            "custom_field_settings": schema.StringAttribute{
+                MarkdownDescription: "How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them..",
+                Computed: true,
+            },
         },
     }
 }
@@ -257,6 +262,7 @@ func (d *IncidentTemplateDataSource) Read(ctx context.Context, req datasource.Re
         "changeMonitorStatusToId": true,
         "initialIncidentStateId": true,
         "customFields": true,
+        "customFieldSettings": true,
         "_id": true,
     }
 
@@ -822,6 +828,23 @@ func (d *IncidentTemplateDataSource) Read(ctx context.Context, req datasource.Re
         data.CustomFields = types.StringValue(val)
     } else {
         data.CustomFields = types.StringNull()
+    }
+    if obj, ok := item["customFieldSettings"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFieldSettings = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CustomFieldSettings = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CustomFieldSettings = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CustomFieldSettings = types.StringValue(string(jsonBytes))
+        } else {
+            data.CustomFieldSettings = types.StringNull()
+        }
+    } else if val, ok := item["customFieldSettings"].(string); ok {
+        data.CustomFieldSettings = types.StringValue(val)
+    } else {
+        data.CustomFieldSettings = types.StringNull()
     }
 
     // Write logs using the tflog package

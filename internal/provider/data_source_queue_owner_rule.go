@@ -16,44 +16,46 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &TeamComplianceSettingDataSource{}
+var _ datasource.DataSource = &QueueOwnerRuleDataSource{}
 
-func NewTeamComplianceSettingDataSource() datasource.DataSource {
-    return &TeamComplianceSettingDataSource{}
+func NewQueueOwnerRuleDataSource() datasource.DataSource {
+    return &QueueOwnerRuleDataSource{}
 }
 
-// TeamComplianceSettingDataSource defines the data source implementation.
-type TeamComplianceSettingDataSource struct {
+// QueueOwnerRuleDataSource defines the data source implementation.
+type QueueOwnerRuleDataSource struct {
     client *Client
 }
 
-// TeamComplianceSettingDataSourceModel describes the data source data model.
-type TeamComplianceSettingDataSourceModel struct {
+// QueueOwnerRuleDataSourceModel describes the data source data model.
+type QueueOwnerRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
-    TeamId types.String `tfsdk:"team_id"`
+    Description types.String `tfsdk:"description"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    NotifyOwners types.Bool `tfsdk:"notify_owners"`
+    MessageQueueLabels types.Set `tfsdk:"message_queue_labels"`
+    MessageQueueNamePattern types.String `tfsdk:"message_queue_name_pattern"`
+    MessageQueueDescriptionPattern types.String `tfsdk:"message_queue_description_pattern"`
+    MessageQueueSystemPattern types.String `tfsdk:"message_queue_system_pattern"`
+    OwnerUsers types.Set `tfsdk:"owner_users"`
+    OwnerTeams types.Set `tfsdk:"owner_teams"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    RuleType types.String `tfsdk:"rule_type"`
-    Enabled types.Bool `tfsdk:"enabled"`
-    Options types.String `tfsdk:"options"`
-    NotificationChannel types.String `tfsdk:"notification_channel"`
-    NotificationChannels types.String `tfsdk:"notification_channels"`
-    IncidentSeverities types.Set `tfsdk:"incident_severities"`
-    AlertSeverities types.Set `tfsdk:"alert_severities"`
 }
 
-func (d *TeamComplianceSettingDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_team_compliance_setting"
+func (d *QueueOwnerRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_queue_owner_rule"
 }
 
-func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *QueueOwnerRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Compliance settings for your OneUptime team Look up an existing team_compliance_setting by `id` or by `name`.",
+        MarkdownDescription: "Configure rules for automatically assigning owner users and teams when matching queues are created Look up an existing queue_owner_rule by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -82,53 +84,62 @@ func (d *TeamComplianceSettingDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
+            "criteria": schema.StringAttribute{
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                Computed: true,
+            },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "team_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "description": schema.StringAttribute{
+                MarkdownDescription: "Description of this queue owner rule.",
                 Computed: true,
+            },
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this rule is enabled.",
+                Computed: true,
+            },
+            "notify_owners": schema.BoolAttribute{
+                MarkdownDescription: "Send notifications to owner users and teams when they are added by this rule.",
+                Computed: true,
+            },
+            "message_queue_labels": schema.SetAttribute{
+                MarkdownDescription: "Only trigger for queues that have at least one of these labels. Leave empty to match regardless of labels..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "message_queue_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the queue name. Discovered queues are named after their destination (e.g. orders.created), so ^orders\\. matches every queue whose name starts with orders. - use the messaging system pattern to match by broker. Leave empty to match any name..",
+                Computed: true,
+            },
+            "message_queue_description_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the queue description. Leave empty to match any description..",
+                Computed: true,
+            },
+            "message_queue_system_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the queue's messaging system - both its OpenTelemetry messaging.system value (kafka, rabbitmq, aws_sqs, servicebus, ...) and its display name (Apache Kafka, RabbitMQ, Amazon SQS, Azure Service Bus, ...). ^kafka$ matches every Kafka topic. Leave empty to match any system..",
+                Computed: true,
+            },
+            "owner_users": schema.SetAttribute{
+                MarkdownDescription: "Users to add as owners on the queue when this rule matches..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "owner_teams": schema.SetAttribute{
+                MarkdownDescription: "Teams to add as owners on the queue when this rule matches..",
+                Computed: true,
+                ElementType: types.StringType,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "rule_type": schema.StringAttribute{
-                MarkdownDescription: "Type of compliance rule..",
-                Computed: true,
-            },
-            "enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether this compliance rule is enabled..",
-                Computed: true,
-            },
-            "options": schema.StringAttribute{
-                MarkdownDescription: "Additional options for this compliance rule..",
-                Computed: true,
-            },
-            "notification_channel": schema.StringAttribute{
-                MarkdownDescription: "Deprecated: use notificationChannels. The first of the rule's notification channels, or empty when it accepts any channel. Sending this field without notificationChannels sets the rule to that one channel (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook)..",
-                Computed: true,
-            },
-            "notification_channels": schema.StringAttribute{
-                MarkdownDescription: "On-call rules only: the channels members must be notified on, as a list - each member needs a rule on every one of them (Call, SMS, Push, Email, WhatsApp, Telegram, Slack, MicrosoftTeams or Webhook). Leave empty to accept any channel..",
-                Computed: true,
-            },
-            "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Incident and incident episode on-call rules only: the severities members must have a rule for. Leave empty to require every incident severity..",
-                Computed: true,
-                ElementType: types.StringType,
-            },
-            "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Alert and alert episode on-call rules only: the severities members must have a rule for. Leave empty to require every alert severity..",
-                Computed: true,
-                ElementType: types.StringType,
-            },
         },
     }
 }
 
-func (d *TeamComplianceSettingDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *QueueOwnerRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -148,8 +159,8 @@ func (d *TeamComplianceSettingDataSource) Configure(ctx context.Context, req dat
     d.client = client
 }
 
-func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data TeamComplianceSettingDataSourceModel
+func (d *QueueOwnerRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data QueueOwnerRuleDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -163,7 +174,7 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a team_compliance_setting.",
+            "Exactly one of `id` or `name` must be set to look up a queue_owner_rule.",
         )
         return
     }
@@ -174,34 +185,36 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "criteria": true,
         "projectId": true,
-        "teamId": true,
+        "description": true,
+        "isEnabled": true,
+        "notifyOwners": true,
+        "messageQueueLabels": true,
+        "messageQueueNamePattern": true,
+        "messageQueueDescriptionPattern": true,
+        "messageQueueSystemPattern": true,
+        "ownerUsers": true,
+        "ownerTeams": true,
         "createdByUserId": true,
-        "ruleType": true,
-        "enabled": true,
-        "options": true,
-        "notificationChannel": true,
-        "notificationChannels": true,
-        "incidentSeverities": true,
-        "alertSeverities": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/team-compliance-setting/" + data.Id.ValueString() + "/get-item"
+        readPath := "/message-queue-owner-rule/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read team_compliance_setting, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read queue_owner_rule, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No team_compliance_setting found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No queue_owner_rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read team_compliance_setting: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read queue_owner_rule: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -218,28 +231,28 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/team-compliance-setting/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/message-queue-owner-rule/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list team_compliance_setting, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list queue_owner_rule, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list team_compliance_setting: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list queue_owner_rule: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No team_compliance_setting found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No queue_owner_rule found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one team_compliance_setting matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one queue_owner_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for team_compliance_setting.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for queue_owner_rule.")
             return
         }
         item = first
@@ -342,6 +355,23 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
     } else {
         data.Version = types.NumberNull()
     }
+    if obj, ok := item["criteria"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Criteria = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Criteria = types.StringValue(string(jsonBytes))
+        } else {
+            data.Criteria = types.StringNull()
+        }
+    } else if val, ok := item["criteria"].(string); ok {
+        data.Criteria = types.StringValue(val)
+    } else {
+        data.Criteria = types.StringNull()
+    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -359,22 +389,155 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["teamId"].(map[string]interface{}); ok {
+    if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.TeamId = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.TeamId = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.TeamId = types.StringValue(fmt.Sprintf("%v", val))
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.TeamId = types.StringValue(string(jsonBytes))
+            data.Description = types.StringValue(string(jsonBytes))
         } else {
-            data.TeamId = types.StringNull()
+            data.Description = types.StringNull()
         }
-    } else if val, ok := item["teamId"].(string); ok {
-        data.TeamId = types.StringValue(val)
+    } else if val, ok := item["description"].(string); ok {
+        data.Description = types.StringValue(val)
     } else {
-        data.TeamId = types.StringNull()
+        data.Description = types.StringNull()
+    }
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
+    } else {
+        data.IsEnabled = types.BoolNull()
+    }
+    if val, ok := item["notifyOwners"].(bool); ok {
+        data.NotifyOwners = types.BoolValue(val)
+    } else {
+        data.NotifyOwners = types.BoolNull()
+    }
+    if val, ok := item["messageQueueLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.MessageQueueLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.MessageQueueLabels = types.SetNull(types.StringType)
+    }
+    if obj, ok := item["messageQueueNamePattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MessageQueueNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MessageQueueNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MessageQueueNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MessageQueueNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MessageQueueNamePattern = types.StringNull()
+        }
+    } else if val, ok := item["messageQueueNamePattern"].(string); ok {
+        data.MessageQueueNamePattern = types.StringValue(val)
+    } else {
+        data.MessageQueueNamePattern = types.StringNull()
+    }
+    if obj, ok := item["messageQueueDescriptionPattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MessageQueueDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MessageQueueDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MessageQueueDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MessageQueueDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MessageQueueDescriptionPattern = types.StringNull()
+        }
+    } else if val, ok := item["messageQueueDescriptionPattern"].(string); ok {
+        data.MessageQueueDescriptionPattern = types.StringValue(val)
+    } else {
+        data.MessageQueueDescriptionPattern = types.StringNull()
+    }
+    if obj, ok := item["messageQueueSystemPattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MessageQueueSystemPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MessageQueueSystemPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MessageQueueSystemPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MessageQueueSystemPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MessageQueueSystemPattern = types.StringNull()
+        }
+    } else if val, ok := item["messageQueueSystemPattern"].(string); ok {
+        data.MessageQueueSystemPattern = types.StringValue(val)
+    } else {
+        data.MessageQueueSystemPattern = types.StringNull()
+    }
+    if val, ok := item["ownerUsers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.OwnerUsers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.OwnerUsers = types.SetNull(types.StringType)
+    }
+    if val, ok := item["ownerTeams"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.OwnerTeams = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.OwnerTeams = types.SetNull(types.StringType)
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -392,127 +555,6 @@ func (d *TeamComplianceSettingDataSource) Read(ctx context.Context, req datasour
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["ruleType"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RuleType = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.RuleType = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.RuleType = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.RuleType = types.StringValue(string(jsonBytes))
-        } else {
-            data.RuleType = types.StringNull()
-        }
-    } else if val, ok := item["ruleType"].(string); ok {
-        data.RuleType = types.StringValue(val)
-    } else {
-        data.RuleType = types.StringNull()
-    }
-    if val, ok := item["enabled"].(bool); ok {
-        data.Enabled = types.BoolValue(val)
-    } else {
-        data.Enabled = types.BoolNull()
-    }
-    if obj, ok := item["options"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Options = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Options = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Options = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Options = types.StringValue(string(jsonBytes))
-        } else {
-            data.Options = types.StringNull()
-        }
-    } else if val, ok := item["options"].(string); ok {
-        data.Options = types.StringValue(val)
-    } else {
-        data.Options = types.StringNull()
-    }
-    if obj, ok := item["notificationChannel"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NotificationChannel = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.NotificationChannel = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.NotificationChannel = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.NotificationChannel = types.StringValue(string(jsonBytes))
-        } else {
-            data.NotificationChannel = types.StringNull()
-        }
-    } else if val, ok := item["notificationChannel"].(string); ok {
-        data.NotificationChannel = types.StringValue(val)
-    } else {
-        data.NotificationChannel = types.StringNull()
-    }
-    if obj, ok := item["notificationChannels"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.NotificationChannels = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.NotificationChannels = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.NotificationChannels = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.NotificationChannels = types.StringValue(string(jsonBytes))
-        } else {
-            data.NotificationChannels = types.StringNull()
-        }
-    } else if val, ok := item["notificationChannels"].(string); ok {
-        data.NotificationChannels = types.StringValue(val)
-    } else {
-        data.NotificationChannels = types.StringNull()
-    }
-    if val, ok := item["incidentSeverities"].([]interface{}); ok {
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                }
-            } else if str, ok := item.(string); ok {
-                setItems = append(setItems, types.StringValue(str))
-            } else {
-                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
-            }
-        }
-        sort.Slice(setItems, func(i, j int) bool {
-            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
-        })
-        data.IncidentSeverities = types.SetValueMust(types.StringType, setItems)
-    } else {
-        data.IncidentSeverities = types.SetNull(types.StringType)
-    }
-    if val, ok := item["alertSeverities"].([]interface{}); ok {
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                }
-            } else if str, ok := item.(string); ok {
-                setItems = append(setItems, types.StringValue(str))
-            } else {
-                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
-            }
-        }
-        sort.Slice(setItems, func(i, j int) bool {
-            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
-        })
-        data.AlertSeverities = types.SetValueMust(types.StringType, setItems)
-    } else {
-        data.AlertSeverities = types.SetNull(types.StringType)
     }
 
     // Write logs using the tflog package

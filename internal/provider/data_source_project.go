@@ -97,6 +97,8 @@ type ProjectDataSourceModel struct {
     AiMaxConcurrentInvestigations types.Number `tfsdk:"ai_max_concurrent_investigations"`
     IncidentAiMaxConcurrentInvestigations types.Number `tfsdk:"incident_ai_max_concurrent_investigations"`
     AlertAiMaxConcurrentInvestigations types.Number `tfsdk:"alert_ai_max_concurrent_investigations"`
+    IncidentAiInvestigationTimeLimitInMinutes types.Number `tfsdk:"incident_ai_investigation_time_limit_in_minutes"`
+    AlertAiInvestigationTimeLimitInMinutes types.Number `tfsdk:"alert_ai_investigation_time_limit_in_minutes"`
     EnableAutoRechargeAiBalance types.Bool `tfsdk:"enable_auto_recharge_ai_balance"`
     SendInvoicesByEmail types.Bool `tfsdk:"send_invoices_by_email"`
     PlanName types.String `tfsdk:"plan_name"`
@@ -397,6 +399,14 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause alert investigations with the opt-in toggle or a daily token limit of 0 instead..",
                 Computed: true,
             },
+            "incident_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Stop an incident AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                Computed: true,
+            },
+            "alert_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
+                MarkdownDescription: "Stop an alert AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done..",
+                Computed: true,
+            },
             "enable_auto_recharge_ai_balance": schema.BoolAttribute{
                 MarkdownDescription: "Enable auto recharge for AI balance for this project..",
                 Computed: true,
@@ -579,6 +589,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "aiMaxConcurrentInvestigations": true,
         "incidentAiMaxConcurrentInvestigations": true,
         "alertAiMaxConcurrentInvestigations": true,
+        "incidentAiInvestigationTimeLimitInMinutes": true,
+        "alertAiInvestigationTimeLimitInMinutes": true,
         "enableAutoRechargeAiBalance": true,
         "sendInvoicesByEmail": true,
         "planName": true,
@@ -1451,6 +1463,28 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         }
     } else {
         data.AlertAiMaxConcurrentInvestigations = types.NumberNull()
+    }
+    if val, ok := item["incidentAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["incidentAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        data.IncidentAiInvestigationTimeLimitInMinutes = types.NumberNull()
+    }
+    if val, ok := item["alertAiInvestigationTimeLimitInMinutes"].(float64); ok {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["alertAiInvestigationTimeLimitInMinutes"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
+        }
+    } else {
+        data.AlertAiInvestigationTimeLimitInMinutes = types.NumberNull()
     }
     if val, ok := item["enableAutoRechargeAiBalance"].(bool); ok {
         data.EnableAutoRechargeAiBalance = types.BoolValue(val)

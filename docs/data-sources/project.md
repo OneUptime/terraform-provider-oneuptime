@@ -95,6 +95,8 @@ data "oneuptime_project" "by_id" {
 - `ai_max_concurrent_investigations` (Number) Fallback maximum number of non-incident and non-alert AI investigations that may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause autonomous work with its opt-in toggle or a daily token limit of 0 instead... Computed.
 - `incident_ai_max_concurrent_investigations` (Number) How many incident AI investigations may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause incident investigations with the opt-in toggle or a daily token limit of 0 instead... Computed.
 - `alert_ai_max_concurrent_investigations` (Number) How many alert AI investigations may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause alert investigations with the opt-in toggle or a daily token limit of 0 instead... Computed.
+- `incident_ai_investigation_time_limit_in_minutes` (Number) Stop an incident AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done... Computed.
+- `alert_ai_investigation_time_limit_in_minutes` (Number) Stop an alert AI investigation after this many minutes and report what it found. Unset (the default) means no time limit — the investigation runs until it is done... Computed.
 - `enable_auto_recharge_ai_balance` (Bool) Enable auto recharge for AI balance for this project... Computed.
 - `send_invoices_by_email` (Bool) When enabled, invoices will be automatically sent to the finance/accounting email when they are generated... Computed.
 - `plan_name` (String) Name of the plan this project is subscribed to... Computed.

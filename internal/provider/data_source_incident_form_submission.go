@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &AiConversationDataSource{}
+var _ datasource.DataSource = &IncidentFormSubmissionDataSource{}
 
-func NewAiConversationDataSource() datasource.DataSource {
-    return &AiConversationDataSource{}
+func NewIncidentFormSubmissionDataSource() datasource.DataSource {
+    return &IncidentFormSubmissionDataSource{}
 }
 
-// AiConversationDataSource defines the data source implementation.
-type AiConversationDataSource struct {
+// IncidentFormSubmissionDataSource defines the data source implementation.
+type IncidentFormSubmissionDataSource struct {
     client *Client
 }
 
-// AiConversationDataSourceModel describes the data source data model.
-type AiConversationDataSourceModel struct {
+// IncidentFormSubmissionDataSourceModel describes the data source data model.
+type IncidentFormSubmissionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,23 +34,19 @@ type AiConversationDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Title types.String `tfsdk:"title"`
-    LastMessageAt types.String `tfsdk:"last_message_at"`
-    LlmProviderId types.String `tfsdk:"llm_provider_id"`
-    PermissionMode types.String `tfsdk:"permission_mode"`
-    PageContext types.String `tfsdk:"page_context"`
+    IncidentFormId types.String `tfsdk:"incident_form_id"`
     IncidentId types.String `tfsdk:"incident_id"`
-    AlertId types.String `tfsdk:"alert_id"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    ReporterName types.String `tfsdk:"reporter_name"`
+    ReporterEmail types.String `tfsdk:"reporter_email"`
 }
 
-func (d *AiConversationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_ai_conversation"
+func (d *IncidentFormSubmissionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_incident_form_submission"
 }
 
-func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *IncidentFormSubmissionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts). Look up an existing ai_conversation by `id` or by `name`.",
+        MarkdownDescription: "The submissions made through this project's incident forms: the form, the incident each one declared, and the name and email the reporter gave. Look up an existing incident_form_submission by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -83,43 +79,27 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the conversation. Generated from the first message..",
-                Computed: true,
-            },
-            "last_message_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
-                Computed: true,
-            },
-            "llm_provider_id": schema.StringAttribute{
+            "incident_form_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "permission_mode": schema.StringAttribute{
-                MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly..",
-                Computed: true,
-            },
-            "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context..",
                 Computed: true,
             },
             "incident_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "reporter_name": schema.StringAttribute{
+                MarkdownDescription: "The name the reporter gave, as they typed it. Empty when the form lets people report anonymously and they did..",
                 Computed: true,
             },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "reporter_email": schema.StringAttribute{
+                MarkdownDescription: "Email object",
                 Computed: true,
             },
         },
     }
 }
 
-func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *IncidentFormSubmissionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -139,8 +119,8 @@ func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource
     d.client = client
 }
 
-func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data AiConversationDataSourceModel
+func (d *IncidentFormSubmissionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data IncidentFormSubmissionDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -154,7 +134,7 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_conversation.",
+            "Exactly one of `id` or `name` must be set to look up a incident_form_submission.",
         )
         return
     }
@@ -166,32 +146,28 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "title": true,
-        "lastMessageAt": true,
-        "llmProviderId": true,
-        "permissionMode": true,
-        "pageContext": true,
+        "incidentFormId": true,
         "incidentId": true,
-        "alertId": true,
-        "createdByUserId": true,
+        "reporterName": true,
+        "reporterEmail": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/ai-conversation/" + data.Id.ValueString() + "/get-item"
+        readPath := "/incident-form-submission/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read incident_form_submission, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_form_submission found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read incident_form_submission: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -208,28 +184,28 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ai-conversation/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-form-submission/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_form_submission, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list incident_form_submission: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_form_submission found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_conversation matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident_form_submission matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for ai_conversation.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for incident_form_submission.")
             return
         }
         item = first
@@ -349,90 +325,22 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["title"].(map[string]interface{}); ok {
+    if obj, ok := item["incidentFormId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Title = types.StringValue(val)
+            data.IncidentFormId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Title = types.StringValue(val)
+            data.IncidentFormId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Title = types.StringValue(fmt.Sprintf("%v", val))
+            data.IncidentFormId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Title = types.StringValue(string(jsonBytes))
+            data.IncidentFormId = types.StringValue(string(jsonBytes))
         } else {
-            data.Title = types.StringNull()
+            data.IncidentFormId = types.StringNull()
         }
-    } else if val, ok := item["title"].(string); ok {
-        data.Title = types.StringValue(val)
+    } else if val, ok := item["incidentFormId"].(string); ok {
+        data.IncidentFormId = types.StringValue(val)
     } else {
-        data.Title = types.StringNull()
-    }
-    if obj, ok := item["lastMessageAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastMessageAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LastMessageAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LastMessageAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastMessageAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.LastMessageAt = types.StringNull()
-        }
-    } else if val, ok := item["lastMessageAt"].(string); ok {
-        data.LastMessageAt = types.StringValue(val)
-    } else {
-        data.LastMessageAt = types.StringNull()
-    }
-    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LlmProviderId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LlmProviderId = types.StringValue(string(jsonBytes))
-        } else {
-            data.LlmProviderId = types.StringNull()
-        }
-    } else if val, ok := item["llmProviderId"].(string); ok {
-        data.LlmProviderId = types.StringValue(val)
-    } else {
-        data.LlmProviderId = types.StringNull()
-    }
-    if obj, ok := item["permissionMode"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PermissionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PermissionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PermissionMode = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PermissionMode = types.StringValue(string(jsonBytes))
-        } else {
-            data.PermissionMode = types.StringNull()
-        }
-    } else if val, ok := item["permissionMode"].(string); ok {
-        data.PermissionMode = types.StringValue(val)
-    } else {
-        data.PermissionMode = types.StringNull()
-    }
-    if obj, ok := item["pageContext"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PageContext = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.PageContext = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.PageContext = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PageContext = types.StringValue(string(jsonBytes))
-        } else {
-            data.PageContext = types.StringNull()
-        }
-    } else if val, ok := item["pageContext"].(string); ok {
-        data.PageContext = types.StringValue(val)
-    } else {
-        data.PageContext = types.StringNull()
+        data.IncidentFormId = types.StringNull()
     }
     if obj, ok := item["incidentId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -451,39 +359,39 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.IncidentId = types.StringNull()
     }
-    if obj, ok := item["alertId"].(map[string]interface{}); ok {
+    if obj, ok := item["reporterName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertId = types.StringValue(val)
+            data.ReporterName = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.AlertId = types.StringValue(val)
+            data.ReporterName = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.AlertId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ReporterName = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AlertId = types.StringValue(string(jsonBytes))
+            data.ReporterName = types.StringValue(string(jsonBytes))
         } else {
-            data.AlertId = types.StringNull()
+            data.ReporterName = types.StringNull()
         }
-    } else if val, ok := item["alertId"].(string); ok {
-        data.AlertId = types.StringValue(val)
+    } else if val, ok := item["reporterName"].(string); ok {
+        data.ReporterName = types.StringValue(val)
     } else {
-        data.AlertId = types.StringNull()
+        data.ReporterName = types.StringNull()
     }
-    if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
+    if obj, ok := item["reporterEmail"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
+            data.ReporterEmail = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.CreatedByUserId = types.StringValue(val)
+            data.ReporterEmail = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+            data.ReporterEmail = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            data.ReporterEmail = types.StringValue(string(jsonBytes))
         } else {
-            data.CreatedByUserId = types.StringNull()
+            data.ReporterEmail = types.StringNull()
         }
-    } else if val, ok := item["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
+    } else if val, ok := item["reporterEmail"].(string); ok {
+        data.ReporterEmail = types.StringValue(val)
     } else {
-        data.CreatedByUserId = types.StringNull()
+        data.ReporterEmail = types.StringNull()
     }
 
     // Write logs using the tflog package

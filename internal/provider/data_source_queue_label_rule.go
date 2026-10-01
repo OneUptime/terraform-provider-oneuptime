@@ -6,6 +6,8 @@ import (
     "fmt"
     "net/http"
     "math/big"
+    "github.com/hashicorp/terraform-plugin-framework/attr"
+    "sort"
 
     "github.com/hashicorp/terraform-plugin-framework/datasource"
     "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -14,43 +16,44 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &AiConversationDataSource{}
+var _ datasource.DataSource = &QueueLabelRuleDataSource{}
 
-func NewAiConversationDataSource() datasource.DataSource {
-    return &AiConversationDataSource{}
+func NewQueueLabelRuleDataSource() datasource.DataSource {
+    return &QueueLabelRuleDataSource{}
 }
 
-// AiConversationDataSource defines the data source implementation.
-type AiConversationDataSource struct {
+// QueueLabelRuleDataSource defines the data source implementation.
+type QueueLabelRuleDataSource struct {
     client *Client
 }
 
-// AiConversationDataSourceModel describes the data source data model.
-type AiConversationDataSourceModel struct {
+// QueueLabelRuleDataSourceModel describes the data source data model.
+type QueueLabelRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
     UpdatedAt types.String `tfsdk:"updated_at"`
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
+    Criteria types.String `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
-    Title types.String `tfsdk:"title"`
-    LastMessageAt types.String `tfsdk:"last_message_at"`
-    LlmProviderId types.String `tfsdk:"llm_provider_id"`
-    PermissionMode types.String `tfsdk:"permission_mode"`
-    PageContext types.String `tfsdk:"page_context"`
-    IncidentId types.String `tfsdk:"incident_id"`
-    AlertId types.String `tfsdk:"alert_id"`
+    Description types.String `tfsdk:"description"`
+    IsEnabled types.Bool `tfsdk:"is_enabled"`
+    MessageQueueLabels types.Set `tfsdk:"message_queue_labels"`
+    MessageQueueNamePattern types.String `tfsdk:"message_queue_name_pattern"`
+    MessageQueueDescriptionPattern types.String `tfsdk:"message_queue_description_pattern"`
+    MessageQueueSystemPattern types.String `tfsdk:"message_queue_system_pattern"`
+    LabelsToAdd types.Set `tfsdk:"labels_to_add"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (d *AiConversationDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_ai_conversation"
+func (d *QueueLabelRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_queue_label_rule"
 }
 
-func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *QueueLabelRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A conversation with the OneUptime AI about observability data (logs, traces, metrics, exceptions, incidents, monitors and alerts). Look up an existing ai_conversation by `id` or by `name`.",
+        MarkdownDescription: "Configure rules for automatically attaching labels to queues when matching queues are created Look up an existing queue_label_rule by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -79,37 +82,43 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
+            "criteria": schema.StringAttribute{
+                MarkdownDescription: "Versioned conditions that determine whether this rule matches a resource..",
+                Computed: true,
+            },
             "project_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "title": schema.StringAttribute{
-                MarkdownDescription: "Title of the conversation. Generated from the first message..",
+            "description": schema.StringAttribute{
+                MarkdownDescription: "Description of this queue label rule.",
                 Computed: true,
             },
-            "last_message_at": schema.StringAttribute{
-                MarkdownDescription: "A date time object.",
+            "is_enabled": schema.BoolAttribute{
+                MarkdownDescription: "Whether this rule is enabled.",
                 Computed: true,
             },
-            "llm_provider_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "message_queue_labels": schema.SetAttribute{
+                MarkdownDescription: "Only trigger for queues that already have at least one of these labels. Leave empty to match regardless of labels..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "message_queue_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the queue name. Discovered queues are named after their destination (e.g. orders.created), so ^orders\\. matches every queue whose name starts with orders. - use the messaging system pattern to match by broker. Leave empty to match any name..",
                 Computed: true,
             },
-            "permission_mode": schema.StringAttribute{
-                MarkdownDescription: "How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly..",
+            "message_queue_description_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the queue description. Leave empty to match any description..",
                 Computed: true,
             },
-            "page_context": schema.StringAttribute{
-                MarkdownDescription: "The dashboard page (entity) this conversation is about. Set from the first message that carried a page context..",
+            "message_queue_system_pattern": schema.StringAttribute{
+                MarkdownDescription: "Regex (case-insensitive) matched against the queue's messaging system - both its OpenTelemetry messaging.system value (kafka, rabbitmq, aws_sqs, servicebus, ...) and its display name (Apache Kafka, RabbitMQ, Amazon SQS, Azure Service Bus, ...). ^kafka$ matches every Kafka topic. Leave empty to match any system..",
                 Computed: true,
             },
-            "incident_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "labels_to_add": schema.SetAttribute{
+                MarkdownDescription: "Labels to attach to the queue when this rule matches. Already-attached labels are not duplicated..",
                 Computed: true,
-            },
-            "alert_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
+                ElementType: types.StringType,
             },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
@@ -119,7 +128,7 @@ func (d *AiConversationDataSource) Schema(ctx context.Context, req datasource.Sc
     }
 }
 
-func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *QueueLabelRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -139,8 +148,8 @@ func (d *AiConversationDataSource) Configure(ctx context.Context, req datasource
     d.client = client
 }
 
-func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data AiConversationDataSourceModel
+func (d *QueueLabelRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data QueueLabelRuleDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -154,7 +163,7 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a ai_conversation.",
+            "Exactly one of `id` or `name` must be set to look up a queue_label_rule.",
         )
         return
     }
@@ -165,33 +174,34 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
+        "criteria": true,
         "projectId": true,
-        "title": true,
-        "lastMessageAt": true,
-        "llmProviderId": true,
-        "permissionMode": true,
-        "pageContext": true,
-        "incidentId": true,
-        "alertId": true,
+        "description": true,
+        "isEnabled": true,
+        "messageQueueLabels": true,
+        "messageQueueNamePattern": true,
+        "messageQueueDescriptionPattern": true,
+        "messageQueueSystemPattern": true,
+        "labelsToAdd": true,
         "createdByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/ai-conversation/" + data.Id.ValueString() + "/get-item"
+        readPath := "/message-queue-label-rule/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read queue_label_rule, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No queue_label_rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read queue_label_rule: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -208,28 +218,28 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ai-conversation/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/message-queue-label-rule/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list ai_conversation, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list queue_label_rule, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list ai_conversation: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list queue_label_rule: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No ai_conversation found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No queue_label_rule found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one ai_conversation matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one queue_label_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for ai_conversation.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for queue_label_rule.")
             return
         }
         item = first
@@ -332,6 +342,23 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.Version = types.NumberNull()
     }
+    if obj, ok := item["criteria"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Criteria = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Criteria = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Criteria = types.StringValue(string(jsonBytes))
+        } else {
+            data.Criteria = types.StringNull()
+        }
+    } else if val, ok := item["criteria"].(string); ok {
+        data.Criteria = types.StringValue(val)
+    } else {
+        data.Criteria = types.StringNull()
+    }
     if obj, ok := item["projectId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.ProjectId = types.StringValue(val)
@@ -349,124 +376,126 @@ func (d *AiConversationDataSource) Read(ctx context.Context, req datasource.Read
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["title"].(map[string]interface{}); ok {
+    if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Title = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Title = types.StringValue(val)
+            data.Description = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Title = types.StringValue(fmt.Sprintf("%v", val))
+            data.Description = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Title = types.StringValue(string(jsonBytes))
+            data.Description = types.StringValue(string(jsonBytes))
         } else {
-            data.Title = types.StringNull()
+            data.Description = types.StringNull()
         }
-    } else if val, ok := item["title"].(string); ok {
-        data.Title = types.StringValue(val)
+    } else if val, ok := item["description"].(string); ok {
+        data.Description = types.StringValue(val)
     } else {
-        data.Title = types.StringNull()
+        data.Description = types.StringNull()
     }
-    if obj, ok := item["lastMessageAt"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LastMessageAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LastMessageAt = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LastMessageAt = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LastMessageAt = types.StringValue(string(jsonBytes))
-        } else {
-            data.LastMessageAt = types.StringNull()
-        }
-    } else if val, ok := item["lastMessageAt"].(string); ok {
-        data.LastMessageAt = types.StringValue(val)
+    if val, ok := item["isEnabled"].(bool); ok {
+        data.IsEnabled = types.BoolValue(val)
     } else {
-        data.LastMessageAt = types.StringNull()
+        data.IsEnabled = types.BoolNull()
     }
-    if obj, ok := item["llmProviderId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.LlmProviderId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.LlmProviderId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.LlmProviderId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.LlmProviderId = types.StringValue(string(jsonBytes))
-        } else {
-            data.LlmProviderId = types.StringNull()
+    if val, ok := item["messageQueueLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
         }
-    } else if val, ok := item["llmProviderId"].(string); ok {
-        data.LlmProviderId = types.StringValue(val)
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.MessageQueueLabels = types.SetValueMust(types.StringType, setItems)
     } else {
-        data.LlmProviderId = types.StringNull()
+        data.MessageQueueLabels = types.SetNull(types.StringType)
     }
-    if obj, ok := item["permissionMode"].(map[string]interface{}); ok {
+    if obj, ok := item["messageQueueNamePattern"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PermissionMode = types.StringValue(val)
+            data.MessageQueueNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.PermissionMode = types.StringValue(val)
+            data.MessageQueueNamePattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.PermissionMode = types.StringValue(fmt.Sprintf("%v", val))
+            data.MessageQueueNamePattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PermissionMode = types.StringValue(string(jsonBytes))
+            data.MessageQueueNamePattern = types.StringValue(string(jsonBytes))
         } else {
-            data.PermissionMode = types.StringNull()
+            data.MessageQueueNamePattern = types.StringNull()
         }
-    } else if val, ok := item["permissionMode"].(string); ok {
-        data.PermissionMode = types.StringValue(val)
+    } else if val, ok := item["messageQueueNamePattern"].(string); ok {
+        data.MessageQueueNamePattern = types.StringValue(val)
     } else {
-        data.PermissionMode = types.StringNull()
+        data.MessageQueueNamePattern = types.StringNull()
     }
-    if obj, ok := item["pageContext"].(map[string]interface{}); ok {
+    if obj, ok := item["messageQueueDescriptionPattern"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.PageContext = types.StringValue(val)
+            data.MessageQueueDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.PageContext = types.StringValue(val)
+            data.MessageQueueDescriptionPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.PageContext = types.StringValue(fmt.Sprintf("%v", val))
+            data.MessageQueueDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.PageContext = types.StringValue(string(jsonBytes))
+            data.MessageQueueDescriptionPattern = types.StringValue(string(jsonBytes))
         } else {
-            data.PageContext = types.StringNull()
+            data.MessageQueueDescriptionPattern = types.StringNull()
         }
-    } else if val, ok := item["pageContext"].(string); ok {
-        data.PageContext = types.StringValue(val)
+    } else if val, ok := item["messageQueueDescriptionPattern"].(string); ok {
+        data.MessageQueueDescriptionPattern = types.StringValue(val)
     } else {
-        data.PageContext = types.StringNull()
+        data.MessageQueueDescriptionPattern = types.StringNull()
     }
-    if obj, ok := item["incidentId"].(map[string]interface{}); ok {
+    if obj, ok := item["messageQueueSystemPattern"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentId = types.StringValue(val)
+            data.MessageQueueSystemPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.IncidentId = types.StringValue(val)
+            data.MessageQueueSystemPattern = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.IncidentId = types.StringValue(fmt.Sprintf("%v", val))
+            data.MessageQueueSystemPattern = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.IncidentId = types.StringValue(string(jsonBytes))
+            data.MessageQueueSystemPattern = types.StringValue(string(jsonBytes))
         } else {
-            data.IncidentId = types.StringNull()
+            data.MessageQueueSystemPattern = types.StringNull()
         }
-    } else if val, ok := item["incidentId"].(string); ok {
-        data.IncidentId = types.StringValue(val)
+    } else if val, ok := item["messageQueueSystemPattern"].(string); ok {
+        data.MessageQueueSystemPattern = types.StringValue(val)
     } else {
-        data.IncidentId = types.StringNull()
+        data.MessageQueueSystemPattern = types.StringNull()
     }
-    if obj, ok := item["alertId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.AlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.AlertId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.AlertId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.AlertId = types.StringValue(string(jsonBytes))
-        } else {
-            data.AlertId = types.StringNull()
+    if val, ok := item["labelsToAdd"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
         }
-    } else if val, ok := item["alertId"].(string); ok {
-        data.AlertId = types.StringValue(val)
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.LabelsToAdd = types.SetValueMust(types.StringType, setItems)
     } else {
-        data.AlertId = types.StringNull()
+        data.LabelsToAdd = types.SetNull(types.StringType)
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

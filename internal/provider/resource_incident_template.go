@@ -57,6 +57,7 @@ type IncidentTemplateResourceModel struct {
     ChangeMonitorStatusToId types.String `tfsdk:"change_monitor_status_to_id"`
     InitialIncidentStateId types.String `tfsdk:"initial_incident_state_id"`
     CustomFields JSONSubsetValue `tfsdk:"custom_fields"`
+    CustomFieldSettings JSONSubsetValue `tfsdk:"custom_field_settings"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
@@ -234,6 +235,18 @@ func (r *IncidentTemplateResource) Schema(ctx context.Context, req resource.Sche
                     JSONEnvelopeValidator(),
                 },
             },
+            "custom_field_settings": schema.StringAttribute{
+                MarkdownDescription: "How the Declare Incident form treats each incident custom field when an incident is declared from this template, keyed by the field's template variable key (variableKey). Each value is Required (asked, must be filled in), Optional (asked, may be left empty), Hidden (not asked; the field keeps this template's value) or Default. A field that is not listed, or is Default, follows its own Show on Create and Required on Create settings. Only the dashboard's Declare Incident form applies these settings: incidents created through the API are not checked against them..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
@@ -360,6 +373,9 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     if parsedCustomFields := r.parseJSONField(data.CustomFields); parsedCustomFields != nil {
         requestDataMap["customFields"] = parsedCustomFields
     }
+    if parsedCustomFieldSettings := r.parseJSONField(data.CustomFieldSettings); parsedCustomFieldSettings != nil {
+        requestDataMap["customFieldSettings"] = parsedCustomFieldSettings
+    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/incident-templates", incidentTemplateRequest)
@@ -424,6 +440,7 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
         "changeMonitorStatusToId": true,
         "initialIncidentStateId": true,
         "customFields": true,
+        "customFieldSettings": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1094,6 +1111,43 @@ func (r *IncidentTemplateResource) Create(ctx context.Context, req resource.Crea
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["customFieldSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFieldSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFieldSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFieldSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFieldSettings"].(string); ok {
+        data.CustomFieldSettings = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFieldSettings = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1230,6 +1284,7 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
         "changeMonitorStatusToId": true,
         "initialIncidentStateId": true,
         "customFields": true,
+        "customFieldSettings": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1901,6 +1956,43 @@ func (r *IncidentTemplateResource) Read(ctx context.Context, req resource.ReadRe
     } else {
         data.CustomFields = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["customFieldSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFieldSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFieldSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFieldSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFieldSettings"].(string); ok {
+        data.CustomFieldSettings = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFieldSettings = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2082,6 +2174,14 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
             requestDataMap["customFields"] = data.CustomFields.ValueString()
         }
     }
+    if !data.CustomFieldSettings.IsUnknown() && !state.CustomFieldSettings.IsUnknown() && !data.CustomFieldSettings.Equal(state.CustomFieldSettings) {
+        var customfieldsettingsData interface{}
+        if err := json.Unmarshal([]byte(data.CustomFieldSettings.ValueString()), &customfieldsettingsData); err == nil {
+            requestDataMap["customFieldSettings"] = customfieldsettingsData
+        } else {
+            requestDataMap["customFieldSettings"] = data.CustomFieldSettings.ValueString()
+        }
+    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -2124,6 +2224,7 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         "changeMonitorStatusToId": true,
         "initialIncidentStateId": true,
         "customFields": true,
+        "customFieldSettings": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2788,6 +2889,43 @@ func (r *IncidentTemplateResource) Update(ctx context.Context, req resource.Upda
         data.CustomFields = NewJSONSubsetValue(val)
     } else {
         data.CustomFields = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["customFieldSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CustomFieldSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CustomFieldSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.CustomFieldSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["customFieldSettings"].(string); ok {
+        data.CustomFieldSettings = NewJSONSubsetValue(val)
+    } else {
+        data.CustomFieldSettings = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {

@@ -35,6 +35,8 @@ resource "oneuptime_ai_conversation" "example" {
 - `llm_provider_id` (String) A unique identifier for an object, represented as a UUID..
 - `permission_mode` (String) How the agent is allowed to run mutating tools: AskForApproval, AutoRun or ReadOnly...
 - `page_context` (String) The dashboard page (entity) this conversation is about. Set from the first message that carried a page context...
+- `incident_id` (String) A unique identifier for an object, represented as a UUID..
+- `alert_id` (String) A unique identifier for an object, represented as a UUID..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
