@@ -39,6 +39,9 @@ data "oneuptime_status_page" "by_id" {
 - `slug` (String) Friendly globally unique name for your object.. Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `is_archived` (Bool) Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online... Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `favicon_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `logo_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `cover_image_file_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

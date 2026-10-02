@@ -152,7 +152,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "ai_composes_commands": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the AI investigates the incident/alert and composes Bash/SSH commands for opted-in Runners instead of picking a runbook. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. Requires the project's Enable AI Command Execution setting..",
+                MarkdownDescription: "When enabled, the AI investigates the incident/alert and composes Bash/SSH commands for opted-in Runners instead of picking a runbook. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. Requires AI to be enabled for the project..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(false),

@@ -35,6 +35,9 @@ data "oneuptime_monitor" "by_id" {
 - `description` (String) Friendly description that will help you remember.. Computed.
 - `slug` (String) Friendly globally unique name for your object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `is_archived` (Bool) Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring... Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `depends_on_monitors` (Set) Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates... Computed.
 - `suppress_alerts_when_parent_monitor_statuses` (Set) Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set... Computed.

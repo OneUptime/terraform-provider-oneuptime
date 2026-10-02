@@ -155,7 +155,7 @@ func (r *CodeRepositoryResource) Schema(ctx context.Context, req resource.Schema
                 },
             },
             "max_open_fix_pull_requests": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means the default of 5; 0 blocks AI fix pull requests for this repository entirely..",
+                MarkdownDescription: "Maximum AI-authored fix pull requests that may be open on this repository at the same time. At the cap, new AI fix runs are refused a repository token, so they cannot push branches or open pull requests. Unset means no cap; 0 blocks AI fix pull requests for this repository entirely..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

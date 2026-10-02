@@ -14,6 +14,7 @@ import (
     "encoding/json"
     "net/url"
     "strings"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -41,7 +42,9 @@ type MonitorSecretResourceModel struct {
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     SecretValue types.String `tfsdk:"secret_value"`
+    MonitorAccess types.String `tfsdk:"monitor_access"`
     Monitors types.Set `tfsdk:"monitors"`
+    Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
@@ -89,8 +92,26 @@ func (r *MonitorSecretResource) Schema(ctx context.Context, req resource.SchemaR
                 MarkdownDescription: "Secret value that you want to store in this object. This value will be encrypted and only accessible by the probe..",
                 Optional: true,
             },
+            "monitor_access": schema.StringAttribute{
+                MarkdownDescription: "Which monitors can use this secret. All Monitors: every monitor in this project, including monitors created later. Specific Monitors: only the monitors in Monitors. Monitors With Labels: monitors that carry at least one of the labels in Labels. Setting this empties whichever of Monitors and Labels it does not use..",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("Specific Monitors"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+            },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors that can access this secret.",
+                MarkdownDescription: "The monitors that can use this secret when Monitor Access is Specific Monitors. Ignored otherwise..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "labels": schema.SetAttribute{
+                MarkdownDescription: "When Monitor Access is Monitors With Labels, monitors that carry at least one of these labels can use this secret. Ignored otherwise..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -184,8 +205,14 @@ func (r *MonitorSecretResource) Create(ctx context.Context, req resource.CreateR
     if !data.SecretValue.IsNull() && !data.SecretValue.IsUnknown() {
         requestDataMap["secretValue"] = data.SecretValue.ValueString()
     }
+    if !data.MonitorAccess.IsNull() && !data.MonitorAccess.IsUnknown() {
+        requestDataMap["monitorAccess"] = data.MonitorAccess.ValueString()
+    }
     if !data.Monitors.IsNull() && !data.Monitors.IsUnknown() {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
+    }
+    if !data.Labels.IsNull() && !data.Labels.IsUnknown() {
+        requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
@@ -238,7 +265,9 @@ func (r *MonitorSecretResource) Create(ctx context.Context, req resource.CreateR
         "projectId": true,
         "name": true,
         "description": true,
+        "monitorAccess": true,
         "monitors": true,
+        "labels": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -362,6 +391,43 @@ func (r *MonitorSecretResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := dataMap["monitorAccess"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorAccess = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorAccess = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorAccess = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorAccess = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorAccess"].(string); ok {
+        data.MonitorAccess = types.StringValue(val)
+    } else {
+        data.MonitorAccess = types.StringNull()
+    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -393,6 +459,38 @@ func (r *MonitorSecretResource) Create(ctx context.Context, req resource.CreateR
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["labels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -548,7 +646,9 @@ func (r *MonitorSecretResource) Read(ctx context.Context, req resource.ReadReque
         "projectId": true,
         "name": true,
         "description": true,
+        "monitorAccess": true,
         "monitors": true,
+        "labels": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -673,6 +773,43 @@ func (r *MonitorSecretResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := dataMap["monitorAccess"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorAccess = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorAccess = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorAccess = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorAccess = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorAccess"].(string); ok {
+        data.MonitorAccess = types.StringValue(val)
+    } else {
+        data.MonitorAccess = types.StringNull()
+    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -704,6 +841,38 @@ func (r *MonitorSecretResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["labels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -873,8 +1042,14 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
     if !data.SecretValue.IsUnknown() && !state.SecretValue.IsUnknown() && !data.SecretValue.Equal(state.SecretValue) {
         requestDataMap["secretValue"] = data.SecretValue.ValueString()
     }
+    if !data.MonitorAccess.IsUnknown() && !state.MonitorAccess.IsUnknown() && !data.MonitorAccess.Equal(state.MonitorAccess) {
+        requestDataMap["monitorAccess"] = data.MonitorAccess.ValueString()
+    }
     if !data.Monitors.IsUnknown() && !state.Monitors.IsUnknown() && !data.Monitors.Equal(state.Monitors) {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
+    }
+    if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
+        requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
     }
 
     // Only call the API when there are changed fields to send. An empty
@@ -902,7 +1077,9 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
         "projectId": true,
         "name": true,
         "description": true,
+        "monitorAccess": true,
         "monitors": true,
+        "labels": true,
         "createdByUserId": true,
         "createdAt": true,
         "updatedAt": true,
@@ -1021,6 +1198,43 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := dataMap["monitorAccess"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.MonitorAccess = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.MonitorAccess = types.StringValue(string(jsonBytes))
+            } else {
+                data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.MonitorAccess = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorAccess = types.StringNull()
+        }
+    } else if val, ok := dataMap["monitorAccess"].(string); ok {
+        data.MonitorAccess = types.StringValue(val)
+    } else {
+        data.MonitorAccess = types.StringNull()
+    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1052,6 +1266,38 @@ func (r *MonitorSecretResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         // For sets, always use empty set instead of null to match default values
         data.Monitors = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["labels"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.Labels = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

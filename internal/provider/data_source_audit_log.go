@@ -43,6 +43,8 @@ type AuditLogDataSourceModel struct {
     UserType types.String `tfsdk:"user_type"`
     ApiKeyId types.String `tfsdk:"api_key_id"`
     ApiKeyName types.String `tfsdk:"api_key_name"`
+    McpOAuthGrantId types.String `tfsdk:"mcp_o_auth_grant_id"`
+    McpClientName types.String `tfsdk:"mcp_client_name"`
     Changes types.Set `tfsdk:"changes"`
 }
 
@@ -117,6 +119,14 @@ func (d *AuditLogDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "API Key Name",
                 Computed: true,
             },
+            "mcp_o_auth_grant_id": schema.StringAttribute{
+                MarkdownDescription: "MCP Client Authorization ID",
+                Computed: true,
+            },
+            "mcp_client_name": schema.StringAttribute{
+                MarkdownDescription: "MCP Client Name",
+                Computed: true,
+            },
             "changes": schema.SetAttribute{
                 MarkdownDescription: "Changes",
                 Computed: true,
@@ -181,6 +191,8 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         "userType": true,
         "apiKeyId": true,
         "apiKeyName": true,
+        "mcpOAuthGrantId": true,
+        "mcpClientName": true,
         "changes": true,
         "_id": true,
     }
@@ -498,6 +510,40 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.ApiKeyName = types.StringValue(val)
     } else {
         data.ApiKeyName = types.StringNull()
+    }
+    if obj, ok := item["mcpOAuthGrantId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.McpOAuthGrantId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.McpOAuthGrantId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.McpOAuthGrantId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.McpOAuthGrantId = types.StringValue(string(jsonBytes))
+        } else {
+            data.McpOAuthGrantId = types.StringNull()
+        }
+    } else if val, ok := item["mcpOAuthGrantId"].(string); ok {
+        data.McpOAuthGrantId = types.StringValue(val)
+    } else {
+        data.McpOAuthGrantId = types.StringNull()
+    }
+    if obj, ok := item["mcpClientName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.McpClientName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.McpClientName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.McpClientName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.McpClientName = types.StringValue(string(jsonBytes))
+        } else {
+            data.McpClientName = types.StringNull()
+        }
+    } else if val, ok := item["mcpClientName"].(string); ok {
+        data.McpClientName = types.StringValue(val)
+    } else {
+        data.McpClientName = types.StringNull()
     }
     if val, ok := item["changes"].([]interface{}); ok {
         var setItems []attr.Value

@@ -40,10 +40,14 @@ type WorkflowDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
+    ArchivedAt types.String `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     Graph types.String `tfsdk:"graph"`
     Labels types.Set `tfsdk:"labels"`
     WebhookSecretKey types.String `tfsdk:"webhook_secret_key"`
+    IncomingEmailSecretKey types.String `tfsdk:"incoming_email_secret_key"`
 }
 
 func (d *WorkflowDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -101,6 +105,18 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were..",
+                Computed: true,
+            },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Is this workflow enabled?.",
                 Computed: true,
@@ -115,7 +131,11 @@ func (d *WorkflowDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 ElementType: types.StringType,
             },
             "webhook_secret_key": schema.StringAttribute{
-                MarkdownDescription: "Secret key used to trigger this workflow via webhook. Use this instead of the workflow ID for security..",
+                MarkdownDescription: "The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL..",
+                Computed: true,
+            },
+            "incoming_email_secret_key": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
         },
@@ -173,10 +193,14 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         "description": true,
         "createdByUserId": true,
         "deletedByUserId": true,
+        "isArchived": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "isEnabled": true,
         "graph": true,
         "labels": true,
         "webhookSecretKey": true,
+        "incomingEmailSecretKey": true,
         "_id": true,
     }
 
@@ -420,6 +444,45 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
     } else {
         data.DeletedByUserId = types.StringNull()
     }
+    if val, ok := item["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    } else {
+        data.IsArchived = types.BoolNull()
+    }
+    if obj, ok := item["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["archivedAt"].(string); ok {
+        data.ArchivedAt = types.StringValue(val)
+    } else {
+        data.ArchivedAt = types.StringNull()
+    }
+    if obj, ok := item["archivedByUserId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := item["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := item["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     } else {
@@ -482,6 +545,23 @@ func (d *WorkflowDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.WebhookSecretKey = types.StringValue(val)
     } else {
         data.WebhookSecretKey = types.StringNull()
+    }
+    if obj, ok := item["incomingEmailSecretKey"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncomingEmailSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.IncomingEmailSecretKey = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.IncomingEmailSecretKey = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.IncomingEmailSecretKey = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncomingEmailSecretKey = types.StringNull()
+        }
+    } else if val, ok := item["incomingEmailSecretKey"].(string); ok {
+        data.IncomingEmailSecretKey = types.StringValue(val)
+    } else {
+        data.IncomingEmailSecretKey = types.StringNull()
     }
 
     // Write logs using the tflog package

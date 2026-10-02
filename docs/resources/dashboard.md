@@ -29,6 +29,7 @@ resource "oneuptime_dashboard" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `is_archived` (Bool) Archived dashboards are hidden from the Dashboards list and their public link stops working. Unarchiving restores them as they were...
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `dashboard_view_config` (String) Configuration of Dashboard View..
 - `page_title` (String) Title of the public dashboard page. This will be used for SEO and the browser tab...
@@ -49,6 +50,8 @@ resource "oneuptime_dashboard" "example" {
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `archived_at` (String) A date time object..
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

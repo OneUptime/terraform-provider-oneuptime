@@ -49,6 +49,7 @@ resource "oneuptime_monitor" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `is_archived` (Bool) Archived monitors are hidden from monitor lists and status pages, are not checked, and open no incidents or alerts. Unarchiving resumes monitoring...
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `depends_on_monitors` (Set) Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates...
 - `suppress_alerts_when_parent_monitor_statuses` (Set) Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set...
@@ -75,6 +76,8 @@ resource "oneuptime_monitor" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `archived_at` (String) A date time object..
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `auto_provisioned_network_device_id` (String) A unique identifier for an object, represented as a UUID..
 - `network_alert_policy_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?..

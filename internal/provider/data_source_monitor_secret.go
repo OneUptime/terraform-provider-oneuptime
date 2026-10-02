@@ -37,7 +37,9 @@ type MonitorSecretDataSourceModel struct {
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
     Description types.String `tfsdk:"description"`
+    MonitorAccess types.String `tfsdk:"monitor_access"`
     Monitors types.Set `tfsdk:"monitors"`
+    Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
@@ -85,8 +87,17 @@ func (d *MonitorSecretDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "Friendly description that will help you remember.",
                 Computed: true,
             },
+            "monitor_access": schema.StringAttribute{
+                MarkdownDescription: "Which monitors can use this secret. All Monitors: every monitor in this project, including monitors created later. Specific Monitors: only the monitors in Monitors. Monitors With Labels: monitors that carry at least one of the labels in Labels. Setting this empties whichever of Monitors and Labels it does not use..",
+                Computed: true,
+            },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "List of monitors that can access this secret.",
+                MarkdownDescription: "The monitors that can use this secret when Monitor Access is Specific Monitors. Ignored otherwise..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "labels": schema.SetAttribute{
+                MarkdownDescription: "When Monitor Access is Monitors With Labels, monitors that carry at least one of these labels can use this secret. Ignored otherwise..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -150,7 +161,9 @@ func (d *MonitorSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         "version": true,
         "projectId": true,
         "description": true,
+        "monitorAccess": true,
         "monitors": true,
+        "labels": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -345,6 +358,23 @@ func (d *MonitorSecretDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.Description = types.StringNull()
     }
+    if obj, ok := item["monitorAccess"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitorAccess = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitorAccess = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorAccess = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorAccess = types.StringNull()
+        }
+    } else if val, ok := item["monitorAccess"].(string); ok {
+        data.MonitorAccess = types.StringValue(val)
+    } else {
+        data.MonitorAccess = types.StringNull()
+    }
     if val, ok := item["monitors"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {
@@ -368,6 +398,30 @@ func (d *MonitorSecretDataSource) Read(ctx context.Context, req datasource.ReadR
         data.Monitors = types.SetValueMust(types.StringType, setItems)
     } else {
         data.Monitors = types.SetNull(types.StringType)
+    }
+    if val, ok := item["labels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Labels = types.SetNull(types.StringType)
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -36,7 +36,11 @@ data "oneuptime_workflow" "by_id" {
 - `description` (String) Friendly description that will help you remember.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `is_archived` (Bool) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were... Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_enabled` (Bool) Is this workflow enabled?.. Computed.
 - `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API... Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
-- `webhook_secret_key` (String) Secret key used to trigger this workflow via webhook. Use this instead of the workflow ID for security... Computed.
+- `webhook_secret_key` (String) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL... Computed.
+- `incoming_email_secret_key` (String) A unique identifier for an object, represented as a UUID.. Computed.

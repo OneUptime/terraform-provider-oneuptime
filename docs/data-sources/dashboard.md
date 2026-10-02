@@ -36,6 +36,9 @@ data "oneuptime_dashboard" "by_id" {
 - `description` (String) Friendly description that will help you remember.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `is_archived` (Bool) Archived dashboards are hidden from the Dashboards list and their public link stops working. Unarchiving restores them as they were... Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `dashboard_view_config` (String) Configuration of Dashboard View.. Computed.
 - `page_title` (String) Title of the public dashboard page. This will be used for SEO and the browser tab... Computed.

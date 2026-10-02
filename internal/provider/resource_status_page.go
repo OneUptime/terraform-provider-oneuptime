@@ -51,6 +51,7 @@ type StatusPageResourceModel struct {
     Description types.String `tfsdk:"description"`
     Labels types.Set `tfsdk:"labels"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
+    IsArchived types.Bool `tfsdk:"is_archived"`
     FaviconFileId types.String `tfsdk:"favicon_file_id"`
     LogoFileId types.String `tfsdk:"logo_file_id"`
     CoverImageFileId types.String `tfsdk:"cover_image_file_id"`
@@ -115,6 +116,8 @@ type StatusPageResourceModel struct {
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
+    ArchivedAt RFC3339Value `tfsdk:"archived_at"`
+    ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
     IsOwnerNotifiedOfResourceCreation types.Bool `tfsdk:"is_owner_notified_of_resource_creation"`
     DowntimeMonitorStatuses types.Set `tfsdk:"downtime_monitor_statuses"`
 }
@@ -195,6 +198,15 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                     stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "is_archived": schema.BoolAttribute{
+                MarkdownDescription: "Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online..",
+                Optional: true,
+                Computed: true,
+                Default: booldefault.StaticBool(false),
+                PlanModifiers: []planmodifier.Bool{
+                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "favicon_file_id": schema.StringAttribute{
@@ -750,6 +762,15 @@ func (r *StatusPageResource) Schema(ctx context.Context, req resource.SchemaRequ
                 MarkdownDescription: "Friendly globally unique name for your object.",
                 Computed: true,
             },
+            "archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "archived_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "is_owner_notified_of_resource_creation": schema.BoolAttribute{
                 MarkdownDescription: "Are owners notified of when this resource is created?.",
                 Computed: true,
@@ -824,6 +845,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     }
     if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
         requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
+    }
+    if !data.IsArchived.IsNull() && !data.IsArchived.IsUnknown() {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
     if !data.FaviconFileId.IsNull() && !data.FaviconFileId.IsUnknown() {
         requestDataMap["faviconFileId"] = data.FaviconFileId.ValueString()
@@ -1055,6 +1079,7 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "description": true,
         "labels": true,
         "createdByUserId": true,
+        "isArchived": true,
         "faviconFileId": true,
         "logoFileId": true,
         "coverImageFileId": true,
@@ -1119,6 +1144,8 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "downtimeMonitorStatuses": true,
         "_id": true,
@@ -1383,6 +1410,9 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
+    }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
     }
     if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2632,6 +2662,54 @@ func (r *StatusPageResource) Create(ctx context.Context, req resource.CreateRequ
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
@@ -2702,6 +2780,7 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "description": true,
         "labels": true,
         "createdByUserId": true,
+        "isArchived": true,
         "faviconFileId": true,
         "logoFileId": true,
         "coverImageFileId": true,
@@ -2766,6 +2845,8 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "downtimeMonitorStatuses": true,
         "_id": true,
@@ -3032,6 +3113,9 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -4280,6 +4364,54 @@ func (r *StatusPageResource) Read(ctx context.Context, req resource.ReadRequest,
     } else {
         data.Slug = types.StringNull()
     }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
+    }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)
     }
@@ -4367,6 +4499,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     }
     if !data.Labels.IsUnknown() && !state.Labels.IsUnknown() && !data.Labels.Equal(state.Labels) {
         requestDataMap["labels"] = r.convertTerraformSetToInterface(data.Labels)
+    }
+    if !data.IsArchived.IsUnknown() && !state.IsArchived.IsUnknown() && !data.IsArchived.Equal(state.IsArchived) {
+        requestDataMap["isArchived"] = data.IsArchived.ValueBool()
     }
     if !data.FaviconFileId.IsUnknown() && !state.FaviconFileId.IsUnknown() && !data.FaviconFileId.Equal(state.FaviconFileId) {
         requestDataMap["faviconFileId"] = data.FaviconFileId.ValueString()
@@ -4601,6 +4736,7 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "description": true,
         "labels": true,
         "createdByUserId": true,
+        "isArchived": true,
         "faviconFileId": true,
         "logoFileId": true,
         "coverImageFileId": true,
@@ -4665,6 +4801,8 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "archivedAt": true,
+        "archivedByUserId": true,
         "isOwnerNotifiedOfResourceCreation": true,
         "downtimeMonitorStatuses": true,
         "_id": true,
@@ -4925,6 +5063,9 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
     } else {
         data.CreatedByUserId = types.StringNull()
     }
+    if val, ok := dataMap["isArchived"].(bool); ok {
+        data.IsArchived = types.BoolValue(val)
+    }
     if obj, ok := dataMap["faviconFileId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -6172,6 +6313,54 @@ func (r *StatusPageResource) Update(ctx context.Context, req resource.UpdateRequ
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["archivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.ArchivedAt = NewRFC3339Value(val)
+        } else {
+            data.ArchivedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["archivedAt"].(string); ok && val != "" {
+        data.ArchivedAt = NewRFC3339Value(val)
+    } else {
+        data.ArchivedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["archivedByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.ArchivedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.ArchivedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.ArchivedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ArchivedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["archivedByUserId"].(string); ok {
+        data.ArchivedByUserId = types.StringValue(val)
+    } else {
+        data.ArchivedByUserId = types.StringNull()
     }
     if val, ok := dataMap["isOwnerNotifiedOfResourceCreation"].(bool); ok {
         data.IsOwnerNotifiedOfResourceCreation = types.BoolValue(val)

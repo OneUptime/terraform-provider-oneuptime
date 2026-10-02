@@ -70,8 +70,6 @@ type ProjectDataSourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
-    EnableAutoRemediation types.Bool `tfsdk:"enable_auto_remediation"`
-    EnableAiCommandExecution types.Bool `tfsdk:"enable_ai_command_execution"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
@@ -288,15 +286,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "enable_ai": schema.BoolAttribute{
-                MarkdownDescription: "Enable AI services for this project..",
-                Computed: true,
-            },
-            "enable_auto_remediation": schema.BoolAttribute{
-                MarkdownDescription: "Kill switch for auto-remediation: when disabled, no auto-remediation rule fires in this project..",
-                Computed: true,
-            },
-            "enable_ai_command_execution": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, auto-remediation rules may let the AI compose and run commands on opted-in Runners (with an operator allowlist for auto-execution, and one-click approval for everything else), and AI may fix Kubernetes clusters reached through a Runner with a Kubernetes credential. Fixes on a cluster through its in-cluster Kubernetes AI agent do not need it: that cluster's AI agent page and the agent's write access decide. Off by default..",
+                MarkdownDescription: "Master switch for AI in this project. When disabled, every AI feature stops: Ask AI, investigations, postmortem drafts, auto-remediation and AI commands on Runners..",
                 Computed: true,
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
@@ -308,7 +298,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "enable_automatic_postmortem_draft": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. Off by default. Requires AI to be enabled and an LLM provider to be configured..",
+                MarkdownDescription: "When enabled, OneUptime's AI SRE drafts a postmortem from the incident's timeline and telemetry when an incident is resolved, for a human to review and edit. It never overwrites a postmortem that already exists. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
                 Computed: true,
             },
             "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
@@ -320,31 +310,31 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "enable_incident_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically..",
+                MarkdownDescription: "When enabled, an incident AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Computed: true,
             },
             "enable_alert_instrumentation_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically..",
+                MarkdownDescription: "When enabled, an alert AI investigation that ends inconclusive (telemetry was insufficient to determine a root cause) automatically queues an AI agent task that opens a pull request adding the missing instrumentation to the implicated code paths. Requires a repository connected through the GitHub App. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Computed: true,
             },
             "enable_automatic_incident_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically..",
+                MarkdownDescription: "When enabled, an incident AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Computed: true,
             },
             "enable_automatic_alert_code_fixes": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically..",
+                MarkdownDescription: "When enabled, an alert AI investigation that ends with a confident, evidenced root cause analysis and recommends a repository code change automatically queues an AI agent task that opens a fix pull request, ready for review, from that analysis — the automatic form of the 'Open Fix PR from this analysis' button. Operational, infrastructure, external, user-error and inconclusive findings do not offer or open code-fix pull requests. Requires a repository connected through the GitHub App and a Runner with the code-fix capability. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Computed: true,
             },
             "enable_ai_insights": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured..",
+                MarkdownDescription: "When enabled, OneUptime AI continuously watches this project's telemetry with deterministic statistical sensors (error-log spikes, exception novelty and spikes, trace-latency regressions, week-over-week metric drift) and files quiet Insights — never pages, never opens incidents. Each new insight also gets a budgeted, read-only AI triage analysis when an LLM provider is configured. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Computed: true,
             },
             "enable_insight_fix_tasks": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors the daily fix task budget and per-repository open-PR caps. Pull requests are always human-reviewed — nothing merges automatically..",
+                MarkdownDescription: "When enabled, insights whose deterministic evidence points at code (new or spiking exceptions with a resolvable repository, trace-latency regressions with span-tree findings) automatically queue an AI agent task that opens a pull request with a proposed fix, ready for review. Honors any open-PR cap set on the repository. Pull requests are always human-reviewed — nothing merges automatically. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Computed: true,
             },
             "auto_archive_non_actionable_exceptions": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab..",
+                MarkdownDescription: "When enabled, exception groups the AI triage classifies as expected denials (auth failures, plan/paywall rejections, scanner probes tripping intentional validation) are automatically archived so they stop surfacing in the unresolved list and never queue AI fix tasks. Groups classified as user errors or infrastructure conditions are NOT auto-archived — only clear expected denials are. Archiving is reversible from the Archived tab. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Computed: true,
             },
             "alert_investigation_minimum_severity_id": schema.StringAttribute{
@@ -352,7 +342,7 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "ai_daily_autonomous_token_limit": schema.NumberAttribute{
-                MarkdownDescription: "Fallback maximum tokens per UTC day for autonomous AI work that is not associated with an incident or alert. When the limit is reached, new autonomous work is skipped until the next day — interactive AI chat is never blocked. Unset means no limit..",
+                MarkdownDescription: "Legacy setting, no longer enforced: autonomous AI work that is not associated with an incident or alert has no daily token limit. Use the Daily Incident AI Token Limit and Daily Alert AI Token Limit instead..",
                 Computed: true,
             },
             "incident_ai_daily_autonomous_token_limit": schema.NumberAttribute{
@@ -364,19 +354,19 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Fallback maximum AI fix tasks (agent runs that open pull requests) that may be created per UTC day for work not associated with an incident or alert, across every fix recipe and trigger. Unset means the default of 25 per day; 0 pauses these AI fix tasks entirely..",
+                MarkdownDescription: "Legacy setting, no longer enforced: AI fix tasks that are not associated with an incident or alert have no daily limit. Use the Daily Incident AI Fix Task Limit and Daily Alert AI Fix Task Limit instead..",
                 Computed: true,
             },
             "incident_ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI fix tasks derived from incidents that may be created per UTC day for this project. Unset means the default of 25 per day; 0 pauses incident AI fix tasks entirely..",
+                MarkdownDescription: "Maximum AI fix tasks derived from incidents that may be created per UTC day for this project. Unset means no limit; 0 pauses incident AI fix tasks entirely..",
                 Computed: true,
             },
             "alert_ai_daily_fix_task_limit": schema.NumberAttribute{
-                MarkdownDescription: "Maximum AI fix tasks derived from alerts that may be created per UTC day for this project. Unset means the default of 25 per day; 0 pauses alert AI fix tasks entirely..",
+                MarkdownDescription: "Maximum AI fix tasks derived from alerts that may be created per UTC day for this project. Unset means no limit; 0 pauses alert AI fix tasks entirely..",
                 Computed: true,
             },
             "alert_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown..",
+                MarkdownDescription: "Repeat alerts from the same monitor within this many minutes are not re-investigated by AI — the first analysis stands. Unset or 0 means no cooldown, so every alert is investigated; at most 1440 minutes (a day)..",
                 Computed: true,
             },
             "incident_investigation_minimum_severity_id": schema.StringAttribute{
@@ -384,19 +374,19 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
                 Computed: true,
             },
             "incident_investigation_dedupe_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset means the default of 30 minutes; 0 disables the cooldown..",
+                MarkdownDescription: "Incidents affecting a monitor that AI investigated within this many minutes are not re-investigated — the first analysis stands. Unset or 0 means no cooldown, so every incident is investigated; at most 1440 minutes (a day)..",
                 Computed: true,
             },
             "ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "Fallback maximum number of non-incident and non-alert AI investigations that may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause autonomous work with its opt-in toggle or a daily token limit of 0 instead..",
+                MarkdownDescription: "Legacy setting, no longer enforced: AI investigations that are not associated with an incident or alert have no concurrency limit. Use the Max Concurrent Incident Investigations and Max Concurrent Alert Investigations instead..",
                 Computed: true,
             },
             "incident_ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many incident AI investigations may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause incident investigations with the opt-in toggle or a daily token limit of 0 instead..",
+                MarkdownDescription: "How many incident AI investigations may run at the same time for this project. Unset means no limit — every incident investigation starts right away. Minimum 1 — pause incident investigations with the Enable Automatic Incident Investigation toggle or a daily token limit of 0 instead..",
                 Computed: true,
             },
             "alert_ai_max_concurrent_investigations": schema.NumberAttribute{
-                MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means the default of 3. Minimum 1 — pause alert investigations with the opt-in toggle or a daily token limit of 0 instead..",
+                MarkdownDescription: "How many alert AI investigations may run at the same time for this project. Unset means no limit — every alert investigation starts right away. Minimum 1 — pause alert investigations with the Enable Automatic Alert Investigation toggle or a daily token limit of 0 instead..",
                 Computed: true,
             },
             "incident_ai_investigation_time_limit_in_minutes": schema.NumberAttribute{
@@ -562,8 +552,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
-        "enableAutoRemediation": true,
-        "enableAiCommandExecution": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticPostmortemDraft": true,
@@ -1238,16 +1226,6 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAi = types.BoolValue(val)
     } else {
         data.EnableAi = types.BoolNull()
-    }
-    if val, ok := item["enableAutoRemediation"].(bool); ok {
-        data.EnableAutoRemediation = types.BoolValue(val)
-    } else {
-        data.EnableAutoRemediation = types.BoolNull()
-    }
-    if val, ok := item["enableAiCommandExecution"].(bool); ok {
-        data.EnableAiCommandExecution = types.BoolValue(val)
-    } else {
-        data.EnableAiCommandExecution = types.BoolNull()
     }
     if val, ok := item["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)

@@ -29,10 +29,12 @@ resource "oneuptime_workflow" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `is_archived` (Bool) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were...
 - `is_enabled` (Bool) Is this workflow enabled?..
 - `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API...
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
-- `webhook_secret_key` (String) Secret key used to trigger this workflow via webhook. Use this instead of the workflow ID for security...
+- `webhook_secret_key` (String) The secret part of the Webhook trigger's URL (/workflow/trigger/<key>). Anyone who has the URL can start the workflow, so only people who can edit the workflow can read the key. Generated when the workflow is created; set a new value to reset the URL...
+- `incoming_email_secret_key` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +45,8 @@ resource "oneuptime_workflow" "example" {
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `archived_at` (String) A date time object..
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

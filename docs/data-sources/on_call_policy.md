@@ -36,6 +36,9 @@ data "oneuptime_on_call_policy" "by_id" {
 - `description` (String) Friendly description that will help you remember.. Computed.
 - `slug` (String) Friendly globally unique name for your object.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `is_archived` (Bool) Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service... Computed.
+- `archived_at` (String) A date time object.. Computed.
+- `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `repeat_policy_if_no_one_acknowledges` (Bool) Repeat the policy if no one acknowledges the alert.. Computed.
 - `repeat_policy_if_no_one_acknowledges_no_of_times` (Number) Repeat the policy X number of times if no one acknowledges the alert.. Computed.
 - `custom_fields` (String) Custom Fields on this resource... Computed.

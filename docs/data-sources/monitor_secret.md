@@ -33,6 +33,8 @@ data "oneuptime_monitor_secret" "by_id" {
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Friendly description that will help you remember.. Computed.
-- `monitors` (Set) List of monitors that can access this secret.. Computed.
+- `monitor_access` (String) Which monitors can use this secret. All Monitors: every monitor in this project, including monitors created later. Specific Monitors: only the monitors in Monitors. Monitors With Labels: monitors that carry at least one of the labels in Labels. Setting this empties whichever of Monitors and Labels it does not use... Computed.
+- `monitors` (Set) The monitors that can use this secret when Monitor Access is Specific Monitors. Ignored otherwise... Computed.
+- `labels` (Set) When Monitor Access is Monitors With Labels, monitors that carry at least one of these labels can use this secret. Ignored otherwise... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
