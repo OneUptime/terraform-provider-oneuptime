@@ -97,7 +97,7 @@ func (d *AlertMeasurementDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "key": schema.StringAttribute{
-                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project. It is immutable once created because it is used to build the metric name that every recorded point is written under - changing it would orphan all the history. Pick it carefully; to rename a measurement, change the Name instead..",
+                MarkdownDescription: "Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Acknowledge becomes time-to-acknowledge, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead..",
                 Computed: true,
             },
             "description": schema.StringAttribute{
@@ -141,11 +141,11 @@ func (d *AlertMeasurementDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "unit": schema.StringAttribute{
-                MarkdownDescription: "The unit this measurement's values are displayed in. Values are always stored in seconds; this only changes how they are rendered..",
+                MarkdownDescription: "The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the alert; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds..",
                 Computed: true,
             },
             "aggregation_type": schema.StringAttribute{
-                MarkdownDescription: "The aggregation this measurement's charts default to - Avg, Max, Min, P50, P90, P95 or P99. Sum is deliberately absent because summing durations across alerts produces a number with no meaning..",
+                MarkdownDescription: "How this measurement's chart sums up many alerts by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across alerts produces a number with no meaning..",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -157,7 +157,7 @@ func (d *AlertMeasurementDataSource) Schema(ctx context.Context, req datasource.
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order in which this measurement is displayed. Lowest first..",
+                MarkdownDescription: "Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Computed: true,
             },
             "is_system_defined": schema.BoolAttribute{

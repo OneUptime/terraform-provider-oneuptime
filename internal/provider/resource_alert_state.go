@@ -130,7 +130,7 @@ func (r *AlertStateResource) Schema(ctx context.Context, req resource.SchemaRequ
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource.",
+                MarkdownDescription: "Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

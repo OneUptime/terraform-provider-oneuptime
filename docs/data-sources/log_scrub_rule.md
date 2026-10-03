@@ -38,6 +38,6 @@ data "oneuptime_log_scrub_rule" "by_id" {
 - `scrub_action` (String) How to scrub matched data: 'mask' partially hides it, 'hash' replaces with a hash, 'redact' removes entirely... Computed.
 - `fields_to_scrub` (String) Which log fields to scrub: 'body' (log message only), 'attributes' (attribute values only), or 'both'... Computed.
 - `is_enabled` (Bool) Whether this scrub rule is active... Computed.
-- `sort_order` (Number) Determines the evaluation order of this rule relative to others... Computed.
+- `sort_order` (Number) Where this rule is applied among the project's log scrub rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

@@ -17,7 +17,6 @@ resource "oneuptime_trace_recording_rule" "example" {
     "_type": "Name",
     "value": "John Doe"
   })
-  output_metric_name = "Example short text"
   description = "This is an example of longer text content that might be stored in this field."
 }
 ```
@@ -27,12 +26,12 @@ resource "oneuptime_trace_recording_rule" "example" {
 ### Required
 
 - `name` (String) Name object.
-- `output_metric_name` (String) Name of the new metric this rule writes (e.g. http.error_rate). Must be unique per project...
 
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) What this recording rule computes and why...
+- `output_metric_name` (String) Name of the new metric this rule writes (e.g. http.error_rate). Leave it out and it is made from the rule's name - HTTP error rate becomes http_error_rate, with _2, _3 and so on added when another recording rule of the project already writes it. Keep it unique per project...
 - `definition` (String) Sources (aliased span aggregations), arithmetic expression, and optional group-by attribute...
 - `is_enabled` (Bool) Whether this rule is evaluated by the recording rule cron...
 - `sort_order` (Number) Evaluation order when multiple rules exist...

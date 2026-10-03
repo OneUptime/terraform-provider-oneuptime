@@ -109,7 +109,7 @@ func (d *NetworkDeviceRoleDataSource) Schema(ctx context.Context, req datasource
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Where this role appears in the role picker and the topology map legend. Lower numbers come first..",
+                MarkdownDescription: "Where this role appears in the role picker and the topology map legend, lowest number first. A new role is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

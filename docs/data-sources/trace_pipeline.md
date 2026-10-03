@@ -35,6 +35,6 @@ data "oneuptime_trace_pipeline" "by_id" {
 - `description` (String) Description of what this trace pipeline does... Computed.
 - `filter_query` (String) Filter expression that determines which spans this pipeline applies to... Computed.
 - `is_enabled` (Bool) Whether this trace pipeline is active... Computed.
-- `sort_order` (Number) Determines the execution order of this pipeline relative to others... Computed.
+- `sort_order` (Number) Where this pipeline runs among the project's trace pipelines, lowest number first. A new pipeline is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

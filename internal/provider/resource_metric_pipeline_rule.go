@@ -194,10 +194,9 @@ func (r *MetricPipelineRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Evaluation order within its scope (service-level or project-level)..",
+                MarkdownDescription: "Where this rule is evaluated among the project's metric pipeline rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Optional: true,
                 Computed: true,
-                Default: numberdefault.StaticBigFloat(big.NewFloat(0)),
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
                 },

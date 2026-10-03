@@ -134,10 +134,9 @@ func (r *AlertGroupingRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "priority": schema.NumberAttribute{
-                MarkdownDescription: "Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order..",
+                MarkdownDescription: "Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Optional: true,
                 Computed: true,
-                Default: numberdefault.StaticBigFloat(big.NewFloat(1)),
                 PlanModifiers: []planmodifier.Number{
                     numberplanmodifier.UseStateForUnknown(),
                 },

@@ -39,4 +39,4 @@ data "oneuptime_alert_state" "by_id" {
 - `is_created_state` (Bool) Is it the created state of the alert?.. Computed.
 - `is_acknowledged_state` (Bool) Is it the acknowledged state of the alert?.. Computed.
 - `is_resolved_state` (Bool) Is it the resolved state of the alert?.. Computed.
-- `order` (Number) Order / Priority of this resource.. Computed.
+- `order` (Number) Where this state sits in the project's list of alert states: 1 is the top. Alerts only ever move down the list, and an alert in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them... Computed.

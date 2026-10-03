@@ -34,7 +34,7 @@ resource "oneuptime_status_page_history_chart_bar_color" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `order` (Number) Order / Priority of this resource..
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them...
 
 ### Read-Only
 

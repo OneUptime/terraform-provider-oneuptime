@@ -44,6 +44,6 @@ data "oneuptime_metric_pipeline_rule" "by_id" {
 - `redact_replacement` (String) For RedactAttribute: the literal string to replace the value with. Defaults to [REDACTED]... Computed.
 - `sample_percentage` (Number) For Sample: percentage of matched rows to keep (0-100). 100 keeps all... Computed.
 - `is_enabled` (Bool) Whether this rule is active... Computed.
-- `sort_order` (Number) Evaluation order within its scope (service-level or project-level)... Computed.
+- `sort_order` (Number) Where this rule is evaluated among the project's metric pipeline rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

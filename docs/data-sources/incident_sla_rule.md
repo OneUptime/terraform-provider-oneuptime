@@ -34,7 +34,7 @@ data "oneuptime_incident_sla_rule" "by_id" {
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Description of this SLA rule.. Computed.
-- `order` (Number) Order/priority of this rule. Rules are evaluated in order (lowest first). First matching rule wins... Computed.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `is_enabled` (Bool) Whether this SLA rule is enabled.. Computed.
 - `response_time_in_minutes` (Number) Target response time in minutes. This is the maximum time allowed before the incident must be acknowledged... Computed.
 - `resolution_time_in_minutes` (Number) Target resolution time in minutes. This is the maximum time allowed before the incident must be resolved... Computed.

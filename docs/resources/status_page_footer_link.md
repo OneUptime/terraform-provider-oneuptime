@@ -31,7 +31,7 @@ resource "oneuptime_status_page_footer_link" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `order` (Number) Order / Priority of this resource..
+- `order` (Number) Where this link appears among the status page's footer links, lowest number first. A new link is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them...
 
 ### Read-Only
 

@@ -30,7 +30,7 @@ resource "oneuptime_incoming_call_policy_escalation_rule" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `name` (String) Rule name (e.g., 'Primary On-Call', 'Backup Engineer')..
 - `description` (String) Optional description of this escalation rule..
-- `order` (Number) Execution order (1, 2, 3...)..
+- `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them...
 - `escalate_after_seconds` (Number) Seconds before escalating to next rule..
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID..
 - `user_id` (String) A unique identifier for an object, represented as a UUID..

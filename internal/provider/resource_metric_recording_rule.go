@@ -94,8 +94,12 @@ func (r *MetricRecordingRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "output_metric_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the new metric this rule writes (e.g. http.error_rate). Must be unique per project..",
-                Required: true,
+                MarkdownDescription: "Name of the new metric this rule writes (e.g. http.error_rate). Leave it out and it is made from the rule's name - HTTP error rate becomes http_error_rate, with _2, _3 and so on added when another recording rule of the project already writes it. Keep it unique per project..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "definition": schema.StringAttribute{
                 MarkdownDescription: "Sources (aliased input metrics), arithmetic expression, and optional group-by attribute..",

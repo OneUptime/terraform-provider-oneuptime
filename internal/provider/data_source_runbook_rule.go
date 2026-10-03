@@ -40,8 +40,15 @@ type RunbookRuleDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     TriggerEntityType types.String `tfsdk:"trigger_entity_type"`
+    Monitors types.Set `tfsdk:"monitors"`
+    IncidentSeverities types.Set `tfsdk:"incident_severities"`
+    AlertSeverities types.Set `tfsdk:"alert_severities"`
+    Labels types.Set `tfsdk:"labels"`
+    MonitorLabels types.Set `tfsdk:"monitor_labels"`
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
+    MonitorNamePattern types.String `tfsdk:"monitor_name_pattern"`
+    MonitorDescriptionPattern types.String `tfsdk:"monitor_description_pattern"`
     Runbooks types.Set `tfsdk:"runbooks"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
@@ -101,12 +108,45 @@ func (d *RunbookRuleDataSource) Schema(ctx context.Context, req datasource.Schem
                 MarkdownDescription: "Entity type that triggers this rule on creation: Incident, Alert, or ScheduledMaintenance..",
                 Computed: true,
             },
+            "monitors": schema.SetAttribute{
+                MarkdownDescription: "Only match incidents and scheduled maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "incident_severities": schema.SetAttribute{
+                MarkdownDescription: "Only match incidents with one of these severities. Incident rules only. Leave empty to match any severity..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "alert_severities": schema.SetAttribute{
+                MarkdownDescription: "Only match alerts with one of these severities. Alert rules only. Leave empty to match any severity..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "labels": schema.SetAttribute{
+                MarkdownDescription: "Only match incidents, alerts or scheduled maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "monitor_labels": schema.SetAttribute{
+                MarkdownDescription: "Only match when a monitor of the incident, alert or scheduled maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
             "title_pattern": schema.StringAttribute{
                 MarkdownDescription: "Case-insensitive regex matched against the entity's title. Leave empty to match any title..",
                 Computed: true,
             },
             "description_pattern": schema.StringAttribute{
                 MarkdownDescription: "Case-insensitive regex matched against the entity's description. Leave empty to match any description..",
+                Computed: true,
+            },
+            "monitor_name_pattern": schema.StringAttribute{
+                MarkdownDescription: "Case-insensitive regex matched against the names of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor name..",
+                Computed: true,
+            },
+            "monitor_description_pattern": schema.StringAttribute{
+                MarkdownDescription: "Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor description..",
                 Computed: true,
             },
             "runbooks": schema.SetAttribute{
@@ -173,8 +213,15 @@ func (d *RunbookRuleDataSource) Read(ctx context.Context, req datasource.ReadReq
         "description": true,
         "isEnabled": true,
         "triggerEntityType": true,
+        "monitors": true,
+        "incidentSeverities": true,
+        "alertSeverities": true,
+        "labels": true,
+        "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
+        "monitorNamePattern": true,
+        "monitorDescriptionPattern": true,
         "runbooks": true,
         "createdByUserId": true,
         "_id": true,
@@ -408,6 +455,126 @@ func (d *RunbookRuleDataSource) Read(ctx context.Context, req datasource.ReadReq
     } else {
         data.TriggerEntityType = types.StringNull()
     }
+    if val, ok := item["monitors"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Monitors = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Monitors = types.SetNull(types.StringType)
+    }
+    if val, ok := item["incidentSeverities"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.IncidentSeverities = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.IncidentSeverities = types.SetNull(types.StringType)
+    }
+    if val, ok := item["alertSeverities"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.AlertSeverities = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.AlertSeverities = types.SetNull(types.StringType)
+    }
+    if val, ok := item["labels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Labels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Labels = types.SetNull(types.StringType)
+    }
+    if val, ok := item["monitorLabels"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.MonitorLabels = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.MonitorLabels = types.SetNull(types.StringType)
+    }
     if obj, ok := item["titlePattern"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.TitlePattern = types.StringValue(val)
@@ -441,6 +608,40 @@ func (d *RunbookRuleDataSource) Read(ctx context.Context, req datasource.ReadReq
         data.DescriptionPattern = types.StringValue(val)
     } else {
         data.DescriptionPattern = types.StringNull()
+    }
+    if obj, ok := item["monitorNamePattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitorNamePattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitorNamePattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorNamePattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorNamePattern = types.StringNull()
+        }
+    } else if val, ok := item["monitorNamePattern"].(string); ok {
+        data.MonitorNamePattern = types.StringValue(val)
+    } else {
+        data.MonitorNamePattern = types.StringNull()
+    }
+    if obj, ok := item["monitorDescriptionPattern"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.MonitorDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.MonitorDescriptionPattern = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.MonitorDescriptionPattern = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.MonitorDescriptionPattern = types.StringValue(string(jsonBytes))
+        } else {
+            data.MonitorDescriptionPattern = types.StringNull()
+        }
+    } else if val, ok := item["monitorDescriptionPattern"].(string); ok {
+        data.MonitorDescriptionPattern = types.StringValue(val)
+    } else {
+        data.MonitorDescriptionPattern = types.StringNull()
     }
     if val, ok := item["runbooks"].([]interface{}); ok {
         var setItems []attr.Value

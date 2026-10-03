@@ -32,7 +32,7 @@ data "oneuptime_incident_measurement" "by_id" {
 - `deleted_at` (String) A date time object.. Computed.
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `key` (String) Stable, machine readable identifier for this measurement, unique within the project. It is immutable once created because it is used to build the metric name that every recorded point is written under - changing it would orphan all the history. Pick it carefully; to rename a measurement, change the Name instead... Computed.
+- `key` (String) Stable, machine readable identifier for this measurement, unique within the project: lowercase letters, numbers and hyphens. Leave it out and it is made from the name - Time to Detect becomes time-to-detect, with -2, -3 and so on added when another measurement already has it. It cannot be changed once the measurement is created, because it is used to build the metric name that every recorded point is written under; to rename a measurement, change the Name instead... Computed.
 - `description` (String) Description of what this measurement means to your team.. Computed.
 - `metric_name` (String) The metric name every recorded point of this measurement is written under. Derived from the key as oneuptime.incident.measurement.<key> and maintained for you... Computed.
 - `start_anchor_type` (String) Where this measurement starts. One of: Impact Started At, Declared At, Created At, Timeline Start, State Entered, State Role Entered, Postmortem Posted At... Computed.
@@ -43,11 +43,11 @@ data "oneuptime_incident_measurement" "by_id" {
 - `end_incident_state_role` (String) The role of the state this measurement ends at - Created, Acknowledged or Resolved. Used when the End Anchor Type is State Role Entered... Computed.
 - `start_state_occurrence` (String) Which entry to use when the start state is entered more than once - First or Last. First matches the built-in incident metrics; Last follows a reopened incident to its final pass through that state... Computed.
 - `end_state_occurrence` (String) Which entry to use when the end state is entered more than once - First or Last. First matches the built-in incident metrics; Last follows a reopened incident to its final pass through that state... Computed.
-- `unit` (String) The unit this measurement's values are displayed in. Values are always stored in seconds; this only changes how they are rendered... Computed.
-- `aggregation_type` (String) The aggregation this measurement's charts default to - Avg, Max, Min, P50, P90, P95 or P99. Sum is deliberately absent because summing durations across incidents produces a number with no meaning... Computed.
+- `unit` (String) The unit this measurement's charts are in: seconds (the default), minutes, hours or days. Every value is worked out in seconds and stored that way on the incident; each chart point is written in this unit, so a chart in hours reads 1.5 for an hour and a half. With seconds, charts show seconds, minutes, hours or days as the numbers grow. Changing it rewrites the measurement's chart points in the new unit. A value that is not a time unit charts in seconds... Computed.
+- `aggregation_type` (String) How this measurement's chart sums up many incidents by default - Avg (the default), P50, P90, P95, P99, Max or Min. View Chart in the dashboard opens the chart this way. Sum is deliberately absent: adding durations up across incidents produces a number with no meaning... Computed.
 - `is_enabled` (Bool) Whether this measurement is computed for new and updated incidents.. Computed.
 - `show_on_incident_view` (Bool) Whether this measurement is shown on the incident page alongside the incident's other timings.. Computed.
-- `order` (Number) Order in which this measurement is displayed. Lowest first... Computed.
+- `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `is_system_defined` (Bool) Whether this measurement was seeded by OneUptime rather than created by your team.. Computed.
 - `backfill_requested_at` (String) A date time object.. Computed.
 - `backfill_cursor_created_at` (String) A date time object.. Computed.

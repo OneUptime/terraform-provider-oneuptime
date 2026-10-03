@@ -36,4 +36,4 @@ data "oneuptime_status_page_header_link" "by_id" {
 - `title` (String) Title of this resource.. Computed.
 - `link` (String) URL to a website or any other resource on the internet.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Order / Priority of this resource.. Computed.
+- `order` (Number) Where this link appears among the status page's header links, lowest number first. A new link is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.

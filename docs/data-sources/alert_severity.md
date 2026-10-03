@@ -37,4 +37,4 @@ data "oneuptime_alert_severity" "by_id" {
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `color` (String) Color object. Computed.
-- `order` (Number) Order / Priority of this resource.. Computed.
+- `order` (Number) Where this severity ranks among the project's alert severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number moves the severity to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them... Computed.

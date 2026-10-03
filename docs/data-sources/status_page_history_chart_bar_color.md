@@ -36,4 +36,4 @@ data "oneuptime_status_page_history_chart_bar_color" "by_id" {
 - `uptime_percent_greater_than_or_equal_to` (Number) Uptime percent greater than or equal to this value.. Computed.
 - `bar_color` (String) Color object. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `order` (Number) Order / Priority of this resource.. Computed.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.

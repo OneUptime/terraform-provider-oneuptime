@@ -38,6 +38,6 @@ data "oneuptime_network_device_role" "by_id" {
 - `topology_shape` (String) The shape devices of this role are drawn with on the network topology map... Computed.
 - `is_core_layer` (Bool) Devices of this role sit at the top of the network - the tiered and radial topology layouts band them above everything else... Computed.
 - `is_snmp_walkable` (Bool) Devices of this role usually speak SNMP. Turn it off for roles that only answer a ping - adopting one from the topology map then defaults to a monitor rather than SNMP polling... Computed.
-- `order` (Number) Where this role appears in the role picker and the topology map legend. Lower numbers come first... Computed.
+- `order` (Number) Where this role appears in the role picker and the topology map legend, lowest number first. A new role is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

@@ -87,7 +87,7 @@ func (d *MetricRecordingRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "output_metric_name": schema.StringAttribute{
-                MarkdownDescription: "Name of the new metric this rule writes (e.g. http.error_rate). Must be unique per project..",
+                MarkdownDescription: "Name of the new metric this rule writes (e.g. http.error_rate). Leave it out and it is made from the rule's name - HTTP error rate becomes http_error_rate, with _2, _3 and so on added when another recording rule of the project already writes it. Keep it unique per project..",
                 Computed: true,
             },
             "definition": schema.StringAttribute{

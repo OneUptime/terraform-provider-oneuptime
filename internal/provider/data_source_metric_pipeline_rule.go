@@ -139,7 +139,7 @@ func (d *MetricPipelineRuleDataSource) Schema(ctx context.Context, req datasourc
                 Computed: true,
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Evaluation order within its scope (service-level or project-level)..",
+                MarkdownDescription: "Where this rule is evaluated among the project's metric pipeline rules, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

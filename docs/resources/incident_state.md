@@ -37,7 +37,7 @@ resource "oneuptime_incident_state" "example" {
 - `is_created_state` (Bool) Is it the created state of the incident?..
 - `is_acknowledged_state` (Bool) Is it the acknowledged state of the incident?..
 - `is_resolved_state` (Bool) Is it the resolved state of the incident?..
-- `order` (Number) Order / Priority of this resource..
+- `order` (Number) Where this state sits in the project's list of incident states: 1 is the top. Incidents only ever move down the list, and an incident in a state at or below the acknowledged (or resolved) state counts as acknowledged (or resolved), so the created, acknowledged and resolved states have to stay in that order. A new state without a number goes just above the resolved state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them...
 
 ### Read-Only
 

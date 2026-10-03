@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &IncidentFormDataSource{}
+var _ datasource.DataSource = &FormDataSource{}
 
-func NewIncidentFormDataSource() datasource.DataSource {
-    return &IncidentFormDataSource{}
+func NewFormDataSource() datasource.DataSource {
+    return &FormDataSource{}
 }
 
-// IncidentFormDataSource defines the data source implementation.
-type IncidentFormDataSource struct {
+// FormDataSource defines the data source implementation.
+type FormDataSource struct {
     client *Client
 }
 
-// IncidentFormDataSourceModel describes the data source data model.
-type IncidentFormDataSourceModel struct {
+// FormDataSourceModel describes the data source data model.
+type FormDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -37,24 +37,21 @@ type IncidentFormDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     ShareKey types.String `tfsdk:"share_key"`
-    IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
-    AllowReporterToChooseSeverity types.Bool `tfsdk:"allow_reporter_to_choose_severity"`
-    IncidentTemplateId types.String `tfsdk:"incident_template_id"`
-    DescriptionSetting types.String `tfsdk:"description_setting"`
-    CustomFieldSettings types.String `tfsdk:"custom_field_settings"`
-    IsReporterDetailsRequired types.Bool `tfsdk:"is_reporter_details_required"`
+    TargetType types.String `tfsdk:"target_type"`
+    Fields types.String `tfsdk:"fields"`
+    TargetSettings types.String `tfsdk:"target_settings"`
     SuccessMessage types.String `tfsdk:"success_message"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (d *IncidentFormDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_incident_form"
+func (d *FormDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_form"
 }
 
-func (d *IncidentFormDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Forms anyone with the link can fill in to report an incident, without a OneUptime account. Each submission declares an incident in this project. Look up an existing incident_form by `id` or by `name`.",
+        MarkdownDescription: "Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project. Look up an existing form by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -92,39 +89,27 @@ func (d *IncidentFormDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether the form's link works. While the form is turned off, its public page shows a not-available message and nothing can be submitted..",
+                MarkdownDescription: "Whether the form's link works. While it is off, the public page shows a not-available message and nothing can be submitted..",
                 Computed: true,
             },
             "share_key": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+            "target_type": schema.StringAttribute{
+                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event)..",
                 Computed: true,
             },
-            "allow_reporter_to_choose_severity": schema.BoolAttribute{
-                MarkdownDescription: "When on, the form asks the reporter to choose a severity from the project's incident severities, with the form's own severity chosen to begin with..",
+            "fields": schema.StringAttribute{
+                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text and isRequired. A new form starts with a title, a description and the submitter's name and email..",
                 Computed: true,
             },
-            "incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Computed: true,
-            },
-            "description_setting": schema.StringAttribute{
-                MarkdownDescription: "Whether the form asks the reporter to describe the incident: Required, Optional or Hidden..",
-                Computed: true,
-            },
-            "custom_field_settings": schema.StringAttribute{
-                MarkdownDescription: "The incident custom fields the form asks for, keyed by each field's template variable key (variableKey). Required means the reporter must answer it, Optional that they may leave it empty. Only the fields listed as Required or Optional are asked: a field that is not listed, or is Hidden or Default, is not on the form. The answers become the incident's custom field values..",
-                Computed: true,
-            },
-            "is_reporter_details_required": schema.BoolAttribute{
-                MarkdownDescription: "When on, the reporter must give their name and email. When off, they may report anonymously..",
+            "target_settings": schema.StringAttribute{
+                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers..",
                 Computed: true,
             },
             "success_message": schema.StringAttribute{
-                MarkdownDescription: "Shown to the reporter after they submit the form, together with the new incident's number. Markdown..",
+                MarkdownDescription: "Shown after the form is submitted, together with the number of what the submission created. Markdown..",
                 Computed: true,
             },
             "ip_whitelist": schema.StringAttribute{
@@ -139,7 +124,7 @@ func (d *IncidentFormDataSource) Schema(ctx context.Context, req datasource.Sche
     }
 }
 
-func (d *IncidentFormDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *FormDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -159,8 +144,8 @@ func (d *IncidentFormDataSource) Configure(ctx context.Context, req datasource.C
     d.client = client
 }
 
-func (d *IncidentFormDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data IncidentFormDataSourceModel
+func (d *FormDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data FormDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -174,7 +159,7 @@ func (d *IncidentFormDataSource) Read(ctx context.Context, req datasource.ReadRe
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a incident_form.",
+            "Exactly one of `id` or `name` must be set to look up a form.",
         )
         return
     }
@@ -189,12 +174,9 @@ func (d *IncidentFormDataSource) Read(ctx context.Context, req datasource.ReadRe
         "description": true,
         "isEnabled": true,
         "shareKey": true,
-        "incidentSeverityId": true,
-        "allowReporterToChooseSeverity": true,
-        "incidentTemplateId": true,
-        "descriptionSetting": true,
-        "customFieldSettings": true,
-        "isReporterDetailsRequired": true,
+        "targetType": true,
+        "fields": true,
+        "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
         "createdByUserId": true,
@@ -203,19 +185,19 @@ func (d *IncidentFormDataSource) Read(ctx context.Context, req datasource.ReadRe
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/incident-form/" + data.Id.ValueString() + "/get-item"
+        readPath := "/form/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read incident_form, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read form, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_form found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No form found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read incident_form: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read form: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -232,28 +214,28 @@ func (d *IncidentFormDataSource) Read(ctx context.Context, req datasource.ReadRe
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/incident-form/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/form/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list incident_form, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list form, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list incident_form: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list form: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No incident_form found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No form found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one incident_form matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one form matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for incident_form.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for form.")
             return
         }
         item = first
@@ -412,83 +394,56 @@ func (d *IncidentFormDataSource) Read(ctx context.Context, req datasource.ReadRe
     } else {
         data.ShareKey = types.StringNull()
     }
-    if obj, ok := item["incidentSeverityId"].(map[string]interface{}); ok {
+    if obj, ok := item["targetType"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TargetType = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            data.TargetType = types.StringValue(string(jsonBytes))
         } else {
-            data.IncidentSeverityId = types.StringNull()
+            data.TargetType = types.StringNull()
         }
-    } else if val, ok := item["incidentSeverityId"].(string); ok {
-        data.IncidentSeverityId = types.StringValue(val)
+    } else if val, ok := item["targetType"].(string); ok {
+        data.TargetType = types.StringValue(val)
     } else {
-        data.IncidentSeverityId = types.StringNull()
+        data.TargetType = types.StringNull()
     }
-    if val, ok := item["allowReporterToChooseSeverity"].(bool); ok {
-        data.AllowReporterToChooseSeverity = types.BoolValue(val)
-    } else {
-        data.AllowReporterToChooseSeverity = types.BoolNull()
-    }
-    if obj, ok := item["incidentTemplateId"].(map[string]interface{}); ok {
+    if obj, ok := item["fields"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentTemplateId = types.StringValue(val)
+            data.Fields = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.IncidentTemplateId = types.StringValue(val)
+            data.Fields = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", val))
+            data.Fields = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.IncidentTemplateId = types.StringValue(string(jsonBytes))
+            data.Fields = types.StringValue(string(jsonBytes))
         } else {
-            data.IncidentTemplateId = types.StringNull()
+            data.Fields = types.StringNull()
         }
-    } else if val, ok := item["incidentTemplateId"].(string); ok {
-        data.IncidentTemplateId = types.StringValue(val)
+    } else if val, ok := item["fields"].(string); ok {
+        data.Fields = types.StringValue(val)
     } else {
-        data.IncidentTemplateId = types.StringNull()
+        data.Fields = types.StringNull()
     }
-    if obj, ok := item["descriptionSetting"].(map[string]interface{}); ok {
+    if obj, ok := item["targetSettings"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DescriptionSetting = types.StringValue(val)
+            data.TargetSettings = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.DescriptionSetting = types.StringValue(val)
+            data.TargetSettings = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", val))
+            data.TargetSettings = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DescriptionSetting = types.StringValue(string(jsonBytes))
+            data.TargetSettings = types.StringValue(string(jsonBytes))
         } else {
-            data.DescriptionSetting = types.StringNull()
+            data.TargetSettings = types.StringNull()
         }
-    } else if val, ok := item["descriptionSetting"].(string); ok {
-        data.DescriptionSetting = types.StringValue(val)
+    } else if val, ok := item["targetSettings"].(string); ok {
+        data.TargetSettings = types.StringValue(val)
     } else {
-        data.DescriptionSetting = types.StringNull()
-    }
-    if obj, ok := item["customFieldSettings"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomFieldSettings = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.CustomFieldSettings = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.CustomFieldSettings = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.CustomFieldSettings = types.StringValue(string(jsonBytes))
-        } else {
-            data.CustomFieldSettings = types.StringNull()
-        }
-    } else if val, ok := item["customFieldSettings"].(string); ok {
-        data.CustomFieldSettings = types.StringValue(val)
-    } else {
-        data.CustomFieldSettings = types.StringNull()
-    }
-    if val, ok := item["isReporterDetailsRequired"].(bool); ok {
-        data.IsReporterDetailsRequired = types.BoolValue(val)
-    } else {
-        data.IsReporterDetailsRequired = types.BoolNull()
+        data.TargetSettings = types.StringNull()
     }
     if obj, ok := item["successMessage"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

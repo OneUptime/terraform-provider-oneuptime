@@ -36,6 +36,6 @@ data "oneuptime_network_site_assignment_rule" "by_id" {
 - `site_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `subnet_cidr` (String) Devices and endpoints with an IP in this CIDR are assigned to the site.. Computed.
 - `hostname_pattern` (String) Devices whose hostname, SNMP system name, display name or DNS name matches this wildcard pattern are assigned to the site.. Computed.
-- `priority` (Number) Higher priority number wins; ties broken by earlier creation... Computed.
+- `priority` (Number) Where this rule sits in the list: when several rules match a device, the one highest in the list wins. The rule at the top has the highest number. A new rule is added to the end of the list, with the lowest number. Setting a number another rule already has puts this rule in that place, and the rules in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

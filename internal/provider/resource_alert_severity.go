@@ -103,7 +103,7 @@ func (r *AlertSeverityResource) Schema(ctx context.Context, req resource.SchemaR
                 },
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Order / Priority of this resource.",
+                MarkdownDescription: "Where this severity ranks among the project's alert severities: 1 is the most severe. A new severity without a number goes to the end of the list. Setting a number moves the severity to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.Number{

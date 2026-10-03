@@ -106,7 +106,7 @@ func (d *TraceDropFilterDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Determines the evaluation order of this filter relative to others..",
+                MarkdownDescription: "Where this filter is evaluated among the project's span drop filters, lowest number first. A new filter is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Computed: true,
             },
             "dropped_count": schema.NumberAttribute{

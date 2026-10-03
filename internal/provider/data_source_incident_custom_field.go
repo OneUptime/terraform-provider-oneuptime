@@ -112,7 +112,7 @@ func (d *IncidentCustomFieldDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Where this field appears among the incident's custom fields, lowest first. Fields with no order come after the ones that have one..",
+                MarkdownDescription: "Where this field appears among the incident's custom fields, lowest number first. A new field is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Computed: true,
             },
             "show_on_create": schema.BoolAttribute{
@@ -124,7 +124,7 @@ func (d *IncidentCustomFieldDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "variable_key": schema.StringAttribute{
-                MarkdownDescription: "The key this field is reached by in templates, as {{customFields.<key>}}. Made from the field's name when it is created - lowercase letters, digits and underscores, with _2, _3 and so on added when another field already has it - and never changed afterwards, so renaming the field does not break templates that use it..",
+                MarkdownDescription: "The key this field is reached by in templates, as {{incident.customFields.<key>}}. Made from the field's name when it is created - lowercase letters, digits and underscores, with _2, _3 and so on added when another field already has it - and never changed afterwards, so renaming the field does not break templates that use it..",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{

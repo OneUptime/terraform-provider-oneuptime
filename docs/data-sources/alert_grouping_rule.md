@@ -34,7 +34,7 @@ data "oneuptime_alert_grouping_rule" "by_id" {
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Description of this alert grouping rule.. Computed.
-- `priority` (Number) Priority of this rule. Lower number = higher priority. Rules are evaluated in priority order... Computed.
+- `priority` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `is_enabled` (Bool) Whether this rule is enabled.. Computed.
 - `match_criteria` (String) JSON object defining the criteria for matching alerts to this rule.. Computed.
 - `monitors` (Set) Only group alerts from these monitors. Leave empty to match alerts from any monitor... Computed.

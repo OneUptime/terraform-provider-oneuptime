@@ -33,7 +33,7 @@ data "oneuptime_trace_recording_rule" "by_id" {
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) What this recording rule computes and why... Computed.
-- `output_metric_name` (String) Name of the new metric this rule writes (e.g. http.error_rate). Must be unique per project... Computed.
+- `output_metric_name` (String) Name of the new metric this rule writes (e.g. http.error_rate). Leave it out and it is made from the rule's name - HTTP error rate becomes http_error_rate, with _2, _3 and so on added when another recording rule of the project already writes it. Keep it unique per project... Computed.
 - `definition` (String) Sources (aliased span aggregations), arithmetic expression, and optional group-by attribute... Computed.
 - `is_enabled` (Bool) Whether this rule is evaluated by the recording rule cron... Computed.
 - `sort_order` (Number) Evaluation order when multiple rules exist... Computed.

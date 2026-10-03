@@ -23,31 +23,28 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &IncidentFormResource{}
-var _ resource.ResourceWithImportState = &IncidentFormResource{}
+var _ resource.Resource = &FormResource{}
+var _ resource.ResourceWithImportState = &FormResource{}
 
-func NewIncidentFormResource() resource.Resource {
-    return &IncidentFormResource{}
+func NewFormResource() resource.Resource {
+    return &FormResource{}
 }
 
-// IncidentFormResource defines the resource implementation.
-type IncidentFormResource struct {
+// FormResource defines the resource implementation.
+type FormResource struct {
     client *Client
 }
 
-// IncidentFormResourceModel describes the resource data model.
-type IncidentFormResourceModel struct {
+// FormResourceModel describes the resource data model.
+type FormResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
     Name types.String `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
-    IncidentSeverityId types.String `tfsdk:"incident_severity_id"`
-    AllowReporterToChooseSeverity types.Bool `tfsdk:"allow_reporter_to_choose_severity"`
-    IncidentTemplateId types.String `tfsdk:"incident_template_id"`
-    DescriptionSetting types.String `tfsdk:"description_setting"`
-    CustomFieldSettings JSONSubsetValue `tfsdk:"custom_field_settings"`
-    IsReporterDetailsRequired types.Bool `tfsdk:"is_reporter_details_required"`
+    TargetType types.String `tfsdk:"target_type"`
+    Fields JSONSubsetValue `tfsdk:"fields"`
+    TargetSettings JSONSubsetValue `tfsdk:"target_settings"`
     SuccessMessage types.String `tfsdk:"success_message"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
@@ -58,13 +55,13 @@ type IncidentFormResourceModel struct {
     ShareKey types.String `tfsdk:"share_key"`
 }
 
-func (r *IncidentFormResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_incident_form"
+func (r *FormResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_form"
 }
 
-func (r *IncidentFormResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Forms anyone with the link can fill in to report an incident, without a OneUptime account. Each submission declares an incident in this project.",
+        MarkdownDescription: "Forms anyone with the link can fill in, without a OneUptime account. Each submission creates an incident or a scheduled maintenance event in this project.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -94,7 +91,7 @@ func (r *IncidentFormResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "is_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Whether the form's link works. While the form is turned off, its public page shows a not-available message and nothing can be submitted..",
+                MarkdownDescription: "Whether the form's link works. While it is off, the public page shows a not-available message and nothing can be submitted..",
                 Optional: true,
                 Computed: true,
                 Default: booldefault.StaticBool(true),
@@ -102,38 +99,17 @@ func (r *IncidentFormResource) Schema(ctx context.Context, req resource.SchemaRe
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
-            "incident_severity_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Required: true,
-            },
-            "allow_reporter_to_choose_severity": schema.BoolAttribute{
-                MarkdownDescription: "When on, the form asks the reporter to choose a severity from the project's incident severities, with the form's own severity chosen to begin with..",
+            "target_type": schema.StringAttribute{
+                MarkdownDescription: "What each submission creates: Incident, or ScheduledMaintenance (a scheduled maintenance event)..",
                 Optional: true,
                 Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "incident_template_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
+                Default: stringdefault.StaticString("Incident"),
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "description_setting": schema.StringAttribute{
-                MarkdownDescription: "Whether the form asks the reporter to describe the incident: Required, Optional or Hidden..",
-                Optional: true,
-                Computed: true,
-                Default: stringdefault.StaticString("Optional"),
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "custom_field_settings": schema.StringAttribute{
-                MarkdownDescription: "The incident custom fields the form asks for, keyed by each field's template variable key (variableKey). Required means the reporter must answer it, Optional that they may leave it empty. Only the fields listed as Required or Optional are asked: a field that is not listed, or is Hidden or Default, is not on the form. The answers become the incident's custom field values..",
+            "fields": schema.StringAttribute{
+                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text and isRequired. A new form starts with a title, a description and the submitter's name and email..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -144,17 +120,20 @@ func (r *IncidentFormResource) Schema(ctx context.Context, req resource.SchemaRe
                     JSONEnvelopeValidator(),
                 },
             },
-            "is_reporter_details_required": schema.BoolAttribute{
-                MarkdownDescription: "When on, the reporter must give their name and email. When off, they may report anonymously..",
+            "target_settings": schema.StringAttribute{
+                MarkdownDescription: "What every submission starts with besides the answers. For incidents: defaultTitle, incidentSeverityId, incidentTemplateId, monitorIds, labelIds, onCallDutyPolicyIds, ownerUserIds and ownerTeamIds. For scheduled maintenance events: defaultTitle, monitorIds, statusPageIds, labelIds, ownerUserIds, ownerTeamIds, showOnStatusPages and notifySubscribers..",
+                CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
-                Default: booldefault.StaticBool(true),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
                 },
             },
             "success_message": schema.StringAttribute{
-                MarkdownDescription: "Shown to the reporter after they submit the form, together with the new incident's number. Markdown..",
+                MarkdownDescription: "Shown after the form is submitted, together with the number of what the submission created. Markdown..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -205,7 +184,7 @@ func (r *IncidentFormResource) Schema(ctx context.Context, req resource.SchemaRe
     }
 }
 
-func (r *IncidentFormResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *FormResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -226,8 +205,8 @@ func (r *IncidentFormResource) Configure(ctx context.Context, req resource.Confi
 }
 
 
-func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data IncidentFormResourceModel
+func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data FormResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -241,10 +220,10 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    incidentFormRequest := map[string]interface{}{
+    formRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := incidentFormRequest["data"].(map[string]interface{})
+    requestDataMap := formRequest["data"].(map[string]interface{})
 
     if !data.Name.IsNull() && !data.Name.IsUnknown() {
         requestDataMap["name"] = data.Name.ValueString()
@@ -255,23 +234,14 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
     if !data.IsEnabled.IsNull() && !data.IsEnabled.IsUnknown() {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
-    if !data.IncidentSeverityId.IsNull() && !data.IncidentSeverityId.IsUnknown() {
-        requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
+    if !data.TargetType.IsNull() && !data.TargetType.IsUnknown() {
+        requestDataMap["targetType"] = data.TargetType.ValueString()
     }
-    if !data.AllowReporterToChooseSeverity.IsNull() && !data.AllowReporterToChooseSeverity.IsUnknown() {
-        requestDataMap["allowReporterToChooseSeverity"] = data.AllowReporterToChooseSeverity.ValueBool()
+    if parsedFields := r.parseJSONField(data.Fields); parsedFields != nil {
+        requestDataMap["fields"] = parsedFields
     }
-    if !data.IncidentTemplateId.IsNull() && !data.IncidentTemplateId.IsUnknown() {
-        requestDataMap["incidentTemplateId"] = data.IncidentTemplateId.ValueString()
-    }
-    if !data.DescriptionSetting.IsNull() && !data.DescriptionSetting.IsUnknown() {
-        requestDataMap["descriptionSetting"] = data.DescriptionSetting.ValueString()
-    }
-    if parsedCustomFieldSettings := r.parseJSONField(data.CustomFieldSettings); parsedCustomFieldSettings != nil {
-        requestDataMap["customFieldSettings"] = parsedCustomFieldSettings
-    }
-    if !data.IsReporterDetailsRequired.IsNull() && !data.IsReporterDetailsRequired.IsUnknown() {
-        requestDataMap["isReporterDetailsRequired"] = data.IsReporterDetailsRequired.ValueBool()
+    if parsedTargetSettings := r.parseJSONField(data.TargetSettings); parsedTargetSettings != nil {
+        requestDataMap["targetSettings"] = parsedTargetSettings
     }
     if !data.SuccessMessage.IsNull() && !data.SuccessMessage.IsUnknown() {
         requestDataMap["successMessage"] = data.SuccessMessage.ValueString()
@@ -284,30 +254,30 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/incident-form", incidentFormRequest)
+    httpResp, err := r.client.Post(ctx, "/form", formRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create incident_form, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create form, got error: %s", err))
         return
     }
 
-    var incidentFormResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &incidentFormResponse)
+    var formResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &formResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create incident_form: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create form: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := incidentFormResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := formResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := incidentFormResponse["_id"].(string); ok {
+    } else if val, ok := formResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for incident_form did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for form did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -316,7 +286,7 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * incident_form is orphaned server-side — never refreshed, never
+     * form is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -331,12 +301,9 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
         "name": true,
         "description": true,
         "isEnabled": true,
-        "incidentSeverityId": true,
-        "allowReporterToChooseSeverity": true,
-        "incidentTemplateId": true,
-        "descriptionSetting": true,
-        "customFieldSettings": true,
-        "isReporterDetailsRequired": true,
+        "targetType": true,
+        "fields": true,
+        "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
         "createdByUserId": true,
@@ -348,21 +315,21 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/incident-form/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/form/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created incident_form but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created form but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created incident_form but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created form but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -465,159 +432,116 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["targetType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TargetType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+                data.TargetType = types.StringValue(string(jsonBytes))
             } else {
-                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TargetType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+                data.TargetType = types.StringValue(string(jsonBytes))
             } else {
-                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TargetType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            data.TargetType = types.StringValue(string(jsonBytes))
         } else {
-            data.IncidentSeverityId = types.StringNull()
+            data.TargetType = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
-        data.IncidentSeverityId = types.StringValue(val)
+    } else if val, ok := dataMap["targetType"].(string); ok {
+        data.TargetType = types.StringValue(val)
     } else {
-        data.IncidentSeverityId = types.StringNull()
+        data.TargetType = types.StringNull()
     }
-    if val, ok := dataMap["allowReporterToChooseSeverity"].(bool); ok {
-        data.AllowReporterToChooseSeverity = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["incidentTemplateId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentTemplateId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentTemplateId"].(string); ok {
-        data.IncidentTemplateId = types.StringValue(val)
-    } else {
-        data.IncidentTemplateId = types.StringNull()
-    }
-    if obj, ok := dataMap["descriptionSetting"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DescriptionSetting = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DescriptionSetting = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DescriptionSetting = types.StringValue(string(jsonBytes))
-            } else {
-                data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DescriptionSetting = types.StringValue(string(jsonBytes))
-            } else {
-                data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DescriptionSetting = types.StringValue(string(jsonBytes))
-        } else {
-            data.DescriptionSetting = types.StringNull()
-        }
-    } else if val, ok := dataMap["descriptionSetting"].(string); ok {
-        data.DescriptionSetting = types.StringValue(val)
-    } else {
-        data.DescriptionSetting = types.StringNull()
-    }
-    if obj, ok := dataMap["customFieldSettings"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["fields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomFieldSettings = NewJSONSubsetValue(val)
+            data.Fields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomFieldSettings = NewJSONSubsetValue(val)
+            data.Fields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+                data.Fields = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+                data.Fields = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            data.Fields = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.CustomFieldSettings = NewJSONSubsetNull()
+            data.Fields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["customFieldSettings"].(string); ok {
-        data.CustomFieldSettings = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["fields"].(string); ok {
+        data.Fields = NewJSONSubsetValue(val)
     } else {
-        data.CustomFieldSettings = NewJSONSubsetNull()
+        data.Fields = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["isReporterDetailsRequired"].(bool); ok {
-        data.IsReporterDetailsRequired = types.BoolValue(val)
+    if obj, ok := dataMap["targetSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TargetSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TargetSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TargetSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["targetSettings"].(string); ok {
+        data.TargetSettings = NewJSONSubsetValue(val)
+    } else {
+        data.TargetSettings = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["successMessage"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -832,8 +756,8 @@ func (r *IncidentFormResource) Create(ctx context.Context, req resource.CreateRe
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *IncidentFormResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data IncidentFormResourceModel
+func (r *FormResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data FormResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -848,12 +772,9 @@ func (r *IncidentFormResource) Read(ctx context.Context, req resource.ReadReques
         "name": true,
         "description": true,
         "isEnabled": true,
-        "incidentSeverityId": true,
-        "allowReporterToChooseSeverity": true,
-        "incidentTemplateId": true,
-        "descriptionSetting": true,
-        "customFieldSettings": true,
-        "isReporterDetailsRequired": true,
+        "targetType": true,
+        "fields": true,
+        "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
         "createdByUserId": true,
@@ -866,9 +787,9 @@ func (r *IncidentFormResource) Read(ctx context.Context, req resource.ReadReques
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/incident-form/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/form/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read incident_form, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read form, got error: %s", err))
         return
     }
 
@@ -877,22 +798,22 @@ func (r *IncidentFormResource) Read(ctx context.Context, req resource.ReadReques
         return
     }
 
-    var incidentFormResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &incidentFormResponse)
+    var formResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &formResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse incident_form response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse form response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := incidentFormResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := formResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = incidentFormResponse
+        dataMap = formResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -983,159 +904,116 @@ func (r *IncidentFormResource) Read(ctx context.Context, req resource.ReadReques
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["targetType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TargetType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+                data.TargetType = types.StringValue(string(jsonBytes))
             } else {
-                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TargetType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+                data.TargetType = types.StringValue(string(jsonBytes))
             } else {
-                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TargetType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            data.TargetType = types.StringValue(string(jsonBytes))
         } else {
-            data.IncidentSeverityId = types.StringNull()
+            data.TargetType = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
-        data.IncidentSeverityId = types.StringValue(val)
+    } else if val, ok := dataMap["targetType"].(string); ok {
+        data.TargetType = types.StringValue(val)
     } else {
-        data.IncidentSeverityId = types.StringNull()
+        data.TargetType = types.StringNull()
     }
-    if val, ok := dataMap["allowReporterToChooseSeverity"].(bool); ok {
-        data.AllowReporterToChooseSeverity = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["incidentTemplateId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentTemplateId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentTemplateId"].(string); ok {
-        data.IncidentTemplateId = types.StringValue(val)
-    } else {
-        data.IncidentTemplateId = types.StringNull()
-    }
-    if obj, ok := dataMap["descriptionSetting"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DescriptionSetting = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DescriptionSetting = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DescriptionSetting = types.StringValue(string(jsonBytes))
-            } else {
-                data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DescriptionSetting = types.StringValue(string(jsonBytes))
-            } else {
-                data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DescriptionSetting = types.StringValue(string(jsonBytes))
-        } else {
-            data.DescriptionSetting = types.StringNull()
-        }
-    } else if val, ok := dataMap["descriptionSetting"].(string); ok {
-        data.DescriptionSetting = types.StringValue(val)
-    } else {
-        data.DescriptionSetting = types.StringNull()
-    }
-    if obj, ok := dataMap["customFieldSettings"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["fields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomFieldSettings = NewJSONSubsetValue(val)
+            data.Fields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomFieldSettings = NewJSONSubsetValue(val)
+            data.Fields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+                data.Fields = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+                data.Fields = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            data.Fields = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.CustomFieldSettings = NewJSONSubsetNull()
+            data.Fields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["customFieldSettings"].(string); ok {
-        data.CustomFieldSettings = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["fields"].(string); ok {
+        data.Fields = NewJSONSubsetValue(val)
     } else {
-        data.CustomFieldSettings = NewJSONSubsetNull()
+        data.Fields = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["isReporterDetailsRequired"].(bool); ok {
-        data.IsReporterDetailsRequired = types.BoolValue(val)
+    if obj, ok := dataMap["targetSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TargetSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TargetSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TargetSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["targetSettings"].(string); ok {
+        data.TargetSettings = NewJSONSubsetValue(val)
+    } else {
+        data.TargetSettings = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["successMessage"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1345,9 +1223,9 @@ func (r *IncidentFormResource) Read(ctx context.Context, req resource.ReadReques
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data IncidentFormResourceModel
-    var state IncidentFormResourceModel
+func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data FormResourceModel
+    var state FormResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -1365,10 +1243,10 @@ func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRe
     data.Id = state.Id
 
     // Create API request body
-    incidentFormRequest := map[string]interface{}{
+    formRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := incidentFormRequest["data"].(map[string]interface{})
+    requestDataMap := formRequest["data"].(map[string]interface{})
 
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
         requestDataMap["name"] = data.Name.ValueString()
@@ -1379,28 +1257,24 @@ func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRe
     if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
     }
-    if !data.IncidentSeverityId.IsUnknown() && !state.IncidentSeverityId.IsUnknown() && !data.IncidentSeverityId.Equal(state.IncidentSeverityId) {
-        requestDataMap["incidentSeverityId"] = data.IncidentSeverityId.ValueString()
+    if !data.TargetType.IsUnknown() && !state.TargetType.IsUnknown() && !data.TargetType.Equal(state.TargetType) {
+        requestDataMap["targetType"] = data.TargetType.ValueString()
     }
-    if !data.AllowReporterToChooseSeverity.IsUnknown() && !state.AllowReporterToChooseSeverity.IsUnknown() && !data.AllowReporterToChooseSeverity.Equal(state.AllowReporterToChooseSeverity) {
-        requestDataMap["allowReporterToChooseSeverity"] = data.AllowReporterToChooseSeverity.ValueBool()
-    }
-    if !data.IncidentTemplateId.IsUnknown() && !state.IncidentTemplateId.IsUnknown() && !data.IncidentTemplateId.Equal(state.IncidentTemplateId) {
-        requestDataMap["incidentTemplateId"] = data.IncidentTemplateId.ValueString()
-    }
-    if !data.DescriptionSetting.IsUnknown() && !state.DescriptionSetting.IsUnknown() && !data.DescriptionSetting.Equal(state.DescriptionSetting) {
-        requestDataMap["descriptionSetting"] = data.DescriptionSetting.ValueString()
-    }
-    if !data.CustomFieldSettings.IsUnknown() && !state.CustomFieldSettings.IsUnknown() && !data.CustomFieldSettings.Equal(state.CustomFieldSettings) {
-        var customfieldsettingsData interface{}
-        if err := json.Unmarshal([]byte(data.CustomFieldSettings.ValueString()), &customfieldsettingsData); err == nil {
-            requestDataMap["customFieldSettings"] = customfieldsettingsData
+    if !data.Fields.IsUnknown() && !state.Fields.IsUnknown() && !data.Fields.Equal(state.Fields) {
+        var fieldsData interface{}
+        if err := json.Unmarshal([]byte(data.Fields.ValueString()), &fieldsData); err == nil {
+            requestDataMap["fields"] = fieldsData
         } else {
-            requestDataMap["customFieldSettings"] = data.CustomFieldSettings.ValueString()
+            requestDataMap["fields"] = data.Fields.ValueString()
         }
     }
-    if !data.IsReporterDetailsRequired.IsUnknown() && !state.IsReporterDetailsRequired.IsUnknown() && !data.IsReporterDetailsRequired.Equal(state.IsReporterDetailsRequired) {
-        requestDataMap["isReporterDetailsRequired"] = data.IsReporterDetailsRequired.ValueBool()
+    if !data.TargetSettings.IsUnknown() && !state.TargetSettings.IsUnknown() && !data.TargetSettings.Equal(state.TargetSettings) {
+        var targetsettingsData interface{}
+        if err := json.Unmarshal([]byte(data.TargetSettings.ValueString()), &targetsettingsData); err == nil {
+            requestDataMap["targetSettings"] = targetsettingsData
+        } else {
+            requestDataMap["targetSettings"] = data.TargetSettings.ValueString()
+        }
     }
     if !data.SuccessMessage.IsUnknown() && !state.SuccessMessage.IsUnknown() && !data.SuccessMessage.Equal(state.SuccessMessage) {
         requestDataMap["successMessage"] = data.SuccessMessage.ValueString()
@@ -1412,21 +1286,21 @@ func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRe
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(incidentFormRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/incident-form/" + data.Id.ValueString() + "", incidentFormRequest)
+    if len(formRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/form/" + data.Id.ValueString() + "", formRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update incident_form, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update form, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var incidentFormResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &incidentFormResponse)
+        var formResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &formResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update incident_form: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update form: %s", err))
             return
         }
-        _ = incidentFormResponse
+        _ = formResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -1435,12 +1309,9 @@ func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRe
         "name": true,
         "description": true,
         "isEnabled": true,
-        "incidentSeverityId": true,
-        "allowReporterToChooseSeverity": true,
-        "incidentTemplateId": true,
-        "descriptionSetting": true,
-        "customFieldSettings": true,
-        "isReporterDetailsRequired": true,
+        "targetType": true,
+        "fields": true,
+        "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
         "createdByUserId": true,
@@ -1452,16 +1323,16 @@ func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRe
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/incident-form/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/form/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read incident_form after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read form after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read incident_form after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read form after update: %s", err))
         return
     }
 
@@ -1564,159 +1435,116 @@ func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRe
     if val, ok := dataMap["isEnabled"].(bool); ok {
         data.IsEnabled = types.BoolValue(val)
     }
-    if obj, ok := dataMap["incidentSeverityId"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["targetType"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentSeverityId = types.StringValue(val)
+            data.TargetType = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", val))
+            data.TargetType = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+                data.TargetType = types.StringValue(string(jsonBytes))
             } else {
-                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.TargetType = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+                data.TargetType = types.StringValue(string(jsonBytes))
             } else {
-                data.IncidentSeverityId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.TargetType = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.IncidentSeverityId = types.StringValue(string(jsonBytes))
+            data.TargetType = types.StringValue(string(jsonBytes))
         } else {
-            data.IncidentSeverityId = types.StringNull()
+            data.TargetType = types.StringNull()
         }
-    } else if val, ok := dataMap["incidentSeverityId"].(string); ok {
-        data.IncidentSeverityId = types.StringValue(val)
+    } else if val, ok := dataMap["targetType"].(string); ok {
+        data.TargetType = types.StringValue(val)
     } else {
-        data.IncidentSeverityId = types.StringNull()
+        data.TargetType = types.StringNull()
     }
-    if val, ok := dataMap["allowReporterToChooseSeverity"].(bool); ok {
-        data.AllowReporterToChooseSeverity = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["incidentTemplateId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentTemplateId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentTemplateId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentTemplateId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentTemplateId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentTemplateId"].(string); ok {
-        data.IncidentTemplateId = types.StringValue(val)
-    } else {
-        data.IncidentTemplateId = types.StringNull()
-    }
-    if obj, ok := dataMap["descriptionSetting"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DescriptionSetting = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.DescriptionSetting = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.DescriptionSetting = types.StringValue(string(jsonBytes))
-            } else {
-                data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.DescriptionSetting = types.StringValue(string(jsonBytes))
-            } else {
-                data.DescriptionSetting = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.DescriptionSetting = types.StringValue(string(jsonBytes))
-        } else {
-            data.DescriptionSetting = types.StringNull()
-        }
-    } else if val, ok := dataMap["descriptionSetting"].(string); ok {
-        data.DescriptionSetting = types.StringValue(val)
-    } else {
-        data.DescriptionSetting = types.StringNull()
-    }
-    if obj, ok := dataMap["customFieldSettings"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["fields"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CustomFieldSettings = NewJSONSubsetValue(val)
+            data.Fields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CustomFieldSettings = NewJSONSubsetValue(val)
+            data.Fields = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+                data.Fields = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+                data.Fields = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.CustomFieldSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Fields = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.CustomFieldSettings = NewJSONSubsetValue(string(jsonBytes))
+            data.Fields = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.CustomFieldSettings = NewJSONSubsetNull()
+            data.Fields = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["customFieldSettings"].(string); ok {
-        data.CustomFieldSettings = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["fields"].(string); ok {
+        data.Fields = NewJSONSubsetValue(val)
     } else {
-        data.CustomFieldSettings = NewJSONSubsetNull()
+        data.Fields = NewJSONSubsetNull()
     }
-    if val, ok := dataMap["isReporterDetailsRequired"].(bool); ok {
-        data.IsReporterDetailsRequired = types.BoolValue(val)
+    if obj, ok := dataMap["targetSettings"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TargetSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.TargetSettings = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.TargetSettings = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.TargetSettings = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.TargetSettings = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["targetSettings"].(string); ok {
+        data.TargetSettings = NewJSONSubsetValue(val)
+    } else {
+        data.TargetSettings = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["successMessage"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1927,8 +1755,8 @@ func (r *IncidentFormResource) Update(ctx context.Context, req resource.UpdateRe
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *IncidentFormResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data IncidentFormResourceModel
+func (r *FormResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data FormResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1938,9 +1766,9 @@ func (r *IncidentFormResource) Delete(ctx context.Context, req resource.DeleteRe
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/incident-form/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/form/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete incident_form, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete form, got error: %s", err))
         return
     }
 
@@ -1948,7 +1776,7 @@ func (r *IncidentFormResource) Delete(ctx context.Context, req resource.DeleteRe
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete incident_form: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete form: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -1957,12 +1785,12 @@ func (r *IncidentFormResource) Delete(ctx context.Context, req resource.DeleteRe
 }
 
 
-func (r *IncidentFormResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *FormResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *IncidentFormResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *FormResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1980,7 +1808,7 @@ func (r *IncidentFormResource) convertTerraformMapToInterface(terraformMap types
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *IncidentFormResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *FormResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -2001,7 +1829,7 @@ func (r *IncidentFormResource) convertTerraformListToInterface(terraformList typ
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *IncidentFormResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *FormResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -2023,7 +1851,7 @@ func (r *IncidentFormResource) convertTerraformSetToInterface(terraformSet types
 
 
 // Helper method to parse JSON field for complex objects
-func (r *IncidentFormResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *FormResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -2039,7 +1867,7 @@ func (r *IncidentFormResource) parseJSONField(terraformString basetypes.StringVa
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *IncidentFormResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *FormResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -2061,7 +1889,7 @@ func (r *IncidentFormResource) normalizeURLWrappers(value interface{}) interface
     }
 }
 
-func (r *IncidentFormResource) normalizeURLString(value string) string {
+func (r *FormResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -2073,7 +1901,7 @@ func (r *IncidentFormResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *IncidentFormResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *FormResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -2083,6 +1911,6 @@ func (r *IncidentFormResource) bigFloatToFloat64(bf *big.Float) interface{} {
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *IncidentFormResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *FormResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

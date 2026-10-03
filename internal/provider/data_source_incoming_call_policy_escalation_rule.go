@@ -91,7 +91,7 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "order": schema.NumberAttribute{
-                MarkdownDescription: "Execution order (1, 2, 3...).",
+                MarkdownDescription: "Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them..",
                 Computed: true,
             },
             "escalate_after_seconds": schema.NumberAttribute{

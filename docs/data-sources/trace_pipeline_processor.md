@@ -36,5 +36,5 @@ data "oneuptime_trace_pipeline_processor" "by_id" {
 - `processor_type` (String) The type of processor: AttributeRemapper, SpanNameRemapper, StatusRemapper, SpanKindRemapper, or CategoryProcessor... Computed.
 - `configuration` (String) Processor-specific configuration as JSON (e.g., source/target fields, mapping rules)... Computed.
 - `is_enabled` (Bool) Whether this processor is active... Computed.
-- `sort_order` (Number) Determines the execution order of this processor within its pipeline... Computed.
+- `sort_order` (Number) Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

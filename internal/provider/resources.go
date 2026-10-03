@@ -70,7 +70,7 @@ func GetResources() []func() resource.Resource {
         NewIncidentSeverityResource,
         NewIncidentNoteTemplateResource,
         NewIncidentPostmortemTemplateResource,
-        NewIncidentFormResource,
+        NewFormResource,
         NewAlertStateResource,
         NewAlertResource,
         NewAlertFeedResource,

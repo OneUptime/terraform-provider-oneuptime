@@ -36,7 +36,14 @@ data "oneuptime_runbook_rule" "by_id" {
 - `description` (String) Description of this runbook rule... Computed.
 - `is_enabled` (Bool) Whether this rule is enabled... Computed.
 - `trigger_entity_type` (String) Entity type that triggers this rule on creation: Incident, Alert, or ScheduledMaintenance... Computed.
+- `monitors` (Set) Only match incidents and scheduled maintenance events that affect, and alerts raised by, at least one of these monitors. Leave empty to match any monitor... Computed.
+- `incident_severities` (Set) Only match incidents with one of these severities. Incident rules only. Leave empty to match any severity... Computed.
+- `alert_severities` (Set) Only match alerts with one of these severities. Alert rules only. Leave empty to match any severity... Computed.
+- `labels` (Set) Only match incidents, alerts or scheduled maintenance events that carry at least one of these labels. Leave empty to match regardless of their labels... Computed.
+- `monitor_labels` (Set) Only match when a monitor of the incident, alert or scheduled maintenance event carries at least one of these labels. Leave empty to match regardless of monitor labels... Computed.
 - `title_pattern` (String) Case-insensitive regex matched against the entity's title. Leave empty to match any title... Computed.
 - `description_pattern` (String) Case-insensitive regex matched against the entity's description. Leave empty to match any description... Computed.
+- `monitor_name_pattern` (String) Case-insensitive regex matched against the names of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor name... Computed.
+- `monitor_description_pattern` (String) Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor description... Computed.
 - `runbooks` (Set) Runbooks to start when this rule matches. Each runbook produces its own execution... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

@@ -41,4 +41,4 @@ data "oneuptime_scheduled_maintenance_state" "by_id" {
 - `is_ongoing_state` (Bool) Is this state a ongoing state?.. Computed.
 - `is_ended_state` (Bool) Is this state a ended state?.. Computed.
 - `is_resolved_state` (Bool) Is this state a resolved state?.. Computed.
-- `order` (Number) Order / Priority of this resource.. Computed.
+- `order` (Number) Where this state sits in the project's list of scheduled maintenance states: 1 is the top. Events only ever move down the list, so the scheduled, ongoing, ended and completed states have to stay in that order. A new state without a number goes just above the completed state. Setting a number moves the state to that place, and the ones in between shift by one. In the dashboard, drag the rows to reorder them... Computed.

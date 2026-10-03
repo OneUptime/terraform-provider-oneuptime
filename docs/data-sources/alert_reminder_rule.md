@@ -34,7 +34,7 @@ data "oneuptime_alert_reminder_rule" "by_id" {
 - `criteria` (String) Versioned conditions that determine whether this rule matches a resource... Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Description of this reminder rule.. Computed.
-- `order` (Number) Order/priority of this rule. Rules are evaluated in order (lowest first). First matching rule wins... Computed.
+- `order` (Number) Where this rule sits in the list. Rules are evaluated from the top of the list down, lowest number first, and the first one that matches wins. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
 - `is_enabled` (Bool) Whether this reminder rule is enabled.. Computed.
 - `reminder_interval_in_minutes` (Number) How often (in minutes) to remind alert owners while the alert is still open. For example, set to 30 to remind owners every 30 minutes... Computed.
 - `stop_reminders_on_state` (String) Stop sending reminders once the alert reaches this state. Select Acknowledged to stop reminders when the alert is acknowledged, or Resolved to keep reminding until the alert is resolved... Computed.
