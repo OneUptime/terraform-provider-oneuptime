@@ -2,12 +2,12 @@
 page_title: "oneuptime_user_override Data Source - oneuptime"
 subcategory: "On-Call & Escalation"
 description: |-
-  Manage on-call duty user overrides, for example if the user is on leave you can override the on-call duty policy for that user so all the alerts will be routed to the other user.
+  While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy.
 ---
 
 # oneuptime_user_override (Data Source)
 
-Manage on-call duty user overrides, for example if the user is on leave you can override the on-call duty policy for that user so all the alerts will be routed to the other user. Look up by `id` or by `name` (must match exactly one item).
+While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. Look up by `id` or by `name` (must match exactly one item).
 
 ## Example Usage
 

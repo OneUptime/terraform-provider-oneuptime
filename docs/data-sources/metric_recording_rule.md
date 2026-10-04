@@ -36,6 +36,6 @@ data "oneuptime_metric_recording_rule" "by_id" {
 - `output_metric_name` (String) Name of the new metric this rule writes (e.g. http.error_rate). Leave it out and it is made from the rule's name - HTTP error rate becomes http_error_rate, with _2, _3 and so on added when another recording rule of the project already writes it. Keep it unique per project... Computed.
 - `definition` (String) Sources (aliased input metrics), arithmetic expression, and optional group-by attribute... Computed.
 - `is_enabled` (Bool) Whether this rule is evaluated by the recording rule cron... Computed.
-- `sort_order` (Number) Evaluation order when multiple rules exist... Computed.
+- `sort_order` (Number) Not read when rules are evaluated: every enabled rule is evaluated each minute, on its own, whatever this holds. The dashboard lists rules by name... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

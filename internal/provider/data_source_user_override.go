@@ -48,7 +48,7 @@ func (d *UserOverrideDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *UserOverrideDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Manage on-call duty user overrides, for example if the user is on leave you can override the on-call duty policy for that user so all the alerts will be routed to the other user. Look up an existing user_override by `id` or by `name`.",
+        MarkdownDescription: "While someone is away, a user override sends the alerts that would page them to the person who covers, for a set time. An override on an on-call policy applies to that policy only; one without a policy applies to every on-call policy. Look up an existing user_override by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{

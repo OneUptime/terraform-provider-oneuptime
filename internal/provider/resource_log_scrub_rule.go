@@ -15,6 +15,7 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -95,11 +96,11 @@ func (r *LogScrubRuleResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "pattern_type": schema.StringAttribute{
-                MarkdownDescription: "The type of sensitive data pattern to detect: email, creditCard, ssn, phoneNumber, ipAddress, or custom..",
+                MarkdownDescription: "The type of sensitive data to detect: email, creditCard, ssn, phoneNumber, ipAddress, sensitiveKeys (the whole value of every attribute whose key looks sensitive, such as password or token), or custom (the regular expression in customRegex). Any other value is refused: it would scrub nothing..",
                 Required: true,
             },
             "custom_regex": schema.StringAttribute{
-                MarkdownDescription: "A custom regular expression pattern to match. Only used when patternType is 'custom'..",
+                MarkdownDescription: "The regular expression a 'custom' rule scrubs, written without slashes or flags and matched case-sensitively. Required when patternType is 'custom': a pattern that is empty, does not compile, or matches empty text is refused. Ignored for the other pattern types..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -107,12 +108,22 @@ func (r *LogScrubRuleResource) Schema(ctx context.Context, req resource.SchemaRe
                 },
             },
             "scrub_action": schema.StringAttribute{
-                MarkdownDescription: "How to scrub matched data: 'mask' partially hides it, 'hash' replaces with a hash, 'redact' removes entirely..",
-                Required: true,
+                MarkdownDescription: "How to scrub matched data: 'redact' replaces it with [REDACTED] (the default), 'mask' partially hides it, 'hash' replaces it with a short hash of the value..",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("redact"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "fields_to_scrub": schema.StringAttribute{
-                MarkdownDescription: "Which log fields to scrub: 'body' (log message only), 'attributes' (attribute values only), or 'both'..",
-                Required: true,
+                MarkdownDescription: "Which log fields to scrub: 'body' (the log message), 'attributes' (attribute values), or 'both', the default. A sensitiveKeys rule always scrubs attribute values, whatever this says..",
+                Optional: true,
+                Computed: true,
+                Default: stringdefault.StaticString("both"),
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
             },
             "is_enabled": schema.BoolAttribute{
                 MarkdownDescription: "Whether this scrub rule is active..",

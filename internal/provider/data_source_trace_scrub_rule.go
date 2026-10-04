@@ -89,19 +89,19 @@ func (d *TraceScrubRuleDataSource) Schema(ctx context.Context, req datasource.Sc
                 Computed: true,
             },
             "pattern_type": schema.StringAttribute{
-                MarkdownDescription: "The type of sensitive data pattern to detect: email, creditCard, ssn, phoneNumber, ipAddress, or custom..",
+                MarkdownDescription: "The type of sensitive data to detect: email, creditCard, ssn, phoneNumber, ipAddress, sensitiveKeys (the whole value of every attribute whose key looks sensitive, such as password or token), or custom (the regular expression in customRegex). Any other value is refused: it would scrub nothing..",
                 Computed: true,
             },
             "custom_regex": schema.StringAttribute{
-                MarkdownDescription: "A custom regular expression pattern to match. Only used when patternType is 'custom'..",
+                MarkdownDescription: "The regular expression a 'custom' rule scrubs, written without slashes or flags and matched case-sensitively. Required when patternType is 'custom': a pattern that is empty, does not compile, or matches empty text is refused. Ignored for the other pattern types..",
                 Computed: true,
             },
             "scrub_action": schema.StringAttribute{
-                MarkdownDescription: "How to scrub matched data: 'mask' partially hides it, 'hash' replaces with a hash, 'redact' removes entirely..",
+                MarkdownDescription: "How to scrub matched data: 'redact' replaces it with [REDACTED] (the default), 'mask' partially hides it, 'hash' replaces it with a short hash of the value..",
                 Computed: true,
             },
             "fields_to_scrub": schema.StringAttribute{
-                MarkdownDescription: "Which span fields to scrub: 'name' (span name), 'attributes' (attribute values), 'events' (span event attributes), or 'all'..",
+                MarkdownDescription: "Which span fields to scrub: 'name' (the span name), 'attributes' (attribute values), 'events' (span event attributes), or 'all', the default. A sensitiveKeys rule always scrubs attribute and event attribute values, whatever this says..",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{

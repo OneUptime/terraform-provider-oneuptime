@@ -42,6 +42,9 @@ type FormDataSourceModel struct {
     TargetSettings types.String `tfsdk:"target_settings"`
     SuccessMessage types.String `tfsdk:"success_message"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
+    LogoFileId types.String `tfsdk:"logo_file_id"`
+    LogoAltText types.String `tfsdk:"logo_alt_text"`
+    FaviconFileId types.String `tfsdk:"favicon_file_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
@@ -116,6 +119,18 @@ func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 MarkdownDescription: "The networks the form can be opened and submitted from: one IPv4 or IPv6 address, or one IPv4 range in CIDR notation (such as 10.0.0.0/8), per line. IPv6 ranges are not supported. Leave it empty to allow any network..",
                 Computed: true,
             },
+            "logo_file_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "logo_alt_text": schema.StringAttribute{
+                MarkdownDescription: "What the logo says, read out by screen readers: usually your organization's name. Leave it empty and screen readers skip the logo..",
+                Computed: true,
+            },
+            "favicon_file_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -179,6 +194,9 @@ func (d *FormDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
+        "logoFileId": true,
+        "logoAltText": true,
+        "faviconFileId": true,
         "createdByUserId": true,
         "_id": true,
     }
@@ -478,6 +496,57 @@ func (d *FormDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.IpWhitelist = types.StringValue(val)
     } else {
         data.IpWhitelist = types.StringNull()
+    }
+    if obj, ok := item["logoFileId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LogoFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LogoFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LogoFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoFileId = types.StringNull()
+        }
+    } else if val, ok := item["logoFileId"].(string); ok {
+        data.LogoFileId = types.StringValue(val)
+    } else {
+        data.LogoFileId = types.StringNull()
+    }
+    if obj, ok := item["logoAltText"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LogoAltText = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LogoAltText = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LogoAltText = types.StringValue(string(jsonBytes))
+        } else {
+            data.LogoAltText = types.StringNull()
+        }
+    } else if val, ok := item["logoAltText"].(string); ok {
+        data.LogoAltText = types.StringValue(val)
+    } else {
+        data.LogoAltText = types.StringNull()
+    }
+    if obj, ok := item["faviconFileId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.FaviconFileId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.FaviconFileId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.FaviconFileId = types.StringValue(string(jsonBytes))
+        } else {
+            data.FaviconFileId = types.StringNull()
+        }
+    } else if val, ok := item["faviconFileId"].(string); ok {
+        data.FaviconFileId = types.StringValue(val)
+    } else {
+        data.FaviconFileId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

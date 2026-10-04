@@ -78,9 +78,9 @@ data "oneuptime_status_page" "by_id" {
 - `default_bar_color` (String) Color object. Computed.
 - `downtime_monitor_statuses` (Set) List of monitors statuses that are considered as "down" for this status page... Computed.
 - `subscriber_timezones` (String) Timezones of subscribers to this status page... Computed.
-- `is_report_enabled` (Bool) Is Report Enabled for this Status Page?.. Computed.
+- `is_report_enabled` (Bool) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it... Computed.
 - `report_start_date_time` (String) A date time object.. Computed.
-- `report_recurring_interval` (String) How often would you like to send the report?.. Computed.
+- `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month... Computed.
 - `send_next_report_by` (String) A date time object.. Computed.
 - `report_data_in_days` (Number) How many days of data should be included in the report?.. Computed.
 - `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period?.. Computed.

@@ -410,7 +410,7 @@ func (r *AlertGroupingRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "episode_owner_users": schema.SetAttribute{
-                MarkdownDescription: "Users to automatically add as owners to episodes created by this rule..",
+                MarkdownDescription: "Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -419,7 +419,7 @@ func (r *AlertGroupingRuleResource) Schema(ctx context.Context, req resource.Sch
                 },
             },
             "episode_owner_teams": schema.SetAttribute{
-                MarkdownDescription: "Teams to automatically add as owners to episodes created by this rule..",
+                MarkdownDescription: "Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,

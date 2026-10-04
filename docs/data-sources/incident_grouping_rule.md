@@ -65,8 +65,8 @@ data "oneuptime_incident_grouping_rule" "by_id" {
 - `default_assign_to_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `default_assign_to_team_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `episode_labels` (Set) Labels to automatically apply to episodes created by this rule... Computed.
-- `episode_owner_users` (Set) Users to automatically add as owners to episodes created by this rule... Computed.
-- `episode_owner_teams` (Set) Teams to automatically add as owners to episodes created by this rule... Computed.
+- `episode_owner_users` (Set) Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project... Computed.
+- `episode_owner_teams` (Set) Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project... Computed.
 - `episode_member_roles` (Set) Incident roles to display in the episode members form. Select the roles that can be assigned to episode members... Computed.
 - `episode_member_role_assignments` (String) Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

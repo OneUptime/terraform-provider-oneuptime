@@ -123,7 +123,7 @@ func (r *TraceRecordingRuleResource) Schema(ctx context.Context, req resource.Sc
                 },
             },
             "sort_order": schema.NumberAttribute{
-                MarkdownDescription: "Evaluation order when multiple rules exist..",
+                MarkdownDescription: "Not read when rules are evaluated: every enabled rule is evaluated each minute, on its own, whatever this holds. The dashboard lists rules by name..",
                 Optional: true,
                 Computed: true,
                 Default: numberdefault.StaticBigFloat(big.NewFloat(0)),

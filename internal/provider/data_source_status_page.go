@@ -336,7 +336,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "is_report_enabled": schema.BoolAttribute{
-                MarkdownDescription: "Is Report Enabled for this Status Page?.",
+                MarkdownDescription: "Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it..",
                 Computed: true,
             },
             "report_start_date_time": schema.StringAttribute{
@@ -344,7 +344,7 @@ func (d *StatusPageDataSource) Schema(ctx context.Context, req datasource.Schema
                 Computed: true,
             },
             "report_recurring_interval": schema.StringAttribute{
-                MarkdownDescription: "How often would you like to send the report?.",
+                MarkdownDescription: "How often a report goes out. Left out when reports are turned on, it is every month..",
                 Computed: true,
             },
             "send_next_report_by": schema.StringAttribute{

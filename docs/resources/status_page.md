@@ -68,9 +68,9 @@ resource "oneuptime_status_page" "example" {
 - `hide_powered_by_one_uptime_branding` (Bool) Hide Powered By OneUptime Branding?..
 - `default_bar_color` (String) Color object.
 - `subscriber_timezones` (String) Timezones of subscribers to this status page...
-- `is_report_enabled` (Bool) Is Report Enabled for this Status Page?..
+- `is_report_enabled` (Bool) Whether this status page's email subscribers get reports. Turned on without a schedule, reports go out on the 1st of every month at 09:00 in the report timezone, each covering the calendar month before it...
 - `report_start_date_time` (String) A date time object..
-- `report_recurring_interval` (String) How often would you like to send the report?..
+- `report_recurring_interval` (String) How often a report goes out. Left out when reports are turned on, it is every month...
 - `send_next_report_by` (String) A date time object..
 - `report_data_in_days` (Number) How many days of data should be included in the report?..
 - `report_period_type` (String) Should the report cover a rolling number of days, or the previous whole calendar period?..
