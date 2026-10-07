@@ -33,7 +33,7 @@ data "oneuptime_log_pipeline_processor" "by_id" {
 - `version` (Number) Object version. Computed.
 - `project_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `log_pipeline_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
-- `processor_type` (String) The type of processor: GrokParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor... Computed.
+- `processor_type` (String) The type of processor: GrokParser, KeyValueParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor... Computed.
 - `configuration` (String) Processor-specific configuration as JSON (e.g., grok pattern, source/target fields, mapping rules)... Computed.
 - `is_enabled` (Bool) Whether this processor is active... Computed.
 - `sort_order` (Number) Where this processor runs within its pipeline, lowest number first. A new processor is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.

@@ -20,42 +20,45 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &OidCollectionTemplateResource{}
-var _ resource.ResourceWithImportState = &OidCollectionTemplateResource{}
+var _ resource.Resource = &VideoCallConnectionResource{}
+var _ resource.ResourceWithImportState = &VideoCallConnectionResource{}
 
-func NewOidCollectionTemplateResource() resource.Resource {
-    return &OidCollectionTemplateResource{}
+func NewVideoCallConnectionResource() resource.Resource {
+    return &VideoCallConnectionResource{}
 }
 
-// OidCollectionTemplateResource defines the resource implementation.
-type OidCollectionTemplateResource struct {
+// VideoCallConnectionResource defines the resource implementation.
+type VideoCallConnectionResource struct {
     client *Client
 }
 
-// OidCollectionTemplateResourceModel describes the resource data model.
-type OidCollectionTemplateResourceModel struct {
+// VideoCallConnectionResourceModel describes the resource data model.
+type VideoCallConnectionResourceModel struct {
     Id types.String `tfsdk:"id"`
     ProjectId types.String `tfsdk:"project_id"`
-    Name types.String `tfsdk:"name"`
+    Name JSONSubsetValue `tfsdk:"name"`
     Description types.String `tfsdk:"description"`
-    Oids JSONSubsetValue `tfsdk:"oids"`
-    Tables JSONSubsetValue `tfsdk:"tables"`
+    ProviderValue types.String `tfsdk:"provider_value"`
+    Config JSONSubsetValue `tfsdk:"config"`
+    Secrets types.String `tfsdk:"secrets"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
-    Slug types.String `tfsdk:"slug"`
+    LastCallStartedAt RFC3339Value `tfsdk:"last_call_started_at"`
+    LastError types.String `tfsdk:"last_error"`
+    LastErrorAt RFC3339Value `tfsdk:"last_error_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (r *OidCollectionTemplateResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_oid_collection_template"
+func (r *VideoCallConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_video_call_connection"
 }
 
-func (r *OidCollectionTemplateResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *VideoCallConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A reusable set of SNMP health OIDs. Every network device linked to a template collects its OIDs, and editing the template changes what every linked device collects on its next poll.",
+        MarkdownDescription: "Zoom, Google Meet, Microsoft Teams or a standing meeting link, used to start a dedicated video call for incidents and alerts.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -73,19 +76,30 @@ func (r *OidCollectionTemplateResource) Schema(ctx context.Context, req resource
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "The device type this template describes. Devices linked to it all collect the same OIDs..",
+                MarkdownDescription: "Name object",
+                CustomType: JSONSubsetType{},
                 Required: true,
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember.",
+                MarkdownDescription: "What this connection is for..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
                 },
             },
-            "oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected by every device linked to this template. You do not need OIDs for interfaces - bits in/out, errors, utilization and up/down are walked for every port automatically..",
+            "provider_value": schema.StringAttribute{
+                MarkdownDescription: "Which provider this connection starts calls with: Zoom, GoogleMeet, MicrosoftTeams or CustomLink. Fixed once created..",
+                Required: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.RequiresReplace(),
+                },
+            },
+            "config": schema.StringAttribute{
+                MarkdownDescription: "Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -96,17 +110,9 @@ func (r *OidCollectionTemplateResource) Schema(ctx context.Context, req resource
                     JSONEnvelopeValidator(),
                 },
             },
-            "tables": schema.StringAttribute{
-                MarkdownDescription: "SNMP tables walked by every device linked to this template - one row per IPsec tunnel, Wi-Fi radio, routing neighbour, fan or power supply. Each table lists the column OIDs to collect and, optionally, the columns that name each row..",
-                CustomType: JSONSubsetType{},
+            "secrets": schema.StringAttribute{
+                MarkdownDescription: "Provider-specific secrets (a client secret or a service account key) as a JSON object. Encrypted at rest and never returned by the API..",
                 Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-                Validators: []validator.String{
-                    JSONEnvelopeValidator(),
-                },
             },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
@@ -127,8 +133,18 @@ func (r *OidCollectionTemplateResource) Schema(ctx context.Context, req resource
                 MarkdownDescription: "Object version",
                 Computed: true,
             },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object.",
+            "last_call_started_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
+                Computed: true,
+            },
+            "last_error": schema.StringAttribute{
+                MarkdownDescription: "Why the most recent call could not be started, with credentials redacted. Cleared when a call starts..",
+                Computed: true,
+            },
+            "last_error_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                CustomType: RFC3339Type{},
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -143,7 +159,7 @@ func (r *OidCollectionTemplateResource) Schema(ctx context.Context, req resource
     }
 }
 
-func (r *OidCollectionTemplateResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *VideoCallConnectionResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -164,8 +180,8 @@ func (r *OidCollectionTemplateResource) Configure(ctx context.Context, req resou
 }
 
 
-func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data OidCollectionTemplateResourceModel
+func (r *VideoCallConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data VideoCallConnectionResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -179,49 +195,52 @@ func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    oidCollectionTemplateRequest := map[string]interface{}{
+    videoCallConnectionRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := oidCollectionTemplateRequest["data"].(map[string]interface{})
+    requestDataMap := videoCallConnectionRequest["data"].(map[string]interface{})
 
-    if !data.Name.IsNull() && !data.Name.IsUnknown() {
-        requestDataMap["name"] = data.Name.ValueString()
+    if parsedName := r.parseJSONField(data.Name); parsedName != nil {
+        requestDataMap["name"] = parsedName
     }
     if !data.Description.IsNull() && !data.Description.IsUnknown() {
         requestDataMap["description"] = data.Description.ValueString()
     }
-    if parsedOids := r.parseJSONField(data.Oids); parsedOids != nil {
-        requestDataMap["oids"] = parsedOids
+    if !data.ProviderValue.IsNull() && !data.ProviderValue.IsUnknown() {
+        requestDataMap["provider"] = data.ProviderValue.ValueString()
     }
-    if parsedTables := r.parseJSONField(data.Tables); parsedTables != nil {
-        requestDataMap["tables"] = parsedTables
+    if parsedConfig := r.parseJSONField(data.Config); parsedConfig != nil {
+        requestDataMap["config"] = parsedConfig
+    }
+    if !data.Secrets.IsNull() && !data.Secrets.IsUnknown() {
+        requestDataMap["secrets"] = data.Secrets.ValueString()
     }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/network-device-oid-template", oidCollectionTemplateRequest)
+    httpResp, err := r.client.Post(ctx, "/video-call-connection", videoCallConnectionRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create oid_collection_template, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create video_call_connection, got error: %s", err))
         return
     }
 
-    var oidCollectionTemplateResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &oidCollectionTemplateResponse)
+    var videoCallConnectionResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &videoCallConnectionResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create oid_collection_template: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create video_call_connection: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := oidCollectionTemplateResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := videoCallConnectionResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := oidCollectionTemplateResponse["_id"].(string); ok {
+    } else if val, ok := videoCallConnectionResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for oid_collection_template did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for video_call_connection did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -230,7 +249,7 @@ func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * oid_collection_template is orphaned server-side — never refreshed, never
+     * video_call_connection is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -244,33 +263,35 @@ func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource
         "projectId": true,
         "name": true,
         "description": true,
-        "oids": true,
-        "tables": true,
+        "provider": true,
+        "config": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
+        "lastCallStartedAt": true,
+        "lastError": true,
+        "lastErrorAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/network-device-oid-template/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/video-call-connection/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created oid_collection_template but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created video_call_connection but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created oid_collection_template but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created video_call_connection but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -297,41 +318,41 @@ func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource
         data.ProjectId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
+            data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Name = types.StringValue(val)
+            data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+            data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Name = types.StringValue(string(jsonBytes))
+                data.Name = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Name = types.StringValue(string(jsonBytes))
+                data.Name = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Name = types.StringValue(string(jsonBytes))
+            data.Name = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Name = types.StringNull()
+            data.Name = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["name"].(string); ok {
-        data.Name = types.StringValue(val)
+        data.Name = NewJSONSubsetValue(val)
     } else {
-        data.Name = types.StringNull()
+        data.Name = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["description"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -370,79 +391,79 @@ func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["oids"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+    if obj, ok := dataMap["provider"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Oids = NewJSONSubsetValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Oids = NewJSONSubsetValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.ProviderValue = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Oids = NewJSONSubsetValue(string(jsonBytes))
+                data.ProviderValue = types.StringValue(string(jsonBytes))
             } else {
-                data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.ProviderValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Oids = NewJSONSubsetValue(string(jsonBytes))
+                data.ProviderValue = types.StringValue(string(jsonBytes))
             } else {
-                data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.ProviderValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Oids = NewJSONSubsetValue(string(jsonBytes))
+            data.ProviderValue = types.StringValue(string(jsonBytes))
         } else {
-            data.Oids = NewJSONSubsetNull()
+            data.ProviderValue = types.StringNull()
         }
-    } else if val, ok := dataMap["oids"].(string); ok {
-        data.Oids = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["provider"].(string); ok {
+        data.ProviderValue = types.StringValue(val)
     } else {
-        data.Oids = NewJSONSubsetNull()
+        data.ProviderValue = types.StringNull()
     }
-    if obj, ok := dataMap["tables"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["config"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Tables = NewJSONSubsetValue(val)
+            data.Config = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Tables = NewJSONSubsetValue(val)
+            data.Config = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Tables = NewJSONSubsetValue(string(jsonBytes))
+                data.Config = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Tables = NewJSONSubsetValue(string(jsonBytes))
+                data.Config = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Tables = NewJSONSubsetValue(string(jsonBytes))
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Tables = NewJSONSubsetNull()
+            data.Config = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["tables"].(string); ok {
-        data.Tables = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["config"].(string); ok {
+        data.Config = NewJSONSubsetValue(val)
     } else {
-        data.Tables = NewJSONSubsetNull()
+        data.Config = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -494,42 +515,64 @@ func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["lastCallStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastCallStartedAt = NewRFC3339Value(val)
+        } else {
+            data.LastCallStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastCallStartedAt"].(string); ok && val != "" {
+        data.LastCallStartedAt = NewRFC3339Value(val)
+    } else {
+        data.LastCallStartedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastError"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
+            data.LastError = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
+            data.LastError = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+            data.LastError = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LastError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LastError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
+            data.LastError = types.StringValue(string(jsonBytes))
         } else {
-            data.Slug = types.StringNull()
+            data.LastError = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
+    } else if val, ok := dataMap["lastError"].(string); ok {
+        data.LastError = types.StringValue(val)
     } else {
-        data.Slug = types.StringNull()
+        data.LastError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastErrorAt = NewRFC3339Value(val)
+        } else {
+            data.LastErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastErrorAt"].(string); ok && val != "" {
+        data.LastErrorAt = NewRFC3339Value(val)
+    } else {
+        data.LastErrorAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -620,8 +663,8 @@ func (r *OidCollectionTemplateResource) Create(ctx context.Context, req resource
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *OidCollectionTemplateResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data OidCollectionTemplateResourceModel
+func (r *VideoCallConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data VideoCallConnectionResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -635,22 +678,24 @@ func (r *OidCollectionTemplateResource) Read(ctx context.Context, req resource.R
         "projectId": true,
         "name": true,
         "description": true,
-        "oids": true,
-        "tables": true,
+        "provider": true,
+        "config": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
+        "lastCallStartedAt": true,
+        "lastError": true,
+        "lastErrorAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/network-device-oid-template/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/video-call-connection/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read oid_collection_template, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read video_call_connection, got error: %s", err))
         return
     }
 
@@ -659,22 +704,22 @@ func (r *OidCollectionTemplateResource) Read(ctx context.Context, req resource.R
         return
     }
 
-    var oidCollectionTemplateResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &oidCollectionTemplateResponse)
+    var videoCallConnectionResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &videoCallConnectionResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse oid_collection_template response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse video_call_connection response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := oidCollectionTemplateResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := videoCallConnectionResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = oidCollectionTemplateResponse
+        dataMap = videoCallConnectionResponse
     }
 
     if obj, ok := dataMap["projectId"].(map[string]interface{}); ok {
@@ -689,41 +734,41 @@ func (r *OidCollectionTemplateResource) Read(ctx context.Context, req resource.R
         data.ProjectId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
+            data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Name = types.StringValue(val)
+            data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+            data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Name = types.StringValue(string(jsonBytes))
+                data.Name = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Name = types.StringValue(string(jsonBytes))
+                data.Name = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Name = types.StringValue(string(jsonBytes))
+            data.Name = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Name = types.StringNull()
+            data.Name = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["name"].(string); ok {
-        data.Name = types.StringValue(val)
+        data.Name = NewJSONSubsetValue(val)
     } else {
-        data.Name = types.StringNull()
+        data.Name = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["description"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -762,79 +807,79 @@ func (r *OidCollectionTemplateResource) Read(ctx context.Context, req resource.R
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["oids"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+    if obj, ok := dataMap["provider"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Oids = NewJSONSubsetValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Oids = NewJSONSubsetValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.ProviderValue = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Oids = NewJSONSubsetValue(string(jsonBytes))
+                data.ProviderValue = types.StringValue(string(jsonBytes))
             } else {
-                data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.ProviderValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Oids = NewJSONSubsetValue(string(jsonBytes))
+                data.ProviderValue = types.StringValue(string(jsonBytes))
             } else {
-                data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.ProviderValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Oids = NewJSONSubsetValue(string(jsonBytes))
+            data.ProviderValue = types.StringValue(string(jsonBytes))
         } else {
-            data.Oids = NewJSONSubsetNull()
+            data.ProviderValue = types.StringNull()
         }
-    } else if val, ok := dataMap["oids"].(string); ok {
-        data.Oids = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["provider"].(string); ok {
+        data.ProviderValue = types.StringValue(val)
     } else {
-        data.Oids = NewJSONSubsetNull()
+        data.ProviderValue = types.StringNull()
     }
-    if obj, ok := dataMap["tables"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["config"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Tables = NewJSONSubsetValue(val)
+            data.Config = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Tables = NewJSONSubsetValue(val)
+            data.Config = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Tables = NewJSONSubsetValue(string(jsonBytes))
+                data.Config = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Tables = NewJSONSubsetValue(string(jsonBytes))
+                data.Config = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Tables = NewJSONSubsetValue(string(jsonBytes))
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Tables = NewJSONSubsetNull()
+            data.Config = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["tables"].(string); ok {
-        data.Tables = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["config"].(string); ok {
+        data.Config = NewJSONSubsetValue(val)
     } else {
-        data.Tables = NewJSONSubsetNull()
+        data.Config = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -886,42 +931,64 @@ func (r *OidCollectionTemplateResource) Read(ctx context.Context, req resource.R
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["lastCallStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastCallStartedAt = NewRFC3339Value(val)
+        } else {
+            data.LastCallStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastCallStartedAt"].(string); ok && val != "" {
+        data.LastCallStartedAt = NewRFC3339Value(val)
+    } else {
+        data.LastCallStartedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastError"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
+            data.LastError = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
+            data.LastError = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+            data.LastError = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LastError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LastError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
+            data.LastError = types.StringValue(string(jsonBytes))
         } else {
-            data.Slug = types.StringNull()
+            data.LastError = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
+    } else if val, ok := dataMap["lastError"].(string); ok {
+        data.LastError = types.StringValue(val)
     } else {
-        data.Slug = types.StringNull()
+        data.LastError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastErrorAt = NewRFC3339Value(val)
+        } else {
+            data.LastErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastErrorAt"].(string); ok && val != "" {
+        data.LastErrorAt = NewRFC3339Value(val)
+    } else {
+        data.LastErrorAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1007,9 +1074,9 @@ func (r *OidCollectionTemplateResource) Read(ctx context.Context, req resource.R
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *OidCollectionTemplateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data OidCollectionTemplateResourceModel
-    var state OidCollectionTemplateResourceModel
+func (r *VideoCallConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data VideoCallConnectionResourceModel
+    var state VideoCallConnectionResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -1027,52 +1094,52 @@ func (r *OidCollectionTemplateResource) Update(ctx context.Context, req resource
     data.Id = state.Id
 
     // Create API request body
-    oidCollectionTemplateRequest := map[string]interface{}{
+    videoCallConnectionRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := oidCollectionTemplateRequest["data"].(map[string]interface{})
+    requestDataMap := videoCallConnectionRequest["data"].(map[string]interface{})
 
     if !data.Name.IsUnknown() && !state.Name.IsUnknown() && !data.Name.Equal(state.Name) {
-        requestDataMap["name"] = data.Name.ValueString()
+        var nameData interface{}
+        if err := json.Unmarshal([]byte(data.Name.ValueString()), &nameData); err == nil {
+            requestDataMap["name"] = nameData
+        } else {
+            requestDataMap["name"] = data.Name.ValueString()
+        }
     }
     if !data.Description.IsUnknown() && !state.Description.IsUnknown() && !data.Description.Equal(state.Description) {
         requestDataMap["description"] = data.Description.ValueString()
     }
-    if !data.Oids.IsUnknown() && !state.Oids.IsUnknown() && !data.Oids.Equal(state.Oids) {
-        var oidsData interface{}
-        if err := json.Unmarshal([]byte(data.Oids.ValueString()), &oidsData); err == nil {
-            requestDataMap["oids"] = oidsData
+    if !data.Config.IsUnknown() && !state.Config.IsUnknown() && !data.Config.Equal(state.Config) {
+        var configData interface{}
+        if err := json.Unmarshal([]byte(data.Config.ValueString()), &configData); err == nil {
+            requestDataMap["config"] = configData
         } else {
-            requestDataMap["oids"] = data.Oids.ValueString()
+            requestDataMap["config"] = data.Config.ValueString()
         }
     }
-    if !data.Tables.IsUnknown() && !state.Tables.IsUnknown() && !data.Tables.Equal(state.Tables) {
-        var tablesData interface{}
-        if err := json.Unmarshal([]byte(data.Tables.ValueString()), &tablesData); err == nil {
-            requestDataMap["tables"] = tablesData
-        } else {
-            requestDataMap["tables"] = data.Tables.ValueString()
-        }
+    if !data.Secrets.IsUnknown() && !state.Secrets.IsUnknown() && !data.Secrets.Equal(state.Secrets) {
+        requestDataMap["secrets"] = data.Secrets.ValueString()
     }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(oidCollectionTemplateRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/network-device-oid-template/" + data.Id.ValueString() + "", oidCollectionTemplateRequest)
+    if len(videoCallConnectionRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/video-call-connection/" + data.Id.ValueString() + "", videoCallConnectionRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update oid_collection_template, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update video_call_connection, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var oidCollectionTemplateResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &oidCollectionTemplateResponse)
+        var videoCallConnectionResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &videoCallConnectionResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update oid_collection_template: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update video_call_connection: %s", err))
             return
         }
-        _ = oidCollectionTemplateResponse
+        _ = videoCallConnectionResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -1080,28 +1147,30 @@ func (r *OidCollectionTemplateResource) Update(ctx context.Context, req resource
         "projectId": true,
         "name": true,
         "description": true,
-        "oids": true,
-        "tables": true,
+        "provider": true,
+        "config": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
-        "slug": true,
+        "lastCallStartedAt": true,
+        "lastError": true,
+        "lastErrorAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/network-device-oid-template/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/video-call-connection/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read oid_collection_template after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read video_call_connection after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read oid_collection_template after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read video_call_connection after update: %s", err))
         return
     }
 
@@ -1128,41 +1197,41 @@ func (r *OidCollectionTemplateResource) Update(ctx context.Context, req resource
         data.ProjectId = types.StringNull()
     }
     if obj, ok := dataMap["name"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Name = types.StringValue(val)
+            data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Name = types.StringValue(val)
+            data.Name = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Name = types.StringValue(fmt.Sprintf("%v", val))
+            data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Name = types.StringValue(string(jsonBytes))
+                data.Name = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Name = types.StringValue(string(jsonBytes))
+                data.Name = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Name = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.Name = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Name = types.StringValue(string(jsonBytes))
+            data.Name = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Name = types.StringNull()
+            data.Name = NewJSONSubsetNull()
         }
     } else if val, ok := dataMap["name"].(string); ok {
-        data.Name = types.StringValue(val)
+        data.Name = NewJSONSubsetValue(val)
     } else {
-        data.Name = types.StringNull()
+        data.Name = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["description"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1201,79 +1270,79 @@ func (r *OidCollectionTemplateResource) Update(ctx context.Context, req resource
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := dataMap["oids"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+    if obj, ok := dataMap["provider"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Oids = NewJSONSubsetValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Oids = NewJSONSubsetValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.ProviderValue = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Oids = NewJSONSubsetValue(string(jsonBytes))
+                data.ProviderValue = types.StringValue(string(jsonBytes))
             } else {
-                data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.ProviderValue = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Oids = NewJSONSubsetValue(string(jsonBytes))
+                data.ProviderValue = types.StringValue(string(jsonBytes))
             } else {
-                data.Oids = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.ProviderValue = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Oids = NewJSONSubsetValue(string(jsonBytes))
+            data.ProviderValue = types.StringValue(string(jsonBytes))
         } else {
-            data.Oids = NewJSONSubsetNull()
+            data.ProviderValue = types.StringNull()
         }
-    } else if val, ok := dataMap["oids"].(string); ok {
-        data.Oids = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["provider"].(string); ok {
+        data.ProviderValue = types.StringValue(val)
     } else {
-        data.Oids = NewJSONSubsetNull()
+        data.ProviderValue = types.StringNull()
     }
-    if obj, ok := dataMap["tables"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["config"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Tables = NewJSONSubsetValue(val)
+            data.Config = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Tables = NewJSONSubsetValue(val)
+            data.Config = NewJSONSubsetValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+            data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Tables = NewJSONSubsetValue(string(jsonBytes))
+                data.Config = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+                data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Tables = NewJSONSubsetValue(string(jsonBytes))
+                data.Config = NewJSONSubsetValue(string(jsonBytes))
             } else {
-                data.Tables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+                data.Config = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Tables = NewJSONSubsetValue(string(jsonBytes))
+            data.Config = NewJSONSubsetValue(string(jsonBytes))
         } else {
-            data.Tables = NewJSONSubsetNull()
+            data.Config = NewJSONSubsetNull()
         }
-    } else if val, ok := dataMap["tables"].(string); ok {
-        data.Tables = NewJSONSubsetValue(val)
+    } else if val, ok := dataMap["config"].(string); ok {
+        data.Config = NewJSONSubsetValue(val)
     } else {
-        data.Tables = NewJSONSubsetNull()
+        data.Config = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
@@ -1325,42 +1394,64 @@ func (r *OidCollectionTemplateResource) Update(ctx context.Context, req resource
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.Version = types.NumberNull()
     }
-    if obj, ok := dataMap["slug"].(map[string]interface{}); ok {
+    if obj, ok := dataMap["lastCallStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastCallStartedAt = NewRFC3339Value(val)
+        } else {
+            data.LastCallStartedAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastCallStartedAt"].(string); ok && val != "" {
+        data.LastCallStartedAt = NewRFC3339Value(val)
+    } else {
+        data.LastCallStartedAt = NewRFC3339Null()
+    }
+    if obj, ok := dataMap["lastError"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
+            data.LastError = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
             // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.Slug = types.StringValue(val)
+            data.LastError = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
             // Handle numeric values that might be returned as float64
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+            data.LastError = types.StringValue(fmt.Sprintf("%v", val))
         } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
             // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
             normalizedObj := r.normalizeURLWrappers(obj)
             if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+                data.LastError = types.StringValue(fmt.Sprintf("%v", normalizedObj))
             }
         } else if obj["value"] != nil {
             // Handle complex value types (maps, arrays) by marshaling to JSON
             normalizedValue := r.normalizeURLWrappers(obj["value"])
             if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.Slug = types.StringValue(string(jsonBytes))
+                data.LastError = types.StringValue(string(jsonBytes))
             } else {
-                data.Slug = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+                data.LastError = types.StringValue(fmt.Sprintf("%v", normalizedValue))
             }
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
             // Fallback to JSON marshaling for other complex objects
-            data.Slug = types.StringValue(string(jsonBytes))
+            data.LastError = types.StringValue(string(jsonBytes))
         } else {
-            data.Slug = types.StringNull()
+            data.LastError = types.StringNull()
         }
-    } else if val, ok := dataMap["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
+    } else if val, ok := dataMap["lastError"].(string); ok {
+        data.LastError = types.StringValue(val)
     } else {
-        data.Slug = types.StringNull()
+        data.LastError = types.StringNull()
+    }
+    if obj, ok := dataMap["lastErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(string); ok && val != "" {
+            data.LastErrorAt = NewRFC3339Value(val)
+        } else {
+            data.LastErrorAt = NewRFC3339Null()
+        }
+    } else if val, ok := dataMap["lastErrorAt"].(string); ok && val != "" {
+        data.LastErrorAt = NewRFC3339Value(val)
+    } else {
+        data.LastErrorAt = NewRFC3339Null()
     }
     if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -1447,8 +1538,8 @@ func (r *OidCollectionTemplateResource) Update(ctx context.Context, req resource
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *OidCollectionTemplateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data OidCollectionTemplateResourceModel
+func (r *VideoCallConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data VideoCallConnectionResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1458,9 +1549,9 @@ func (r *OidCollectionTemplateResource) Delete(ctx context.Context, req resource
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/network-device-oid-template/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/video-call-connection/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete oid_collection_template, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete video_call_connection, got error: %s", err))
         return
     }
 
@@ -1468,7 +1559,7 @@ func (r *OidCollectionTemplateResource) Delete(ctx context.Context, req resource
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete oid_collection_template: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete video_call_connection: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -1477,12 +1568,12 @@ func (r *OidCollectionTemplateResource) Delete(ctx context.Context, req resource
 }
 
 
-func (r *OidCollectionTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *VideoCallConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *OidCollectionTemplateResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *VideoCallConnectionResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -1500,7 +1591,7 @@ func (r *OidCollectionTemplateResource) convertTerraformMapToInterface(terraform
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *OidCollectionTemplateResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *VideoCallConnectionResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -1521,7 +1612,7 @@ func (r *OidCollectionTemplateResource) convertTerraformListToInterface(terrafor
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *OidCollectionTemplateResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *VideoCallConnectionResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -1543,7 +1634,7 @@ func (r *OidCollectionTemplateResource) convertTerraformSetToInterface(terraform
 
 
 // Helper method to parse JSON field for complex objects
-func (r *OidCollectionTemplateResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *VideoCallConnectionResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -1559,7 +1650,7 @@ func (r *OidCollectionTemplateResource) parseJSONField(terraformString basetypes
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *OidCollectionTemplateResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *VideoCallConnectionResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -1581,7 +1672,7 @@ func (r *OidCollectionTemplateResource) normalizeURLWrappers(value interface{}) 
     }
 }
 
-func (r *OidCollectionTemplateResource) normalizeURLString(value string) string {
+func (r *VideoCallConnectionResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -1593,7 +1684,7 @@ func (r *OidCollectionTemplateResource) normalizeURLString(value string) string 
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *OidCollectionTemplateResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *VideoCallConnectionResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -1603,6 +1694,6 @@ func (r *OidCollectionTemplateResource) bigFloatToFloat64(bf *big.Float) interfa
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *OidCollectionTemplateResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *VideoCallConnectionResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }

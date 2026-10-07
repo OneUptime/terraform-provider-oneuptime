@@ -86,7 +86,7 @@ func (d *LogPipelineProcessorDataSource) Schema(ctx context.Context, req datasou
                 Computed: true,
             },
             "processor_type": schema.StringAttribute{
-                MarkdownDescription: "The type of processor: GrokParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor..",
+                MarkdownDescription: "The type of processor: GrokParser, KeyValueParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor..",
                 Computed: true,
             },
             "configuration": schema.StringAttribute{

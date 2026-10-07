@@ -28,7 +28,7 @@ resource "oneuptime_log_pipeline_processor" "example" {
 
 - `log_pipeline_id` (String) A unique identifier for an object, represented as a UUID..
 - `name` (String) Name object.
-- `processor_type` (String) The type of processor: GrokParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor...
+- `processor_type` (String) The type of processor: GrokParser, KeyValueParser, AttributeRemapper, SeverityRemapper, or CategoryProcessor...
 
 ### Optional
 

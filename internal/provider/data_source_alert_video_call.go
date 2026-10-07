@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &OidCollectionTemplateDataSource{}
+var _ datasource.DataSource = &AlertVideoCallDataSource{}
 
-func NewOidCollectionTemplateDataSource() datasource.DataSource {
-    return &OidCollectionTemplateDataSource{}
+func NewAlertVideoCallDataSource() datasource.DataSource {
+    return &AlertVideoCallDataSource{}
 }
 
-// OidCollectionTemplateDataSource defines the data source implementation.
-type OidCollectionTemplateDataSource struct {
+// AlertVideoCallDataSource defines the data source implementation.
+type AlertVideoCallDataSource struct {
     client *Client
 }
 
-// OidCollectionTemplateDataSourceModel describes the data source data model.
-type OidCollectionTemplateDataSourceModel struct {
+// AlertVideoCallDataSourceModel describes the data source data model.
+type AlertVideoCallDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,21 +34,23 @@ type OidCollectionTemplateDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Slug types.String `tfsdk:"slug"`
-    Description types.String `tfsdk:"description"`
-    Oids types.String `tfsdk:"oids"`
-    Tables types.String `tfsdk:"tables"`
+    AlertId types.String `tfsdk:"alert_id"`
+    ProviderValue types.String `tfsdk:"provider_value"`
+    VideoCallConnectionId types.String `tfsdk:"video_call_connection_id"`
+    Title types.String `tfsdk:"title"`
+    JoinUrl types.String `tfsdk:"join_url"`
+    ExternalMeetingId types.String `tfsdk:"external_meeting_id"`
+    WorkspaceNotificationRuleId types.String `tfsdk:"workspace_notification_rule_id"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
-    DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *OidCollectionTemplateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_oid_collection_template"
+func (d *AlertVideoCallDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_alert_video_call"
 }
 
-func (d *OidCollectionTemplateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *AlertVideoCallDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A reusable set of SNMP health OIDs. Every network device linked to a template collects its OIDs, and editing the template changes what every linked device collects on its next poll. Look up an existing oid_collection_template by `id` or by `name`.",
+        MarkdownDescription: "Video calls for an alert: a Zoom, Google Meet or Microsoft Teams meeting, a Slack huddle, or a meeting link. Look up an existing alert_video_call by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -81,27 +83,35 @@ func (d *OidCollectionTemplateDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object.",
-                Computed: true,
-            },
-            "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember.",
-                Computed: true,
-            },
-            "oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected by every device linked to this template. You do not need OIDs for interfaces - bits in/out, errors, utilization and up/down are walked for every port automatically..",
-                Computed: true,
-            },
-            "tables": schema.StringAttribute{
-                MarkdownDescription: "SNMP tables walked by every device linked to this template - one row per IPsec tunnel, Wi-Fi radio, routing neighbour, fan or power supply. Each table lists the column OIDs to collect and, optionally, the columns that name each row..",
-                Computed: true,
-            },
-            "created_by_user_id": schema.StringAttribute{
+            "alert_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "deleted_by_user_id": schema.StringAttribute{
+            "provider_value": schema.StringAttribute{
+                MarkdownDescription: "Where the call is held: Zoom, GoogleMeet, MicrosoftTeams, SlackHuddle, or CustomLink for a link a person provided. Taken from the connection when one is given..",
+                Computed: true,
+            },
+            "video_call_connection_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "title": schema.StringAttribute{
+                MarkdownDescription: "What the call is called. A meeting a provider creates is named for the alert..",
+                Computed: true,
+            },
+            "join_url": schema.StringAttribute{
+                MarkdownDescription: "The link responders open to join the call. Set by OneUptime for a call started with a connection or a Slack huddle; required, as an https link, when you add a link of your own..",
+                Computed: true,
+            },
+            "external_meeting_id": schema.StringAttribute{
+                MarkdownDescription: "The provider's own id for the meeting: a Zoom meeting id, a Google Meet space name, a Microsoft Teams online meeting id or a Slack channel id..",
+                Computed: true,
+            },
+            "workspace_notification_rule_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
@@ -109,7 +119,7 @@ func (d *OidCollectionTemplateDataSource) Schema(ctx context.Context, req dataso
     }
 }
 
-func (d *OidCollectionTemplateDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *AlertVideoCallDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -129,8 +139,8 @@ func (d *OidCollectionTemplateDataSource) Configure(ctx context.Context, req dat
     d.client = client
 }
 
-func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data OidCollectionTemplateDataSourceModel
+func (d *AlertVideoCallDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data AlertVideoCallDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -144,7 +154,7 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a oid_collection_template.",
+            "Exactly one of `id` or `name` must be set to look up a alert_video_call.",
         )
         return
     }
@@ -156,30 +166,32 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "slug": true,
-        "description": true,
-        "oids": true,
-        "tables": true,
+        "alertId": true,
+        "provider": true,
+        "videoCallConnectionId": true,
+        "title": true,
+        "joinUrl": true,
+        "externalMeetingId": true,
+        "workspaceNotificationRuleId": true,
         "createdByUserId": true,
-        "deletedByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/network-device-oid-template/" + data.Id.ValueString() + "/get-item"
+        readPath := "/alert-video-call/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read oid_collection_template, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read alert_video_call, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No oid_collection_template found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_video_call found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read oid_collection_template: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read alert_video_call: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -196,28 +208,28 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-oid-template/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/alert-video-call/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list oid_collection_template, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list alert_video_call, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list oid_collection_template: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list alert_video_call: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No oid_collection_template found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No alert_video_call found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one oid_collection_template matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one alert_video_call matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for oid_collection_template.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for alert_video_call.")
             return
         }
         item = first
@@ -337,73 +349,124 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["slug"].(map[string]interface{}); ok {
+    if obj, ok := item["alertId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
+            data.AlertId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Slug = types.StringValue(val)
+            data.AlertId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
+            data.AlertId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Slug = types.StringValue(string(jsonBytes))
+            data.AlertId = types.StringValue(string(jsonBytes))
         } else {
-            data.Slug = types.StringNull()
+            data.AlertId = types.StringNull()
         }
-    } else if val, ok := item["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
+    } else if val, ok := item["alertId"].(string); ok {
+        data.AlertId = types.StringValue(val)
     } else {
-        data.Slug = types.StringNull()
+        data.AlertId = types.StringNull()
     }
-    if obj, ok := item["description"].(map[string]interface{}); ok {
+    if obj, ok := item["provider"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Description = types.StringValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Description = types.StringValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Description = types.StringValue(fmt.Sprintf("%v", val))
+            data.ProviderValue = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Description = types.StringValue(string(jsonBytes))
+            data.ProviderValue = types.StringValue(string(jsonBytes))
         } else {
-            data.Description = types.StringNull()
+            data.ProviderValue = types.StringNull()
         }
-    } else if val, ok := item["description"].(string); ok {
-        data.Description = types.StringValue(val)
+    } else if val, ok := item["provider"].(string); ok {
+        data.ProviderValue = types.StringValue(val)
     } else {
-        data.Description = types.StringNull()
+        data.ProviderValue = types.StringNull()
     }
-    if obj, ok := item["oids"].(map[string]interface{}); ok {
+    if obj, ok := item["videoCallConnectionId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Oids = types.StringValue(val)
+            data.VideoCallConnectionId = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Oids = types.StringValue(val)
+            data.VideoCallConnectionId = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Oids = types.StringValue(fmt.Sprintf("%v", val))
+            data.VideoCallConnectionId = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Oids = types.StringValue(string(jsonBytes))
+            data.VideoCallConnectionId = types.StringValue(string(jsonBytes))
         } else {
-            data.Oids = types.StringNull()
+            data.VideoCallConnectionId = types.StringNull()
         }
-    } else if val, ok := item["oids"].(string); ok {
-        data.Oids = types.StringValue(val)
+    } else if val, ok := item["videoCallConnectionId"].(string); ok {
+        data.VideoCallConnectionId = types.StringValue(val)
     } else {
-        data.Oids = types.StringNull()
+        data.VideoCallConnectionId = types.StringNull()
     }
-    if obj, ok := item["tables"].(map[string]interface{}); ok {
+    if obj, ok := item["title"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Tables = types.StringValue(val)
+            data.Title = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Tables = types.StringValue(val)
+            data.Title = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Tables = types.StringValue(fmt.Sprintf("%v", val))
+            data.Title = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Tables = types.StringValue(string(jsonBytes))
+            data.Title = types.StringValue(string(jsonBytes))
         } else {
-            data.Tables = types.StringNull()
+            data.Title = types.StringNull()
         }
-    } else if val, ok := item["tables"].(string); ok {
-        data.Tables = types.StringValue(val)
+    } else if val, ok := item["title"].(string); ok {
+        data.Title = types.StringValue(val)
     } else {
-        data.Tables = types.StringNull()
+        data.Title = types.StringNull()
+    }
+    if obj, ok := item["joinUrl"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.JoinUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.JoinUrl = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.JoinUrl = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.JoinUrl = types.StringValue(string(jsonBytes))
+        } else {
+            data.JoinUrl = types.StringNull()
+        }
+    } else if val, ok := item["joinUrl"].(string); ok {
+        data.JoinUrl = types.StringValue(val)
+    } else {
+        data.JoinUrl = types.StringNull()
+    }
+    if obj, ok := item["externalMeetingId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ExternalMeetingId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ExternalMeetingId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ExternalMeetingId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ExternalMeetingId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ExternalMeetingId = types.StringNull()
+        }
+    } else if val, ok := item["externalMeetingId"].(string); ok {
+        data.ExternalMeetingId = types.StringValue(val)
+    } else {
+        data.ExternalMeetingId = types.StringNull()
+    }
+    if obj, ok := item["workspaceNotificationRuleId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkspaceNotificationRuleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkspaceNotificationRuleId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkspaceNotificationRuleId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkspaceNotificationRuleId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkspaceNotificationRuleId = types.StringNull()
+        }
+    } else if val, ok := item["workspaceNotificationRuleId"].(string); ok {
+        data.WorkspaceNotificationRuleId = types.StringValue(val)
+    } else {
+        data.WorkspaceNotificationRuleId = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
@@ -421,23 +484,6 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
         data.CreatedByUserId = types.StringValue(val)
     } else {
         data.CreatedByUserId = types.StringNull()
-    }
-    if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.DeletedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.DeletedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.DeletedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.DeletedByUserId = types.StringNull()
-        }
-    } else if val, ok := item["deletedByUserId"].(string); ok {
-        data.DeletedByUserId = types.StringValue(val)
-    } else {
-        data.DeletedByUserId = types.StringNull()
     }
 
     // Write logs using the tflog package

@@ -66,6 +66,7 @@ type NetworkDeviceDataSourceModel struct {
     WalkInterfaces types.Bool `tfsdk:"walk_interfaces"`
     CollectEndpoints types.Bool `tfsdk:"collect_endpoints"`
     SnmpOids types.String `tfsdk:"snmp_oids"`
+    SnmpTables types.String `tfsdk:"snmp_tables"`
     AutoApplyVendorHealthTemplate types.Bool `tfsdk:"auto_apply_vendor_health_template"`
     NextPollAt types.String `tfsdk:"next_poll_at"`
     LastWalkLog types.String `tfsdk:"last_walk_log"`
@@ -82,6 +83,7 @@ type NetworkDeviceDataSourceModel struct {
     LastRebootedAt types.String `tfsdk:"last_rebooted_at"`
     CdpNeighbors types.String `tfsdk:"cdp_neighbors"`
     LldpNeighbors types.String `tfsdk:"lldp_neighbors"`
+    SnmpTableSnapshot types.String `tfsdk:"snmp_table_snapshot"`
     LastSeenAt types.String `tfsdk:"last_seen_at"`
     LastPolledAt types.String `tfsdk:"last_polled_at"`
     IsReachable types.Bool `tfsdk:"is_reachable"`
@@ -257,6 +259,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "SNMP OIDs collected on each poll for this device ALONE, on top of whatever its OID Collection Template collects. Values are recorded as metrics and can be alerted on through monitor criteria. If several devices need the same OID, put it on a template instead..",
                 Computed: true,
             },
+            "snmp_tables": schema.StringAttribute{
+                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device..",
+                Computed: true,
+            },
             "auto_apply_vendor_health_template": schema.BoolAttribute{
                 MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list..",
                 Computed: true,
@@ -319,6 +325,10 @@ func (d *NetworkDeviceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "lldp_neighbors": schema.StringAttribute{
                 MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe..",
+                Computed: true,
+            },
+            "snmp_table_snapshot": schema.StringAttribute{
+                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe..",
                 Computed: true,
             },
             "last_seen_at": schema.StringAttribute{
@@ -459,6 +469,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "snmpTables": true,
         "autoApplyVendorHealthTemplate": true,
         "nextPollAt": true,
         "lastWalkLog": true,
@@ -475,6 +486,7 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         "lastRebootedAt": true,
         "cdpNeighbors": true,
         "lldpNeighbors": true,
+        "snmpTableSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -1114,6 +1126,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.SnmpOids = types.StringNull()
     }
+    if obj, ok := item["snmpTables"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTables = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpTables = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpTables = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpTables = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpTables = types.StringNull()
+        }
+    } else if val, ok := item["snmpTables"].(string); ok {
+        data.SnmpTables = types.StringValue(val)
+    } else {
+        data.SnmpTables = types.StringNull()
+    }
     if val, ok := item["autoApplyVendorHealthTemplate"].(bool); ok {
         data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
     } else {
@@ -1373,6 +1402,23 @@ func (d *NetworkDeviceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.LldpNeighbors = types.StringValue(val)
     } else {
         data.LldpNeighbors = types.StringNull()
+    }
+    if obj, ok := item["snmpTableSnapshot"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTableSnapshot = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.SnmpTableSnapshot = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.SnmpTableSnapshot = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.SnmpTableSnapshot = types.StringValue(string(jsonBytes))
+        } else {
+            data.SnmpTableSnapshot = types.StringNull()
+        }
+    } else if val, ok := item["snmpTableSnapshot"].(string); ok {
+        data.SnmpTableSnapshot = types.StringValue(val)
+    } else {
+        data.SnmpTableSnapshot = types.StringNull()
     }
     if obj, ok := item["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

@@ -14,19 +14,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &OidCollectionTemplateDataSource{}
+var _ datasource.DataSource = &VideoCallConnectionDataSource{}
 
-func NewOidCollectionTemplateDataSource() datasource.DataSource {
-    return &OidCollectionTemplateDataSource{}
+func NewVideoCallConnectionDataSource() datasource.DataSource {
+    return &VideoCallConnectionDataSource{}
 }
 
-// OidCollectionTemplateDataSource defines the data source implementation.
-type OidCollectionTemplateDataSource struct {
+// VideoCallConnectionDataSource defines the data source implementation.
+type VideoCallConnectionDataSource struct {
     client *Client
 }
 
-// OidCollectionTemplateDataSourceModel describes the data source data model.
-type OidCollectionTemplateDataSourceModel struct {
+// VideoCallConnectionDataSourceModel describes the data source data model.
+type VideoCallConnectionDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -34,21 +34,23 @@ type OidCollectionTemplateDataSourceModel struct {
     DeletedAt types.String `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     ProjectId types.String `tfsdk:"project_id"`
-    Slug types.String `tfsdk:"slug"`
     Description types.String `tfsdk:"description"`
-    Oids types.String `tfsdk:"oids"`
-    Tables types.String `tfsdk:"tables"`
+    ProviderValue types.String `tfsdk:"provider_value"`
+    Config types.String `tfsdk:"config"`
+    LastCallStartedAt types.String `tfsdk:"last_call_started_at"`
+    LastError types.String `tfsdk:"last_error"`
+    LastErrorAt types.String `tfsdk:"last_error_at"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
-func (d *OidCollectionTemplateDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_oid_collection_template"
+func (d *VideoCallConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_video_call_connection"
 }
 
-func (d *OidCollectionTemplateDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *VideoCallConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "A reusable set of SNMP health OIDs. Every network device linked to a template collects its OIDs, and editing the template changes what every linked device collects on its next poll. Look up an existing oid_collection_template by `id` or by `name`.",
+        MarkdownDescription: "Zoom, Google Meet, Microsoft Teams or a standing meeting link, used to start a dedicated video call for incidents and alerts. Look up an existing video_call_connection by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -81,20 +83,28 @@ func (d *OidCollectionTemplateDataSource) Schema(ctx context.Context, req dataso
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
-            "slug": schema.StringAttribute{
-                MarkdownDescription: "Friendly globally unique name for your object.",
-                Computed: true,
-            },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Friendly description that will help you remember.",
+                MarkdownDescription: "What this connection is for..",
                 Computed: true,
             },
-            "oids": schema.StringAttribute{
-                MarkdownDescription: "SNMP OIDs (CPU, memory, temperature, or any custom OID) collected by every device linked to this template. You do not need OIDs for interfaces - bits in/out, errors, utilization and up/down are walked for every port automatically..",
+            "provider_value": schema.StringAttribute{
+                MarkdownDescription: "Which provider this connection starts calls with: Zoom, GoogleMeet, MicrosoftTeams or CustomLink. Fixed once created..",
                 Computed: true,
             },
-            "tables": schema.StringAttribute{
-                MarkdownDescription: "SNMP tables walked by every device linked to this template - one row per IPsec tunnel, Wi-Fi radio, routing neighbour, fan or power supply. Each table lists the column OIDs to collect and, optionally, the columns that name each row..",
+            "config": schema.StringAttribute{
+                MarkdownDescription: "Provider-specific, non-secret settings such as the Zoom account and meeting host, the Google Workspace user or the Microsoft Entra tenant and organizer. Keys are defined by the provider catalog..",
+                Computed: true,
+            },
+            "last_call_started_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "last_error": schema.StringAttribute{
+                MarkdownDescription: "Why the most recent call could not be started, with credentials redacted. Cleared when a call starts..",
+                Computed: true,
+            },
+            "last_error_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "created_by_user_id": schema.StringAttribute{
@@ -109,7 +119,7 @@ func (d *OidCollectionTemplateDataSource) Schema(ctx context.Context, req dataso
     }
 }
 
-func (d *OidCollectionTemplateDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *VideoCallConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -129,8 +139,8 @@ func (d *OidCollectionTemplateDataSource) Configure(ctx context.Context, req dat
     d.client = client
 }
 
-func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data OidCollectionTemplateDataSourceModel
+func (d *VideoCallConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data VideoCallConnectionDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -144,7 +154,7 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a oid_collection_template.",
+            "Exactly one of `id` or `name` must be set to look up a video_call_connection.",
         )
         return
     }
@@ -156,10 +166,12 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
         "deletedAt": true,
         "version": true,
         "projectId": true,
-        "slug": true,
         "description": true,
-        "oids": true,
-        "tables": true,
+        "provider": true,
+        "config": true,
+        "lastCallStartedAt": true,
+        "lastError": true,
+        "lastErrorAt": true,
         "createdByUserId": true,
         "deletedByUserId": true,
         "_id": true,
@@ -167,19 +179,19 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/network-device-oid-template/" + data.Id.ValueString() + "/get-item"
+        readPath := "/video-call-connection/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read oid_collection_template, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read video_call_connection, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No oid_collection_template found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No video_call_connection found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read oid_collection_template: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read video_call_connection: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -196,28 +208,28 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/network-device-oid-template/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/video-call-connection/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list oid_collection_template, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list video_call_connection, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list oid_collection_template: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list video_call_connection: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No oid_collection_template found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No video_call_connection found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one oid_collection_template matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one video_call_connection matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for oid_collection_template.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for video_call_connection.")
             return
         }
         item = first
@@ -337,23 +349,6 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
     } else {
         data.ProjectId = types.StringNull()
     }
-    if obj, ok := item["slug"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.Slug = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.Slug = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Slug = types.StringValue(string(jsonBytes))
-        } else {
-            data.Slug = types.StringNull()
-        }
-    } else if val, ok := item["slug"].(string); ok {
-        data.Slug = types.StringValue(val)
-    } else {
-        data.Slug = types.StringNull()
-    }
     if obj, ok := item["description"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.Description = types.StringValue(val)
@@ -371,39 +366,90 @@ func (d *OidCollectionTemplateDataSource) Read(ctx context.Context, req datasour
     } else {
         data.Description = types.StringNull()
     }
-    if obj, ok := item["oids"].(map[string]interface{}); ok {
+    if obj, ok := item["provider"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Oids = types.StringValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Oids = types.StringValue(val)
+            data.ProviderValue = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Oids = types.StringValue(fmt.Sprintf("%v", val))
+            data.ProviderValue = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Oids = types.StringValue(string(jsonBytes))
+            data.ProviderValue = types.StringValue(string(jsonBytes))
         } else {
-            data.Oids = types.StringNull()
+            data.ProviderValue = types.StringNull()
         }
-    } else if val, ok := item["oids"].(string); ok {
-        data.Oids = types.StringValue(val)
+    } else if val, ok := item["provider"].(string); ok {
+        data.ProviderValue = types.StringValue(val)
     } else {
-        data.Oids = types.StringNull()
+        data.ProviderValue = types.StringNull()
     }
-    if obj, ok := item["tables"].(map[string]interface{}); ok {
+    if obj, ok := item["config"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
-            data.Tables = types.StringValue(val)
+            data.Config = types.StringValue(val)
         } else if val, ok := obj["value"].(string); ok {
-            data.Tables = types.StringValue(val)
+            data.Config = types.StringValue(val)
         } else if val, ok := obj["value"].(float64); ok {
-            data.Tables = types.StringValue(fmt.Sprintf("%v", val))
+            data.Config = types.StringValue(fmt.Sprintf("%v", val))
         } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.Tables = types.StringValue(string(jsonBytes))
+            data.Config = types.StringValue(string(jsonBytes))
         } else {
-            data.Tables = types.StringNull()
+            data.Config = types.StringNull()
         }
-    } else if val, ok := item["tables"].(string); ok {
-        data.Tables = types.StringValue(val)
+    } else if val, ok := item["config"].(string); ok {
+        data.Config = types.StringValue(val)
     } else {
-        data.Tables = types.StringNull()
+        data.Config = types.StringNull()
+    }
+    if obj, ok := item["lastCallStartedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastCallStartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastCallStartedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastCallStartedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastCallStartedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastCallStartedAt = types.StringNull()
+        }
+    } else if val, ok := item["lastCallStartedAt"].(string); ok {
+        data.LastCallStartedAt = types.StringValue(val)
+    } else {
+        data.LastCallStartedAt = types.StringNull()
+    }
+    if obj, ok := item["lastError"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastError = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastError = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastError = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastError = types.StringNull()
+        }
+    } else if val, ok := item["lastError"].(string); ok {
+        data.LastError = types.StringValue(val)
+    } else {
+        data.LastError = types.StringNull()
+    }
+    if obj, ok := item["lastErrorAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.LastErrorAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.LastErrorAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.LastErrorAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.LastErrorAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.LastErrorAt = types.StringNull()
+        }
+    } else if val, ok := item["lastErrorAt"].(string); ok {
+        data.LastErrorAt = types.StringValue(val)
+    } else {
+        data.LastErrorAt = types.StringNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

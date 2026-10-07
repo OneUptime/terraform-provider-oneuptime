@@ -71,6 +71,7 @@ type NetworkDeviceResourceModel struct {
     WalkInterfaces types.Bool `tfsdk:"walk_interfaces"`
     CollectEndpoints types.Bool `tfsdk:"collect_endpoints"`
     SnmpOids JSONSubsetValue `tfsdk:"snmp_oids"`
+    SnmpTables JSONSubsetValue `tfsdk:"snmp_tables"`
     AutoApplyVendorHealthTemplate types.Bool `tfsdk:"auto_apply_vendor_health_template"`
     IsArchived types.Bool `tfsdk:"is_archived"`
     Labels types.Set `tfsdk:"labels"`
@@ -89,6 +90,7 @@ type NetworkDeviceResourceModel struct {
     LastRebootedAt RFC3339Value `tfsdk:"last_rebooted_at"`
     CdpNeighbors JSONSubsetValue `tfsdk:"cdp_neighbors"`
     LldpNeighbors JSONSubsetValue `tfsdk:"lldp_neighbors"`
+    SnmpTableSnapshot JSONSubsetValue `tfsdk:"snmp_table_snapshot"`
     LastSeenAt RFC3339Value `tfsdk:"last_seen_at"`
     LastPolledAt RFC3339Value `tfsdk:"last_polled_at"`
     IsReachable types.Bool `tfsdk:"is_reachable"`
@@ -368,6 +370,18 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
                     JSONEnvelopeValidator(),
                 },
             },
+            "snmp_tables": schema.StringAttribute{
+                MarkdownDescription: "SNMP tables walked on each poll for this device alone, on top of its OID Collection Template's tables. A table with the same key as a template table replaces it on this device..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
             "auto_apply_vendor_health_template": schema.BoolAttribute{
                 MarkdownDescription: "When the device's vendor is fingerprinted from its SNMP sysObjectID and no Health OIDs are configured yet, apply the matching vendor health template automatically on the next poll. Off by default for hand-made devices — the vendor template banner stays the manual path; auto-imported devices enable it so the zero-touch pipeline ends with health metrics, not an empty OID list..",
                 Optional: true,
@@ -515,6 +529,18 @@ func (r *NetworkDeviceResource) Schema(ctx context.Context, req resource.SchemaR
             },
             "lldp_neighbors": schema.StringAttribute{
                 MarkdownDescription: "LLDP neighbors discovered on the last SNMP walk, used to build the network topology graph. Managed by the probe..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "snmp_table_snapshot": schema.StringAttribute{
+                MarkdownDescription: "The rows of every SNMP table collected on the last successful walk - tunnels, radios, neighbours and so on - with their values. Managed by the probe..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -769,6 +795,9 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     if parsedSnmpOids := r.parseJSONField(data.SnmpOids); parsedSnmpOids != nil {
         requestDataMap["snmpOids"] = parsedSnmpOids
     }
+    if parsedSnmpTables := r.parseJSONField(data.SnmpTables); parsedSnmpTables != nil {
+        requestDataMap["snmpTables"] = parsedSnmpTables
+    }
     if !data.AutoApplyVendorHealthTemplate.IsNull() && !data.AutoApplyVendorHealthTemplate.IsUnknown() {
         requestDataMap["autoApplyVendorHealthTemplate"] = data.AutoApplyVendorHealthTemplate.ValueBool()
     }
@@ -853,6 +882,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "snmpTables": true,
         "autoApplyVendorHealthTemplate": true,
         "isArchived": true,
         "labels": true,
@@ -871,6 +901,7 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
         "lastRebootedAt": true,
         "cdpNeighbors": true,
         "lldpNeighbors": true,
+        "snmpTableSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -1829,6 +1860,43 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.SnmpOids = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpTables"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpTables = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpTables"].(string); ok {
+        data.SnmpTables = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpTables = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["autoApplyVendorHealthTemplate"].(bool); ok {
         data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
     }
@@ -2370,6 +2438,43 @@ func (r *NetworkDeviceResource) Create(ctx context.Context, req resource.CreateR
     } else {
         data.LldpNeighbors = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpTableSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpTableSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpTableSnapshot"].(string); ok {
+        data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpTableSnapshot = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastSeenAt = NewRFC3339Value(val)
@@ -2767,6 +2872,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "snmpTables": true,
         "autoApplyVendorHealthTemplate": true,
         "isArchived": true,
         "labels": true,
@@ -2785,6 +2891,7 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
         "lastRebootedAt": true,
         "cdpNeighbors": true,
         "lldpNeighbors": true,
+        "snmpTableSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -3744,6 +3851,43 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.SnmpOids = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpTables"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpTables = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpTables"].(string); ok {
+        data.SnmpTables = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpTables = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["autoApplyVendorHealthTemplate"].(bool); ok {
         data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
     }
@@ -4285,6 +4429,43 @@ func (r *NetworkDeviceResource) Read(ctx context.Context, req resource.ReadReque
     } else {
         data.LldpNeighbors = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpTableSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpTableSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpTableSnapshot"].(string); ok {
+        data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpTableSnapshot = NewJSONSubsetNull()
+    }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.LastSeenAt = NewRFC3339Value(val)
@@ -4760,6 +4941,14 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
             requestDataMap["snmpOids"] = data.SnmpOids.ValueString()
         }
     }
+    if !data.SnmpTables.IsUnknown() && !state.SnmpTables.IsUnknown() && !data.SnmpTables.Equal(state.SnmpTables) {
+        var snmptablesData interface{}
+        if err := json.Unmarshal([]byte(data.SnmpTables.ValueString()), &snmptablesData); err == nil {
+            requestDataMap["snmpTables"] = snmptablesData
+        } else {
+            requestDataMap["snmpTables"] = data.SnmpTables.ValueString()
+        }
+    }
     if !data.AutoApplyVendorHealthTemplate.IsUnknown() && !state.AutoApplyVendorHealthTemplate.IsUnknown() && !data.AutoApplyVendorHealthTemplate.Equal(state.AutoApplyVendorHealthTemplate) {
         requestDataMap["autoApplyVendorHealthTemplate"] = data.AutoApplyVendorHealthTemplate.ValueBool()
     }
@@ -4813,6 +5002,14 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
             requestDataMap["lldpNeighbors"] = lldpneighborsData
         } else {
             requestDataMap["lldpNeighbors"] = data.LldpNeighbors.ValueString()
+        }
+    }
+    if !data.SnmpTableSnapshot.IsUnknown() && !state.SnmpTableSnapshot.IsUnknown() && !data.SnmpTableSnapshot.Equal(state.SnmpTableSnapshot) {
+        var snmptablesnapshotData interface{}
+        if err := json.Unmarshal([]byte(data.SnmpTableSnapshot.ValueString()), &snmptablesnapshotData); err == nil {
+            requestDataMap["snmpTableSnapshot"] = snmptablesnapshotData
+        } else {
+            requestDataMap["snmpTableSnapshot"] = data.SnmpTableSnapshot.ValueString()
         }
     }
     if !data.LastSeenAt.IsUnknown() && !state.LastSeenAt.IsUnknown() && !data.LastSeenAt.Equal(state.LastSeenAt) {
@@ -4898,6 +5095,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "walkInterfaces": true,
         "collectEndpoints": true,
         "snmpOids": true,
+        "snmpTables": true,
         "autoApplyVendorHealthTemplate": true,
         "isArchived": true,
         "labels": true,
@@ -4916,6 +5114,7 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         "lastRebootedAt": true,
         "cdpNeighbors": true,
         "lldpNeighbors": true,
+        "snmpTableSnapshot": true,
         "lastSeenAt": true,
         "lastPolledAt": true,
         "isReachable": true,
@@ -5869,6 +6068,43 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
     } else {
         data.SnmpOids = NewJSONSubsetNull()
     }
+    if obj, ok := dataMap["snmpTables"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpTables = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTables = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpTables = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpTables = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpTables"].(string); ok {
+        data.SnmpTables = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpTables = NewJSONSubsetNull()
+    }
     if val, ok := dataMap["autoApplyVendorHealthTemplate"].(bool); ok {
         data.AutoApplyVendorHealthTemplate = types.BoolValue(val)
     }
@@ -6409,6 +6645,43 @@ func (r *NetworkDeviceResource) Update(ctx context.Context, req resource.UpdateR
         data.LldpNeighbors = NewJSONSubsetValue(val)
     } else {
         data.LldpNeighbors = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["snmpTableSnapshot"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.SnmpTableSnapshot = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.SnmpTableSnapshot = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.SnmpTableSnapshot = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["snmpTableSnapshot"].(string); ok {
+        data.SnmpTableSnapshot = NewJSONSubsetValue(val)
+    } else {
+        data.SnmpTableSnapshot = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["lastSeenAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
