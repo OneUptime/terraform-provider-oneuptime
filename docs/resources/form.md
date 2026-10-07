@@ -39,7 +39,6 @@ This is **markdown** content"
 - `logo_file_id` (String) A unique identifier for an object, represented as a UUID..
 - `logo_alt_text` (String) What the logo says, read out by screen readers: usually your organization's name. Leave it empty and screen readers skip the logo...
 - `favicon_file_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -49,6 +48,7 @@ This is **markdown** content"
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `share_key` (String) A unique identifier for an object, represented as a UUID..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

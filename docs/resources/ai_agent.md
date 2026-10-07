@@ -40,7 +40,6 @@ resource "oneuptime_ai_agent" "example" {
 - `last_alive` (String) A date time object..
 - `icon_file_id` (String) A unique identifier for an object, represented as a UUID..
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_default` (Bool) Is this the default AI Agent for the project? When set, this agent will be used for automated tasks...
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 
@@ -52,6 +51,7 @@ resource "oneuptime_ai_agent" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `connection_status` (String) Connection Status of the AI Agent..
 
 ## Import

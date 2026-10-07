@@ -35,7 +35,6 @@ resource "oneuptime_queue_label_rule" "example" {
 - `message_queue_description_pattern` (String) Regex (case-insensitive) matched against the queue description. Leave empty to match any description...
 - `message_queue_system_pattern` (String) Regex (case-insensitive) matched against the queue's messaging system - both its OpenTelemetry messaging.system value (kafka, rabbitmq, aws_sqs, servicebus, ...) and its display name (Apache Kafka, RabbitMQ, Amazon SQS, Azure Service Bus, ...). ^kafka$ matches every Kafka topic. Leave empty to match any system...
 - `labels_to_add` (Set) Labels to attach to the queue when this rule matches. Already-attached labels are not duplicated...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -44,6 +43,7 @@ resource "oneuptime_queue_label_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

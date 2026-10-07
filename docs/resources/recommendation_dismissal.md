@@ -31,7 +31,6 @@ resource "oneuptime_recommendation_dismissal" "example" {
 - `resource_type` (String) The kind of resource this recommendation was shown on, for example Kubernetes or Docker. Empty for recommendations that are not scoped to a resource...
 - `resource_id` (String) A unique identifier for an object, represented as a UUID..
 - `dismissal_reason` (String) Optional note explaining why this recommendation was dismissed, shown to whoever finds it in the dismissed list later...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -40,6 +39,7 @@ resource "oneuptime_recommendation_dismissal" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

@@ -43,7 +43,6 @@ This is **markdown** content"
 - `description_template` (String) Template used to generate the episode description. Stored for dynamic variable updates...
 - `is_manually_created` (Bool) Whether this episode was manually created vs auto-created by a rule..
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `grouping_key` (String) Key used for grouping incidents into this episode. Generated from groupByFields of the matching rule...
 - `incident_grouping_rule_id` (String) A unique identifier for an object, represented as a UUID..
 - `remediation_notes` (String) User-documented remediation steps and notes for this episode..
@@ -65,6 +64,7 @@ This is **markdown** content"
 - `all_incidents_resolved_at` (String) A date time object..
 - `is_on_call_policy_executed` (Bool) Whether the on-call policy has been executed for this episode..
 - `incident_count` (Number) Denormalized count of incidents in this episode..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_owner_notified_of_episode_creation` (Bool) Are owners notified when this episode is created?..
 - `subscriber_notification_status_on_episode_created` (String) Status of notification sent to subscribers when this episode was created..
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons..

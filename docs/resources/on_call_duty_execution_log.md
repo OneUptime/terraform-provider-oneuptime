@@ -36,9 +36,6 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `triggered_by_alert_id` (String) A unique identifier for an object, represented as a UUID..
 - `triggered_by_alert_episode_id` (String) A unique identifier for an object, represented as a UUID..
 - `triggered_by_incident_episode_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `acknowledged_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `acknowledged_at` (String) A date time object..
 - `acknowledged_by_team_id` (String) A unique identifier for an object, represented as a UUID..
 - `last_executed_escalation_rule_order` (Number) Which escalation rule was executed?..
@@ -46,7 +43,6 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `last_executed_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID..
 - `execute_next_escalation_rule_in_minutes` (Number) How many minutes should we wait before executing the next escalation rule?..
 - `on_call_policy_execution_repeat_count` (Number) How many times did we execute this on-call policy?..
-- `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -55,7 +51,11 @@ resource "oneuptime_on_call_duty_execution_log" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `acknowledged_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `schedule_gap_retry_count` (Number) How many times the current escalation rule has been re-sampled because its target schedule(s) momentarily had no on-call user...
+- `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

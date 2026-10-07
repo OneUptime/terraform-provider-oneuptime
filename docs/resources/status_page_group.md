@@ -33,7 +33,6 @@ This is **markdown** content"
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `parent_status_page_group_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Description for this group. This is visible on Status Page. This can be in markdown format...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `order` (Number) Order / Priority of this resource..
 - `is_expanded_by_default` (Bool) Is this group expanded by default on Status Page?..
 - `show_current_status` (Bool) Show current status like offline, operational or degraded...
@@ -53,6 +52,7 @@ This is **markdown** content"
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

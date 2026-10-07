@@ -47,7 +47,6 @@ resource "oneuptime_auto_remediation_rule" "example" {
 - `runbooks` (Set) Runbook candidates for this rule. Deterministic rules propose or start every attached runbook; AI rules pick the most applicable one...
 - `verification_window_minutes` (Number) How long after the runbook starts the subject's monitors get to recover before verification fails. Defaults to 15 minutes...
 - `auto_resolve_on_verified_recovery` (Bool) When verification confirms the monitors recovered inside the window, automatically resolve the incident/alert. Off by default — the timeline note is posted either way...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -56,6 +55,7 @@ resource "oneuptime_auto_remediation_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

@@ -33,7 +33,6 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `slack_workspace_name` (String) Name of the Slack workspace for validation and identification..
 - `microsoft_teams_incoming_webhook_url` (String) Microsoft Teams incoming webhook URL to send notifications to Teams channel..
 - `microsoft_teams_workspace_name` (String) Name of the Microsoft Teams workspace for validation and identification..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_subscription_confirmed` (Bool) Has subscriber confirmed their subscription? (for example, by clicking on a confirmation link in an email)..
 - `subscription_confirmation_token` (String) Token used to confirm subscription. This is a random token that is sent to the subscriber's email address to confirm their subscription...
 - `is_unsubscribed` (Bool) Is Subscriber Unsubscribed?..
@@ -51,6 +50,7 @@ resource "oneuptime_status_page_subscriber" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `unsubscribed_at` (String) A date time object..
 - `is_added_by_team` (Bool) Whether your team added this subscriber (from the dashboard, with an API key or by a workflow) rather than the subscriber signing up on the status page. Set by OneUptime when the subscriber is created; any value sent for it is ignored...
 

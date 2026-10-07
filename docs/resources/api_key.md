@@ -30,7 +30,6 @@ resource "oneuptime_api_key" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -40,6 +39,7 @@ resource "oneuptime_api_key" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `api_key` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

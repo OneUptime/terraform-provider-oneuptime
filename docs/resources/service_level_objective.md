@@ -42,7 +42,6 @@ resource "oneuptime_service_level_objective" "example" {
 - `window_days` (Number) Length of the rolling compliance window in days (e.g. 7, 28, 30 or 90). Ignored for Calendar Month windows...
 - `timezone` (String) IANA timezone (e.g. America/New_York) used for Calendar Month window boundaries. Defaults to UTC when not set...
 - `at_risk_threshold_percentage` (Number) Percentage of remaining error budget at which the SLO status changes to At Risk. For example, 20 means the status becomes At Risk when less than 20% of the error budget remains...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -66,6 +65,7 @@ resource "oneuptime_service_level_objective" "example" {
 - `last_evaluated_at` (String) A date time object..
 - `next_evaluation_at` (String) A date time object..
 - `last_accumulated_bucket_end_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

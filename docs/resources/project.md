@@ -30,7 +30,6 @@ resource "oneuptime_project" "example" {
 - `business_details_country` (String) Two-letter ISO country code for billing address (e.g., US, GB, DE)...
 - `finance_accounting_email` (String) Invoices, receipts and billing related notifications will be sent to these emails in addition to project owner. Separate multiple emails with a comma...
 - `payment_provider_promo_code` (String) Project payment_provider_promo_code.
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_feature_flag_monitor_groups_enabled` (Bool) Is Feature Flag Monitor Groups Enabled..
 - `active_monitors_limit` (Number) Project active_monitors_limit.
 - `seat_limit` (Number) Project seat_limit.
@@ -68,6 +67,8 @@ resource "oneuptime_project" "example" {
 - `auto_ai_recharge_by_balance_in_usd` (Number) Auto recharge amount in USD for AI services..
 - `auto_recharge_ai_when_current_balance_falls_in_usd` (Number) Auto recharge is triggered when current balance falls to this amount in USD for AI services..
 - `enable_ai` (Bool) Master switch for AI in this project. When disabled, every AI feature stops: Ask AI, investigations, postmortem drafts, auto-remediation and AI commands on Runners...
+- `ai_daily_token_limit` (Number) The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI)...
+- `ai_daily_spend_limit_in_usd` (Number) OneUptime Cloud: the most AI credits, in whole US dollars, OneUptime AI may spend in this project each UTC day. Only calls billed to the project's AI credits count, so it never stops AI that runs on the project's own LLM provider. Once it is reached, billed AI work is refused until midnight UTC. Ignored where AI is not billed (self-hosted). Unset means no limit; a limit is at least 1 (to turn AI off, use Enable AI)...
 - `acknowledge_linked_alerts_when_incident_acknowledged` (Bool) When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting...
 - `resolve_linked_alerts_when_incident_resolved` (Bool) When enabled, resolving an incident also resolves every alert linked to it, except alerts that are still linked to another incident that is not resolved yet. Alerts linked to an incident that is already resolved are resolved as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting...
 - `alert_investigation_minimum_severity_id` (String) A unique identifier for an object, represented as a UUID..
@@ -107,8 +108,9 @@ resource "oneuptime_project" "example" {
 - `payment_provider_customer_id` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation].
 - `payment_provider_subscription_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation].
 - `payment_provider_metered_subscription_status` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation].
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `workflow_runs_in_last30_days` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read Workflow], Update: [No access - you don't have permission for this operation].
+- `workflow_runs_in_last30_days` (Number) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation].
 - `sms_or_call_current_balance_in_usd_cents` (Number) Balance in USD for SMS, Call, and WhatsApp..
 - `ai_current_balance_in_usd_cents` (Number) Balance in USD for AI services..
 - `plan_name` (String) Name of the plan this project is subscribed to...

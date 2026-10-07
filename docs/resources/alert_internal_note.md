@@ -26,7 +26,6 @@ resource "oneuptime_alert_internal_note" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `note` (String) Notes in markdown..
 - `attachments` (Set) Files attached to this note..
 - `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message...
@@ -38,6 +37,7 @@ resource "oneuptime_alert_internal_note" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_owner_notified` (Bool) Are owners notified of this resource ownership?..
 
 ## Import

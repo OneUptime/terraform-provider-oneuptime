@@ -2,12 +2,12 @@
 page_title: "oneuptime_cloud_resource Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  Managed cloud compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner).
+  Cloud environments - managed compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner) - and cloud resources: the IaaS and PaaS resources (virtual machines, load balancers, buckets, managed databases, queues, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch and Google Cloud Monitoring publish about them.
 ---
 
 # oneuptime_cloud_resource (Data Source)
 
-Managed cloud compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner). Look up by `id` or by `name` (must match exactly one item).
+Cloud environments - managed compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner) - and cloud resources: the IaaS and PaaS resources (virtual machines, load balancers, buckets, managed databases, queues, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch and Google Cloud Monitoring publish about them. Look up by `id` or by `name` (must match exactly one item).
 
 ## Example Usage
 
@@ -39,6 +39,11 @@ data "oneuptime_cloud_resource" "by_id" {
 - `cloud_provider` (String) Last-seen cloud.provider OpenTelemetry resource attribute, e.g. aws, gcp, azure... Computed.
 - `cloud_region` (String) Last-seen cloud.region OpenTelemetry resource attribute, e.g. us-east-1... Computed.
 - `cloud_account_id` (String) Last-seen cloud.account.id OpenTelemetry resource attribute... Computed.
+- `cloud_resource_kind` (String) environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it... Computed.
+- `cloud_resource_type` (String) For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance)... Computed.
+- `provider_resource_id` (String) For a resource: the provider's id for it - its Azure resource id, its AWS ARN or its Google Cloud full resource name. Where the metrics do not name the resource completely (an AWS resource whose ARN needs an id no metric reports), a readable composite of what they do name... Computed.
+- `cloud_resource_group` (String) For an Azure resource: the resource group it belongs to... Computed.
+- `telemetry_attributes` (String) For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these... Computed.
 - `runtime_name` (String) Last-seen process.runtime.name OpenTelemetry resource attribute... Computed.
 - `runtime_version` (String) Last-seen process.runtime.version OpenTelemetry resource attribute... Computed.
 - `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected)... Computed.
@@ -51,4 +56,5 @@ data "oneuptime_cloud_resource" "by_id" {
 - `is_archived` (Bool) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry... Computed.
 - `archived_at` (String) A date time object.. Computed.
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
+- `auto_archived_at` (String) A date time object.. Computed.
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

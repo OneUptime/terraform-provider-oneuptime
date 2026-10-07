@@ -33,8 +33,6 @@ resource "oneuptime_workspace_notification_rule" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Description of the Notification Rule..
 - `notification_rule` (String) Notification Rules for the Workspace..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +41,8 @@ resource "oneuptime_workspace_notification_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

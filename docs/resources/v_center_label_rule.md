@@ -34,7 +34,6 @@ resource "oneuptime_v_center_label_rule" "example" {
 - `vmware_v_center_name_pattern` (String) Regex (case-insensitive) matched against the vCenter name. Leave empty to match any name...
 - `vmware_v_center_description_pattern` (String) Regex (case-insensitive) matched against the vCenter description. Leave empty to match any description...
 - `labels_to_add` (Set) Labels to attach to the vCenter when this rule matches. Already-attached labels are not duplicated...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +42,7 @@ resource "oneuptime_v_center_label_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

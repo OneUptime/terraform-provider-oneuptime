@@ -29,7 +29,6 @@ resource "oneuptime_network_device_diagnostic" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `probe_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -45,6 +44,7 @@ resource "oneuptime_network_device_diagnostic" "example" {
 - `trace_route_result` (String) For a Traceroute diagnostic: the DNS lookup and the hop-by-hop path from the probe to the device, in the same shape the Network monitor records. Managed by the probe...
 - `started_at` (String) A date time object..
 - `completed_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

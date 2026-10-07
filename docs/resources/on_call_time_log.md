@@ -33,7 +33,6 @@ resource "oneuptime_on_call_time_log" "example" {
 - `on_call_duty_policy_escalation_rule_id` (String) A unique identifier for an object, represented as a UUID..
 - `team_id` (String) A unique identifier for an object, represented as a UUID..
 - `more_info` (String) More information about this log record...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `ends_at` (String) A date time object..
 
 ### Read-Only
@@ -43,6 +42,7 @@ resource "oneuptime_on_call_time_log" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

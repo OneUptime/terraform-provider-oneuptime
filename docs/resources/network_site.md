@@ -40,7 +40,6 @@ resource "oneuptime_network_site" "example" {
 - `offline_threshold_percent` (Number) With the PercentThreshold rollup policy: the share of reporting devices beneath this site that must be non-operational before the site itself is marked offline. Below it (but above zero) the site is degraded...
 - `should_alert_when_unhealthy` (Bool) When enabled, an alert opens when this site's health rollup turns non-operational and auto-resolves when it recovers...
 - `alert_severity_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `materialized_path` (String) Slash-separated ancestor IDs of this site (e.g. '/rootId/childId/'). Managed by the server on parent changes; used for subtree queries and rollups...
 - `depth` (Number) Number of ancestors above this site (0 for root sites). Managed by the server on parent changes...
 - `current_monitor_status_id` (String) A unique identifier for an object, represented as a UUID..
@@ -55,6 +54,7 @@ resource "oneuptime_network_site" "example" {
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
 - `current_active_alert_id` (String) A unique identifier for an object, represented as a UUID..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

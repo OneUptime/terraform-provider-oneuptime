@@ -34,7 +34,6 @@ This is **markdown** content"
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Short description of this incident. This is in markdown and will be visible on the status page...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `monitors` (Set) List of monitors affected by this incident..
 - `hosts` (Set) List of hosts to pre-populate on incidents created from this template...
 - `kubernetes_clusters` (Set) List of Kubernetes clusters to pre-populate on incidents created from this template...
@@ -58,6 +57,7 @@ This is **markdown** content"
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_scoped_to_status_pages` (Bool) Whether incidents declared from this template are limited to the status pages in Status Pages. Derived from Status Pages; any value sent for it is ignored...
 
 ## Import

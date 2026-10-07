@@ -28,7 +28,6 @@ resource "oneuptime_scheduled_maintenance_state_timeline" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this state change?..
 - `ends_at` (String) A date time object..
 - `starts_at` (String) A date time object..
@@ -40,6 +39,7 @@ resource "oneuptime_scheduled_maintenance_state_timeline" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `subscriber_notification_status` (String) Status of notification sent to subscribers about this scheduled maintenance state change..
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons..
 - `is_owner_notified` (Bool) Are owners notified of state change?..

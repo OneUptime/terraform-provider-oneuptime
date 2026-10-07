@@ -34,7 +34,6 @@ resource "oneuptime_incident_episode_privacy_rule" "example" {
 - `episode_labels` (Set) Only trigger for episodes that have at least one of these labels. Leave empty to match regardless of episode labels...
 - `episode_title_pattern` (String) Regex (case-insensitive) matched against the episode title. Leave empty to match any title...
 - `episode_description_pattern` (String) Regex (case-insensitive) matched against the episode description. Leave empty to match any description...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +42,7 @@ resource "oneuptime_incident_episode_privacy_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

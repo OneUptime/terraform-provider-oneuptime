@@ -52,7 +52,6 @@ resource "oneuptime_rum_application" "example" {
 - `session_replay_record_canvas` (Bool) When enabled, canvas contents are recorded. Off by default because canvas capture is expensive on the end user's device and canvases routinely render content the text masking cannot reach...
 - `session_replay_retention_in_days` (Number) How long session recordings are kept for this application. Clamped to 1, 7, 14, 30 or 90 days. Defaults to 7 rather than the 15 the other telemetry pillars use, because a short retention is itself a privacy control...
 - `session_replay_monthly_budget_in_gb` (Number) Optional ceiling on replay bytes ingested per calendar month for this application. Once exceeded, live recorders are told to stop. Leave blank for no application-level ceiling...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_archived` (Bool) Is this RUM application archived? Archived RUM applications are hidden from lists but keep collecting telemetry...
 
 ### Read-Only
@@ -70,6 +69,7 @@ resource "oneuptime_rum_application" "example" {
 - `last_seen_at` (String) A date time object..
 - `session_replay_last_chunk_received_at` (String) A date time object..
 - `session_replay_budget_exceeded_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..

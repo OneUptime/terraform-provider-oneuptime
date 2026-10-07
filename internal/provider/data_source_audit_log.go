@@ -45,6 +45,8 @@ type AuditLogDataSourceModel struct {
     ApiKeyName types.String `tfsdk:"api_key_name"`
     McpOAuthGrantId types.String `tfsdk:"mcp_o_auth_grant_id"`
     McpClientName types.String `tfsdk:"mcp_client_name"`
+    WorkflowId types.String `tfsdk:"workflow_id"`
+    WorkflowName types.String `tfsdk:"workflow_name"`
     Changes types.Set `tfsdk:"changes"`
 }
 
@@ -127,6 +129,14 @@ func (d *AuditLogDataSource) Schema(ctx context.Context, req datasource.SchemaRe
                 MarkdownDescription: "MCP Client Name",
                 Computed: true,
             },
+            "workflow_id": schema.StringAttribute{
+                MarkdownDescription: "Workflow ID",
+                Computed: true,
+            },
+            "workflow_name": schema.StringAttribute{
+                MarkdownDescription: "Workflow Name",
+                Computed: true,
+            },
             "changes": schema.SetAttribute{
                 MarkdownDescription: "Changes",
                 Computed: true,
@@ -193,6 +203,8 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         "apiKeyName": true,
         "mcpOAuthGrantId": true,
         "mcpClientName": true,
+        "workflowId": true,
+        "workflowName": true,
         "changes": true,
         "_id": true,
     }
@@ -544,6 +556,40 @@ func (d *AuditLogDataSource) Read(ctx context.Context, req datasource.ReadReques
         data.McpClientName = types.StringValue(val)
     } else {
         data.McpClientName = types.StringNull()
+    }
+    if obj, ok := item["workflowId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkflowId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkflowId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkflowId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkflowId = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowId = types.StringNull()
+        }
+    } else if val, ok := item["workflowId"].(string); ok {
+        data.WorkflowId = types.StringValue(val)
+    } else {
+        data.WorkflowId = types.StringNull()
+    }
+    if obj, ok := item["workflowName"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.WorkflowName = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.WorkflowName = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.WorkflowName = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.WorkflowName = types.StringValue(string(jsonBytes))
+        } else {
+            data.WorkflowName = types.StringNull()
+        }
+    } else if val, ok := item["workflowName"].(string); ok {
+        data.WorkflowName = types.StringValue(val)
+    } else {
+        data.WorkflowName = types.StringNull()
     }
     if val, ok := item["changes"].([]interface{}); ok {
         var setItems []attr.Value

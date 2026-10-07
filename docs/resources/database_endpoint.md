@@ -30,7 +30,6 @@ resource "oneuptime_database_endpoint" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_primary` (Bool) Is this the endpoint the database was created from? The primary endpoint cannot be removed...
 - `source` (String) Who added this endpoint: auto (found in telemetry), workload (a Service name of the Kubernetes workload the database runs as) or user (added as an alias by a person)...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -40,6 +39,7 @@ resource "oneuptime_database_endpoint" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `last_matched_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

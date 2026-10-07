@@ -45,7 +45,6 @@ resource "oneuptime_alert_label_rule" "example" {
 - `inherit_labels_from_docker_hosts` (Bool) When this rule matches, also copy every label of the alert's affected Docker hosts onto the alert...
 - `inherit_labels_from_podman_hosts` (Bool) When this rule matches, also copy every label of the alert's affected Podman hosts onto the alert...
 - `inherit_labels_from_services` (Bool) When this rule matches, also copy every label of the alert's affected services onto the alert...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -54,6 +53,7 @@ resource "oneuptime_alert_label_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

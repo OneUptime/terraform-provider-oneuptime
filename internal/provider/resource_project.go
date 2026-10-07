@@ -45,7 +45,6 @@ type ProjectResourceModel struct {
     BusinessDetailsCountry types.String `tfsdk:"business_details_country"`
     FinanceAccountingEmail types.String `tfsdk:"finance_accounting_email"`
     PaymentProviderPromoCode types.String `tfsdk:"payment_provider_promo_code"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     IsFeatureFlagMonitorGroupsEnabled types.Bool `tfsdk:"is_feature_flag_monitor_groups_enabled"`
     ActiveMonitorsLimit types.Number `tfsdk:"active_monitors_limit"`
     SeatLimit types.Number `tfsdk:"seat_limit"`
@@ -83,6 +82,8 @@ type ProjectResourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
+    AiDailyTokenLimit types.Number `tfsdk:"ai_daily_token_limit"`
+    AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
     AlertInvestigationMinimumSeverityId types.String `tfsdk:"alert_investigation_minimum_severity_id"`
@@ -118,6 +119,7 @@ type ProjectResourceModel struct {
     PaymentProviderCustomerId types.String `tfsdk:"payment_provider_customer_id"`
     PaymentProviderSubscriptionStatus types.String `tfsdk:"payment_provider_subscription_status"`
     PaymentProviderMeteredSubscriptionStatus types.String `tfsdk:"payment_provider_metered_subscription_status"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
     WorkflowRunsInLast30Days types.Number `tfsdk:"workflow_runs_in_last30_days"`
     SmsOrCallCurrentBalanceInUsdCents types.Number `tfsdk:"sms_or_call_current_balance_in_usd_cents"`
@@ -182,15 +184,6 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 },
             },
             "payment_provider_promo_code": schema.StringAttribute{
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
-                },
-            },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -515,6 +508,22 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
+            "ai_daily_token_limit": schema.NumberAttribute{
+                MarkdownDescription: "The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI)..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "ai_daily_spend_limit_in_usd": schema.NumberAttribute{
+                MarkdownDescription: "OneUptime Cloud: the most AI credits, in whole US dollars, OneUptime AI may spend in this project each UTC day. Only calls billed to the project's AI credits count, so it never stops AI that runs on the project's own LLM provider. Once it is reached, billed AI work is refused until midnight UTC. Ignored where AI is not billed (self-hosted). Unset means no limit; a limit is at least 1 (to turn AI off, use Enable AI)..",
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.Number{
+                    numberplanmodifier.UseStateForUnknown(),
+                },
+            },
             "acknowledge_linked_alerts_when_incident_acknowledged": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, acknowledging an incident also acknowledges every alert linked to it. This stops those alerts' on-call escalations, and their reminders only when the alert reminder rule is set to stop on Acknowledged. Alerts linked to an incident that is already acknowledged are acknowledged as they are linked. On for new projects created in OneUptime; projects that existed before keep their setting..",
                 Optional: true,
@@ -763,12 +772,16 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
                 MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
             "deleted_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "workflow_runs_in_last30_days": schema.NumberAttribute{
-                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Read Workflow], Update: [No access - you don't have permission for this operation]",
+                MarkdownDescription: "Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Read Project, Project User], Update: [No access - you don't have permission for this operation]",
                 Computed: true,
             },
             "sms_or_call_current_balance_in_usd_cents": schema.NumberAttribute{
@@ -865,9 +878,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if !data.PaymentProviderPromoCode.IsNull() && !data.PaymentProviderPromoCode.IsUnknown() {
         requestDataMap["paymentProviderPromoCode"] = data.PaymentProviderPromoCode.ValueString()
-    }
-    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
-        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
     }
     if !data.IsFeatureFlagMonitorGroupsEnabled.IsNull() && !data.IsFeatureFlagMonitorGroupsEnabled.IsUnknown() {
         requestDataMap["isFeatureFlagMonitorGroupsEnabled"] = data.IsFeatureFlagMonitorGroupsEnabled.ValueBool()
@@ -992,7 +1002,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "businessDetailsCountry": true,
         "financeAccountingEmail": true,
         "paymentProviderPromoCode": true,
-        "createdByUserId": true,
         "isFeatureFlagMonitorGroupsEnabled": true,
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
@@ -1027,6 +1036,8 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiDailyTokenLimit": true,
+        "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "alertInvestigationMinimumSeverityId": true,
@@ -1062,6 +1073,7 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         "paymentProviderCustomerId": true,
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
+        "createdByUserId": true,
         "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
@@ -1325,43 +1337,6 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.PaymentProviderPromoCode = types.StringValue(val)
     } else {
         data.PaymentProviderPromoCode = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["isFeatureFlagMonitorGroupsEnabled"].(bool); ok {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolValue(val)
@@ -1738,6 +1713,40 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["aiDailyTokenLimit"].(float64); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyTokenLimit"].(int); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyTokenLimit"].(int64); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["aiDailyTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AiDailyTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["aiDailySpendLimitInUSD"].(float64); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int64); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailySpendLimitInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AiDailySpendLimitInUsd = types.NumberNull()
     }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
@@ -2453,6 +2462,43 @@ func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2763,7 +2809,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "businessDetailsCountry": true,
         "financeAccountingEmail": true,
         "paymentProviderPromoCode": true,
-        "createdByUserId": true,
         "isFeatureFlagMonitorGroupsEnabled": true,
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
@@ -2798,6 +2843,8 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiDailyTokenLimit": true,
+        "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "alertInvestigationMinimumSeverityId": true,
@@ -2833,6 +2880,7 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         "paymentProviderCustomerId": true,
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
+        "createdByUserId": true,
         "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
@@ -3097,43 +3145,6 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.PaymentProviderPromoCode = types.StringValue(val)
     } else {
         data.PaymentProviderPromoCode = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["isFeatureFlagMonitorGroupsEnabled"].(bool); ok {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolValue(val)
@@ -3510,6 +3521,40 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["aiDailyTokenLimit"].(float64); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyTokenLimit"].(int); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyTokenLimit"].(int64); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["aiDailyTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AiDailyTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["aiDailySpendLimitInUSD"].(float64); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int64); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailySpendLimitInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AiDailySpendLimitInUsd = types.NumberNull()
     }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
@@ -4225,6 +4270,43 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4609,6 +4691,12 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     if !data.EnableAi.IsUnknown() && !state.EnableAi.IsUnknown() && !data.EnableAi.Equal(state.EnableAi) {
         requestDataMap["enableAi"] = data.EnableAi.ValueBool()
     }
+    if !data.AiDailyTokenLimit.IsUnknown() && !state.AiDailyTokenLimit.IsUnknown() && !data.AiDailyTokenLimit.Equal(state.AiDailyTokenLimit) {
+        requestDataMap["aiDailyTokenLimit"] = r.bigFloatToFloat64(data.AiDailyTokenLimit.ValueBigFloat())
+    }
+    if !data.AiDailySpendLimitInUsd.IsUnknown() && !state.AiDailySpendLimitInUsd.IsUnknown() && !data.AiDailySpendLimitInUsd.Equal(state.AiDailySpendLimitInUsd) {
+        requestDataMap["aiDailySpendLimitInUSD"] = r.bigFloatToFloat64(data.AiDailySpendLimitInUsd.ValueBigFloat())
+    }
     if !data.EnableAutomaticIncidentInvestigation.IsUnknown() && !state.EnableAutomaticIncidentInvestigation.IsUnknown() && !data.EnableAutomaticIncidentInvestigation.Equal(state.EnableAutomaticIncidentInvestigation) {
         requestDataMap["enableAutomaticIncidentInvestigation"] = data.EnableAutomaticIncidentInvestigation.ValueBool()
     }
@@ -4762,7 +4850,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "businessDetailsCountry": true,
         "financeAccountingEmail": true,
         "paymentProviderPromoCode": true,
-        "createdByUserId": true,
         "isFeatureFlagMonitorGroupsEnabled": true,
         "incidentNumberPrefix": true,
         "alertNumberPrefix": true,
@@ -4797,6 +4884,8 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiDailyTokenLimit": true,
+        "aiDailySpendLimitInUSD": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
         "alertInvestigationMinimumSeverityId": true,
@@ -4832,6 +4921,7 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         "paymentProviderCustomerId": true,
         "paymentProviderSubscriptionStatus": true,
         "paymentProviderMeteredSubscriptionStatus": true,
+        "createdByUserId": true,
         "deletedByUserId": true,
         "workflowRunsInLast30Days": true,
         "smsOrCallCurrentBalanceInUSDCents": true,
@@ -5090,43 +5180,6 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.PaymentProviderPromoCode = types.StringValue(val)
     } else {
         data.PaymentProviderPromoCode = types.StringNull()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["isFeatureFlagMonitorGroupsEnabled"].(bool); ok {
         data.IsFeatureFlagMonitorGroupsEnabled = types.BoolValue(val)
@@ -5503,6 +5556,40 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
     }
     if val, ok := dataMap["enableAi"].(bool); ok {
         data.EnableAi = types.BoolValue(val)
+    }
+    if val, ok := dataMap["aiDailyTokenLimit"].(float64); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailyTokenLimit"].(int); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailyTokenLimit"].(int64); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["aiDailyTokenLimit"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyTokenLimit = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AiDailyTokenLimit = types.NumberNull()
+    }
+    if val, ok := dataMap["aiDailySpendLimitInUSD"].(float64); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
+    } else if val, ok := dataMap["aiDailySpendLimitInUSD"].(int64); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(float64(val)))
+    } else if obj, ok := dataMap["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
+        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailySpendLimitInUsd = types.NumberNull()
+        }
+    } else {
+        // Missing or unrecognized value: null, never unknown, so apply can complete.
+        data.AiDailySpendLimitInUsd = types.NumberNull()
     }
     if val, ok := dataMap["acknowledgeLinkedAlertsWhenIncidentAcknowledged"].(bool); ok {
         data.AcknowledgeLinkedAlertsWhenIncidentAcknowledged = types.BoolValue(val)
@@ -6218,6 +6305,43 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
         data.PaymentProviderMeteredSubscriptionStatus = types.StringValue(val)
     } else {
         data.PaymentProviderMeteredSubscriptionStatus = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["deletedByUserId"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

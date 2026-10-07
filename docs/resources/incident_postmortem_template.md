@@ -29,7 +29,6 @@ resource "oneuptime_incident_postmortem_template" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `postmortem_note` (String) Markdown template used when documenting an incident postmortem...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -38,6 +37,7 @@ resource "oneuptime_incident_postmortem_template" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

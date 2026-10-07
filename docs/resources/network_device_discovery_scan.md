@@ -45,7 +45,6 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 - `is_netbios_lookup_enabled` (Bool) Whether hosts with no SNMP name and no reverse DNS record are asked for their NetBIOS name over UDP 137. Best-effort: Windows/Samba hosts that allow UDP 137 from the probe. Private addresses only; never done by global probes...
 - `is_recurring` (Bool) Re-run this scan automatically every Rescan Interval minutes to keep discovery continuous...
 - `rescan_interval_in_minutes` (Number) How often a recurring scan re-runs, in minutes. Ignored unless Is Recurring is on...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -63,6 +62,7 @@ resource "oneuptime_network_device_discovery_scan" "example" {
 - `completed_at` (String) A date time object..
 - `next_scan_at` (String) A date time object..
 - `auto_import_processed_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

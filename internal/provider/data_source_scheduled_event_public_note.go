@@ -48,6 +48,7 @@ type ScheduledEventPublicNoteDataSourceModel struct {
     IsOwnerNotified types.Bool `tfsdk:"is_owner_notified"`
     PostedAt types.String `tfsdk:"posted_at"`
     PostedFromSlackMessageId types.String `tfsdk:"posted_from_slack_message_id"`
+    PostedWithScheduledMaintenanceStateId types.String `tfsdk:"posted_with_scheduled_maintenance_state_id"`
 }
 
 func (d *ScheduledEventPublicNoteDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -138,6 +139,10 @@ func (d *ScheduledEventPublicNoteDataSource) Schema(ctx context.Context, req dat
                 MarkdownDescription: "Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message..",
                 Computed: true,
             },
+            "posted_with_scheduled_maintenance_state_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
         },
     }
 }
@@ -201,6 +206,7 @@ func (d *ScheduledEventPublicNoteDataSource) Read(ctx context.Context, req datas
         "isOwnerNotified": true,
         "postedAt": true,
         "postedFromSlackMessageId": true,
+        "postedWithScheduledMaintenanceStateId": true,
         "_id": true,
     }
 
@@ -562,6 +568,23 @@ func (d *ScheduledEventPublicNoteDataSource) Read(ctx context.Context, req datas
         data.PostedFromSlackMessageId = types.StringValue(val)
     } else {
         data.PostedFromSlackMessageId = types.StringNull()
+    }
+    if obj, ok := item["postedWithScheduledMaintenanceStateId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.PostedWithScheduledMaintenanceStateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.PostedWithScheduledMaintenanceStateId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.PostedWithScheduledMaintenanceStateId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.PostedWithScheduledMaintenanceStateId = types.StringValue(string(jsonBytes))
+        } else {
+            data.PostedWithScheduledMaintenanceStateId = types.StringNull()
+        }
+    } else if val, ok := item["postedWithScheduledMaintenanceStateId"].(string); ok {
+        data.PostedWithScheduledMaintenanceStateId = types.StringValue(val)
+    } else {
+        data.PostedWithScheduledMaintenanceStateId = types.StringNull()
     }
 
     // Write logs using the tflog package

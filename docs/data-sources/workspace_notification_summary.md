@@ -38,6 +38,7 @@ data "oneuptime_workspace_notification_summary" "by_id" {
 - `recurring_interval` (String) How often should the summary be sent?.. Computed.
 - `number_of_days_of_data` (Number) How many days of data to include in the summary.. Computed.
 - `send_first_report_at` (String) A date time object.. Computed.
+- `timezone` (String) The IANA time zone the summary's schedule is read in, such as Europe/Berlin or America/New_York. The summary goes out at the same time of day there all year, also after the clocks change for daylight saving time. Left out when the summary is created, it is the time zone in the creator's profile, or UTC when no person creates it (an API key or a workflow). A summary without one is read in UTC... Computed.
 - `channel_names` (String) List of channel names to post the summary to.. Computed.
 - `team_name` (String) Microsoft Teams team name (only for Microsoft Teams).. Computed.
 - `summary_items` (String) Checklist of items to include in the summary.. Computed.

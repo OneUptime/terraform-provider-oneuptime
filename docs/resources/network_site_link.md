@@ -31,7 +31,6 @@ resource "oneuptime_network_site_link" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `name` (String) Friendly name for this link..
 - `monitor_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -40,6 +39,7 @@ resource "oneuptime_network_site_link" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

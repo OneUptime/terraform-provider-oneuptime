@@ -34,7 +34,6 @@ This is **markdown** content"
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Description of this scheduled event that will show up on Status Page. This is a markdown field...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `monitors` (Set) List of monitors attached to this event..
 - `hosts` (Set) List of hosts to pre-populate on scheduled maintenance events created from this template...
 - `kubernetes_clusters` (Set) List of Kubernetes clusters to pre-populate on scheduled maintenance events created from this template...
@@ -63,6 +62,7 @@ This is **markdown** content"
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `schedule_next_event_at` (String) A date time object..
 
 ## Import

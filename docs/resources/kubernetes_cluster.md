@@ -31,7 +31,6 @@ resource "oneuptime_kubernetes_cluster" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description for this Kubernetes cluster..
 - `provider` (String) Cloud provider or platform running this cluster (EKS, GKE, AKS, self-managed, unknown)..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_archived` (Bool) Is this Kubernetes cluster archived? Archived Kubernetes clusters are hidden from lists but keep collecting telemetry...
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this Kubernetes cluster. Leave blank to use the project-wide default...
@@ -56,6 +55,7 @@ resource "oneuptime_kubernetes_cluster" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..

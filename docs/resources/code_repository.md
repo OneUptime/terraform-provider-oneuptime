@@ -44,7 +44,6 @@ resource "oneuptime_code_repository" "example" {
 - `repository_url` (String) The HTTPS URL to the repository..
 - `git_lab_project_id` (String) The GitLab project ID for this repository..
 - `secret_token` (String) Secret token used to verify incoming webhooks..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 
 ### Read-Only
@@ -56,6 +55,7 @@ resource "oneuptime_code_repository" "example" {
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
 - `git_hub_app_installation_id` (String) The GitHub App installation ID used to authenticate with this repository..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

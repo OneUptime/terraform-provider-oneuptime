@@ -40,7 +40,6 @@ resource "oneuptime_workflow_variable" "example" {
 - `oauth_scope` (String) OAuth 2.0 variables only. Space-separated scopes to request. Leave empty to use the scopes your identity provider grants by default...
 - `oauth_additional_parameters` (String) OAuth 2.0 variables only. Extra form parameters sent with every token request, such as audience for Auth0 or resource for Azure AD v1. Readable by anyone who can read the variable, so do not put secrets here...
 - `oauth_client_authentication_method` (String) OAuth 2.0 variables only. How the client ID and secret are sent: in an HTTP Basic header (client_secret_basic, the default) or in the request body (client_secret_post)...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -53,6 +52,7 @@ resource "oneuptime_workflow_variable" "example" {
 - `oauth_last_refreshed_at` (String) A date time object..
 - `oauth_last_refresh_error` (String) Why the last attempt to fetch an access token failed. Cleared by the next successful refresh...
 - `oauth_last_refresh_error_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

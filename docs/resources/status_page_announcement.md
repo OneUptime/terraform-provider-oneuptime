@@ -36,7 +36,6 @@ This is **markdown** content"
 - `monitors` (Set) List of monitors affected by this announcement. If none are selected, all subscribers will be notified...
 - `end_announcement_at` (String) A date time object..
 - `attachments` (Set) Files attached to this announcement..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about this announcement?..
 
 ### Read-Only
@@ -46,6 +45,7 @@ This is **markdown** content"
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `subscriber_notification_status` (String) Status page announcement subscriber_notification_status.
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons..
 - `subscriber_notification_status_on_announcement_updated` (String) Status of the notification sent to subscribers when this announcement was last updated. Empty until an update notification is requested...

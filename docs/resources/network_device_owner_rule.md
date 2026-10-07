@@ -36,7 +36,6 @@ resource "oneuptime_network_device_owner_rule" "example" {
 - `network_device_description_pattern` (String) Regex or * wildcard pattern (case-insensitive) matched against the network device description. Leave empty to match any description...
 - `owner_users` (Set) Users to add as owners on the network device when this rule matches...
 - `owner_teams` (Set) Teams to add as owners on the network device when this rule matches...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -45,6 +44,7 @@ resource "oneuptime_network_device_owner_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

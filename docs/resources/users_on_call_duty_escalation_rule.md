@@ -29,7 +29,6 @@ resource "oneuptime_users_on_call_duty_escalation_rule" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `user_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -38,6 +37,7 @@ resource "oneuptime_users_on_call_duty_escalation_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

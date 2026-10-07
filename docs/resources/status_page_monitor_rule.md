@@ -40,7 +40,6 @@ resource "oneuptime_status_page_monitor_rule" "example" {
 - `show_uptime_percent` (Bool) Show uptime percent on the resources this rule adds to the status page...
 - `uptime_percent_precision` (String) Precision of the uptime percent shown on the resources this rule adds..
 - `show_status_history_chart` (Bool) Show a 90 day uptime history on the resources this rule adds to the status page...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -49,6 +48,7 @@ resource "oneuptime_status_page_monitor_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

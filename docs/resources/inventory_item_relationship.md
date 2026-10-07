@@ -37,8 +37,6 @@ resource "oneuptime_inventory_item_relationship" "example" {
 - `call_count` (Number) Calls observed over this edge in the most recent computation window (depends-on edges only)...
 - `error_count` (Number) Errored calls observed over this edge in the most recent computation window (depends-on edges only)...
 - `avg_duration_ms` (Number) Average call duration in milliseconds over this edge in the most recent computation window (depends-on edges only)...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -47,6 +45,8 @@ resource "oneuptime_inventory_item_relationship" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

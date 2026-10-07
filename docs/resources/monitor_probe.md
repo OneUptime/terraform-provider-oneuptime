@@ -30,7 +30,6 @@ resource "oneuptime_monitor_probe" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `last_ping_at` (String) A date time object..
 - `next_ping_at` (String) A date time object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_enabled` (Bool) Monitor probe is_enabled.
 
 ### Read-Only
@@ -40,6 +39,7 @@ resource "oneuptime_monitor_probe" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `last_monitoring_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Probe], Update: [No access - you don't have permission for this operation].
 

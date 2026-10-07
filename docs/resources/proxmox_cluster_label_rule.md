@@ -34,7 +34,6 @@ resource "oneuptime_proxmox_cluster_label_rule" "example" {
 - `proxmox_cluster_name_pattern` (String) Regex (case-insensitive) matched against the Proxmox cluster name. Leave empty to match any name...
 - `proxmox_cluster_description_pattern` (String) Regex (case-insensitive) matched against the Proxmox cluster description. Leave empty to match any description...
 - `labels_to_add` (Set) Labels to attach to the Proxmox cluster when this rule matches. Already-attached labels are not duplicated...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +42,7 @@ resource "oneuptime_proxmox_cluster_label_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

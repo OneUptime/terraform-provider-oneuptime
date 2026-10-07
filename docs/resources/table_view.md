@@ -30,7 +30,6 @@ resource "oneuptime_table_view" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `query` (String) Filters for this table view..
 - `sort` (String) Sort for this table view..
 - `items_on_page` (Number) Items on page..
@@ -44,6 +43,7 @@ resource "oneuptime_table_view" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

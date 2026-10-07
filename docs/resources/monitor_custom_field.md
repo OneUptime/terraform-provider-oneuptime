@@ -32,7 +32,6 @@ resource "oneuptime_monitor_custom_field" "example" {
 - `dropdown_options` (String) Options and optional colors for dropdown fields. Plain one-per-line values remain supported...
 - `map_from_resource_type` (String) Related resource this field copies its value from. Empty means values are entered by hand...
 - `map_from_custom_field_name` (String) Name of the custom field on the related resource this field copies its value from...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -41,6 +40,7 @@ resource "oneuptime_monitor_custom_field" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

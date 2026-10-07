@@ -50,6 +50,7 @@ data "oneuptime_incident" "by_id" {
 - `iot_fleets` (Set) List of IoT fleets affected by this incident... Computed.
 - `docker_swarm_clusters` (Set) List of Docker Swarm clusters affected by this incident... Computed.
 - `ceph_clusters` (Set) List of Ceph clusters affected by this incident... Computed.
+- `storage_arrays` (Set) List of storage arrays affected by this incident... Computed.
 - `database_servers` (Set) List of databases affected by this incident... Computed.
 - `docker_resources` (Set) List of Docker resources (containers, images, networks, volumes) affected by this incident... Computed.
 - `podman_resources` (Set) List of Podman resources (containers, images, networks, volumes) affected by this incident... Computed.
@@ -81,6 +82,7 @@ data "oneuptime_incident" "by_id" {
 - `monitor_summary` (String) The monitor summary captured at the moment this incident was created - the same card the monitor page shows, frozen so it survives the monitor log being aged out... Computed.
 - `created_by_probe_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_created_automatically` (Bool) Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?.. Computed.
+- `holds_monitors` (Bool) Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written... Computed.
 - `remediation_notes` (String) Notes on how to remediate this incident. This is in markdown... Computed.
 - `telemetry_query` (String) Telemetry query for this incident.. Computed.
 - `incident_number` (Number) Incident Number.. Computed.

@@ -2,12 +2,12 @@
 page_title: "oneuptime_cloud_resource Resource - oneuptime"
 subcategory: "Other"
 description: |-
-  Managed cloud compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner).
+  Cloud environments - managed compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner) - and cloud resources: the IaaS and PaaS resources (virtual machines, load balancers, buckets, managed databases, queues, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch and Google Cloud Monitoring publish about them.
 ---
 
 # oneuptime_cloud_resource (Resource)
 
-Managed cloud compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner).
+Cloud environments - managed compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner) - and cloud resources: the IaaS and PaaS resources (virtual machines, load balancers, buckets, managed databases, queues, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch and Google Cloud Monitoring publish about them.
 
 ## Example Usage
 
@@ -37,7 +37,6 @@ resource "oneuptime_cloud_resource" "example" {
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `retain_telemetry_data_for_days` (Number) Number of days to retain telemetry data for this resource. Leave blank to use the project-wide default...
 - `telemetry_retention_config` (String) Per-pillar retention overrides for this resource. Unset fields fall back to the resource default, then the project's retention settings...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_archived` (Bool) Is this cloud resource archived? Archived cloud resources are hidden from lists but keep collecting telemetry...
 
 ### Read-Only
@@ -48,13 +47,20 @@ resource "oneuptime_cloud_resource" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `cloud_resource_kind` (String) environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it...
+- `cloud_resource_type` (String) For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance)...
+- `provider_resource_id` (String) For a resource: the provider's id for it - its Azure resource id, its AWS ARN or its Google Cloud full resource name. Where the metrics do not name the resource completely (an AWS resource whose ARN needs an id no metric reports), a readable composite of what they do name...
+- `cloud_resource_group` (String) For an Azure resource: the resource group it belongs to...
+- `telemetry_attributes` (String) For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these...
 - `runtime_name` (String) Last-seen process.runtime.name OpenTelemetry resource attribute...
 - `runtime_version` (String) Last-seen process.runtime.version OpenTelemetry resource attribute...
 - `otel_collector_status` (String) Whether telemetry is currently being received (connected) or has gone stale (disconnected)...
 - `agent_version` (String) Version of the OneUptime agent reporting this resource...
 - `last_seen_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `auto_archived_at` (String) A date time object..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

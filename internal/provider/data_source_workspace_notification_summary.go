@@ -40,6 +40,7 @@ type WorkspaceNotificationSummaryDataSourceModel struct {
     RecurringInterval types.String `tfsdk:"recurring_interval"`
     NumberOfDaysOfData types.Number `tfsdk:"number_of_days_of_data"`
     SendFirstReportAt types.String `tfsdk:"send_first_report_at"`
+    Timezone types.String `tfsdk:"timezone"`
     ChannelNames types.String `tfsdk:"channel_names"`
     TeamName types.String `tfsdk:"team_name"`
     SummaryItems types.String `tfsdk:"summary_items"`
@@ -113,6 +114,10 @@ func (d *WorkspaceNotificationSummaryDataSource) Schema(ctx context.Context, req
             },
             "send_first_report_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
+                Computed: true,
+            },
+            "timezone": schema.StringAttribute{
+                MarkdownDescription: "The IANA time zone the summary's schedule is read in, such as Europe/Berlin or America/New_York. The summary goes out at the same time of day there all year, also after the clocks change for daylight saving time. Left out when the summary is created, it is the time zone in the creator's profile, or UTC when no person creates it (an API key or a workflow). A summary without one is read in UTC..",
                 Computed: true,
             },
             "channel_names": schema.StringAttribute{
@@ -212,6 +217,7 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         "recurringInterval": true,
         "numberOfDaysOfData": true,
         "sendFirstReportAt": true,
+        "timezone": true,
         "channelNames": true,
         "teamName": true,
         "summaryItems": true,
@@ -492,6 +498,23 @@ func (d *WorkspaceNotificationSummaryDataSource) Read(ctx context.Context, req d
         data.SendFirstReportAt = types.StringValue(val)
     } else {
         data.SendFirstReportAt = types.StringNull()
+    }
+    if obj, ok := item["timezone"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Timezone = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Timezone = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Timezone = types.StringValue(string(jsonBytes))
+        } else {
+            data.Timezone = types.StringNull()
+        }
+    } else if val, ok := item["timezone"].(string); ok {
+        data.Timezone = types.StringValue(val)
+    } else {
+        data.Timezone = types.StringNull()
     }
     if obj, ok := item["channelNames"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

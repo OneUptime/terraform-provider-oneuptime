@@ -42,7 +42,6 @@ resource "oneuptime_runbook_rule" "example" {
 - `monitor_name_pattern` (String) Case-insensitive regex matched against the names of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor name...
 - `monitor_description_pattern` (String) Case-insensitive regex matched against the descriptions of the monitors of the incident, alert or scheduled maintenance event. Leave empty to match any monitor description...
 - `runbooks` (Set) Runbooks to start when this rule matches. Each runbook produces its own execution...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -51,6 +50,7 @@ resource "oneuptime_runbook_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

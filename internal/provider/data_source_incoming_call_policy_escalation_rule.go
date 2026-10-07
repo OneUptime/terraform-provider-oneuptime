@@ -95,7 +95,7 @@ func (d *IncomingCallPolicyEscalationRuleDataSource) Schema(ctx context.Context,
                 Computed: true,
             },
             "escalate_after_seconds": schema.NumberAttribute{
-                MarkdownDescription: "Seconds before escalating to next rule.",
+                MarkdownDescription: "How long, in seconds, the phone rings before the call moves on to the next rule. 20 when left out; a time below 5 or above 600 rings for 5 or 600, the limits Twilio takes..",
                 Computed: true,
             },
             "on_call_duty_policy_schedule_id": schema.StringAttribute{

@@ -28,7 +28,6 @@ resource "oneuptime_workflow" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_archived` (Bool) Archived workflows are hidden from the Workflows list and never run, from any trigger. Unarchiving restores them as they were...
 - `is_enabled` (Bool) Is this workflow enabled?..
 - `graph` (String) Workflow Graph in JSON. Ideally, create this via UI and not via API...
@@ -44,6 +43,7 @@ resource "oneuptime_workflow" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..

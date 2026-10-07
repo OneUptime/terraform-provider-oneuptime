@@ -44,7 +44,6 @@ resource "oneuptime_incident_measurement" "example" {
 - `is_enabled` (Bool) Whether this measurement is computed for new and updated incidents..
 - `show_on_incident_view` (Bool) Whether this measurement is shown on the incident page alongside the incident's other timings..
 - `order` (Number) Where this measurement appears in the list of measurements, lowest number first. A new measurement is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -58,6 +57,7 @@ resource "oneuptime_incident_measurement" "example" {
 - `backfill_requested_at` (String) A date time object..
 - `backfill_cursor_created_at` (String) A date time object..
 - `backfill_completed_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

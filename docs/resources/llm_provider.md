@@ -37,7 +37,6 @@ resource "oneuptime_llm_provider" "example" {
 - `base_url` (String) The base URL for the LLM API. Required for Azure OpenAI and Ollama, optional for others...
 - `additional_params` (String) Optional JSON object with extra parameters sent directly to the provider API. These are merged last and override any defaults...
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_default` (Bool) Is this the default LLM provider for the project? When set, the global LLM provider will not be used...
 
 ### Read-Only
@@ -48,6 +47,7 @@ resource "oneuptime_llm_provider" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `cost_per_million_tokens_in_usd_cents` (Number) Cost per million tokens in USD cents. Used for billing when using global LLM providers...
 
 ## Import

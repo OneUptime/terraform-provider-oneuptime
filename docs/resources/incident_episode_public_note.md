@@ -26,7 +26,6 @@ resource "oneuptime_incident_episode_public_note" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `note` (String) Notes in markdown..
 - `attachments` (Set) Files attached to this note..
 - `should_status_page_subscribers_be_notified_on_note_created` (Bool) Should subscribers be notified about this note? If left out, this follows the episode: true when subscribers were notified that the episode was created, false when it was created without notifying them...
@@ -40,6 +39,7 @@ resource "oneuptime_incident_episode_public_note" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `subscriber_notification_status_on_note_created` (String) Status of notification sent to subscribers about this note..
 - `subscriber_notification_status_message` (String) Status message for subscriber notifications - includes success messages, failure reasons, or skip reasons..
 - `subscriber_notification_status_on_note_updated` (String) Status of the notification sent to subscribers when this note was last updated. Empty until an update notification is requested...

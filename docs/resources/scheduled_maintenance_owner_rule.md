@@ -46,7 +46,6 @@ resource "oneuptime_scheduled_maintenance_owner_rule" "example" {
 - `inherit_owners_from_docker_hosts` (Bool) When this rule matches, also assign every owner of the event's affected Docker hosts to the event...
 - `inherit_owners_from_podman_hosts` (Bool) When this rule matches, also assign every owner of the event's affected Podman hosts to the event...
 - `inherit_owners_from_services` (Bool) When this rule matches, also assign every owner of the event's affected services to the event...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -55,6 +54,7 @@ resource "oneuptime_scheduled_maintenance_owner_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

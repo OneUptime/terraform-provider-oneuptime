@@ -37,7 +37,6 @@ resource "oneuptime_status_page_resource" "example" {
 - `show_uptime_percent` (Bool) Show uptime percent of this monitor for the last 90 days..
 - `uptime_percent_precision` (String) Precision of uptime percent of this monitor for the last 90 days..
 - `show_status_history_chart` (Bool) Show a 90 day uptime history of this monitor..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `order` (Number) Order / Priority of this resource..
 - `row_axis_value` (String) Row this resource belongs to when its status page group is rendered as a grid. Should match one of the row axis values defined on the group...
 - `column_axis_value` (String) Column this resource belongs to when its status page group is rendered as a grid. Should match one of the column axis values defined on the group...
@@ -50,6 +49,7 @@ resource "oneuptime_status_page_resource" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `status_page_monitor_rule_id` (String) A unique identifier for an object, represented as a UUID..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

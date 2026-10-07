@@ -45,7 +45,6 @@ type IncidentResourceModel struct {
     Description types.String `tfsdk:"description"`
     DeclaredAt RFC3339Value `tfsdk:"declared_at"`
     ImpactStartedAt RFC3339Value `tfsdk:"impact_started_at"`
-    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     Monitors types.Set `tfsdk:"monitors"`
     Hosts types.Set `tfsdk:"hosts"`
     KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
@@ -58,6 +57,7 @@ type IncidentResourceModel struct {
     IotFleets types.Set `tfsdk:"iot_fleets"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
+    StorageArrays types.Set `tfsdk:"storage_arrays"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
     DockerResources types.Set `tfsdk:"docker_resources"`
     PodmanResources types.Set `tfsdk:"podman_resources"`
@@ -82,12 +82,12 @@ type IncidentResourceModel struct {
     StatusPages types.Set `tfsdk:"status_pages"`
     IsPrivate types.Bool `tfsdk:"is_private"`
     EnableReminders types.Bool `tfsdk:"enable_reminders"`
-    IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
     Version types.Number `tfsdk:"version"`
     Slug types.String `tfsdk:"slug"`
+    CreatedByUserId types.String `tfsdk:"created_by_user_id"`
     SubscriberNotificationStatusOnIncidentCreated types.String `tfsdk:"subscriber_notification_status_on_incident_created"`
     SubscriberNotificationStatusMessage types.String `tfsdk:"subscriber_notification_status_message"`
     SubscriberNotificationStatusOnPostmortemPublished types.String `tfsdk:"subscriber_notification_status_on_postmortem_published"`
@@ -101,12 +101,14 @@ type IncidentResourceModel struct {
     MonitorSummary JSONSubsetValue `tfsdk:"monitor_summary"`
     CreatedByProbeId types.String `tfsdk:"created_by_probe_id"`
     IsCreatedAutomatically types.Bool `tfsdk:"is_created_automatically"`
+    HoldsMonitors types.Bool `tfsdk:"holds_monitors"`
     IncidentNumber types.Number `tfsdk:"incident_number"`
     IncidentNumberWithPrefix types.String `tfsdk:"incident_number_with_prefix"`
     IsScopedToStatusPages types.Bool `tfsdk:"is_scoped_to_status_pages"`
     StatusPagesNotifiedOnCreation JSONSubsetValue `tfsdk:"status_pages_notified_on_creation"`
     NextReminderNotificationAt RFC3339Value `tfsdk:"next_reminder_notification_at"`
     ReminderNotificationSentCount types.Number `tfsdk:"reminder_notification_sent_count"`
+    IncidentEpisodeId types.String `tfsdk:"incident_episode_id"`
 }
 
 func (r *IncidentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -160,15 +162,6 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "created_by_user_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                    stringplanmodifier.RequiresReplace(),
                 },
             },
             "monitors": schema.SetAttribute{
@@ -272,6 +265,15 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "ceph_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Ceph clusters affected by this incident..",
+                Optional: true,
+                Computed: true,
+                ElementType: types.StringType,
+                PlanModifiers: []planmodifier.Set{
+                    setplanmodifier.UseStateForUnknown(),
+                },
+            },
+            "storage_arrays": schema.SetAttribute{
+                MarkdownDescription: "List of storage arrays affected by this incident..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -492,14 +494,6 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                     boolplanmodifier.UseStateForUnknown(),
                 },
             },
-            "incident_episode_id": schema.StringAttribute{
-                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
             "created_at": schema.StringAttribute{
                 MarkdownDescription: "A date time object.",
                 CustomType: RFC3339Type{},
@@ -521,6 +515,10 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "slug": schema.StringAttribute{
                 MarkdownDescription: "Friendly globally unique name for your object.",
+                Computed: true,
+            },
+            "created_by_user_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
             "subscriber_notification_status_on_incident_created": schema.StringAttribute{
@@ -578,6 +576,10 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
                 MarkdownDescription: "Is this incident created by OneUptime Probe or Workers automatically (and not created manually by a user)?.",
                 Computed: true,
             },
+            "holds_monitors": schema.BoolAttribute{
+                MarkdownDescription: "Whether this incident is holding its monitors - keeping them in its monitor status, or their monitoring paused - so that resolving it gives them back: their monitoring resumes and their status returns to operational. True from when the incident is declared open, or from when an edit while it is open puts its monitors in its monitor status. False for an incident declared already resolved, which never held them, and once a resolve has given them back. Empty for incidents from before it was recorded, which give their monitors back when they are resolved. Set by OneUptime; it cannot be written..",
+                Computed: true,
+            },
             "incident_number": schema.NumberAttribute{
                 MarkdownDescription: "Incident Number.",
                 Computed: true,
@@ -602,6 +604,10 @@ func (r *IncidentResource) Schema(ctx context.Context, req resource.SchemaReques
             },
             "reminder_notification_sent_count": schema.NumberAttribute{
                 MarkdownDescription: "How many reminder notifications have been sent to owners of this incident so far..",
+                Computed: true,
+            },
+            "incident_episode_id": schema.StringAttribute{
+                MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
             },
         },
@@ -661,9 +667,6 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if !data.ImpactStartedAt.IsNull() && !data.ImpactStartedAt.IsUnknown() {
         requestDataMap["impactStartedAt"] = data.ImpactStartedAt.ValueString()
     }
-    if !data.CreatedByUserId.IsNull() && !data.CreatedByUserId.IsUnknown() {
-        requestDataMap["createdByUserId"] = data.CreatedByUserId.ValueString()
-    }
     if !data.Monitors.IsNull() && !data.Monitors.IsUnknown() {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
     }
@@ -699,6 +702,9 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     }
     if !data.CephClusters.IsNull() && !data.CephClusters.IsUnknown() {
         requestDataMap["cephClusters"] = r.convertTerraformSetToInterface(data.CephClusters)
+    }
+    if !data.StorageArrays.IsNull() && !data.StorageArrays.IsUnknown() {
+        requestDataMap["storageArrays"] = r.convertTerraformSetToInterface(data.StorageArrays)
     }
     if !data.DatabaseServers.IsNull() && !data.DatabaseServers.IsUnknown() {
         requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
@@ -772,9 +778,6 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if !data.EnableReminders.IsNull() && !data.EnableReminders.IsUnknown() {
         requestDataMap["enableReminders"] = data.EnableReminders.ValueBool()
     }
-    if !data.IncidentEpisodeId.IsNull() && !data.IncidentEpisodeId.IsUnknown() {
-        requestDataMap["incidentEpisodeId"] = data.IncidentEpisodeId.ValueString()
-    }
 
     // Make API call
     httpResp, err := r.client.Post(ctx, "/incident", incidentRequest)
@@ -825,7 +828,6 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "description": true,
         "declaredAt": true,
         "impactStartedAt": true,
-        "createdByUserId": true,
         "monitors": true,
         "hosts": true,
         "kubernetesClusters": true,
@@ -838,6 +840,7 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "iotFleets": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "storageArrays": true,
         "databaseServers": true,
         "dockerResources": true,
         "podmanResources": true,
@@ -862,12 +865,12 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "statusPages": true,
         "isPrivate": true,
         "enableReminders": true,
-        "incidentEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
         "subscriberNotificationStatusMessage": true,
         "subscriberNotificationStatusOnPostmortemPublished": true,
@@ -881,12 +884,14 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         "monitorSummary": true,
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
+        "holdsMonitors": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
         "isScopedToStatusPages": true,
         "statusPagesNotifiedOnCreation": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
+        "incidentEpisodeId": true,
         "_id": true,
     }
 
@@ -1025,43 +1030,6 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         data.ImpactStartedAt = NewRFC3339Value(val)
     } else {
         data.ImpactStartedAt = NewRFC3339Null()
-    }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
     }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -1446,6 +1414,38 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["storageArrays"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StorageArrays = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StorageArrays = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["databaseServers"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -2060,43 +2060,6 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if val, ok := dataMap["enableReminders"].(bool); ok {
         data.EnableReminders = types.BoolValue(val)
     }
-    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentEpisodeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentEpisodeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentEpisodeId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
-        data.IncidentEpisodeId = types.StringValue(val)
-    } else {
-        data.IncidentEpisodeId = types.StringNull()
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2183,6 +2146,43 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["subscriberNotificationStatusOnIncidentCreated"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -2597,6 +2597,11 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
     if val, ok := dataMap["isCreatedAutomatically"].(bool); ok {
         data.IsCreatedAutomatically = types.BoolValue(val)
     }
+    if val, ok := dataMap["holdsMonitors"].(bool); ok {
+        data.HoldsMonitors = types.BoolValue(val)
+    } else {
+        data.HoldsMonitors = types.BoolNull()
+    }
     if val, ok := dataMap["incidentNumber"].(float64); ok {
         data.IncidentNumber = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["incidentNumber"].(int); ok {
@@ -2719,6 +2724,43 @@ func (r *IncidentResource) Create(ctx context.Context, req resource.CreateReques
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReminderNotificationSentCount = types.NumberNull()
     }
+    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
+        data.IncidentEpisodeId = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -2751,7 +2793,6 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "description": true,
         "declaredAt": true,
         "impactStartedAt": true,
-        "createdByUserId": true,
         "monitors": true,
         "hosts": true,
         "kubernetesClusters": true,
@@ -2764,6 +2805,7 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "iotFleets": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "storageArrays": true,
         "databaseServers": true,
         "dockerResources": true,
         "podmanResources": true,
@@ -2788,12 +2830,12 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "statusPages": true,
         "isPrivate": true,
         "enableReminders": true,
-        "incidentEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
         "subscriberNotificationStatusMessage": true,
         "subscriberNotificationStatusOnPostmortemPublished": true,
@@ -2807,12 +2849,14 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         "monitorSummary": true,
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
+        "holdsMonitors": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
         "isScopedToStatusPages": true,
         "statusPagesNotifiedOnCreation": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
+        "incidentEpisodeId": true,
         "_id": true,
     }
 
@@ -2953,43 +2997,6 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         data.ImpactStartedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -3373,6 +3380,38 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     } else {
         // For sets, always use empty set instead of null to match default values
         data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["storageArrays"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StorageArrays = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StorageArrays = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["databaseServers"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -3987,43 +4026,6 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     if val, ok := dataMap["enableReminders"].(bool); ok {
         data.EnableReminders = types.BoolValue(val)
     }
-    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentEpisodeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentEpisodeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentEpisodeId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
-        data.IncidentEpisodeId = types.StringValue(val)
-    } else {
-        data.IncidentEpisodeId = types.StringNull()
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -4110,6 +4112,43 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["subscriberNotificationStatusOnIncidentCreated"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -4524,6 +4563,11 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
     if val, ok := dataMap["isCreatedAutomatically"].(bool); ok {
         data.IsCreatedAutomatically = types.BoolValue(val)
     }
+    if val, ok := dataMap["holdsMonitors"].(bool); ok {
+        data.HoldsMonitors = types.BoolValue(val)
+    } else {
+        data.HoldsMonitors = types.BoolNull()
+    }
     if val, ok := dataMap["incidentNumber"].(float64); ok {
         data.IncidentNumber = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["incidentNumber"].(int); ok {
@@ -4646,6 +4690,43 @@ func (r *IncidentResource) Read(ctx context.Context, req resource.ReadRequest, r
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReminderNotificationSentCount = types.NumberNull()
     }
+    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
+        data.IncidentEpisodeId = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeId = types.StringNull()
+    }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)
     } else {
@@ -4729,6 +4810,9 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.CephClusters.IsUnknown() && !state.CephClusters.IsUnknown() && !data.CephClusters.Equal(state.CephClusters) {
         requestDataMap["cephClusters"] = r.convertTerraformSetToInterface(data.CephClusters)
     }
+    if !data.StorageArrays.IsUnknown() && !state.StorageArrays.IsUnknown() && !data.StorageArrays.Equal(state.StorageArrays) {
+        requestDataMap["storageArrays"] = r.convertTerraformSetToInterface(data.StorageArrays)
+    }
     if !data.DatabaseServers.IsUnknown() && !state.DatabaseServers.IsUnknown() && !data.DatabaseServers.Equal(state.DatabaseServers) {
         requestDataMap["databaseServers"] = r.convertTerraformSetToInterface(data.DatabaseServers)
     }
@@ -4808,9 +4892,6 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if !data.EnableReminders.IsUnknown() && !state.EnableReminders.IsUnknown() && !data.EnableReminders.Equal(state.EnableReminders) {
         requestDataMap["enableReminders"] = data.EnableReminders.ValueBool()
     }
-    if !data.IncidentEpisodeId.IsUnknown() && !state.IncidentEpisodeId.IsUnknown() && !data.IncidentEpisodeId.Equal(state.IncidentEpisodeId) {
-        requestDataMap["incidentEpisodeId"] = data.IncidentEpisodeId.ValueString()
-    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
@@ -4839,7 +4920,6 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "description": true,
         "declaredAt": true,
         "impactStartedAt": true,
-        "createdByUserId": true,
         "monitors": true,
         "hosts": true,
         "kubernetesClusters": true,
@@ -4852,6 +4932,7 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "iotFleets": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "storageArrays": true,
         "databaseServers": true,
         "dockerResources": true,
         "podmanResources": true,
@@ -4876,12 +4957,12 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "statusPages": true,
         "isPrivate": true,
         "enableReminders": true,
-        "incidentEpisodeId": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
         "version": true,
         "slug": true,
+        "createdByUserId": true,
         "subscriberNotificationStatusOnIncidentCreated": true,
         "subscriberNotificationStatusMessage": true,
         "subscriberNotificationStatusOnPostmortemPublished": true,
@@ -4895,12 +4976,14 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         "monitorSummary": true,
         "createdByProbeId": true,
         "isCreatedAutomatically": true,
+        "holdsMonitors": true,
         "incidentNumber": true,
         "incidentNumberWithPrefix": true,
         "isScopedToStatusPages": true,
         "statusPagesNotifiedOnCreation": true,
         "nextReminderNotificationAt": true,
         "reminderNotificationSentCount": true,
+        "incidentEpisodeId": true,
         "_id": true,
     }
 
@@ -5035,43 +5118,6 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         data.ImpactStartedAt = NewRFC3339Null()
     }
-    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CreatedByUserId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CreatedByUserId = types.StringValue(string(jsonBytes))
-            } else {
-                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CreatedByUserId = types.StringValue(string(jsonBytes))
-        } else {
-            data.CreatedByUserId = types.StringNull()
-        }
-    } else if val, ok := dataMap["createdByUserId"].(string); ok {
-        data.CreatedByUserId = types.StringValue(val)
-    } else {
-        data.CreatedByUserId = types.StringNull()
-    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -5455,6 +5501,38 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         // For sets, always use empty set instead of null to match default values
         data.CephClusters = types.SetValueMust(types.StringType, []attr.Value{})
+    }
+    if val, ok := dataMap["storageArrays"].([]interface{}); ok {
+        // Convert API response list to Terraform set
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                // Handle objects with _id field (OneUptime format)
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else {
+                    // Convert entire object to JSON string if no id field
+                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                    }
+                }
+            } else if str, ok := item.(string); ok {
+                // Handle direct string values
+                setItems = append(setItems, types.StringValue(str))
+            }
+        }
+        // Sort set items for deterministic state representation
+        sort.Slice(setItems, func(i, j int) bool {
+            iStr := setItems[i].(types.String).ValueString()
+            jStr := setItems[j].(types.String).ValueString()
+            return iStr < jStr
+        })
+        data.StorageArrays = types.SetValueMust(types.StringType, setItems)
+    } else {
+        // For sets, always use empty set instead of null to match default values
+        data.StorageArrays = types.SetValueMust(types.StringType, []attr.Value{})
     }
     if val, ok := dataMap["databaseServers"].([]interface{}); ok {
         // Convert API response list to Terraform set
@@ -6069,43 +6147,6 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if val, ok := dataMap["enableReminders"].(bool); ok {
         data.EnableReminders = types.BoolValue(val)
     }
-    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.IncidentEpisodeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.IncidentEpisodeId = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-            } else {
-                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
-        } else {
-            data.IncidentEpisodeId = types.StringNull()
-        }
-    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
-        data.IncidentEpisodeId = types.StringValue(val)
-    } else {
-        data.IncidentEpisodeId = types.StringNull()
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -6192,6 +6233,43 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
         data.Slug = types.StringValue(val)
     } else {
         data.Slug = types.StringNull()
+    }
+    if obj, ok := dataMap["createdByUserId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.CreatedByUserId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.CreatedByUserId = types.StringValue(string(jsonBytes))
+            } else {
+                data.CreatedByUserId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.CreatedByUserId = types.StringValue(string(jsonBytes))
+        } else {
+            data.CreatedByUserId = types.StringNull()
+        }
+    } else if val, ok := dataMap["createdByUserId"].(string); ok {
+        data.CreatedByUserId = types.StringValue(val)
+    } else {
+        data.CreatedByUserId = types.StringNull()
     }
     if obj, ok := dataMap["subscriberNotificationStatusOnIncidentCreated"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
@@ -6606,6 +6684,11 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     if val, ok := dataMap["isCreatedAutomatically"].(bool); ok {
         data.IsCreatedAutomatically = types.BoolValue(val)
     }
+    if val, ok := dataMap["holdsMonitors"].(bool); ok {
+        data.HoldsMonitors = types.BoolValue(val)
+    } else {
+        data.HoldsMonitors = types.BoolNull()
+    }
     if val, ok := dataMap["incidentNumber"].(float64); ok {
         data.IncidentNumber = types.NumberValue(big.NewFloat(val))
     } else if val, ok := dataMap["incidentNumber"].(int); ok {
@@ -6727,6 +6810,43 @@ func (r *IncidentResource) Update(ctx context.Context, req resource.UpdateReques
     } else {
         // Missing or unrecognized value: null, never unknown, so apply can complete.
         data.ReminderNotificationSentCount = types.NumberNull()
+    }
+    if obj, ok := dataMap["incidentEpisodeId"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.IncidentEpisodeId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+            } else {
+                data.IncidentEpisodeId = types.StringValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.IncidentEpisodeId = types.StringValue(string(jsonBytes))
+        } else {
+            data.IncidentEpisodeId = types.StringNull()
+        }
+    } else if val, ok := dataMap["incidentEpisodeId"].(string); ok {
+        data.IncidentEpisodeId = types.StringValue(val)
+    } else {
+        data.IncidentEpisodeId = types.StringNull()
     }
     if val, ok := dataMap["_id"].(string); ok {
         data.Id = types.StringValue(val)

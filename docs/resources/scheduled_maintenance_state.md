@@ -33,7 +33,6 @@ resource "oneuptime_scheduled_maintenance_state" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_scheduled_state` (Bool) Is this state a scheduled state?..
 - `is_ongoing_state` (Bool) Is this state a ongoing state?..
 - `is_ended_state` (Bool) Is this state a ended state?..
@@ -48,6 +47,7 @@ resource "oneuptime_scheduled_maintenance_state" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

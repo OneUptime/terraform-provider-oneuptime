@@ -44,7 +44,6 @@ resource "oneuptime_incident_sla_rule" "example" {
 - `monitor_labels` (Set) Only apply this SLA rule to incidents from monitors that have at least one of these labels. Leave empty to match incidents regardless of monitor labels...
 - `incident_title_pattern` (String) Regular expression pattern to match incident titles. Leave empty to match any title. Example: 'CPU.*high' matches titles containing 'CPU' followed by 'high'...
 - `incident_description_pattern` (String) Regular expression pattern to match incident descriptions. Leave empty to match any description...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -53,6 +52,7 @@ resource "oneuptime_incident_sla_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

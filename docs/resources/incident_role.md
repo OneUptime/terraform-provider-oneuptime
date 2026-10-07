@@ -33,7 +33,6 @@ resource "oneuptime_incident_role" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `role_icon` (String) Icon for this incident role (e.g., User, Shield, etc.)..
 - `can_assign_multiple_users` (Bool) Can multiple users be assigned to this role? If false, only one user can be assigned...
 
@@ -45,6 +44,7 @@ resource "oneuptime_incident_role" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_primary_role` (Bool) Is this the primary incident role? Primary roles like Incident Commander have special significance...
 - `is_deleteable` (Bool) Can this role be deleted? Primary roles cannot be deleted...

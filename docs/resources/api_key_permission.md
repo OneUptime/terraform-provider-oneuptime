@@ -26,7 +26,6 @@ resource "oneuptime_api_key_permission" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `permission` (String) Permission. You can find list of permissions on the Permissions page...
 - `labels` (Set) Relation to Labels Array where this permission is scoped at...
 - `is_block_permission` (Bool) Api key permission is_block_permission.
@@ -38,6 +37,7 @@ resource "oneuptime_api_key_permission" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

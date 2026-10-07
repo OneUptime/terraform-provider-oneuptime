@@ -44,3 +44,4 @@ data "oneuptime_incident_public_note" "by_id" {
 - `is_owner_notified` (Bool) Are owners notified of this resource ownership?.. Computed.
 - `posted_at` (String) A date time object.. Computed.
 - `posted_from_slack_message_id` (String) Unique identifier for the Slack message this note was created from (channel_id:message_ts). Used to prevent duplicate notes when multiple users react to the same message... Computed.
+- `posted_with_incident_state_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

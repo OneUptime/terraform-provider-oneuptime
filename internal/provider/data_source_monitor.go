@@ -45,6 +45,18 @@ type MonitorDataSourceModel struct {
     Labels types.Set `tfsdk:"labels"`
     DependsOnMonitors types.Set `tfsdk:"depends_on_monitors"`
     SuppressAlertsWhenParentMonitorStatuses types.Set `tfsdk:"suppress_alerts_when_parent_monitor_statuses"`
+    Hosts types.Set `tfsdk:"hosts"`
+    KubernetesClusters types.Set `tfsdk:"kubernetes_clusters"`
+    DockerHosts types.Set `tfsdk:"docker_hosts"`
+    PodmanHosts types.Set `tfsdk:"podman_hosts"`
+    ProxmoxClusters types.Set `tfsdk:"proxmox_clusters"`
+    VmwareVCenters types.Set `tfsdk:"vmware_v_centers"`
+    CephClusters types.Set `tfsdk:"ceph_clusters"`
+    StorageArrays types.Set `tfsdk:"storage_arrays"`
+    DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
+    IotFleets types.Set `tfsdk:"iot_fleets"`
+    DatabaseServers types.Set `tfsdk:"database_servers"`
+    Services types.Set `tfsdk:"services"`
     MonitorTemplateId types.String `tfsdk:"monitor_template_id"`
     AutoProvisionedNetworkDeviceId types.String `tfsdk:"auto_provisioned_network_device_id"`
     NetworkAlertPolicyId types.String `tfsdk:"network_alert_policy_id"`
@@ -150,6 +162,66 @@ func (d *MonitorDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "suppress_alerts_when_parent_monitor_statuses": schema.SetAttribute{
                 MarkdownDescription: "Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "hosts": schema.SetAttribute{
+                MarkdownDescription: "Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "kubernetes_clusters": schema.SetAttribute{
+                MarkdownDescription: "Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_hosts": schema.SetAttribute{
+                MarkdownDescription: "Docker hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "podman_hosts": schema.SetAttribute{
+                MarkdownDescription: "Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "proxmox_clusters": schema.SetAttribute{
+                MarkdownDescription: "Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "vmware_v_centers": schema.SetAttribute{
+                MarkdownDescription: "VMware vCenters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "ceph_clusters": schema.SetAttribute{
+                MarkdownDescription: "Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "storage_arrays": schema.SetAttribute{
+                MarkdownDescription: "Storage arrays this monitor watches. Incidents and alerts it creates are linked to them..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "docker_swarm_clusters": schema.SetAttribute{
+                MarkdownDescription: "Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "iot_fleets": schema.SetAttribute{
+                MarkdownDescription: "IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "database_servers": schema.SetAttribute{
+                MarkdownDescription: "Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "services": schema.SetAttribute{
+                MarkdownDescription: "Services this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -325,6 +397,18 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "labels": true,
         "dependsOnMonitors": true,
         "suppressAlertsWhenParentMonitorStatuses": true,
+        "hosts": true,
+        "kubernetesClusters": true,
+        "dockerHosts": true,
+        "podmanHosts": true,
+        "proxmoxClusters": true,
+        "vmwareVCenters": true,
+        "cephClusters": true,
+        "storageArrays": true,
+        "dockerSwarmClusters": true,
+        "iotFleets": true,
+        "databaseServers": true,
+        "services": true,
         "monitorTemplateId": true,
         "autoProvisionedNetworkDeviceId": true,
         "networkAlertPolicyId": true,
@@ -689,6 +773,294 @@ func (d *MonitorDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.SuppressAlertsWhenParentMonitorStatuses = types.SetValueMust(types.StringType, setItems)
     } else {
         data.SuppressAlertsWhenParentMonitorStatuses = types.SetNull(types.StringType)
+    }
+    if val, ok := item["hosts"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Hosts = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Hosts = types.SetNull(types.StringType)
+    }
+    if val, ok := item["kubernetesClusters"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.KubernetesClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.KubernetesClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["dockerHosts"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.DockerHosts = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.DockerHosts = types.SetNull(types.StringType)
+    }
+    if val, ok := item["podmanHosts"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.PodmanHosts = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.PodmanHosts = types.SetNull(types.StringType)
+    }
+    if val, ok := item["proxmoxClusters"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.ProxmoxClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.ProxmoxClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["vmwareVCenters"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.VmwareVCenters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.VmwareVCenters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["cephClusters"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.CephClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.CephClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["storageArrays"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.StorageArrays = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.StorageArrays = types.SetNull(types.StringType)
+    }
+    if val, ok := item["dockerSwarmClusters"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.DockerSwarmClusters = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.DockerSwarmClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["iotFleets"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.IotFleets = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.IotFleets = types.SetNull(types.StringType)
+    }
+    if val, ok := item["databaseServers"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.DatabaseServers = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.DatabaseServers = types.SetNull(types.StringType)
+    }
+    if val, ok := item["services"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.Services = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.Services = types.SetNull(types.StringType)
     }
     if obj, ok := item["monitorTemplateId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

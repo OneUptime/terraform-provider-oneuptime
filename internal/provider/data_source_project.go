@@ -70,6 +70,8 @@ type ProjectDataSourceModel struct {
     AutoAiRechargeByBalanceInUsd types.Number `tfsdk:"auto_ai_recharge_by_balance_in_usd"`
     AutoRechargeAiWhenCurrentBalanceFallsInUsd types.Number `tfsdk:"auto_recharge_ai_when_current_balance_falls_in_usd"`
     EnableAi types.Bool `tfsdk:"enable_ai"`
+    AiDailyTokenLimit types.Number `tfsdk:"ai_daily_token_limit"`
+    AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
@@ -287,6 +289,14 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "enable_ai": schema.BoolAttribute{
                 MarkdownDescription: "Master switch for AI in this project. When disabled, every AI feature stops: Ask AI, investigations, postmortem drafts, auto-remediation and AI commands on Runners..",
+                Computed: true,
+            },
+            "ai_daily_token_limit": schema.NumberAttribute{
+                MarkdownDescription: "The most tokens OneUptime AI may use in this project each UTC day, across every AI feature: Ask AI, investigations, postmortem drafts, fix pull requests, insight triage, workflows, runbooks and Slack or Microsoft Teams questions. Once it is reached, new AI work is refused until midnight UTC. The incident and alert daily limits still apply under it. Unset means no limit; a limit is a whole number of at least 1 (to turn AI off, use Enable AI)..",
+                Computed: true,
+            },
+            "ai_daily_spend_limit_in_usd": schema.NumberAttribute{
+                MarkdownDescription: "OneUptime Cloud: the most AI credits, in whole US dollars, OneUptime AI may spend in this project each UTC day. Only calls billed to the project's AI credits count, so it never stops AI that runs on the project's own LLM provider. Once it is reached, billed AI work is refused until midnight UTC. Ignored where AI is not billed (self-hosted). Unset means no limit; a limit is at least 1 (to turn AI off, use Enable AI)..",
                 Computed: true,
             },
             "enable_automatic_incident_investigation": schema.BoolAttribute{
@@ -552,6 +562,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "autoAiRechargeByBalanceInUSD": true,
         "autoRechargeAiWhenCurrentBalanceFallsInUSD": true,
         "enableAi": true,
+        "aiDailyTokenLimit": true,
+        "aiDailySpendLimitInUSD": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
         "enableAutomaticPostmortemDraft": true,
@@ -1226,6 +1238,28 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAi = types.BoolValue(val)
     } else {
         data.EnableAi = types.BoolNull()
+    }
+    if val, ok := item["aiDailyTokenLimit"].(float64); ok {
+        data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["aiDailyTokenLimit"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailyTokenLimit = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailyTokenLimit = types.NumberNull()
+        }
+    } else {
+        data.AiDailyTokenLimit = types.NumberNull()
+    }
+    if val, ok := item["aiDailySpendLimitInUSD"].(float64); ok {
+        data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+    } else if obj, ok := item["aiDailySpendLimitInUSD"].(map[string]interface{}); ok {
+        if val, ok := obj["value"].(float64); ok {
+            data.AiDailySpendLimitInUsd = types.NumberValue(big.NewFloat(val))
+        } else {
+            data.AiDailySpendLimitInUsd = types.NumberNull()
+        }
+    } else {
+        data.AiDailySpendLimitInUsd = types.NumberNull()
     }
     if val, ok := item["enableAutomaticIncidentInvestigation"].(bool); ok {
         data.EnableAutomaticIncidentInvestigation = types.BoolValue(val)

@@ -60,7 +60,6 @@ resource "oneuptime_slo_burn_rate_rule" "example" {
 - `incident_owner_teams` (Set) Teams added as owners of incidents declared by this burn rate rule...
 - `incident_owner_users` (Set) Users added as owners of incidents declared by this burn rate rule...
 - `add_slo_owners_as_owners` (Bool) Also add the owner users and owner teams of the Service Level Objective as owners of the alerts and incidents this burn rate rule creates. Disabled by default...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -73,6 +72,7 @@ resource "oneuptime_slo_burn_rate_rule" "example" {
 - `last_alert_resolved_at` (String) A date time object..
 - `last_incident_created_at` (String) A date time object..
 - `last_incident_resolved_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

@@ -42,4 +42,6 @@ data "oneuptime_audit_log" "by_id" {
 - `api_key_name` (String) API Key Name. Computed.
 - `mcp_o_auth_grant_id` (String) MCP Client Authorization ID. Computed.
 - `mcp_client_name` (String) MCP Client Name. Computed.
+- `workflow_id` (String) Workflow ID. Computed.
+- `workflow_name` (String) Workflow Name. Computed.
 - `changes` (Set) Changes. Computed.

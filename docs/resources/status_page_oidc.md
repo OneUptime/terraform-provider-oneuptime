@@ -43,7 +43,6 @@ resource "oneuptime_status_page_oidc" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `name_claim_name` (String) Claim name in the ID token (or userinfo response) that contains the user's display name...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_enabled` (Bool) Status page oidc is_enabled.
 - `is_tested` (Bool) Status page oidc is_tested.
 
@@ -54,6 +53,7 @@ resource "oneuptime_status_page_oidc" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

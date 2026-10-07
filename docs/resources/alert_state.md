@@ -33,7 +33,6 @@ resource "oneuptime_alert_state" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_created_state` (Bool) Is it the created state of the alert?..
 - `is_acknowledged_state` (Bool) Is it the acknowledged state of the alert?..
 - `is_resolved_state` (Bool) Is it the resolved state of the alert?..
@@ -46,6 +45,7 @@ resource "oneuptime_alert_state" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

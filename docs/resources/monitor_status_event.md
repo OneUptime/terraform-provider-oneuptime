@@ -28,7 +28,6 @@ resource "oneuptime_monitor_status_event" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `root_cause` (String) What is the root cause of this status change?..
 - `ends_at` (String) A date time object..
 - `starts_at` (String) A date time object..
@@ -40,6 +39,7 @@ resource "oneuptime_monitor_status_event" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_owner_notified` (Bool) Are owners notified of status change?..
 - `status_change_log` (String) Permissions - Create: [No access - you don't have permission for this operation], Read: [Project Owner, Project Admin, Project Member, Viewer, Monitor Admin, Monitor Member, Monitor Viewer, Read Monitor Status Timeline], Update: [No access - you don't have permission for this operation].
 

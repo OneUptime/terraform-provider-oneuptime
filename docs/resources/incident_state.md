@@ -33,7 +33,6 @@ resource "oneuptime_incident_state" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_created_state` (Bool) Is it the created state of the incident?..
 - `is_acknowledged_state` (Bool) Is it the acknowledged state of the incident?..
 - `is_resolved_state` (Bool) Is it the resolved state of the incident?..
@@ -47,6 +46,7 @@ resource "oneuptime_incident_state" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

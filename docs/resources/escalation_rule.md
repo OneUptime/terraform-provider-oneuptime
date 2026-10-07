@@ -30,7 +30,6 @@ resource "oneuptime_escalation_rule" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `escalate_after_in_minutes` (Number) How long should we wait before we execute the next escalation rule?..
 - `order` (Number) Order of this rule..
 
@@ -41,6 +40,7 @@ resource "oneuptime_escalation_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

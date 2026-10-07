@@ -31,7 +31,6 @@ resource "oneuptime_incident_episode_role_member" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `notes` (String) Assignment context or notes..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -40,6 +39,7 @@ resource "oneuptime_incident_episode_role_member" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

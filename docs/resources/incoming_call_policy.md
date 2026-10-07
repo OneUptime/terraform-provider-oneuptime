@@ -36,7 +36,6 @@ resource "oneuptime_incoming_call_policy" "example" {
 - `repeat_policy_if_no_one_answers_times` (Number) Maximum repeat attempts if no one answers..
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `project_call_sms_config_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -51,6 +50,7 @@ resource "oneuptime_incoming_call_policy" "example" {
 - `phone_number_country_code` (String) Country code of the phone number (US, GB, etc.)..
 - `phone_number_area_code` (String) Area code of the phone number..
 - `phone_number_purchased_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

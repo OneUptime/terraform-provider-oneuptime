@@ -28,7 +28,6 @@ resource "oneuptime_status_page_private_user" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `email` (String) Email object.
 - `password` (String, Sensitive) Password..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_sso_user` (Bool) Did this user sign up via SSO?..
 
 ### Read-Only
@@ -38,6 +37,7 @@ resource "oneuptime_status_page_private_user" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

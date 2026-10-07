@@ -28,7 +28,6 @@ resource "oneuptime_monitor_group" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 
 ### Read-Only
@@ -39,6 +38,7 @@ resource "oneuptime_monitor_group" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

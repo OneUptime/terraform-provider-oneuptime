@@ -32,7 +32,6 @@ resource "oneuptime_status_page" "example" {
 - `enable_search_engine_indexing` (Bool) Should search engines like Google and Bing be allowed to index this status page? Turn this off to keep the page reachable by link but out of search results...
 - `description` (String) Friendly description that will help you remember..
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_archived` (Bool) Archived status pages are hidden from the Status Pages list, are not served to visitors, and send nothing to their subscribers. Unarchiving puts them back online...
 - `favicon_file_id` (String) A unique identifier for an object, represented as a UUID..
 - `logo_file_id` (String) A unique identifier for an object, represented as a UUID..
@@ -102,6 +101,7 @@ resource "oneuptime_status_page" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_owner_notified_of_resource_creation` (Bool) Are owners notified of when this resource is created?..

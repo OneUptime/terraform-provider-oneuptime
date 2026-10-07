@@ -29,7 +29,6 @@ resource "oneuptime_domain" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_verified` (Bool) Is this domain verified?..
 - `domain_verification_text` (String) Verification text that you need to add to your domains TXT record to veify the domain...
 
@@ -41,6 +40,7 @@ resource "oneuptime_domain" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

@@ -32,7 +32,6 @@ resource "oneuptime_network_device_role" "example" {
 - `is_core_layer` (Bool) Devices of this role sit at the top of the network - the tiered and radial topology layouts band them above everything else...
 - `is_snmp_walkable` (Bool) Devices of this role usually speak SNMP. Turn it off for roles that only answer a ping - adopting one from the topology map then defaults to a monitor rather than SNMP polling...
 - `order` (Number) Where this role appears in the role picker and the topology map legend, lowest number first. A new role is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +42,7 @@ resource "oneuptime_network_device_role" "example" {
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
 - `key` (String) Stable identifier for this role, derived from its name when it is created. SNMP classification and the topology map match on this, so it never changes when the role is renamed...
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

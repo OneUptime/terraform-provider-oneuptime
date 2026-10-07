@@ -35,7 +35,7 @@ data "oneuptime_incoming_call_policy_escalation_rule" "by_id" {
 - `incoming_call_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `description` (String) Optional description of this escalation rule.. Computed.
 - `order` (Number) Where this rule sits in the escalation, lowest number first. A new rule is added to the end of the list. Setting a number another one already has puts it in that place, and the ones in the way move one place along to make room. In the dashboard, drag the rows to reorder them... Computed.
-- `escalate_after_seconds` (Number) Seconds before escalating to next rule.. Computed.
+- `escalate_after_seconds` (Number) How long, in seconds, the phone rings before the call moves on to the next rule. 20 when left out; a time below 5 or above 600 rings for 5 or 600, the limits Twilio takes... Computed.
 - `on_call_duty_policy_schedule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

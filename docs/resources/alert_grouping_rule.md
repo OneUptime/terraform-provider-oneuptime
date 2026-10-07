@@ -62,7 +62,6 @@ resource "oneuptime_alert_grouping_rule" "example" {
 - `episode_labels` (Set) Labels to automatically apply to episodes created by this rule...
 - `episode_owner_users` (Set) Users added as owners of every episode this rule opens, and notified like any owner. Each must be a member of the project...
 - `episode_owner_teams` (Set) Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -71,6 +70,7 @@ resource "oneuptime_alert_grouping_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

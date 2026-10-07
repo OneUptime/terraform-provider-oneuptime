@@ -37,7 +37,6 @@ This is **markdown** content"
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `more_information_in_markdown` (String) More information in Markdown..
 - `user_id` (String) A unique identifier for an object, represented as a UUID..
 - `posted_at` (String) A date time object..
@@ -50,6 +49,7 @@ This is **markdown** content"
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `ai_run_id` (String) A unique identifier for an object, represented as a UUID..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

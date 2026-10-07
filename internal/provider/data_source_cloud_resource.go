@@ -43,6 +43,11 @@ type CloudResourceDataSourceModel struct {
     CloudProvider types.String `tfsdk:"cloud_provider"`
     CloudRegion types.String `tfsdk:"cloud_region"`
     CloudAccountId types.String `tfsdk:"cloud_account_id"`
+    CloudResourceKind types.String `tfsdk:"cloud_resource_kind"`
+    CloudResourceType types.String `tfsdk:"cloud_resource_type"`
+    ProviderResourceId types.String `tfsdk:"provider_resource_id"`
+    CloudResourceGroup types.String `tfsdk:"cloud_resource_group"`
+    TelemetryAttributes types.String `tfsdk:"telemetry_attributes"`
     RuntimeName types.String `tfsdk:"runtime_name"`
     RuntimeVersion types.String `tfsdk:"runtime_version"`
     OtelCollectorStatus types.String `tfsdk:"otel_collector_status"`
@@ -55,6 +60,7 @@ type CloudResourceDataSourceModel struct {
     IsArchived types.Bool `tfsdk:"is_archived"`
     ArchivedAt types.String `tfsdk:"archived_at"`
     ArchivedByUserId types.String `tfsdk:"archived_by_user_id"`
+    AutoArchivedAt types.String `tfsdk:"auto_archived_at"`
     DeletedByUserId types.String `tfsdk:"deleted_by_user_id"`
 }
 
@@ -64,7 +70,7 @@ func (d *CloudResourceDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Managed cloud compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner). Look up an existing cloud_resource by `id` or by `name`.",
+        MarkdownDescription: "Cloud environments - managed compute auto-discovered from OpenTelemetry cloud.platform (e.g. AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps, Elastic Beanstalk, App Runner) - and cloud resources: the IaaS and PaaS resources (virtual machines, load balancers, buckets, managed databases, queues, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch and Google Cloud Monitoring publish about them. Look up an existing cloud_resource by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -125,6 +131,26 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
                 MarkdownDescription: "Last-seen cloud.account.id OpenTelemetry resource attribute..",
                 Computed: true,
             },
+            "cloud_resource_kind": schema.StringAttribute{
+                MarkdownDescription: "environment: a managed compute environment discovered from the cloud.platform, cloud.account.id and cloud.region resource attributes of a workload's own telemetry. resource: one IaaS or PaaS resource (a virtual machine, a load balancer, a bucket, a managed database, ...) discovered from the metrics Azure Monitor, Amazon CloudWatch or Google Cloud Monitoring publish about it..",
+                Computed: true,
+            },
+            "cloud_resource_type": schema.StringAttribute{
+                MarkdownDescription: "For a resource: the provider's type for it - the Azure Resource Manager type (Microsoft.Compute/virtualMachines), the AWS CloudFormation type (AWS::EC2::Instance) or the Google Cloud Monitoring resource type (gce_instance)..",
+                Computed: true,
+            },
+            "provider_resource_id": schema.StringAttribute{
+                MarkdownDescription: "For a resource: the provider's id for it - its Azure resource id, its AWS ARN or its Google Cloud full resource name. Where the metrics do not name the resource completely (an AWS resource whose ARN needs an id no metric reports), a readable composite of what they do name..",
+                Computed: true,
+            },
+            "cloud_resource_group": schema.StringAttribute{
+                MarkdownDescription: "For an Azure resource: the resource group it belongs to..",
+                Computed: true,
+            },
+            "telemetry_attributes": schema.StringAttribute{
+                MarkdownDescription: "For a resource: the metric attributes, exactly as stored, that select its metrics - for example azuremonitor.resource_id, or the CloudWatch Namespace and identifying Dimensions with the account and region. The resource's pages and the monitors created from them filter on these..",
+                Computed: true,
+            },
             "runtime_name": schema.StringAttribute{
                 MarkdownDescription: "Last-seen process.runtime.name OpenTelemetry resource attribute..",
                 Computed: true,
@@ -172,6 +198,10 @@ func (d *CloudResourceDataSource) Schema(ctx context.Context, req datasource.Sch
             },
             "archived_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
+                Computed: true,
+            },
+            "auto_archived_at": schema.StringAttribute{
+                MarkdownDescription: "A date time object.",
                 Computed: true,
             },
             "deleted_by_user_id": schema.StringAttribute{
@@ -236,6 +266,11 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         "cloudProvider": true,
         "cloudRegion": true,
         "cloudAccountId": true,
+        "cloudResourceKind": true,
+        "cloudResourceType": true,
+        "providerResourceId": true,
+        "cloudResourceGroup": true,
+        "telemetryAttributes": true,
         "runtimeName": true,
         "runtimeVersion": true,
         "otelCollectorStatus": true,
@@ -248,6 +283,7 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         "isArchived": true,
         "archivedAt": true,
         "archivedByUserId": true,
+        "autoArchivedAt": true,
         "deletedByUserId": true,
         "_id": true,
     }
@@ -543,6 +579,91 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
     } else {
         data.CloudAccountId = types.StringNull()
     }
+    if obj, ok := item["cloudResourceKind"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudResourceKind = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudResourceKind = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudResourceKind = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudResourceKind = types.StringNull()
+        }
+    } else if val, ok := item["cloudResourceKind"].(string); ok {
+        data.CloudResourceKind = types.StringValue(val)
+    } else {
+        data.CloudResourceKind = types.StringNull()
+    }
+    if obj, ok := item["cloudResourceType"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudResourceType = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudResourceType = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudResourceType = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudResourceType = types.StringNull()
+        }
+    } else if val, ok := item["cloudResourceType"].(string); ok {
+        data.CloudResourceType = types.StringValue(val)
+    } else {
+        data.CloudResourceType = types.StringNull()
+    }
+    if obj, ok := item["providerResourceId"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.ProviderResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.ProviderResourceId = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.ProviderResourceId = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.ProviderResourceId = types.StringValue(string(jsonBytes))
+        } else {
+            data.ProviderResourceId = types.StringNull()
+        }
+    } else if val, ok := item["providerResourceId"].(string); ok {
+        data.ProviderResourceId = types.StringValue(val)
+    } else {
+        data.ProviderResourceId = types.StringNull()
+    }
+    if obj, ok := item["cloudResourceGroup"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.CloudResourceGroup = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.CloudResourceGroup = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.CloudResourceGroup = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.CloudResourceGroup = types.StringValue(string(jsonBytes))
+        } else {
+            data.CloudResourceGroup = types.StringNull()
+        }
+    } else if val, ok := item["cloudResourceGroup"].(string); ok {
+        data.CloudResourceGroup = types.StringValue(val)
+    } else {
+        data.CloudResourceGroup = types.StringNull()
+    }
+    if obj, ok := item["telemetryAttributes"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.TelemetryAttributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.TelemetryAttributes = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.TelemetryAttributes = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.TelemetryAttributes = types.StringValue(string(jsonBytes))
+        } else {
+            data.TelemetryAttributes = types.StringNull()
+        }
+    } else if val, ok := item["telemetryAttributes"].(string); ok {
+        data.TelemetryAttributes = types.StringValue(val)
+    } else {
+        data.TelemetryAttributes = types.StringNull()
+    }
     if obj, ok := item["runtimeName"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {
             data.RuntimeName = types.StringValue(val)
@@ -735,6 +856,23 @@ func (d *CloudResourceDataSource) Read(ctx context.Context, req datasource.ReadR
         data.ArchivedByUserId = types.StringValue(val)
     } else {
         data.ArchivedByUserId = types.StringNull()
+    }
+    if obj, ok := item["autoArchivedAt"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.AutoArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.AutoArchivedAt = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.AutoArchivedAt = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.AutoArchivedAt = types.StringValue(string(jsonBytes))
+        } else {
+            data.AutoArchivedAt = types.StringNull()
+        }
+    } else if val, ok := item["autoArchivedAt"].(string); ok {
+        data.AutoArchivedAt = types.StringValue(val)
+    } else {
+        data.AutoArchivedAt = types.StringNull()
     }
     if obj, ok := item["deletedByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

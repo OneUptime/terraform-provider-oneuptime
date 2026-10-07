@@ -31,7 +31,6 @@ resource "oneuptime_io_t_device_credential" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `name` (String) Any friendly name of this device..
 - `is_enabled` (Bool) Disabled credentials are rejected at MQTT CONNECT and stop the device's silent-death offline detection...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -41,6 +40,7 @@ resource "oneuptime_io_t_device_credential" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `last_connected_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `secret_key` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

@@ -36,7 +36,6 @@ This is **markdown** content"
 - `status_pages` (Set) Status Pages to show this announcement on...
 - `monitors` (Set) List of monitors affected by this announcement template. If none are selected, all subscribers will be notified...
 - `should_status_page_subscribers_be_notified` (Bool) Should subscribers be notified about announcements created from this template?..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -45,6 +44,7 @@ This is **markdown** content"
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

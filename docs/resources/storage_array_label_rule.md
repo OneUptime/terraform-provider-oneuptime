@@ -1,0 +1,53 @@
+---
+page_title: "oneuptime_storage_array_label_rule Resource - oneuptime"
+subcategory: "Other"
+description: |-
+  Configure rules for automatically attaching labels to storage arrays when matching storage arrays are created
+---
+
+# oneuptime_storage_array_label_rule (Resource)
+
+Configure rules for automatically attaching labels to storage arrays when matching storage arrays are created
+
+## Example Usage
+
+```terraform
+resource "oneuptime_storage_array_label_rule" "example" {
+  name = "Example short text"
+  description = "This is an example of longer text content that might be stored in this field."
+}
+```
+
+## Schema
+
+### Required
+
+- `name` (String) Name of this storage array label rule..
+
+### Optional
+
+- `criteria` (String) Versioned conditions that determine whether this rule matches a resource...
+- `project_id` (String) A unique identifier for an object, represented as a UUID..
+- `description` (String) Description of this storage array label rule..
+- `is_enabled` (Bool) Whether this rule is enabled..
+- `storage_array_labels` (Set) Only trigger for storage arrays that already have at least one of these labels. Leave empty to match regardless of labels...
+- `storage_array_name_pattern` (String) Regex (case-insensitive) matched against the storage array name. Leave empty to match any name...
+- `storage_array_description_pattern` (String) Regex (case-insensitive) matched against the storage array description. Leave empty to match any description...
+- `labels_to_add` (Set) Labels to attach to the storage array when this rule matches. Already-attached labels are not duplicated...
+
+### Read-Only
+
+- `id` (String) Unique identifier for the resource.
+- `created_at` (String) A date time object..
+- `updated_at` (String) A date time object..
+- `deleted_at` (String) A date time object..
+- `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import oneuptime_storage_array_label_rule.example <id>
+```

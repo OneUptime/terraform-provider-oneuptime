@@ -43,7 +43,6 @@ resource "oneuptime_probe" "example" {
 - `last_alive` (String) A date time object..
 - `icon_file_id` (String) A unique identifier for an object, represented as a UUID..
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `should_auto_enable_probe_on_new_monitors` (Bool) Auto Enable Probe on New Monitors..
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 
@@ -55,6 +54,7 @@ resource "oneuptime_probe" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `connection_status` (String) Connection Status of the Probe..
 
 ## Import

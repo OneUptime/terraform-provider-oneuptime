@@ -14,7 +14,6 @@ import (
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -79,18 +78,11 @@ func (r *FileResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "is_public": schema.BoolAttribute{
-                Optional: true,
+                MarkdownDescription: "Whether anyone may read the file without signing in. Set by OneUptime: every upload starts private, and a file becomes public only when a record that shows it to everyone, such as a public note or a probe's icon, is published..",
                 Computed: true,
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
             },
             "image_access_token": schema.StringAttribute{
-                Optional: true,
                 Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
             },
         },
     }
@@ -150,12 +142,6 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     }
     if !data.Slug.IsNull() && !data.Slug.IsUnknown() {
         requestDataMap["slug"] = data.Slug.ValueString()
-    }
-    if !data.IsPublic.IsNull() && !data.IsPublic.IsUnknown() {
-        requestDataMap["isPublic"] = data.IsPublic.ValueBool()
-    }
-    if !data.ImageAccessToken.IsNull() && !data.ImageAccessToken.IsUnknown() {
-        requestDataMap["imageAccessToken"] = data.ImageAccessToken.ValueString()
     }
 
     // Make API call
@@ -303,8 +289,6 @@ func (r *FileResource) Create(ctx context.Context, req resource.CreateRequest, r
     }
     if val, ok := dataMap["isPublic"].(bool); ok {
         data.IsPublic = types.BoolValue(val)
-    } else {
-        data.IsPublic = types.BoolNull()
     }
     if obj, ok := dataMap["imageAccessToken"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)

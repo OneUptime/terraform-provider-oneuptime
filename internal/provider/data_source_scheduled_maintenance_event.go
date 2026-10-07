@@ -51,6 +51,7 @@ type ScheduledMaintenanceEventDataSourceModel struct {
     NetworkSites types.Set `tfsdk:"network_sites"`
     DockerSwarmClusters types.Set `tfsdk:"docker_swarm_clusters"`
     CephClusters types.Set `tfsdk:"ceph_clusters"`
+    StorageArrays types.Set `tfsdk:"storage_arrays"`
     DatabaseServers types.Set `tfsdk:"database_servers"`
     Services types.Set `tfsdk:"services"`
     StatusPages types.Set `tfsdk:"status_pages"`
@@ -183,6 +184,11 @@ func (d *ScheduledMaintenanceEventDataSource) Schema(ctx context.Context, req da
             },
             "ceph_clusters": schema.SetAttribute{
                 MarkdownDescription: "List of Ceph clusters affected by this event..",
+                Computed: true,
+                ElementType: types.StringType,
+            },
+            "storage_arrays": schema.SetAttribute{
+                MarkdownDescription: "List of storage arrays affected by this event..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -348,6 +354,7 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         "networkSites": true,
         "dockerSwarmClusters": true,
         "cephClusters": true,
+        "storageArrays": true,
         "databaseServers": true,
         "services": true,
         "statusPages": true,
@@ -877,6 +884,30 @@ func (d *ScheduledMaintenanceEventDataSource) Read(ctx context.Context, req data
         data.CephClusters = types.SetValueMust(types.StringType, setItems)
     } else {
         data.CephClusters = types.SetNull(types.StringType)
+    }
+    if val, ok := item["storageArrays"].([]interface{}); ok {
+        var setItems []attr.Value
+        for _, item := range val {
+            if itemMap, ok := item.(map[string]interface{}); ok {
+                if id, ok := itemMap["_id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if id, ok := itemMap["id"].(string); ok {
+                    setItems = append(setItems, types.StringValue(id))
+                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
+                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
+                }
+            } else if str, ok := item.(string); ok {
+                setItems = append(setItems, types.StringValue(str))
+            } else {
+                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
+            }
+        }
+        sort.Slice(setItems, func(i, j int) bool {
+            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
+        })
+        data.StorageArrays = types.SetValueMust(types.StringType, setItems)
+    } else {
+        data.StorageArrays = types.SetNull(types.StringType)
     }
     if val, ok := item["databaseServers"].([]interface{}); ok {
         var setItems []attr.Value

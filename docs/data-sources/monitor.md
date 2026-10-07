@@ -41,6 +41,18 @@ data "oneuptime_monitor" "by_id" {
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `depends_on_monitors` (Set) Parent monitors this monitor depends on. When a parent is offline (or in one of the configured suppression statuses), alerts and incidents from this monitor are suppressed at creation time — the monitor keeps evaluating and its status timeline still updates... Computed.
 - `suppress_alerts_when_parent_monitor_statuses` (Set) Parent monitor statuses that suppress this monitor's alerts and incidents. When empty, statuses flagged as offline suppress (the default). Only used when Depends On Monitors is set... Computed.
+- `hosts` (Set) Hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `kubernetes_clusters` (Set) Kubernetes clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `docker_hosts` (Set) Docker hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `podman_hosts` (Set) Podman hosts this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `proxmox_clusters` (Set) Proxmox clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `vmware_v_centers` (Set) VMware vCenters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `ceph_clusters` (Set) Ceph clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `storage_arrays` (Set) Storage arrays this monitor watches. Incidents and alerts it creates are linked to them... Computed.
+- `docker_swarm_clusters` (Set) Docker Swarm clusters this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `iot_fleets` (Set) IoT fleets this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `database_servers` (Set) Databases this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
+- `services` (Set) Services this monitor watches. Incidents and alerts it creates are linked to them, so OneUptime AI can investigate and fix them there... Computed.
 - `monitor_template_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `auto_provisioned_network_device_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `network_alert_policy_id` (String) A unique identifier for an object, represented as a UUID.. Computed.

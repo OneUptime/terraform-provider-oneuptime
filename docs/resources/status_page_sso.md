@@ -40,7 +40,6 @@ resource "oneuptime_status_page_sso" "example" {
 ### Optional
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_enabled` (Bool) Status page sso is_enabled.
 - `is_tested` (Bool) Status page sso is_tested.
 
@@ -51,6 +50,7 @@ resource "oneuptime_status_page_sso" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

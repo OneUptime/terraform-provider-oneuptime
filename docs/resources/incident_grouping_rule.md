@@ -64,7 +64,6 @@ resource "oneuptime_incident_grouping_rule" "example" {
 - `episode_owner_teams` (Set) Teams added as owners of every episode this rule opens, and notified like any owner. Each must be a team of the project...
 - `episode_member_roles` (Set) Incident roles to display in the episode members form. Select the roles that can be assigned to episode members...
 - `episode_member_role_assignments` (String) Users with specific incident roles to automatically add as members to episodes created by this rule. Each assignment includes a user ID and an incident role ID...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `show_episode_on_status_page` (Bool) Should episodes created by this rule be shown on the status page?..
 
 ### Read-Only
@@ -74,6 +73,7 @@ resource "oneuptime_incident_grouping_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

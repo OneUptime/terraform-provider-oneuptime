@@ -28,7 +28,6 @@ resource "oneuptime_team" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `custom_fields` (String) Custom Fields on this resource...
 
 ### Read-Only
@@ -39,6 +38,7 @@ resource "oneuptime_team" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_permissions_editable` (Bool) Can you edit team permissions? Teams auto-created for you are uneditable but you should be able to edit permissions on the team you create..
 - `is_team_deleteable` (Bool) Can you delete this team? Teams auto-created for you are not deleteable but you should be able to delete permissions on the team you create..
 - `should_have_at_least_one_member` (Bool) Can this team have no members? Owner team should have at least 1 member, other teams can have no members..

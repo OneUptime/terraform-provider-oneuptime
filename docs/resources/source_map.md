@@ -33,7 +33,6 @@ resource "oneuptime_source_map" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `size_in_bytes` (Number) Size of the source map JSON in bytes..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -42,6 +41,7 @@ resource "oneuptime_source_map" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

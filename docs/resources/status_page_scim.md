@@ -34,7 +34,6 @@ resource "oneuptime_status_page_scim" "example" {
 - `description` (String) Friendly description to help you remember..
 - `auto_provision_users` (Bool) Automatically create status page users when they are added via SCIM..
 - `auto_deprovision_users` (Bool) Automatically remove status page users when they are removed via SCIM..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +42,7 @@ resource "oneuptime_status_page_scim" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

@@ -34,7 +34,6 @@ resource "oneuptime_on_call_schedule_layer" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Description for this layer. This is optional and can be left blank...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `order` (Number) Order / Priority of this layer. Lower the number, higher the priority...
 - `rotation` (String) How often would you like to hand off the duty to the next user in this layer?..
 - `restriction_times` (String) Restrict this layer to these times..
@@ -46,6 +45,7 @@ resource "oneuptime_on_call_schedule_layer" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

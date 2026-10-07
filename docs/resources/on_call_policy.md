@@ -29,7 +29,6 @@ resource "oneuptime_on_call_policy" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_archived` (Bool) Archived on-call policies are hidden from the On-Call Policies list and page no one: incidents and alerts that use them skip them. Unarchiving puts them back in service...
 - `repeat_policy_if_no_one_acknowledges` (Bool) Repeat the policy if no one acknowledges the alert..
 - `repeat_policy_if_no_one_acknowledges_no_of_times` (Number) Repeat the policy X number of times if no one acknowledges the alert..
@@ -43,6 +42,7 @@ resource "oneuptime_on_call_policy" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 

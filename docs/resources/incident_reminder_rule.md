@@ -36,7 +36,6 @@ resource "oneuptime_incident_reminder_rule" "example" {
 - `stop_reminders_on_state` (String) Stop sending reminders once the incident reaches this state. Select Acknowledged to stop reminders when the incident is acknowledged, or Resolved to keep reminding until the incident is resolved...
 - `incident_severities` (Set) Only apply this reminder rule to incidents with these severities. Leave empty to match incidents of any severity...
 - `labels` (Set) Only apply this reminder rule to incidents with these labels. Leave empty to match incidents with any labels...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -45,6 +44,7 @@ resource "oneuptime_incident_reminder_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

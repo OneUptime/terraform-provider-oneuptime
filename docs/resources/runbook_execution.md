@@ -31,8 +31,6 @@ resource "oneuptime_runbook_execution" "example" {
 - `incident_id` (String) A unique identifier for an object, represented as a UUID..
 - `alert_id` (String) A unique identifier for an object, represented as a UUID..
 - `scheduled_maintenance_id` (String) A unique identifier for an object, represented as a UUID..
-- `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `status` (String) Current status of this runbook execution...
 - `started_at` (String) A date time object..
 - `completed_at` (String) A date time object..
 - `failure_reason` (String) Reason this runbook execution failed (if it did)...
@@ -45,6 +43,8 @@ resource "oneuptime_runbook_execution" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
+- `status` (String) Current status of this runbook execution...
+- `triggered_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

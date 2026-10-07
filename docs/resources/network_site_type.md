@@ -31,7 +31,6 @@ resource "oneuptime_network_site_type" "example" {
 - `parent_network_site_type_id` (String) A unique identifier for an object, represented as a UUID..
 - `order` (Number) Display order among site types that have the same parent...
 - `is_unit_level` (Bool) Sites of this type are the leaf level - the network map opens their device topology, and the health rollup counts them as units...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -41,6 +40,7 @@ resource "oneuptime_network_site_type" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

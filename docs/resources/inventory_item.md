@@ -42,8 +42,6 @@ resource "oneuptime_inventory_item" "example" {
 - `last_seen_at` (String) A date time object..
 - `is_archived` (Bool) Is this item archived? Archived items are hidden from the default list but keep their identity and keep collecting telemetry...
 - `custom_fields` (String) Custom fields on this item...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -55,6 +53,8 @@ resource "oneuptime_inventory_item" "example" {
 - `inventory_status` (String) Current heartbeat status: live, recent, stale, never seen, or not tracked...
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

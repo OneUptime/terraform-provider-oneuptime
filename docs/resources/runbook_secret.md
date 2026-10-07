@@ -30,7 +30,6 @@ resource "oneuptime_runbook_secret" "example" {
 - `description` (String) Friendly description that will help you remember..
 - `secret_value` (String) Secret value that you want to store in this object. This value will be encrypted and only accessible by the assigned runbook agent...
 - `runners` (Set) List of runbook agents that can access this secret..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -39,6 +38,7 @@ resource "oneuptime_runbook_secret" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

@@ -38,7 +38,6 @@ resource "oneuptime_network_device_auto_import_rule" "example" {
 - `is_exclusion` (Bool) Invert this rule: matching hosts are NEVER auto-imported, even when another rule matches them. Use it to carve printers, phones, or other unwanted hosts out of a broader rule...
 - `monitor_template_id` (String) A unique identifier for an object, represented as a UUID..
 - `oid_template_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -47,6 +46,7 @@ resource "oneuptime_network_device_auto_import_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

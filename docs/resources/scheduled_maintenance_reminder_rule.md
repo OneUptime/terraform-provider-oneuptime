@@ -36,7 +36,6 @@ resource "oneuptime_scheduled_maintenance_reminder_rule" "example" {
 - `stop_reminders_on_state` (String) Stop sending reminders once the scheduled maintenance event reaches this state. Select Ongoing to stop reminders when the event starts, or Completed to keep reminding until the event is completed...
 - `remind_while_scheduled` (Bool) Send reminders while the event is still scheduled (before it starts). When disabled, reminders only begin once the event has started...
 - `labels` (Set) Only apply this reminder rule to scheduled maintenance events with these labels. Leave empty to match all events...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -45,6 +44,7 @@ resource "oneuptime_scheduled_maintenance_reminder_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

@@ -38,6 +38,7 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `description` (String) Description of the Summary Rule..
 - `recurring_interval` (String) How often should the summary be sent?..
 - `send_first_report_at` (String) A date time object..
+- `timezone` (String) The IANA time zone the summary's schedule is read in, such as Europe/Berlin or America/New_York. The summary goes out at the same time of day there all year, also after the clocks change for daylight saving time. Left out when the summary is created, it is the time zone in the creator's profile, or UTC when no person creates it (an API key or a workflow). A summary without one is read in UTC...
 - `channel_names` (String) List of channel names to post the summary to..
 - `team_name` (String) Microsoft Teams team name (only for Microsoft Teams)..
 - `summary_items` (String) Checklist of items to include in the summary..
@@ -45,8 +46,6 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `filter_condition` (String) How to combine filters - Any or All..
 - `next_send_at` (String) A date time object..
 - `last_sent_at` (String) A date time object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
-- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -55,6 +54,8 @@ resource "oneuptime_workspace_notification_summary" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
+- `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

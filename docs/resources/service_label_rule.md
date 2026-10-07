@@ -34,7 +34,6 @@ resource "oneuptime_service_label_rule" "example" {
 - `service_name_pattern` (String) Regex (case-insensitive) matched against the service name. Leave empty to match any name...
 - `service_description_pattern` (String) Regex (case-insensitive) matched against the service description. Leave empty to match any description...
 - `labels_to_add` (Set) Labels to attach to the service when this rule matches. Already-attached labels are not duplicated...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +42,7 @@ resource "oneuptime_service_label_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

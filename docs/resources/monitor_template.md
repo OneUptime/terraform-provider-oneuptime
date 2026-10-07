@@ -43,7 +43,7 @@ resource "oneuptime_monitor_template" "example" {
 
 - `template_name` (String) Name of the Monitor Template..
 - `template_description` (String) Description of the Monitor Template..
-- `monitor_type` (String) What is the type of monitor created from this template?.. Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `VMware`, `Ceph`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Database`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
+- `monitor_type` (String) What is the type of monitor created from this template?.. Allowed values: `Manual`, `Website`, `API`, `Ping`, `Kubernetes`, `Docker`, `Host`, `Podman`, `Docker Swarm`, `Proxmox`, `VMware`, `Ceph`, `Storage Array`, `IoT Device`, `IP`, `Incoming Request`, `Incoming Email`, `Port`, `Server`, `SSL Certificate`, `SQL Query`, `Database`, `Synthetic Monitor`, `Custom JavaScript Code`, `Logs`, `Metrics`, `Traces`, `Exceptions`, `Profiles`, `Security Events`, `Network Device`, `DNS`, `DNSSEC`, `Domain`, `External Status Page`.
 
 ### Optional
 
@@ -55,7 +55,6 @@ resource "oneuptime_monitor_template" "example" {
 - `labels` (Set) Default labels applied to monitors created from this template...
 - `custom_fields` (String) Custom Fields on this resource...
 - `minimum_probe_agreement` (Number) Default minimum number of probes that must agree on a status before the monitor status changes...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -65,6 +64,7 @@ resource "oneuptime_monitor_template" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

@@ -47,7 +47,6 @@ resource "oneuptime_alert_owner_rule" "example" {
 - `inherit_owners_from_docker_hosts` (Bool) When this rule matches, also assign every owner of the alert's affected Docker hosts to the alert...
 - `inherit_owners_from_podman_hosts` (Bool) When this rule matches, also assign every owner of the alert's affected Podman hosts to the alert...
 - `inherit_owners_from_services` (Bool) When this rule matches, also assign every owner of the alert's affected services to the alert...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -56,6 +55,7 @@ resource "oneuptime_alert_owner_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

@@ -28,7 +28,6 @@ resource "oneuptime_service" "example" {
 
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `description` (String) Friendly description that will help you remember..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `is_archived` (Bool) Is this service archived? Archived services are hidden from lists but keep collecting telemetry...
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `service_color` (String) Color object.
@@ -47,6 +46,7 @@ resource "oneuptime_service" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `archived_at` (String) A date time object..
 - `archived_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..

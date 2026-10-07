@@ -34,7 +34,6 @@ resource "oneuptime_incoming_call_policy_label_rule" "example" {
 - `incoming_call_policy_name_pattern` (String) Regex (case-insensitive) matched against the incoming call policy name. Leave empty to match any name...
 - `incoming_call_policy_description_pattern` (String) Regex (case-insensitive) matched against the incoming call policy description. Leave empty to match any description...
 - `labels_to_add` (Set) Labels to attach to the incoming call policy when this rule matches. Already-attached labels are not duplicated...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -43,6 +42,7 @@ resource "oneuptime_incoming_call_policy_label_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

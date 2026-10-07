@@ -38,7 +38,6 @@ resource "oneuptime_incident_sla" "example" {
 - `last_internal_note_reminder_sent_at` (String) A date time object..
 - `last_public_note_reminder_sent_at` (String) A date time object..
 - `breach_notification_sent_at` (String) A date time object..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -47,6 +46,7 @@ resource "oneuptime_incident_sla" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

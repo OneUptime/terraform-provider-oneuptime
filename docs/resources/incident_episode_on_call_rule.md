@@ -35,7 +35,6 @@ resource "oneuptime_incident_episode_on_call_rule" "example" {
 - `episode_title_pattern` (String) Regex (case-insensitive) matched against the episode title...
 - `episode_description_pattern` (String) Regex (case-insensitive) matched against the episode description...
 - `on_call_duty_policies` (Set) On-call duty policies to execute when an incident episode matches this rule...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -44,6 +43,7 @@ resource "oneuptime_incident_episode_on_call_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

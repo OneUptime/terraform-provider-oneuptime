@@ -37,7 +37,6 @@ resource "oneuptime_snmp_credential_profile" "example" {
 - `snmp_v3_auth_key` (String) SNMP v3 authentication passphrase..
 - `snmp_v3_priv_protocol` (String) SNMP v3 privacy (encryption) protocol: DES, AES, or AES256..
 - `snmp_v3_priv_key` (String) SNMP v3 privacy (encryption) passphrase..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -46,6 +45,7 @@ resource "oneuptime_snmp_credential_profile" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import

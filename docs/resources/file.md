@@ -29,12 +29,12 @@ resource "oneuptime_file" "example" {
 
 - `file` (String) File file.
 - `slug` (String) File slug.
-- `is_public` (Bool) File is_public.
-- `image_access_token` (String) File image_access_token.
 
 ### Read-Only
 
 - `id` (String) Unique identifier for the resource.
+- `is_public` (Bool) Whether anyone may read the file without signing in. Set by OneUptime: every upload starts private, and a file becomes public only when a record that shows it to everyone, such as a public note or a probe's icon, is published...
+- `image_access_token` (String) File image_access_token.
 
 ## Import
 

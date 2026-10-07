@@ -37,7 +37,6 @@ resource "oneuptime_queue_owner_rule" "example" {
 - `message_queue_system_pattern` (String) Regex (case-insensitive) matched against the queue's messaging system - both its OpenTelemetry messaging.system value (kafka, rabbitmq, aws_sqs, servicebus, ...) and its display name (Apache Kafka, RabbitMQ, Amazon SQS, Azure Service Bus, ...). ^kafka$ matches every Kafka topic. Leave empty to match any system...
 - `owner_users` (Set) Users to add as owners on the queue when this rule matches...
 - `owner_teams` (Set) Teams to add as owners on the queue when this rule matches...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -46,6 +45,7 @@ resource "oneuptime_queue_owner_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

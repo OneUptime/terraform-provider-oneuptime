@@ -30,7 +30,6 @@ resource "oneuptime_on_call_policy_schedule" "example" {
 - `labels` (Set) Relation to Labels Array where this object is categorized in...
 - `description` (String) Friendly description that will help you remember..
 - `timezone` (String) IANA timezone this schedule's restriction and hand-off wall-clock times are interpreted in. When empty, times are interpreted in the server's local timezone (legacy behavior)...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -40,6 +39,7 @@ resource "oneuptime_on_call_policy_schedule" "example" {
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
 - `slug` (String) Friendly globally unique name for your object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `current_user_id_on_roster` (String) A unique identifier for an object, represented as a UUID..
 - `next_user_id_on_roster` (String) A unique identifier for an object, represented as a UUID..
 - `roster_handoff_at` (String) A date time object..

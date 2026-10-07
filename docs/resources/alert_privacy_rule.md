@@ -38,7 +38,6 @@ resource "oneuptime_alert_privacy_rule" "example" {
 - `alert_description_pattern` (String) Regex (case-insensitive) matched against the alert description. Leave empty to match any description...
 - `monitor_name_pattern` (String) Regex (case-insensitive) matched against the alert's monitor name. Leave empty to match any monitor...
 - `monitor_description_pattern` (String) Regex (case-insensitive) matched against the alert's monitor description. Leave empty to match any description...
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ### Read-Only
 
@@ -47,6 +46,7 @@ resource "oneuptime_alert_privacy_rule" "example" {
 - `updated_at` (String) A date time object..
 - `deleted_at` (String) A date time object..
 - `version` (Number) Object version.
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
 

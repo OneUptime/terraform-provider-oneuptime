@@ -28,7 +28,6 @@ resource "oneuptime_network_endpoint" "example" {
 - `project_id` (String) A unique identifier for an object, represented as a UUID..
 - `classification` (String) User-editable classification of this endpoint (POS, Kiosk, Camera, Printer, ...)..
 - `site_id` (String) A unique identifier for an object, represented as a UUID..
-- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `ip_address` (String) Last IP address seen for this endpoint in ARP tables. Managed by the server...
 - `vendor` (String) Hardware vendor derived from the MAC OUI prefix. Managed by the server...
 
@@ -45,6 +44,7 @@ resource "oneuptime_network_endpoint" "example" {
 - `vlan_id` (Number) VLAN this endpoint was last seen on, from the FDB walk. Managed by the server...
 - `first_seen_at` (String) A date time object..
 - `last_seen_at` (String) A date time object..
+- `created_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 - `deleted_by_user_id` (String) A unique identifier for an object, represented as a UUID..
 
 ## Import
