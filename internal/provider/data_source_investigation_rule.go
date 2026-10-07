@@ -16,19 +16,19 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSource = &AutoRemediationRuleDataSource{}
+var _ datasource.DataSource = &InvestigationRuleDataSource{}
 
-func NewAutoRemediationRuleDataSource() datasource.DataSource {
-    return &AutoRemediationRuleDataSource{}
+func NewInvestigationRuleDataSource() datasource.DataSource {
+    return &InvestigationRuleDataSource{}
 }
 
-// AutoRemediationRuleDataSource defines the data source implementation.
-type AutoRemediationRuleDataSource struct {
+// InvestigationRuleDataSource defines the data source implementation.
+type InvestigationRuleDataSource struct {
     client *Client
 }
 
-// AutoRemediationRuleDataSourceModel describes the data source data model.
-type AutoRemediationRuleDataSourceModel struct {
+// InvestigationRuleDataSourceModel describes the data source data model.
+type InvestigationRuleDataSourceModel struct {
     Id types.String `tfsdk:"id"`
     Name types.String `tfsdk:"name"`
     CreatedAt types.String `tfsdk:"created_at"`
@@ -40,12 +40,6 @@ type AutoRemediationRuleDataSourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     TriggerEntityType types.String `tfsdk:"trigger_entity_type"`
-    ExecutionMode types.String `tfsdk:"execution_mode"`
-    RemediationAction types.String `tfsdk:"remediation_action"`
-    AiSelectsRunbook types.Bool `tfsdk:"ai_selects_runbook"`
-    AiComposesCommands types.Bool `tfsdk:"ai_composes_commands"`
-    CommandAllowlist types.String `tfsdk:"command_allowlist"`
-    CommandRunners types.Set `tfsdk:"command_runners"`
     Monitors types.Set `tfsdk:"monitors"`
     IncidentSeverities types.Set `tfsdk:"incident_severities"`
     AlertSeverities types.Set `tfsdk:"alert_severities"`
@@ -53,19 +47,16 @@ type AutoRemediationRuleDataSourceModel struct {
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
-    Runbooks types.Set `tfsdk:"runbooks"`
-    VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
-    AutoResolveOnVerifiedRecovery types.Bool `tfsdk:"auto_resolve_on_verified_recovery"`
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (d *AutoRemediationRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_auto_remediation_rule"
+func (d *InvestigationRuleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_investigation_rule"
 }
 
-func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *InvestigationRuleDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts are fixed automatically, and how: by OneUptime AI or with runbooks, asking first or not. With no rule, OneUptime AI fixes every one while automatic fixing is on. Look up an existing auto_remediation_rule by `id` or by `name`.",
+        MarkdownDescription: "Choose which new incidents or alerts OneUptime AI investigates on its own. With no rule, every one is investigated; with rules, only those that match one. Look up an existing investigation_rule by `id` or by `name`.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -103,7 +94,7 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this auto-remediation rule..",
+                MarkdownDescription: "Description of this investigation rule..",
                 Computed: true,
             },
             "is_enabled": schema.BoolAttribute{
@@ -111,56 +102,31 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 Computed: true,
             },
             "trigger_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Entity type that triggers this rule on creation: Incident or Alert..",
+                MarkdownDescription: "Which kind of new signal this rule decides about: Incident or Alert..",
                 Computed: true,
-            },
-            "execution_mode": schema.StringAttribute{
-                MarkdownDescription: "Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: its runbooks start immediately, and OneUptime AI fixes run on their own where the cluster's or resource's AI agent page allows..",
-                Computed: true,
-            },
-            "remediation_action": schema.StringAttribute{
-                MarkdownDescription: "OneUptimeAI: OneUptime AI fixes the matched incident or alert on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows. Runbooks: the rule's runbooks run. Whether a person approves first is the rule's Execution Mode..",
-                Computed: true,
-            },
-            "ai_selects_runbook": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached). AI-picked runbooks are always suggest-only — never full-auto..",
-                Computed: true,
-            },
-            "ai_composes_commands": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the AI investigates the incident/alert and composes Bash/SSH commands for opted-in Runners instead of picking a runbook. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. Requires AI to be enabled for the project..",
-                Computed: true,
-            },
-            "command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Glob patterns for commands the AI may execute WITHOUT human approval under FullAuto (for example: systemctl restart *). Commands that do not match are proposed for one-click approval instead. Destructive commands are always refused by the built-in policy..",
-                Computed: true,
-            },
-            "command_runners": schema.SetAttribute{
-                MarkdownDescription: "Runners the AI may target with composed commands. Leave empty to allow any Runner in the project that has AI commands enabled..",
-                Computed: true,
-                ElementType: types.StringType,
             },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents/alerts from these monitors. Leave empty to match any monitor..",
+                MarkdownDescription: "Match only incidents/alerts from these monitors. Leave empty to match any monitor..",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents with these severities (incident rules only). Leave empty to match any severity..",
+                MarkdownDescription: "Match only incidents with these severities (incident rules only). Leave empty to match any severity..",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts with these severities (alert rules only). Leave empty to match any severity..",
+                MarkdownDescription: "Match only alerts with these severities (alert rules only). Leave empty to match any severity..",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents/alerts that carry at least one of these labels. Leave empty to match any label..",
+                MarkdownDescription: "Match only incidents/alerts that carry at least one of these labels. Leave empty to match any label..",
                 Computed: true,
                 ElementType: types.StringType,
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger when the incident/alert's monitor carries at least one of these labels — the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label..",
+                MarkdownDescription: "Match only when the incident/alert's monitor carries at least one of these labels — the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label..",
                 Computed: true,
                 ElementType: types.StringType,
             },
@@ -172,19 +138,6 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
                 MarkdownDescription: "Case-insensitive regex matched against the entity's description. Leave empty to match any description..",
                 Computed: true,
             },
-            "runbooks": schema.SetAttribute{
-                MarkdownDescription: "Runbook candidates for this rule. Deterministic rules propose or start every attached runbook; AI rules pick the most applicable one..",
-                Computed: true,
-                ElementType: types.StringType,
-            },
-            "verification_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How long after the runbook starts the subject's monitors get to recover before verification fails. Defaults to 15 minutes..",
-                Computed: true,
-            },
-            "auto_resolve_on_verified_recovery": schema.BoolAttribute{
-                MarkdownDescription: "When verification confirms the monitors recovered inside the window, automatically resolve the incident/alert. Off by default — the timeline note is posted either way..",
-                Computed: true,
-            },
             "created_by_user_id": schema.StringAttribute{
                 MarkdownDescription: "A unique identifier for an object, represented as a UUID.",
                 Computed: true,
@@ -193,7 +146,7 @@ func (d *AutoRemediationRuleDataSource) Schema(ctx context.Context, req datasour
     }
 }
 
-func (d *AutoRemediationRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *InvestigationRuleDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -213,8 +166,8 @@ func (d *AutoRemediationRuleDataSource) Configure(ctx context.Context, req datas
     d.client = client
 }
 
-func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-    var data AutoRemediationRuleDataSourceModel
+func (d *InvestigationRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+    var data InvestigationRuleDataSourceModel
 
     // Read Terraform configuration data into the model
     resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -228,7 +181,7 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
     if hasId == hasName {
         resp.Diagnostics.AddError(
             "Invalid Lookup",
-            "Exactly one of `id` or `name` must be set to look up a auto_remediation_rule.",
+            "Exactly one of `id` or `name` must be set to look up a investigation_rule.",
         )
         return
     }
@@ -244,12 +197,6 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         "description": true,
         "isEnabled": true,
         "triggerEntityType": true,
-        "executionMode": true,
-        "remediationAction": true,
-        "aiSelectsRunbook": true,
-        "aiComposesCommands": true,
-        "commandAllowlist": true,
-        "commandRunners": true,
         "monitors": true,
         "incidentSeverities": true,
         "alertSeverities": true,
@@ -257,28 +204,25 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
-        "runbooks": true,
-        "verificationWindowMinutes": true,
-        "autoResolveOnVerifiedRecovery": true,
         "createdByUserId": true,
         "_id": true,
     }
 
     var item map[string]interface{}
     if hasId {
-        readPath := "/auto-remediation-rule/" + data.Id.ValueString() + "/get-item"
+        readPath := "/ai-investigation-rule/" + data.Id.ValueString() + "/get-item"
         httpResp, err := d.client.PostWithSelect(ctx, readPath, selectParam)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read auto_remediation_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read investigation_rule, got error: %s", err))
             return
         }
         if httpResp.StatusCode == http.StatusNotFound {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No auto_remediation_rule found with id %q.", data.Id.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No investigation_rule found with id %q.", data.Id.ValueString()))
             return
         }
         var itemResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &itemResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read auto_remediation_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read investigation_rule: %s", err))
             return
         }
         if wrapper, ok := itemResponse["data"].(map[string]interface{}); ok {
@@ -295,28 +239,28 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
             // limit 2 is enough to detect ambiguity without paging.
             "limit": 2,
         }
-        httpResp, err := d.client.PostBodyWithSelect(ctx, "/auto-remediation-rule/get-list", listBody)
+        httpResp, err := d.client.PostBodyWithSelect(ctx, "/ai-investigation-rule/get-list", listBody)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list auto_remediation_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to list investigation_rule, got error: %s", err))
             return
         }
         var listResponse map[string]interface{}
         if err := d.client.ParseResponse(httpResp, &listResponse); err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list auto_remediation_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to list investigation_rule: %s", err))
             return
         }
         items, _ := listResponse["data"].([]interface{})
         if len(items) == 0 {
-            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No auto_remediation_rule found with name %q.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Not Found", fmt.Sprintf("No investigation_rule found with name %q.", data.Name.ValueString()))
             return
         }
         if len(items) > 1 {
-            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one auto_remediation_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
+            resp.Diagnostics.AddError("Ambiguous Match", fmt.Sprintf("More than one investigation_rule matches name %q. Use the id attribute to disambiguate.", data.Name.ValueString()))
             return
         }
         first, ok := items[0].(map[string]interface{})
         if !ok {
-            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for auto_remediation_rule.")
+            resp.Diagnostics.AddError("OneUptime API Error", "Unexpected list response shape for investigation_rule.")
             return
         }
         item = first
@@ -492,91 +436,6 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
     } else {
         data.TriggerEntityType = types.StringNull()
     }
-    if obj, ok := item["executionMode"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.ExecutionMode = types.StringValue(string(jsonBytes))
-        } else {
-            data.ExecutionMode = types.StringNull()
-        }
-    } else if val, ok := item["executionMode"].(string); ok {
-        data.ExecutionMode = types.StringValue(val)
-    } else {
-        data.ExecutionMode = types.StringNull()
-    }
-    if obj, ok := item["remediationAction"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.RemediationAction = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.RemediationAction = types.StringValue(string(jsonBytes))
-        } else {
-            data.RemediationAction = types.StringNull()
-        }
-    } else if val, ok := item["remediationAction"].(string); ok {
-        data.RemediationAction = types.StringValue(val)
-    } else {
-        data.RemediationAction = types.StringNull()
-    }
-    if val, ok := item["aiSelectsRunbook"].(bool); ok {
-        data.AiSelectsRunbook = types.BoolValue(val)
-    } else {
-        data.AiSelectsRunbook = types.BoolNull()
-    }
-    if val, ok := item["aiComposesCommands"].(bool); ok {
-        data.AiComposesCommands = types.BoolValue(val)
-    } else {
-        data.AiComposesCommands = types.BoolNull()
-    }
-    if obj, ok := item["commandAllowlist"].(map[string]interface{}); ok {
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CommandAllowlist = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            data.CommandAllowlist = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            data.CommandAllowlist = types.StringValue(fmt.Sprintf("%v", val))
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            data.CommandAllowlist = types.StringValue(string(jsonBytes))
-        } else {
-            data.CommandAllowlist = types.StringNull()
-        }
-    } else if val, ok := item["commandAllowlist"].(string); ok {
-        data.CommandAllowlist = types.StringValue(val)
-    } else {
-        data.CommandAllowlist = types.StringNull()
-    }
-    if val, ok := item["commandRunners"].([]interface{}); ok {
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                }
-            } else if str, ok := item.(string); ok {
-                setItems = append(setItems, types.StringValue(str))
-            } else {
-                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
-            }
-        }
-        sort.Slice(setItems, func(i, j int) bool {
-            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
-        })
-        data.CommandRunners = types.SetValueMust(types.StringType, setItems)
-    } else {
-        data.CommandRunners = types.SetNull(types.StringType)
-    }
     if val, ok := item["monitors"].([]interface{}); ok {
         var setItems []attr.Value
         for _, item := range val {
@@ -730,46 +589,6 @@ func (d *AutoRemediationRuleDataSource) Read(ctx context.Context, req datasource
         data.DescriptionPattern = types.StringValue(val)
     } else {
         data.DescriptionPattern = types.StringNull()
-    }
-    if val, ok := item["runbooks"].([]interface{}); ok {
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                    setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                }
-            } else if str, ok := item.(string); ok {
-                setItems = append(setItems, types.StringValue(str))
-            } else {
-                setItems = append(setItems, types.StringValue(fmt.Sprintf("%v", item)))
-            }
-        }
-        sort.Slice(setItems, func(i, j int) bool {
-            return setItems[i].(types.String).ValueString() < setItems[j].(types.String).ValueString()
-        })
-        data.Runbooks = types.SetValueMust(types.StringType, setItems)
-    } else {
-        data.Runbooks = types.SetNull(types.StringType)
-    }
-    if val, ok := item["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if obj, ok := item["verificationWindowMinutes"].(map[string]interface{}); ok {
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
-    if val, ok := item["autoResolveOnVerifiedRecovery"].(bool); ok {
-        data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
-    } else {
-        data.AutoResolveOnVerifiedRecovery = types.BoolNull()
     }
     if obj, ok := item["createdByUserId"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

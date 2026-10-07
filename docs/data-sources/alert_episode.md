@@ -54,7 +54,7 @@ data "oneuptime_alert_episode" "by_id" {
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_owner_notified_of_episode_creation` (Bool) Are owners notified when this episode is created?.. Computed.
-- `grouping_key` (String) Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule... Computed.
+- `grouping_key` (String) Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash... Computed.
 - `remediation_notes` (String) User-documented remediation steps and notes for this episode.. Computed.
 - `post_updates_to_workspace_channels` (String) Workspace channels to post episode updates to (e.g., Slack, Microsoft Teams).. Computed.
 - `is_private` (Bool) If true, this alert episode is only visible to its owners (users in 'owner users' and members of 'owner teams'), project admins, and project owners... Computed.

@@ -198,6 +198,7 @@ func GetResources() []func() resource.Resource {
         NewRunbookUserOwnerResource,
         NewRunbookRuleResource,
         NewAutoRemediationRuleResource,
+        NewInvestigationRuleResource,
         NewRunnerResource,
         NewRunnerTeamOwnerResource,
         NewRunnerUserOwnerResource,

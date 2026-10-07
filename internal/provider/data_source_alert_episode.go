@@ -194,7 +194,7 @@ func (d *AlertEpisodeDataSource) Schema(ctx context.Context, req datasource.Sche
                 Computed: true,
             },
             "grouping_key": schema.StringAttribute{
-                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule..",
+                MarkdownDescription: "Key used for grouping alerts into this episode. Generated from groupByFields of the matching rule. When a private alert opened the episode, its title is in the key only as a keyed hash..",
                 Computed: true,
             },
             "remediation_notes": schema.StringAttribute{

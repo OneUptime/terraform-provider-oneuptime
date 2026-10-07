@@ -210,6 +210,7 @@ func GetDataSources() []func() datasource.DataSource {
         NewAutoRemediationRuleDataSource,
         NewAutoRemediationSuggestionDataSource,
         NewAutoRemediationDecisionDataSource,
+        NewInvestigationRuleDataSource,
         NewRunnerDataSource,
         NewRunnerTeamOwnerDataSource,
         NewRunnerUserOwnerDataSource,

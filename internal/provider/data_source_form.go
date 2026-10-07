@@ -39,6 +39,7 @@ type FormDataSourceModel struct {
     ShareKey types.String `tfsdk:"share_key"`
     TargetType types.String `tfsdk:"target_type"`
     Fields types.String `tfsdk:"fields"`
+    Templates types.String `tfsdk:"templates"`
     TargetSettings types.String `tfsdk:"target_settings"`
     SuccessMessage types.String `tfsdk:"success_message"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
@@ -104,7 +105,11 @@ func (d *FormDataSource) Schema(ctx context.Context, req datasource.SchemaReques
                 Computed: true,
             },
             "fields": schema.StringAttribute{
-                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text and isRequired. A new form starts with a title, a description and the submitter's name and email..",
+                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text, isRequired and isHidden (not shown on the public form, and answered only from the template a submission started from; never required, and never a field the target cannot be created without). A new form starts with a title, a description and the submitter's name and email..",
+                Computed: true,
+            },
+            "templates": schema.StringAttribute{
+                MarkdownDescription: "Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template) and answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). Hidden questions are answered only from the template a submission started from..",
                 Computed: true,
             },
             "target_settings": schema.StringAttribute{
@@ -191,6 +196,7 @@ func (d *FormDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         "shareKey": true,
         "targetType": true,
         "fields": true,
+        "templates": true,
         "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
@@ -445,6 +451,23 @@ func (d *FormDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
         data.Fields = types.StringValue(val)
     } else {
         data.Fields = types.StringNull()
+    }
+    if obj, ok := item["templates"].(map[string]interface{}); ok {
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Templates = types.StringValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            data.Templates = types.StringValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            data.Templates = types.StringValue(fmt.Sprintf("%v", val))
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            data.Templates = types.StringValue(string(jsonBytes))
+        } else {
+            data.Templates = types.StringNull()
+        }
+    } else if val, ok := item["templates"].(string); ok {
+        data.Templates = types.StringValue(val)
+    } else {
+        data.Templates = types.StringNull()
     }
     if obj, ok := item["targetSettings"].(map[string]interface{}); ok {
         if val, ok := obj["_id"].(string); ok && val != "" {

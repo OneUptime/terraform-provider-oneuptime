@@ -2,12 +2,12 @@
 page_title: "oneuptime_auto_remediation_rule Data Source - oneuptime"
 subcategory: "Other"
 description: |-
-  Automatically propose or start remediation runbooks when matching incidents or alerts are created.
+  Which new incidents or alerts are fixed automatically, and how: by OneUptime AI or with runbooks, asking first or not. With no rule, OneUptime AI fixes every one while automatic fixing is on.
 ---
 
 # oneuptime_auto_remediation_rule (Data Source)
 
-Automatically propose or start remediation runbooks when matching incidents or alerts are created. Look up by `id` or by `name` (must match exactly one item).
+Which new incidents or alerts are fixed automatically, and how: by OneUptime AI or with runbooks, asking first or not. With no rule, OneUptime AI fixes every one while automatic fixing is on. Look up by `id` or by `name` (must match exactly one item).
 
 ## Example Usage
 
@@ -36,7 +36,8 @@ data "oneuptime_auto_remediation_rule" "by_id" {
 - `description` (String) Description of this auto-remediation rule... Computed.
 - `is_enabled` (Bool) Whether this rule is enabled... Computed.
 - `trigger_entity_type` (String) Entity type that triggers this rule on creation: Incident or Alert... Computed.
-- `execution_mode` (String) Suggest proposes the runbook and waits for one-click human approval. FullAuto starts it immediately (deterministic rules only)... Computed.
+- `execution_mode` (String) Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: its runbooks start immediately, and OneUptime AI fixes run on their own where the cluster's or resource's AI agent page allows... Computed.
+- `remediation_action` (String) OneUptimeAI: OneUptime AI fixes the matched incident or alert on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows. Runbooks: the rule's runbooks run. Whether a person approves first is the rule's Execution Mode... Computed.
 - `ai_selects_runbook` (Bool) When enabled, an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached). AI-picked runbooks are always suggest-only — never full-auto... Computed.
 - `ai_composes_commands` (Bool) When enabled, the AI investigates the incident/alert and composes Bash/SSH commands for opted-in Runners instead of picking a runbook. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. Requires AI to be enabled for the project... Computed.
 - `command_allowlist` (String) Glob patterns for commands the AI may execute WITHOUT human approval under FullAuto (for example: systemctl restart *). Commands that do not match are proposed for one-click approval instead. Destructive commands are always refused by the built-in policy... Computed.

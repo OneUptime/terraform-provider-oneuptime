@@ -196,7 +196,7 @@ func (d *IncidentEpisodeDataSource) Schema(ctx context.Context, req datasource.S
                 Computed: true,
             },
             "grouping_key": schema.StringAttribute{
-                MarkdownDescription: "Key used for grouping incidents into this episode. Generated from groupByFields of the matching rule..",
+                MarkdownDescription: "Key used for grouping incidents into this episode. Generated from groupByFields of the matching rule. When a private incident opened the episode, its title is in the key only as a keyed hash..",
                 Computed: true,
             },
             "incident_grouping_rule_id": schema.StringAttribute{

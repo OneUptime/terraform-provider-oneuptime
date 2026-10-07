@@ -74,6 +74,8 @@ type ProjectDataSourceModel struct {
     AiDailySpendLimitInUsd types.Number `tfsdk:"ai_daily_spend_limit_in_usd"`
     EnableAutomaticIncidentInvestigation types.Bool `tfsdk:"enable_automatic_incident_investigation"`
     EnableAutomaticAlertInvestigation types.Bool `tfsdk:"enable_automatic_alert_investigation"`
+    EnableAutomaticIncidentRemediation types.Bool `tfsdk:"enable_automatic_incident_remediation"`
+    EnableAutomaticAlertRemediation types.Bool `tfsdk:"enable_automatic_alert_remediation"`
     EnableAutomaticPostmortemDraft types.Bool `tfsdk:"enable_automatic_postmortem_draft"`
     AcknowledgeLinkedAlertsWhenIncidentAcknowledged types.Bool `tfsdk:"acknowledge_linked_alerts_when_incident_acknowledged"`
     ResolveLinkedAlertsWhenIncidentResolved types.Bool `tfsdk:"resolve_linked_alerts_when_incident_resolved"`
@@ -305,6 +307,14 @@ func (d *ProjectDataSource) Schema(ctx context.Context, req datasource.SchemaReq
             },
             "enable_automatic_alert_investigation": schema.BoolAttribute{
                 MarkdownDescription: "When enabled, OneUptime's AI SRE automatically investigates every new alert and posts a cited root cause analysis to the alert timeline. On for new projects created in OneUptime; projects that existed before keep their setting. Requires AI to be enabled and an LLM provider to be configured..",
+                Computed: true,
+            },
+            "enable_automatic_incident_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime fixes new incidents automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which incidents are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the incident settles first. Requires AI to be enabled..",
+                Computed: true,
+            },
+            "enable_automatic_alert_remediation": schema.BoolAttribute{
+                MarkdownDescription: "When enabled, OneUptime fixes new alerts automatically: OneUptime AI fixes each one on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows, and Auto Remediation Rules - when there are any - choose which alerts are fixed, which runbooks run and whether a person approves first. Off by default, for new projects too. Any AI investigation of the alert settles first. Requires AI to be enabled..",
                 Computed: true,
             },
             "enable_automatic_postmortem_draft": schema.BoolAttribute{
@@ -566,6 +576,8 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         "aiDailySpendLimitInUSD": true,
         "enableAutomaticIncidentInvestigation": true,
         "enableAutomaticAlertInvestigation": true,
+        "enableAutomaticIncidentRemediation": true,
+        "enableAutomaticAlertRemediation": true,
         "enableAutomaticPostmortemDraft": true,
         "acknowledgeLinkedAlertsWhenIncidentAcknowledged": true,
         "resolveLinkedAlertsWhenIncidentResolved": true,
@@ -1270,6 +1282,16 @@ func (d *ProjectDataSource) Read(ctx context.Context, req datasource.ReadRequest
         data.EnableAutomaticAlertInvestigation = types.BoolValue(val)
     } else {
         data.EnableAutomaticAlertInvestigation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticIncidentRemediation"].(bool); ok {
+        data.EnableAutomaticIncidentRemediation = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticIncidentRemediation = types.BoolNull()
+    }
+    if val, ok := item["enableAutomaticAlertRemediation"].(bool); ok {
+        data.EnableAutomaticAlertRemediation = types.BoolValue(val)
+    } else {
+        data.EnableAutomaticAlertRemediation = types.BoolNull()
     }
     if val, ok := item["enableAutomaticPostmortemDraft"].(bool); ok {
         data.EnableAutomaticPostmortemDraft = types.BoolValue(val)

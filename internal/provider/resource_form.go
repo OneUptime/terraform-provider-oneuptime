@@ -44,6 +44,7 @@ type FormResourceModel struct {
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     TargetType types.String `tfsdk:"target_type"`
     Fields JSONSubsetValue `tfsdk:"fields"`
+    Templates JSONSubsetValue `tfsdk:"templates"`
     TargetSettings JSONSubsetValue `tfsdk:"target_settings"`
     SuccessMessage types.String `tfsdk:"success_message"`
     IpWhitelist types.String `tfsdk:"ip_whitelist"`
@@ -112,7 +113,19 @@ func (r *FormResource) Schema(ctx context.Context, req resource.SchemaRequest, r
                 },
             },
             "fields": schema.StringAttribute{
-                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text and isRequired. A new form starts with a title, a description and the submitter's name and email..",
+                MarkdownDescription: "The questions the form asks, in order. Each has an id, a source (Question: one of the form's own, answered by type; TargetField: a built-in field of what the form creates, by targetField; TargetCustomField: one of its custom fields, by customFieldId; Submitter: the submitter's Name or Email), a label, optional help text, isRequired and isHidden (not shown on the public form, and answered only from the template a submission started from; never required, and never a field the target cannot be created without). A new form starts with a title, a description and the submitter's name and email..",
+                CustomType: JSONSubsetType{},
+                Optional: true,
+                Computed: true,
+                PlanModifiers: []planmodifier.String{
+                    stringplanmodifier.UseStateForUnknown(),
+                },
+                Validators: []validator.String{
+                    JSONEnvelopeValidator(),
+                },
+            },
+            "templates": schema.StringAttribute{
+                MarkdownDescription: "Named sets of answers a submission can start from, in the order the form lists them. Each has an id, a name (unique within the form), isDefault (the form opens with it; at most one template) and answers: an object keyed by question id, each answer as a submission sends it - text, a number, true or false, an option's value, or a list of values for a multi-select. The public form lists the templates above its questions and fills in a template's answers when one is chosen, or when its link names one (?template=<id>). Hidden questions are answered only from the template a submission started from..",
                 CustomType: JSONSubsetType{},
                 Optional: true,
                 Computed: true,
@@ -262,6 +275,9 @@ func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, r
     if parsedFields := r.parseJSONField(data.Fields); parsedFields != nil {
         requestDataMap["fields"] = parsedFields
     }
+    if parsedTemplates := r.parseJSONField(data.Templates); parsedTemplates != nil {
+        requestDataMap["templates"] = parsedTemplates
+    }
     if parsedTargetSettings := r.parseJSONField(data.TargetSettings); parsedTargetSettings != nil {
         requestDataMap["targetSettings"] = parsedTargetSettings
     }
@@ -331,6 +347,7 @@ func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, r
         "isEnabled": true,
         "targetType": true,
         "fields": true,
+        "templates": true,
         "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
@@ -536,6 +553,43 @@ func (r *FormResource) Create(ctx context.Context, req resource.CreateRequest, r
         data.Fields = NewJSONSubsetValue(val)
     } else {
         data.Fields = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["templates"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Templates = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Templates = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Templates = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Templates = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Templates = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Templates = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["templates"].(string); ok {
+        data.Templates = NewJSONSubsetValue(val)
+    } else {
+        data.Templates = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["targetSettings"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -916,6 +970,7 @@ func (r *FormResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         "isEnabled": true,
         "targetType": true,
         "fields": true,
+        "templates": true,
         "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
@@ -1122,6 +1177,43 @@ func (r *FormResource) Read(ctx context.Context, req resource.ReadRequest, resp 
         data.Fields = NewJSONSubsetValue(val)
     } else {
         data.Fields = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["templates"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Templates = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Templates = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Templates = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Templates = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Templates = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Templates = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["templates"].(string); ok {
+        data.Templates = NewJSONSubsetValue(val)
+    } else {
+        data.Templates = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["targetSettings"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
@@ -1524,6 +1616,14 @@ func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, r
             requestDataMap["fields"] = data.Fields.ValueString()
         }
     }
+    if !data.Templates.IsUnknown() && !state.Templates.IsUnknown() && !data.Templates.Equal(state.Templates) {
+        var templatesData interface{}
+        if err := json.Unmarshal([]byte(data.Templates.ValueString()), &templatesData); err == nil {
+            requestDataMap["templates"] = templatesData
+        } else {
+            requestDataMap["templates"] = data.Templates.ValueString()
+        }
+    }
     if !data.TargetSettings.IsUnknown() && !state.TargetSettings.IsUnknown() && !data.TargetSettings.Equal(state.TargetSettings) {
         var targetsettingsData interface{}
         if err := json.Unmarshal([]byte(data.TargetSettings.ValueString()), &targetsettingsData); err == nil {
@@ -1576,6 +1676,7 @@ func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, r
         "isEnabled": true,
         "targetType": true,
         "fields": true,
+        "templates": true,
         "targetSettings": true,
         "successMessage": true,
         "ipWhitelist": true,
@@ -1776,6 +1877,43 @@ func (r *FormResource) Update(ctx context.Context, req resource.UpdateRequest, r
         data.Fields = NewJSONSubsetValue(val)
     } else {
         data.Fields = NewJSONSubsetNull()
+    }
+    if obj, ok := dataMap["templates"].(map[string]interface{}); ok {
+        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
+        if val, ok := obj["_id"].(string); ok && val != "" {
+            data.Templates = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(string); ok {
+            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
+            data.Templates = NewJSONSubsetValue(val)
+        } else if val, ok := obj["value"].(float64); ok {
+            // Handle numeric values that might be returned as float64
+            data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", val))
+        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
+            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
+            normalizedObj := r.normalizeURLWrappers(obj)
+            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
+                data.Templates = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
+            }
+        } else if obj["value"] != nil {
+            // Handle complex value types (maps, arrays) by marshaling to JSON
+            normalizedValue := r.normalizeURLWrappers(obj["value"])
+            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
+                data.Templates = NewJSONSubsetValue(string(jsonBytes))
+            } else {
+                data.Templates = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
+            }
+        } else if jsonBytes, err := json.Marshal(obj); err == nil {
+            // Fallback to JSON marshaling for other complex objects
+            data.Templates = NewJSONSubsetValue(string(jsonBytes))
+        } else {
+            data.Templates = NewJSONSubsetNull()
+        }
+    } else if val, ok := dataMap["templates"].(string); ok {
+        data.Templates = NewJSONSubsetValue(val)
+    } else {
+        data.Templates = NewJSONSubsetNull()
     }
     if obj, ok := dataMap["targetSettings"].(map[string]interface{}); ok {
         // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)

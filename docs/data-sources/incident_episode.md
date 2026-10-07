@@ -53,7 +53,7 @@ data "oneuptime_incident_episode" "by_id" {
 - `labels` (Set) Relation to Labels Array where this object is categorized in... Computed.
 - `created_by_user_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `is_owner_notified_of_episode_creation` (Bool) Are owners notified when this episode is created?.. Computed.
-- `grouping_key` (String) Key used for grouping incidents into this episode. Generated from groupByFields of the matching rule... Computed.
+- `grouping_key` (String) Key used for grouping incidents into this episode. Generated from groupByFields of the matching rule. When a private incident opened the episode, its title is in the key only as a keyed hash... Computed.
 - `incident_grouping_rule_id` (String) A unique identifier for an object, represented as a UUID.. Computed.
 - `remediation_notes` (String) User-documented remediation steps and notes for this episode.. Computed.
 - `postmortem_note` (String) User-documented postmortem summary for this episode.. Computed.

@@ -15,32 +15,30 @@ import (
     "net/url"
     "strings"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
     "github.com/hashicorp/terraform-plugin-framework/attr"
     "sort"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-    "github.com/hashicorp/terraform-plugin-framework/resource/schema/numberplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
     "github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &AutoRemediationRuleResource{}
-var _ resource.ResourceWithImportState = &AutoRemediationRuleResource{}
+var _ resource.Resource = &InvestigationRuleResource{}
+var _ resource.ResourceWithImportState = &InvestigationRuleResource{}
 
-func NewAutoRemediationRuleResource() resource.Resource {
-    return &AutoRemediationRuleResource{}
+func NewInvestigationRuleResource() resource.Resource {
+    return &InvestigationRuleResource{}
 }
 
-// AutoRemediationRuleResource defines the resource implementation.
-type AutoRemediationRuleResource struct {
+// InvestigationRuleResource defines the resource implementation.
+type InvestigationRuleResource struct {
     client *Client
 }
 
-// AutoRemediationRuleResourceModel describes the resource data model.
-type AutoRemediationRuleResourceModel struct {
+// InvestigationRuleResourceModel describes the resource data model.
+type InvestigationRuleResourceModel struct {
     Id types.String `tfsdk:"id"`
     Criteria JSONSubsetValue `tfsdk:"criteria"`
     ProjectId types.String `tfsdk:"project_id"`
@@ -48,12 +46,6 @@ type AutoRemediationRuleResourceModel struct {
     Description types.String `tfsdk:"description"`
     IsEnabled types.Bool `tfsdk:"is_enabled"`
     TriggerEntityType types.String `tfsdk:"trigger_entity_type"`
-    ExecutionMode types.String `tfsdk:"execution_mode"`
-    RemediationAction types.String `tfsdk:"remediation_action"`
-    AiSelectsRunbook types.Bool `tfsdk:"ai_selects_runbook"`
-    AiComposesCommands types.Bool `tfsdk:"ai_composes_commands"`
-    CommandAllowlist JSONSubsetValue `tfsdk:"command_allowlist"`
-    CommandRunners types.Set `tfsdk:"command_runners"`
     Monitors types.Set `tfsdk:"monitors"`
     IncidentSeverities types.Set `tfsdk:"incident_severities"`
     AlertSeverities types.Set `tfsdk:"alert_severities"`
@@ -61,9 +53,6 @@ type AutoRemediationRuleResourceModel struct {
     MonitorLabels types.Set `tfsdk:"monitor_labels"`
     TitlePattern types.String `tfsdk:"title_pattern"`
     DescriptionPattern types.String `tfsdk:"description_pattern"`
-    Runbooks types.Set `tfsdk:"runbooks"`
-    VerificationWindowMinutes types.Number `tfsdk:"verification_window_minutes"`
-    AutoResolveOnVerifiedRecovery types.Bool `tfsdk:"auto_resolve_on_verified_recovery"`
     CreatedAt RFC3339Value `tfsdk:"created_at"`
     UpdatedAt RFC3339Value `tfsdk:"updated_at"`
     DeletedAt RFC3339Value `tfsdk:"deleted_at"`
@@ -71,13 +60,13 @@ type AutoRemediationRuleResourceModel struct {
     CreatedByUserId types.String `tfsdk:"created_by_user_id"`
 }
 
-func (r *AutoRemediationRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_auto_remediation_rule"
+func (r *InvestigationRuleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_investigation_rule"
 }
 
-func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *InvestigationRuleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
-        MarkdownDescription: "Which new incidents or alerts are fixed automatically, and how: by OneUptime AI or with runbooks, asking first or not. With no rule, OneUptime AI fixes every one while automatic fixing is on.",
+        MarkdownDescription: "Choose which new incidents or alerts OneUptime AI investigates on its own. With no rule, every one is investigated; with rules, only those that match one.",
 
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
@@ -107,11 +96,11 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "name": schema.StringAttribute{
-                MarkdownDescription: "Name of this auto-remediation rule..",
+                MarkdownDescription: "Name of this investigation rule..",
                 Required: true,
             },
             "description": schema.StringAttribute{
-                MarkdownDescription: "Description of this auto-remediation rule..",
+                MarkdownDescription: "Description of this investigation rule..",
                 Optional: true,
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
@@ -128,71 +117,14 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "trigger_entity_type": schema.StringAttribute{
-                MarkdownDescription: "Entity type that triggers this rule on creation: Incident or Alert..",
+                MarkdownDescription: "Which kind of new signal this rule decides about: Incident or Alert..",
                 Required: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.RequiresReplace(),
                 },
             },
-            "execution_mode": schema.StringAttribute{
-                MarkdownDescription: "Suggest asks before fixing: every fix the rule starts waits for one-click human approval. FullAuto fixes without asking: its runbooks start immediately, and OneUptime AI fixes run on their own where the cluster's or resource's AI agent page allows..",
-                Optional: true,
-                Computed: true,
-                Default: stringdefault.StaticString("Suggest"),
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "remediation_action": schema.StringAttribute{
-                MarkdownDescription: "OneUptimeAI: OneUptime AI fixes the matched incident or alert on the Kubernetes clusters and infrastructure it is linked to, the way each one's AI agent page allows. Runbooks: the rule's runbooks run. Whether a person approves first is the rule's Execution Mode..",
-                Optional: true,
-                Computed: true,
-                Default: stringdefault.StaticString("OneUptimeAI"),
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "ai_selects_runbook": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, an AI planning run reads the incident/alert context and picks the most applicable runbook (from the attached candidates, or all enabled runbooks when none are attached). AI-picked runbooks are always suggest-only — never full-auto..",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "ai_composes_commands": schema.BoolAttribute{
-                MarkdownDescription: "When enabled, the AI investigates the incident/alert and composes Bash/SSH commands for opted-in Runners instead of picking a runbook. Suggest mode proposes a command plan for one-click approval; FullAuto mode may execute commands inline, but only ones matching the command allowlist. Requires AI to be enabled for the project..",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "command_allowlist": schema.StringAttribute{
-                MarkdownDescription: "Glob patterns for commands the AI may execute WITHOUT human approval under FullAuto (for example: systemctl restart *). Commands that do not match are proposed for one-click approval instead. Destructive commands are always refused by the built-in policy..",
-                CustomType: JSONSubsetType{},
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.String{
-                    stringplanmodifier.UseStateForUnknown(),
-                },
-                Validators: []validator.String{
-                    JSONEnvelopeValidator(),
-                },
-            },
-            "command_runners": schema.SetAttribute{
-                MarkdownDescription: "Runners the AI may target with composed commands. Leave empty to allow any Runner in the project that has AI commands enabled..",
-                Optional: true,
-                Computed: true,
-                ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
-                },
-            },
             "monitors": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents/alerts from these monitors. Leave empty to match any monitor..",
+                MarkdownDescription: "Match only incidents/alerts from these monitors. Leave empty to match any monitor..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -201,7 +133,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "incident_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents with these severities (incident rules only). Leave empty to match any severity..",
+                MarkdownDescription: "Match only incidents with these severities (incident rules only). Leave empty to match any severity..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -210,7 +142,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "alert_severities": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for alerts with these severities (alert rules only). Leave empty to match any severity..",
+                MarkdownDescription: "Match only alerts with these severities (alert rules only). Leave empty to match any severity..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -219,7 +151,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger for incidents/alerts that carry at least one of these labels. Leave empty to match any label..",
+                MarkdownDescription: "Match only incidents/alerts that carry at least one of these labels. Leave empty to match any label..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -228,7 +160,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 },
             },
             "monitor_labels": schema.SetAttribute{
-                MarkdownDescription: "Only trigger when the incident/alert's monitor carries at least one of these labels — the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label..",
+                MarkdownDescription: "Match only when the incident/alert's monitor carries at least one of these labels — the natural way to scope rules to environments (e.g. staging vs production). Leave empty to match any monitor label..",
                 Optional: true,
                 Computed: true,
                 ElementType: types.StringType,
@@ -250,32 +182,6 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "runbooks": schema.SetAttribute{
-                MarkdownDescription: "Runbook candidates for this rule. Deterministic rules propose or start every attached runbook; AI rules pick the most applicable one..",
-                Optional: true,
-                Computed: true,
-                ElementType: types.StringType,
-                PlanModifiers: []planmodifier.Set{
-                    setplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "verification_window_minutes": schema.NumberAttribute{
-                MarkdownDescription: "How long after the runbook starts the subject's monitors get to recover before verification fails. Defaults to 15 minutes..",
-                Optional: true,
-                Computed: true,
-                PlanModifiers: []planmodifier.Number{
-                    numberplanmodifier.UseStateForUnknown(),
-                },
-            },
-            "auto_resolve_on_verified_recovery": schema.BoolAttribute{
-                MarkdownDescription: "When verification confirms the monitors recovered inside the window, automatically resolve the incident/alert. Off by default — the timeline note is posted either way..",
-                Optional: true,
-                Computed: true,
-                Default: booldefault.StaticBool(false),
-                PlanModifiers: []planmodifier.Bool{
-                    boolplanmodifier.UseStateForUnknown(),
                 },
             },
             "created_at": schema.StringAttribute{
@@ -305,7 +211,7 @@ func (r *AutoRemediationRuleResource) Schema(ctx context.Context, req resource.S
     }
 }
 
-func (r *AutoRemediationRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *InvestigationRuleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
     // Prevent panic if the provider has not been configured.
     if req.ProviderData == nil {
         return
@@ -326,8 +232,8 @@ func (r *AutoRemediationRuleResource) Configure(ctx context.Context, req resourc
 }
 
 
-func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data AutoRemediationRuleResourceModel
+func (r *InvestigationRuleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data InvestigationRuleResourceModel
 
     // Read Terraform plan data into the model
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -341,10 +247,10 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     // Create API request body. Unset (null/unknown) optional fields are
     // omitted so server-side defaults apply instead of being overwritten
     // with zero values.
-    autoRemediationRuleRequest := map[string]interface{}{
+    investigationRuleRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := autoRemediationRuleRequest["data"].(map[string]interface{})
+    requestDataMap := investigationRuleRequest["data"].(map[string]interface{})
 
     if parsedCriteria := r.parseJSONField(data.Criteria); parsedCriteria != nil {
         requestDataMap["criteria"] = parsedCriteria
@@ -360,24 +266,6 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     }
     if !data.TriggerEntityType.IsNull() && !data.TriggerEntityType.IsUnknown() {
         requestDataMap["triggerEntityType"] = data.TriggerEntityType.ValueString()
-    }
-    if !data.ExecutionMode.IsNull() && !data.ExecutionMode.IsUnknown() {
-        requestDataMap["executionMode"] = data.ExecutionMode.ValueString()
-    }
-    if !data.RemediationAction.IsNull() && !data.RemediationAction.IsUnknown() {
-        requestDataMap["remediationAction"] = data.RemediationAction.ValueString()
-    }
-    if !data.AiSelectsRunbook.IsNull() && !data.AiSelectsRunbook.IsUnknown() {
-        requestDataMap["aiSelectsRunbook"] = data.AiSelectsRunbook.ValueBool()
-    }
-    if !data.AiComposesCommands.IsNull() && !data.AiComposesCommands.IsUnknown() {
-        requestDataMap["aiComposesCommands"] = data.AiComposesCommands.ValueBool()
-    }
-    if parsedCommandAllowlist := r.parseJSONField(data.CommandAllowlist); parsedCommandAllowlist != nil {
-        requestDataMap["commandAllowlist"] = parsedCommandAllowlist
-    }
-    if !data.CommandRunners.IsNull() && !data.CommandRunners.IsUnknown() {
-        requestDataMap["commandRunners"] = r.convertTerraformSetToInterface(data.CommandRunners)
     }
     if !data.Monitors.IsNull() && !data.Monitors.IsUnknown() {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
@@ -400,41 +288,32 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     if !data.DescriptionPattern.IsNull() && !data.DescriptionPattern.IsUnknown() {
         requestDataMap["descriptionPattern"] = data.DescriptionPattern.ValueString()
     }
-    if !data.Runbooks.IsNull() && !data.Runbooks.IsUnknown() {
-        requestDataMap["runbooks"] = r.convertTerraformSetToInterface(data.Runbooks)
-    }
-    if !data.VerificationWindowMinutes.IsNull() && !data.VerificationWindowMinutes.IsUnknown() {
-        requestDataMap["verificationWindowMinutes"] = r.bigFloatToFloat64(data.VerificationWindowMinutes.ValueBigFloat())
-    }
-    if !data.AutoResolveOnVerifiedRecovery.IsNull() && !data.AutoResolveOnVerifiedRecovery.IsUnknown() {
-        requestDataMap["autoResolveOnVerifiedRecovery"] = data.AutoResolveOnVerifiedRecovery.ValueBool()
-    }
 
     // Make API call
-    httpResp, err := r.client.Post(ctx, "/auto-remediation-rule", autoRemediationRuleRequest)
+    httpResp, err := r.client.Post(ctx, "/ai-investigation-rule", investigationRuleRequest)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create auto_remediation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create investigation_rule, got error: %s", err))
         return
     }
 
-    var autoRemediationRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &autoRemediationRuleResponse)
+    var investigationRuleResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &investigationRuleResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create auto_remediation_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to create investigation_rule: %s", err))
         return
     }
 
     // Extract the new resource id from the create response.
     createdId := ""
-    if wrapper, ok := autoRemediationRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := investigationRuleResponse["data"].(map[string]interface{}); ok {
         if val, ok := wrapper["_id"].(string); ok {
             createdId = val
         }
-    } else if val, ok := autoRemediationRuleResponse["_id"].(string); ok {
+    } else if val, ok := investigationRuleResponse["_id"].(string); ok {
         createdId = val
     }
     if createdId == "" {
-        resp.Diagnostics.AddError("OneUptime API Error", "Create response for auto_remediation_rule did not contain an id. This is a bug in the provider or the API; please report it.")
+        resp.Diagnostics.AddError("OneUptime API Error", "Create response for investigation_rule did not contain an id. This is a bug in the provider or the API; please report it.")
         return
     }
     data.Id = types.StringValue(createdId)
@@ -443,7 +322,7 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
      * The server has committed the row. Persist what we know to state BEFORE
      * the read-back: if the read-back fails and we return without setting
      * state, Terraform never learns the resource exists and the created
-     * auto_remediation_rule is orphaned server-side — never refreshed, never
+     * investigation_rule is orphaned server-side — never refreshed, never
      * destroyed. Delete already refuses to drop state on failure for the
      * same reason; Create must not either.
      */
@@ -460,12 +339,6 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         "description": true,
         "isEnabled": true,
         "triggerEntityType": true,
-        "executionMode": true,
-        "remediationAction": true,
-        "aiSelectsRunbook": true,
-        "aiComposesCommands": true,
-        "commandAllowlist": true,
-        "commandRunners": true,
         "monitors": true,
         "incidentSeverities": true,
         "alertSeverities": true,
@@ -473,9 +346,6 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
-        "runbooks": true,
-        "verificationWindowMinutes": true,
-        "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -484,21 +354,21 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/auto-remediation-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/ai-investigation-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
         /*
          * State already owns the id, so the resource is tracked and the next
          * refresh reconciles the remaining attributes. Warn rather than
          * error: erroring here would strand a real resource.
          */
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created auto_remediation_rule but could not read it back; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created investigation_rule but could not read it back; state is incomplete until the next refresh: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created auto_remediation_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
+        resp.Diagnostics.AddWarning("Read After Create Failed", fmt.Sprintf("Created investigation_rule but could not parse the read-back response; state is incomplete until the next refresh: %s", err))
         return
     }
 
@@ -675,155 +545,6 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     } else {
         data.TriggerEntityType = types.StringNull()
     }
-    if obj, ok := dataMap["executionMode"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ExecutionMode = types.StringValue(string(jsonBytes))
-            } else {
-                data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ExecutionMode = types.StringValue(string(jsonBytes))
-            } else {
-                data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ExecutionMode = types.StringValue(string(jsonBytes))
-        } else {
-            data.ExecutionMode = types.StringNull()
-        }
-    } else if val, ok := dataMap["executionMode"].(string); ok {
-        data.ExecutionMode = types.StringValue(val)
-    } else {
-        data.ExecutionMode = types.StringNull()
-    }
-    if obj, ok := dataMap["remediationAction"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RemediationAction = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RemediationAction = types.StringValue(string(jsonBytes))
-            } else {
-                data.RemediationAction = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RemediationAction = types.StringValue(string(jsonBytes))
-            } else {
-                data.RemediationAction = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RemediationAction = types.StringValue(string(jsonBytes))
-        } else {
-            data.RemediationAction = types.StringNull()
-        }
-    } else if val, ok := dataMap["remediationAction"].(string); ok {
-        data.RemediationAction = types.StringValue(val)
-    } else {
-        data.RemediationAction = types.StringNull()
-    }
-    if val, ok := dataMap["aiSelectsRunbook"].(bool); ok {
-        data.AiSelectsRunbook = types.BoolValue(val)
-    }
-    if val, ok := dataMap["aiComposesCommands"].(bool); ok {
-        data.AiComposesCommands = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["commandAllowlist"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CommandAllowlist = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CommandAllowlist = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CommandAllowlist = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["commandAllowlist"].(string); ok {
-        data.CommandAllowlist = NewJSONSubsetValue(val)
-    } else {
-        data.CommandAllowlist = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["commandRunners"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.CommandRunners = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.CommandRunners = types.SetValueMust(types.StringType, []attr.Value{})
-    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1058,58 +779,6 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     } else {
         data.DescriptionPattern = types.StringNull()
     }
-    if val, ok := dataMap["runbooks"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.Runbooks = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
-    }
-    if val, ok := dataMap["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["verificationWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
-        data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1212,8 +881,8 @@ func (r *AutoRemediationRuleResource) Create(ctx context.Context, req resource.C
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data AutoRemediationRuleResourceModel
+func (r *InvestigationRuleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data InvestigationRuleResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -1230,12 +899,6 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         "description": true,
         "isEnabled": true,
         "triggerEntityType": true,
-        "executionMode": true,
-        "remediationAction": true,
-        "aiSelectsRunbook": true,
-        "aiComposesCommands": true,
-        "commandAllowlist": true,
-        "commandRunners": true,
         "monitors": true,
         "incidentSeverities": true,
         "alertSeverities": true,
@@ -1243,9 +906,6 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
-        "runbooks": true,
-        "verificationWindowMinutes": true,
-        "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -1255,9 +915,9 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
     }
 
     // Make API call with select parameter
-    httpResp, err := r.client.PostWithSelect(ctx, "/auto-remediation-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    httpResp, err := r.client.PostWithSelect(ctx, "/ai-investigation-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read auto_remediation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read investigation_rule, got error: %s", err))
         return
     }
 
@@ -1266,22 +926,22 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
         return
     }
 
-    var autoRemediationRuleResponse map[string]interface{}
-    err = r.client.ParseResponse(httpResp, &autoRemediationRuleResponse)
+    var investigationRuleResponse map[string]interface{}
+    err = r.client.ParseResponse(httpResp, &investigationRuleResponse)
     if err != nil {
-        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse auto_remediation_rule response, got error: %s", err))
+        resp.Diagnostics.AddError("Parse Error", fmt.Sprintf("Unable to parse investigation_rule response, got error: %s", err))
         return
     }
 
     // Update the model with response data
     // Extract data from response wrapper
     var dataMap map[string]interface{}
-    if wrapper, ok := autoRemediationRuleResponse["data"].(map[string]interface{}); ok {
+    if wrapper, ok := investigationRuleResponse["data"].(map[string]interface{}); ok {
         // Response is wrapped in a data field
         dataMap = wrapper
     } else {
         // Response is the direct object
-        dataMap = autoRemediationRuleResponse
+        dataMap = investigationRuleResponse
     }
 
     if obj, ok := dataMap["criteria"].(map[string]interface{}); ok {
@@ -1446,155 +1106,6 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.TriggerEntityType = types.StringNull()
     }
-    if obj, ok := dataMap["executionMode"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ExecutionMode = types.StringValue(string(jsonBytes))
-            } else {
-                data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ExecutionMode = types.StringValue(string(jsonBytes))
-            } else {
-                data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ExecutionMode = types.StringValue(string(jsonBytes))
-        } else {
-            data.ExecutionMode = types.StringNull()
-        }
-    } else if val, ok := dataMap["executionMode"].(string); ok {
-        data.ExecutionMode = types.StringValue(val)
-    } else {
-        data.ExecutionMode = types.StringNull()
-    }
-    if obj, ok := dataMap["remediationAction"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RemediationAction = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RemediationAction = types.StringValue(string(jsonBytes))
-            } else {
-                data.RemediationAction = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RemediationAction = types.StringValue(string(jsonBytes))
-            } else {
-                data.RemediationAction = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RemediationAction = types.StringValue(string(jsonBytes))
-        } else {
-            data.RemediationAction = types.StringNull()
-        }
-    } else if val, ok := dataMap["remediationAction"].(string); ok {
-        data.RemediationAction = types.StringValue(val)
-    } else {
-        data.RemediationAction = types.StringNull()
-    }
-    if val, ok := dataMap["aiSelectsRunbook"].(bool); ok {
-        data.AiSelectsRunbook = types.BoolValue(val)
-    }
-    if val, ok := dataMap["aiComposesCommands"].(bool); ok {
-        data.AiComposesCommands = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["commandAllowlist"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CommandAllowlist = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CommandAllowlist = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CommandAllowlist = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["commandAllowlist"].(string); ok {
-        data.CommandAllowlist = NewJSONSubsetValue(val)
-    } else {
-        data.CommandAllowlist = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["commandRunners"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.CommandRunners = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.CommandRunners = types.SetValueMust(types.StringType, []attr.Value{})
-    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -1829,58 +1340,6 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
     } else {
         data.DescriptionPattern = types.StringNull()
     }
-    if val, ok := dataMap["runbooks"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.Runbooks = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
-    }
-    if val, ok := dataMap["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["verificationWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
-        data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -1978,9 +1437,9 @@ func (r *AutoRemediationRuleResource) Read(ctx context.Context, req resource.Rea
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var data AutoRemediationRuleResourceModel
-    var state AutoRemediationRuleResourceModel
+func (r *InvestigationRuleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var data InvestigationRuleResourceModel
+    var state InvestigationRuleResourceModel
 
     // Read Terraform current state data to get the ID
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -1998,10 +1457,10 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     data.Id = state.Id
 
     // Create API request body
-    autoRemediationRuleRequest := map[string]interface{}{
+    investigationRuleRequest := map[string]interface{}{
         "data": map[string]interface{}{},
     }
-    requestDataMap := autoRemediationRuleRequest["data"].(map[string]interface{})
+    requestDataMap := investigationRuleRequest["data"].(map[string]interface{})
 
     if !data.Criteria.IsUnknown() && !state.Criteria.IsUnknown() && !data.Criteria.Equal(state.Criteria) {
         var criteriaData interface{}
@@ -2019,29 +1478,6 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     }
     if !data.IsEnabled.IsUnknown() && !state.IsEnabled.IsUnknown() && !data.IsEnabled.Equal(state.IsEnabled) {
         requestDataMap["isEnabled"] = data.IsEnabled.ValueBool()
-    }
-    if !data.ExecutionMode.IsUnknown() && !state.ExecutionMode.IsUnknown() && !data.ExecutionMode.Equal(state.ExecutionMode) {
-        requestDataMap["executionMode"] = data.ExecutionMode.ValueString()
-    }
-    if !data.RemediationAction.IsUnknown() && !state.RemediationAction.IsUnknown() && !data.RemediationAction.Equal(state.RemediationAction) {
-        requestDataMap["remediationAction"] = data.RemediationAction.ValueString()
-    }
-    if !data.AiSelectsRunbook.IsUnknown() && !state.AiSelectsRunbook.IsUnknown() && !data.AiSelectsRunbook.Equal(state.AiSelectsRunbook) {
-        requestDataMap["aiSelectsRunbook"] = data.AiSelectsRunbook.ValueBool()
-    }
-    if !data.AiComposesCommands.IsUnknown() && !state.AiComposesCommands.IsUnknown() && !data.AiComposesCommands.Equal(state.AiComposesCommands) {
-        requestDataMap["aiComposesCommands"] = data.AiComposesCommands.ValueBool()
-    }
-    if !data.CommandAllowlist.IsUnknown() && !state.CommandAllowlist.IsUnknown() && !data.CommandAllowlist.Equal(state.CommandAllowlist) {
-        var commandallowlistData interface{}
-        if err := json.Unmarshal([]byte(data.CommandAllowlist.ValueString()), &commandallowlistData); err == nil {
-            requestDataMap["commandAllowlist"] = commandallowlistData
-        } else {
-            requestDataMap["commandAllowlist"] = data.CommandAllowlist.ValueString()
-        }
-    }
-    if !data.CommandRunners.IsUnknown() && !state.CommandRunners.IsUnknown() && !data.CommandRunners.Equal(state.CommandRunners) {
-        requestDataMap["commandRunners"] = r.convertTerraformSetToInterface(data.CommandRunners)
     }
     if !data.Monitors.IsUnknown() && !state.Monitors.IsUnknown() && !data.Monitors.Equal(state.Monitors) {
         requestDataMap["monitors"] = r.convertTerraformSetToInterface(data.Monitors)
@@ -2064,34 +1500,25 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     if !data.DescriptionPattern.IsUnknown() && !state.DescriptionPattern.IsUnknown() && !data.DescriptionPattern.Equal(state.DescriptionPattern) {
         requestDataMap["descriptionPattern"] = data.DescriptionPattern.ValueString()
     }
-    if !data.Runbooks.IsUnknown() && !state.Runbooks.IsUnknown() && !data.Runbooks.Equal(state.Runbooks) {
-        requestDataMap["runbooks"] = r.convertTerraformSetToInterface(data.Runbooks)
-    }
-    if !data.VerificationWindowMinutes.IsUnknown() && !state.VerificationWindowMinutes.IsUnknown() && !data.VerificationWindowMinutes.Equal(state.VerificationWindowMinutes) {
-        requestDataMap["verificationWindowMinutes"] = r.bigFloatToFloat64(data.VerificationWindowMinutes.ValueBigFloat())
-    }
-    if !data.AutoResolveOnVerifiedRecovery.IsUnknown() && !state.AutoResolveOnVerifiedRecovery.IsUnknown() && !data.AutoResolveOnVerifiedRecovery.Equal(state.AutoResolveOnVerifiedRecovery) {
-        requestDataMap["autoResolveOnVerifiedRecovery"] = data.AutoResolveOnVerifiedRecovery.ValueBool()
-    }
 
     // Only call the API when there are changed fields to send. An empty
     // update body is rejected by the API; state is still refreshed below so
     // this method never writes unverified plan values into state.
-    if len(autoRemediationRuleRequest["data"].(map[string]interface{})) > 0 {
-        httpResp, err := r.client.Put(ctx, "/auto-remediation-rule/" + data.Id.ValueString() + "", autoRemediationRuleRequest)
+    if len(investigationRuleRequest["data"].(map[string]interface{})) > 0 {
+        httpResp, err := r.client.Put(ctx, "/ai-investigation-rule/" + data.Id.ValueString() + "", investigationRuleRequest)
         if err != nil {
-            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update auto_remediation_rule, got error: %s", err))
+            resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update investigation_rule, got error: %s", err))
             return
         }
 
         // Parse the update response
-        var autoRemediationRuleResponse map[string]interface{}
-        err = r.client.ParseResponse(httpResp, &autoRemediationRuleResponse)
+        var investigationRuleResponse map[string]interface{}
+        err = r.client.ParseResponse(httpResp, &investigationRuleResponse)
         if err != nil {
-            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update auto_remediation_rule: %s", err))
+            resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to update investigation_rule: %s", err))
             return
         }
-        _ = autoRemediationRuleResponse
+        _ = investigationRuleResponse
     }
 
     // After successful update, fetch the current state by calling Read with select parameter
@@ -2102,12 +1529,6 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         "description": true,
         "isEnabled": true,
         "triggerEntityType": true,
-        "executionMode": true,
-        "remediationAction": true,
-        "aiSelectsRunbook": true,
-        "aiComposesCommands": true,
-        "commandAllowlist": true,
-        "commandRunners": true,
         "monitors": true,
         "incidentSeverities": true,
         "alertSeverities": true,
@@ -2115,9 +1536,6 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         "monitorLabels": true,
         "titlePattern": true,
         "descriptionPattern": true,
-        "runbooks": true,
-        "verificationWindowMinutes": true,
-        "autoResolveOnVerifiedRecovery": true,
         "createdAt": true,
         "updatedAt": true,
         "deletedAt": true,
@@ -2126,16 +1544,16 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
         "_id": true,
     }
 
-    readResp, err := r.client.PostWithSelect(ctx, "/auto-remediation-rule/" + data.Id.ValueString() + "/get-item", selectParam)
+    readResp, err := r.client.PostWithSelect(ctx, "/ai-investigation-rule/" + data.Id.ValueString() + "/get-item", selectParam)
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read auto_remediation_rule after update, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read investigation_rule after update, got error: %s", err))
         return
     }
 
     var readResponse map[string]interface{}
     err = r.client.ParseResponse(readResp, &readResponse)
     if err != nil {
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read auto_remediation_rule after update: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to read investigation_rule after update: %s", err))
         return
     }
 
@@ -2312,155 +1730,6 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     } else {
         data.TriggerEntityType = types.StringNull()
     }
-    if obj, ok := dataMap["executionMode"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.ExecutionMode = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.ExecutionMode = types.StringValue(string(jsonBytes))
-            } else {
-                data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.ExecutionMode = types.StringValue(string(jsonBytes))
-            } else {
-                data.ExecutionMode = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.ExecutionMode = types.StringValue(string(jsonBytes))
-        } else {
-            data.ExecutionMode = types.StringNull()
-        }
-    } else if val, ok := dataMap["executionMode"].(string); ok {
-        data.ExecutionMode = types.StringValue(val)
-    } else {
-        data.ExecutionMode = types.StringNull()
-    }
-    if obj, ok := dataMap["remediationAction"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, DateTime, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.RemediationAction = types.StringValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.RemediationAction = types.StringValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.RemediationAction = types.StringValue(string(jsonBytes))
-            } else {
-                data.RemediationAction = types.StringValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.RemediationAction = types.StringValue(string(jsonBytes))
-            } else {
-                data.RemediationAction = types.StringValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.RemediationAction = types.StringValue(string(jsonBytes))
-        } else {
-            data.RemediationAction = types.StringNull()
-        }
-    } else if val, ok := dataMap["remediationAction"].(string); ok {
-        data.RemediationAction = types.StringValue(val)
-    } else {
-        data.RemediationAction = types.StringNull()
-    }
-    if val, ok := dataMap["aiSelectsRunbook"].(bool); ok {
-        data.AiSelectsRunbook = types.BoolValue(val)
-    }
-    if val, ok := dataMap["aiComposesCommands"].(bool); ok {
-        data.AiComposesCommands = types.BoolValue(val)
-    }
-    if obj, ok := dataMap["commandAllowlist"].(map[string]interface{}); ok {
-        // Handle ObjectID type responses and wrapper objects (e.g., Version, Name types)
-        if val, ok := obj["_id"].(string); ok && val != "" {
-            data.CommandAllowlist = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(string); ok {
-            // Unwrap wrapper objects - extract the inner value regardless of whether it's empty
-            data.CommandAllowlist = NewJSONSubsetValue(val)
-        } else if val, ok := obj["value"].(float64); ok {
-            // Handle numeric values that might be returned as float64
-            data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", val))
-        } else if typeStr, typeOk := obj["_type"].(string); typeOk && r.isValidOneUptimeObjectType(typeStr) && obj["value"] != nil {
-            // For typed wrapper objects (only valid OneUptime ObjectTypes), preserve the full structure including _type
-            normalizedObj := r.normalizeURLWrappers(obj)
-            if jsonBytes, err := json.Marshal(normalizedObj); err == nil {
-                data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedObj))
-            }
-        } else if obj["value"] != nil {
-            // Handle complex value types (maps, arrays) by marshaling to JSON
-            normalizedValue := r.normalizeURLWrappers(obj["value"])
-            if jsonBytes, err := json.Marshal(normalizedValue); err == nil {
-                data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-            } else {
-                data.CommandAllowlist = NewJSONSubsetValue(fmt.Sprintf("%v", normalizedValue))
-            }
-        } else if jsonBytes, err := json.Marshal(obj); err == nil {
-            // Fallback to JSON marshaling for other complex objects
-            data.CommandAllowlist = NewJSONSubsetValue(string(jsonBytes))
-        } else {
-            data.CommandAllowlist = NewJSONSubsetNull()
-        }
-    } else if val, ok := dataMap["commandAllowlist"].(string); ok {
-        data.CommandAllowlist = NewJSONSubsetValue(val)
-    } else {
-        data.CommandAllowlist = NewJSONSubsetNull()
-    }
-    if val, ok := dataMap["commandRunners"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.CommandRunners = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.CommandRunners = types.SetValueMust(types.StringType, []attr.Value{})
-    }
     if val, ok := dataMap["monitors"].([]interface{}); ok {
         // Convert API response list to Terraform set
         var setItems []attr.Value
@@ -2695,58 +1964,6 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     } else {
         data.DescriptionPattern = types.StringNull()
     }
-    if val, ok := dataMap["runbooks"].([]interface{}); ok {
-        // Convert API response list to Terraform set
-        var setItems []attr.Value
-        for _, item := range val {
-            if itemMap, ok := item.(map[string]interface{}); ok {
-                // Handle objects with _id field (OneUptime format)
-                if id, ok := itemMap["_id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else if id, ok := itemMap["id"].(string); ok {
-                    setItems = append(setItems, types.StringValue(id))
-                } else {
-                    // Convert entire object to JSON string if no id field
-                    if jsonBytes, err := json.Marshal(itemMap); err == nil {
-                        setItems = append(setItems, types.StringValue(string(jsonBytes)))
-                    }
-                }
-            } else if str, ok := item.(string); ok {
-                // Handle direct string values
-                setItems = append(setItems, types.StringValue(str))
-            }
-        }
-        // Sort set items for deterministic state representation
-        sort.Slice(setItems, func(i, j int) bool {
-            iStr := setItems[i].(types.String).ValueString()
-            jStr := setItems[j].(types.String).ValueString()
-            return iStr < jStr
-        })
-        data.Runbooks = types.SetValueMust(types.StringType, setItems)
-    } else {
-        // For sets, always use empty set instead of null to match default values
-        data.Runbooks = types.SetValueMust(types.StringType, []attr.Value{})
-    }
-    if val, ok := dataMap["verificationWindowMinutes"].(float64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if val, ok := dataMap["verificationWindowMinutes"].(int64); ok {
-        data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(float64(val)))
-    } else if obj, ok := dataMap["verificationWindowMinutes"].(map[string]interface{}); ok {
-        // Unwrap numeric wrapper objects (e.g. {_type: "Port", value: 443})
-        if val, ok := obj["value"].(float64); ok {
-            data.VerificationWindowMinutes = types.NumberValue(big.NewFloat(val))
-        } else {
-            data.VerificationWindowMinutes = types.NumberNull()
-        }
-    } else {
-        // Missing or unrecognized value: null, never unknown, so apply can complete.
-        data.VerificationWindowMinutes = types.NumberNull()
-    }
-    if val, ok := dataMap["autoResolveOnVerifiedRecovery"].(bool); ok {
-        data.AutoResolveOnVerifiedRecovery = types.BoolValue(val)
-    }
     if obj, ok := dataMap["createdAt"].(map[string]interface{}); ok {
         if val, ok := obj["value"].(string); ok && val != "" {
             data.CreatedAt = NewRFC3339Value(val)
@@ -2845,8 +2062,8 @@ func (r *AutoRemediationRuleResource) Update(ctx context.Context, req resource.U
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *AutoRemediationRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data AutoRemediationRuleResourceModel
+func (r *InvestigationRuleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data InvestigationRuleResourceModel
 
     // Read Terraform prior state data into the model
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -2856,9 +2073,9 @@ func (r *AutoRemediationRuleResource) Delete(ctx context.Context, req resource.D
     }
 
     // Make API call
-    httpResp, err := r.client.Delete(ctx, "/auto-remediation-rule/" + data.Id.ValueString() + "")
+    httpResp, err := r.client.Delete(ctx, "/ai-investigation-rule/" + data.Id.ValueString() + "")
     if err != nil {
-        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete auto_remediation_rule, got error: %s", err))
+        resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete investigation_rule, got error: %s", err))
         return
     }
 
@@ -2866,7 +2083,7 @@ func (r *AutoRemediationRuleResource) Delete(ctx context.Context, req resource.D
     // orphans real infrastructure. 404 means it is already gone.
     if httpResp.StatusCode >= 400 && httpResp.StatusCode != http.StatusNotFound {
         err = r.client.ParseResponse(httpResp, nil)
-        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete auto_remediation_rule: %s", err))
+        resp.Diagnostics.AddError("OneUptime API Error", fmt.Sprintf("Unable to delete investigation_rule: %s", err))
         return
     }
     if httpResp.Body != nil {
@@ -2875,12 +2092,12 @@ func (r *AutoRemediationRuleResource) Delete(ctx context.Context, req resource.D
 }
 
 
-func (r *AutoRemediationRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *InvestigationRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
     resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Helper method to convert Terraform map to Go interface{}
-func (r *AutoRemediationRuleResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
+func (r *InvestigationRuleResource) convertTerraformMapToInterface(terraformMap types.Map) interface{} {
     if terraformMap.IsNull() || terraformMap.IsUnknown() {
         return nil
     }
@@ -2898,7 +2115,7 @@ func (r *AutoRemediationRuleResource) convertTerraformMapToInterface(terraformMa
 }
 
 // Helper method to convert Terraform list to Go interface{}
-func (r *AutoRemediationRuleResource) convertTerraformListToInterface(terraformList types.List) interface{} {
+func (r *InvestigationRuleResource) convertTerraformListToInterface(terraformList types.List) interface{} {
     if terraformList.IsNull() || terraformList.IsUnknown() {
         return nil
     }
@@ -2919,7 +2136,7 @@ func (r *AutoRemediationRuleResource) convertTerraformListToInterface(terraformL
 }
 
 // Helper method to convert Terraform set to Go interface{}
-func (r *AutoRemediationRuleResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
+func (r *InvestigationRuleResource) convertTerraformSetToInterface(terraformSet types.Set) interface{} {
     if terraformSet.IsNull() || terraformSet.IsUnknown() {
         return nil
     }
@@ -2941,7 +2158,7 @@ func (r *AutoRemediationRuleResource) convertTerraformSetToInterface(terraformSe
 
 
 // Helper method to parse JSON field for complex objects
-func (r *AutoRemediationRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
+func (r *InvestigationRuleResource) parseJSONField(terraformString basetypes.StringValuable) interface{} {
     sv, _ := terraformString.ToStringValue(context.Background())
     if sv.IsNull() || sv.IsUnknown() || sv.ValueString() == "" {
         return nil
@@ -2957,7 +2174,7 @@ func (r *AutoRemediationRuleResource) parseJSONField(terraformString basetypes.S
 }
 
 // Normalize URL wrapper objects to avoid drift (e.g., trailing slash differences).
-func (r *AutoRemediationRuleResource) normalizeURLWrappers(value interface{}) interface{} {
+func (r *InvestigationRuleResource) normalizeURLWrappers(value interface{}) interface{} {
     switch v := value.(type) {
     case map[string]interface{}:
         if typeStr, ok := v["_type"].(string); ok && typeStr == "URL" {
@@ -2979,7 +2196,7 @@ func (r *AutoRemediationRuleResource) normalizeURLWrappers(value interface{}) in
     }
 }
 
-func (r *AutoRemediationRuleResource) normalizeURLString(value string) string {
+func (r *InvestigationRuleResource) normalizeURLString(value string) string {
     parsed, err := url.Parse(value)
     if err != nil {
         return value
@@ -2991,7 +2208,7 @@ func (r *AutoRemediationRuleResource) normalizeURLString(value string) string {
 }
 
 // Helper method to convert *big.Float to float64 for JSON serialization
-func (r *AutoRemediationRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
+func (r *InvestigationRuleResource) bigFloatToFloat64(bf *big.Float) interface{} {
     if bf == nil {
         return nil
     }
@@ -3001,6 +2218,6 @@ func (r *AutoRemediationRuleResource) bigFloatToFloat64(bf *big.Float) interface
 
 // Helper method to check if a type string is a valid OneUptime ObjectType.
 // The registry itself lives in objecttypes.go, shared across the package.
-func (r *AutoRemediationRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
+func (r *InvestigationRuleResource) isValidOneUptimeObjectType(typeStr string) bool {
     return validOneUptimeObjectTypes[typeStr]
 }
